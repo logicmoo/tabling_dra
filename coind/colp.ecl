@@ -35,6 +35,7 @@ builtin( fail ).
 builtin( \+( _ ) ).
 builtin( _ = _ ).
 builtin( _ \= _ ).
+builtin( once( _ ) ).  % there is special treatment for this, see below
 
 
 
@@ -89,6 +90,7 @@ treat_term( (:- coinductive P / K), _ ) :-         % declaration of coinductive
         writeln( error, '\"' ).
 
 treat_term( (:- Directive), _ ) :-                 % another directive
+        Directive \= (coinductive _),
         !,
         write( error, 'Unknown directive: \"' ),
         write( error, Directive ),
@@ -97,26 +99,33 @@ treat_term( (:- Directive), _ ) :-                 % another directive
 treat_term( (?- Query), VarDict ) :-
         !,
         write( 'Query: ' ),  write( Query ), writeln( '.' ),
-        (
-            query( Query ),
-            !,
-            write( 'Yes: ' ),  show_results( VarDict )
-        ;
-            writeln( 'No' )
-        ).
+        treat_query( Query, VarDict ).
 
 treat_term( Clause, _ ) :-
-        ( good_head( Clause ) ; Clause = (H :- _), good_head( H  )),
+        Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
+        ( good_head( Clause ) ; Clause = (H :- _), good_head( H ) ),
         !,
         ensure_dynamic( Clause ),
         assertz( Clause ).
 
 treat_term( Clause, _ ) :-
-        ( \+ good_head( Clause ) ; \+ (Clause \= (H :- _), good_head( H )) ),
+        Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
+        \+ ( good_head( Clause ) ; Clause = (H :- _), good_head( H ) ),
         !,
         write( error, 'Erroeneous clause: \"' ),
         write( error, Clause ),
         writeln( error, '\"' ).
+
+
+%% Treat a query, i.e., produce and display solutions until
+%% no more can be found.
+
+treat_query( Query, VarDict ) :-
+        query( Query ),
+        write( 'Yes: ' ),  show_results( VarDict ).
+
+treat_query( _, _ ) :-
+            writeln( 'No' ).
 
 
 %% Is this term a good head of a clause?
@@ -151,14 +160,8 @@ show_results( _ ).
 %% Given p/k, produce p( _, _, ... _ )  (of arity k)
 
 mk_pattern( P, K, Pattern ) :-
-        mk_vars( K, Args ),
+        length( Args, K ),                           % Args = K fresh variables
         Pattern =.. [ P | Args ].
-
-
-% Produce a list of K fresh variables
-
-mk_vars( 0, []        ) :-  !.
-mk_vars( K, [ _ | T ] ) :-  K > 0,  K1 is K - 1,  mk_vars( K1, T ).
 
 
 
@@ -192,28 +195,49 @@ solve( Hypotheses, ( Goal1 , Goal2 ) ) :-     % a conjunction
         solve( Hypotheses, Goal2 ).
 
 solve( Hypotheses, Call ) :-                  % a single call
+        Call \= ( _ ; _ ),
+        Call \= ( _ , _ ),
         solve_call( Hypotheses, Call ).
 
 
 % A single call:
 
-solve_call( _, Call ) :-                                  % a built-in
+solve_call( Hypotheses, Call ) :-                         % a built-in
         builtin( Call ),
-        !,
-        Call .
+%        !,
+        solve_builtin_call( Hypotheses, Call ).
 
 solve_call( Hypotheses, Call ) :-                         % coinductive
         coinductive( Call ),
-        !,
-        (
-            member( Call, Hypotheses )                    % the hypotheses first
-        ;
-            clause( Call, Body ),
-            solve( [ Call | Hypotheses ], Body )          % then the clauses
-        ).
+%        !,
+        solve_coinductive_call( Hypotheses, Call ).
 
 solve_call( Hypotheses, Call ) :-                         % not coinductive
+        \+ builtin( Call ),
+        \+ coinductive( Call ),
         clause( Call, Body ),
         solve( Hypotheses, Body ).
+
+
+% A single coinductive call:
+
+solve_coinductive_call( Hypotheses, Call ) :-
+            member( Call, Hypotheses ).                   % the hypotheses first
+
+solve_coinductive_call( Hypotheses, Call ) :-
+            clause( Call, Body ),
+            solve( [ Call | Hypotheses ], Body ).          % then the clauses
+
+
+% A single built-in call
+
+solve_builtin_call( Hypotheses, once( Call ) ) :-
+        once( solve( Hypotheses, Call ) ).
+
+
+solve_builtin_call( _, Call ) :-
+        Call \= once( _ ),
+        Call.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
