@@ -22,15 +22,16 @@ mk_ground( T ) :-  mk_ground_aux( T, 0, _ ).
 
 %
 mk_ground_aux( V, N, N1 ) :-
-        var( V ),  !,
-        name(N, CharsOfN ),
+        var( V ),
+        !,
+        number_string( N, CharsOfN ),
         N1 is N + 1,
-        name( ' V', CharsOfV ),
-        append( CharsOfV, CharsOfN, CharsOfVN ),
-        name( V, CharsOfVN ).
+        append_strings( " V", CharsOfN, CharsOfVN ),
+        atom_string( V, CharsOfVN ).
 
 mk_ground_aux( T, N, N ) :-
-        atomic( T ),  !.
+        atomic( T ),
+        !.
 
 mk_ground_aux( T, N, N1 ) :-
         % \+ var( T ), \+ atomic( T ),
@@ -64,28 +65,33 @@ are_variants( T1, T2 ) :-
 
 
 %%------------------------------------------------------------------------------
-%% getline( - list of character codes ) :
+%% getline( - list of character strings ) :
 %%    Reads characters from the current input stream upto (and including) the
 %%    nearest newline.  The newline is not included in the list of characters
 %%    that is returned.
 
-getline( Name ) :-  get_code( C ),  getline_( C, Name ).
+getline( Name ) :-  get_char( C ),  getline_( C, Name ).
 
-getline_( C, []         ) :-  C =:= "\n",  !.
-getline_( C, [ C | Cs ] ) :-  get_code( NC ),  getline_( NC, Cs ).
+%
+getline_( "\n", []         ) :-  !.
+
+getline_( C   , [ C | Cs ] ) :-
+        % C \= "\n",
+        get_char( NC ),
+        getline_( NC, Cs ).
 
 
 %%------------------------------------------------------------------------------
-%% putline( + list of character codes ) :
+%% putline( + list of character strings ) :
 %%    Writes the characters to the current output stream and follows them with
-%%    a newline. 
+%%    a newline.
 
 putline( Cs ) :-  putchars( Cs ),  nl.
 
 
 %%------------------------------------------------------------------------------
-%% putchars( + list of character codes ) :
+%% putchars( + list of character strings ) :
 %%    Writes the characters to the current output stream.
 
 putchars( []         ).
-putchars( [ C | Cs ] ) :-  put_code( C ),  putchars( Cs ).
+putchars( [ C | Cs ] ) :-  put_char( C ),  putchars( Cs ).
