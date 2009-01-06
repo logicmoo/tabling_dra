@@ -204,12 +204,12 @@ solve( Hypotheses, Call ) :-                  % a single call
 
 solve_call( Hypotheses, Call ) :-                         % a built-in
         builtin( Call ),
-%        !,
+        !,
         solve_builtin_call( Hypotheses, Call ).
 
 solve_call( Hypotheses, Call ) :-                         % coinductive
         coinductive( Call ),
-%        !,
+        !,
         solve_coinductive_call( Hypotheses, Call ).
 
 solve_call( Hypotheses, Call ) :-                         % not coinductive
