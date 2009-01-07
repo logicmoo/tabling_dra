@@ -62,6 +62,14 @@ prog( FileName ) :-
 %% Load a program from this file.
 
 process_file( FileName ) :-
+        \+ atom( FileName ),
+        !,
+        write( stderr, "*** Illegal file name '" ),
+        write( stderr, FileName ),
+        write( stderr, "'.  The file will be ignored.\n" ).
+
+process_file( FileName ) :-
+        atom( FileName ),
         ensure_extension( FileName, FullFileName ),
         open( FullFileName, read, ProgStream ),
 
@@ -70,8 +78,8 @@ process_file( FileName ) :-
         % write( '<processing \"' ),  write( Term ),  writeln( '\">' ),
         treat_term( Term, VarDict ),
         Term = end_of_file,
-
         !,
+
         close( ProgStream ).
 
 
