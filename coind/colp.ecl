@@ -29,20 +29,20 @@
 %%  NOTE: Just adding "!" or " _ -> _ ; _" won't do the trick, the main
 %%        metainterpreter would have to be modified.
 
-builtin( true ).
-builtin( false ).
-builtin( fail ).
-builtin( \+( _ ) ).
-builtin( _ = _ ).
-builtin( _ \= _ ).
+builtin( true      ).
+builtin( false     ).
+builtin( fail      ).
+builtin( \+( _ )   ).
+builtin( _ = _     ).
+builtin( _ \= _    ).
 builtin( once( _ ) ).  % there is special treatment for this, see below
 
 
 
 %%%%%  Administration  %%%%%
 
-:-dynamic coinductive/1 .          % e.g., coinductive( comember( _, _ ) ).
-:-dynamic known/2 .                % known( p, k ). if p/k has already been seen
+:- dynamic coinductive/1 .         % e.g., coinductive( comember( _, _ ) ).
+:- dynamic known/2 .               % known( p, k ). if p/k has already been seen
 
 :- op( 1000, fy, coinductive ).    % allow  ":- coinductive p/k ."
 
