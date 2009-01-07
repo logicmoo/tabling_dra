@@ -178,6 +178,31 @@
 :- dynamic completed/1 .
 
 
+%% error( + message, + stack ):
+%% Display the message and stack, then abort.
+
+fatal_error( Message, Stack ) :-
+        write( "---- FATAL ERROR: " ),
+        nl,
+        write( "---- " ),
+        write( Message ),
+        nl,
+        nl,
+        write( "---- The current stack:" ),
+        nl,
+        show_stack( Stack ),
+        write( "----" ),
+        nl,
+        abort.
+
+%
+show_stack( [] ).
+show_stack( [ H | T ] ) :-
+        write( H ),
+        nl,
+        show_stack( T ).
+
+
 
 %%%%  The top level  %%%%
 
@@ -191,4 +216,4 @@ go :-   putchars( "What is the name of the program file? " ),
 
 %%%%  Start the interpreter.  %%%%
 
-:- go.
+% :- go.
