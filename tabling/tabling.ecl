@@ -17,15 +17,15 @@
    The interpreter follows -- somewhat loosely -- the description in the latter
    paper but without "semi-naive optimization".  Moreover, "clusters" are
    detected dynamically, to achieve greater precision (a dependency graph among
-   static calls can only be a rought approximation, a dependency graph among
+   static calls can only be a rough approximation, a dependency graph among
    predicates is rougher still).
 
 
    Nomenclature
    ------------
 
-   Some predicates are "tabled", because the uer has declared them to be such
-   that by using a directive.  E.g.,
+   Some predicates are "tabled", because the user has declared them to be such
+   by using a directive.  E.g.,
        :- tabled p/2.
 
    All calls to a tabled predicate that are present in the interpreted program
@@ -83,11 +83,11 @@
            -- for each tabled goal encounted during the computation -- of a set
            of facts that form the goal's "least fixed point interpretation".
            (Of course, if this set is not sufficiently small, the interpreter
-           will not terminate successfully).  The facts (which need not be
+           will not terminate successfully.)  The facts (which need not be
            ground!) are all entered into the table "answered", and the members
            of different sets are distinguished by their association with the
            appropriate goal: a fact in "answered" is a result that is valid only
-          for a variant of the accompanying goal.
+           for a variant of the accompanying goal.
 
            The need for annotating a fact with information about the
            corresponding goal might not be immediately obvious.  Consider the
@@ -98,15 +98,15 @@
                          p( a, a ).
                          p( a, b ).
 
-               query:    ?- p( U, V ),  p( W, W ), p( a, X ), p( Y, b ).
+               query:    ?-  p( U, V ),  p( W, W ),  p( a, X ),  p( Y, b ).
 
            During "normal" execution of this Prolog program each goal in the
            query would generate a different set of results; to wit:
 
-               p( U, V )  would generate p( U, U ), p( a, a ), p( a, b )
-               p( W, W )  .............. p( W, W ), p( a, a )
-               p( a, X )  .............. p( a, a ) (twice!)
-               p( Y, b )  .............. p( b, b ), p( a, b ).
+               p( U, V )  would generate  p( U, U ), p( a, a ), p( a, b )
+               p( W, W )  ..............  p( W, W ), p( a, a )
+               p( a, X )  ..............  p( a, a ) (twice!)
+               p( Y, b )  ..............  p( b, b ), p( a, b ).
 
            In other words, the set of results depends not on the predicate, but
            the form of the goal.  If "p/2" is tabled, the proper contents of
@@ -133,7 +133,7 @@
 
    -- pioneer( goal )
 
-           If a goal is encounterd whose variant has not yet been encountered
+           If a goal is encountered whose variant has not yet been encountered
            during the computation, the goal is called a "pioneer" and recorded
            in this table.  If a variant goal is encountered subsequently, it
            will be treated as a "follower".  The table is used to detect whether
@@ -167,6 +167,17 @@
 :- [ utilities ].
 
 
+%% The tables:
+:- dynamic rule/2 .
+:- dynamic tabled/1 .
+:- dynamic answer/2 .
+:- dynamic number_of_answers/1 .
+:- dynamic pioneer/1 .
+:- dynamic not_topmost/1 .
+:- dynamic cluster/2 .
+:- dynamic completed/1 .
+
+
 
 %%%%  The top level  %%%%
 
@@ -178,6 +189,6 @@ go :-   putchars( "What is the name of the program file? " ),
 
 
 
-%%%%  Start the interpreter.
+%%%%  Start the interpreter.  %%%%
 
 :- go.
