@@ -177,8 +177,31 @@
 :- dynamic cluster/2 .
 :- dynamic completed/1 .
 
+number_of_answers( 0 ).
 
-%% error( + message, + stack ):
+
+
+%% memo( + goal, + fact ):
+%% If the table "answer" does not contain a variant of this fact paired with
+%% a variant of this goal, then add the pair to the table, increasing
+%% "number_of_answers".
+
+memo( Goal, Fact ) :-
+        answer( G, F ),
+        are_variants( F, Fact ),
+        are_variants( G, Goal ),
+        !.
+
+memo( Goal, Fact ) :-
+        % No variant pair in "answer",
+        assert( answer( Goal, Fact ) ),
+        retract( number_of_answers( N ) ),
+        N1 is N + 1,
+        assert( number_of_answers( N1 ) ).
+
+
+
+%% fatal_error( + message, + stack ):
 %% Display the message and stack, then abort.
 
 fatal_error( Message, Stack ) :-
