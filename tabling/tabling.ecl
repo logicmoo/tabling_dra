@@ -201,6 +201,17 @@ memo( Goal, Fact ) :-
 
 
 
+%% get_answer( +- goal ):
+%% Get an instantiation (if any) tabled in "answer" for variants of this goal.
+%% Sequence through all such instantiations on backtracking.
+
+get_answer( Goal ) :-
+        answer( G, Ans ),
+        are_variants( Goal, G ),
+        Goal = Ans .
+
+
+
 %% fatal_error( + message, + stack ):
 %% Display the message and stack, then abort.
 
