@@ -64,9 +64,9 @@ prog( FileName ) :-
 process_file( FileName ) :-
         \+ atom( FileName ),
         !,
-        write( stderr, "*** Illegal file name '" ),
-        write( stderr, FileName ),
-        write( stderr, "'.  The file will be ignored.\n" ).
+        write(   error, "*** Illegal file name '" ),
+        write(   error, FileName ),
+        writeln( error, "'.  The file will be ignored." ).
 
 process_file( FileName ) :-
         atom( FileName ),
@@ -114,24 +114,16 @@ treat_term( (:- [ H | T ]), _ ) :-                 % include
         !,
         include_files( [ H | T ] ).
 
-treat_term( (:- coinductive P / K), _ ) :-         % declaration of coinductive
-        (atom( P ), integer( K ), K >= 0),         %  seems OK
+treat_term( (:- Directive), _ ) :-
+        legal_directive( Directive ),
         !,
-        mk_pattern( P, K, Pattern ),               % Pattern = P( _, _, ... )
-        assert( coinductive( Pattern ) ).
-
-treat_term( (:- coinductive P / K), _ ) :-         % declaration of coinductive
-        (\+ atom( P ) ; \+ integer( K ) ; K < 0),  %  obviously wrong
-        !,
-        write( error, 'Erroeneous directive: \"' ),
-        write( error, (:- coinductive P / K) ),
-        writeln( error, '\"' ).
+        treat_directive( Directive ).
 
 treat_term( (:- Directive), _ ) :-                 % another directive
-        Directive \= (coinductive _),
+        \+ legal_directive( Directive ),
         !,
-        write( error, 'Unknown directive: \"' ),
-        write( error, Directive ),
+        write(   error, 'Unknown directive: \"' ),
+        write(   error, Directive ),
         writeln( error, '\"' ).
 
 treat_term( (?- Query), VarDict ) :-
@@ -150,7 +142,7 @@ treat_term( Clause, _ ) :-
         Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
         \+ ( good_head( Clause ) ; Clause = (H :- _), good_head( H ) ),
         !,
-        write( error, 'Erroeneous clause: \"' ),
+        write( error, 'Erroneous clause: \"' ),
         write( error, Clause ),
         writeln( error, '\"' ).
 
@@ -165,6 +157,11 @@ include_files( List ) :-
 include_files( _ ).
 
 
+%% Is this term a good head of a clause?
+
+good_head( Hd ) :-  atom( Hd ),  !.
+good_head( Hd ) :-  compound( Hd ),  \+ is_list( Hd ).
+
 
 %% Treat a query, i.e., produce and display solutions until
 %% no more can be found.
@@ -177,10 +174,26 @@ treat_query( _, _ ) :-
             writeln( 'No' ).
 
 
-%% Is this term a good head of a clause?
 
-good_head( Hd ) :-  atom( Hd ),  !.
-good_head( Hd ) :-  compound( Hd ),  \+ is_list( Hd ).
+%% The legal directives (check external form only).
+
+legal_directive( coinductive _ ).
+
+
+%% Check and process the legal directives
+
+treat_directive( coinductive P / K ) :-            % declaration of coinductive
+        (atom( P ), integer( K ), K >= 0),         %  seems OK
+        !,
+        mk_pattern( P, K, Pattern ),               % Pattern = P( _, _, ... )
+        assert( coinductive( Pattern ) ).
+
+treat_directive( coinductive P / K ) :-            % declaration of coinductive
+        (\+ atom( P ) ; \+ integer( K ) ; K < 0),  %  obviously wrong
+        !,
+        write( error, 'Erroneous directive: \"' ),
+        write( error, (:- coinductive P / K) ),
+        writeln( error, '\"' ).
 
 
 %% Make sure the predicate of this clause is dynamic.
