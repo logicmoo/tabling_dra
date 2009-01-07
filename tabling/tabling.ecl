@@ -238,6 +238,30 @@ is_completed( Goal ) :-
 
 
 
+%% complete_cluster( + goal ):
+%% If the goal has an associated cluster, make sure all the goals in the cluster
+%% are marked as complete.
+
+complete_cluster( Goal ) :-
+        cluster( G, Gs ),
+        are_variants( G, Goal ),
+        !,
+        complete_goal( Goal ),
+        complete_goals( Gs ).
+
+complete_cluster( _ ).
+
+%
+complete_goals( Gs ) :-
+        member( G, Gs ),
+        complete_goal( G ),
+        fail.
+
+complete_goals( _ ).
+
+
+
+
 %% is_a_pioneer( + goal ):
 %% Succeeds if the goal is not a variant of another goal that has already been
 %% encountered during this computation.
