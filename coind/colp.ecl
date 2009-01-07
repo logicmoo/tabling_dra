@@ -7,10 +7,14 @@
 %%%
 %%%    1. To load a program use the query:
 %%%           ?- prog( filename ).
+%%%       If the filename has no extension, ".clp" is added.
 %%%
 %%%       A coinductive predicate should be declared as such in the program
 %%%       file, e.g.,
 %%%           :- coinductive comember/2 .
+%%%
+%%%       To include files use the usual Prolog syntax:
+%%            :- [ file1, file2, ... ].
 %%%
 %%%    2. The program should contain no other directives. It may, however,
 %%%       contain queries, which will be executed immediately upon reading.
@@ -35,7 +39,8 @@ builtin( fail      ).
 builtin( \+( _ )   ).
 builtin( _ = _     ).
 builtin( _ \= _    ).
-builtin( once( _ ) ).  % there is special treatment for this, see below
+builtin( once( _ ) ).   % there is special treatment for this, see
+                        % solve_builtin_call/2 below.
 
 
 
@@ -47,11 +52,18 @@ builtin( once( _ ) ).  % there is special treatment for this, see below
 :- op( 1000, fy, coinductive ).    % allow  ":- coinductive p/k ."
 
 
+%% Initialise, then load a program from this file.
+
+prog( FileName ) :-
+        clean_up,
+        process_file( FileName ).
+
+
 %% Load a program from this file.
 
-prog( Filename ) :-
-        clean_up,
-        open( Filename, read, ProgStream ),
+process_file( FileName ) :-
+        ensure_extension( FileName, FullFileName ),
+        open( FullFileName, read, ProgStream ),
 
         repeat,
         readvar( ProgStream, Term, VarDict ),
@@ -70,11 +82,29 @@ clean_up :-  retract( coinductive( _ ) ),  !,  clean_up.
 clean_up.
 
 
+%% If the file name has no extension, add ".clp".
+
+ensure_extension( FileName, FileName ) :-
+        atom_string( FileName, FileNameString ),
+        substring( FileNameString, ".", _ ),
+        !.
+
+ensure_extension( FileName, FullFileName ) :-
+        atom_string( FileName, FileNameString ),
+        % \+ substring( FileNameString, ".", _ ),
+        concat_strings( FileNameString, ".clp", FullFileName ).
+
+
+
 %% Treat a term, which should be a directive, a program clause or end_of_file.
 %% The second argument is a variable dictionary, used for printing out the
 %% results of a query
 
 treat_term( end_of_file, _ ) :-  !.                % just ignore this
+
+treat_term( (:- [ H | T ]), _ ) :-                 % include
+        !,
+        include_files( [ H | T ] ).
 
 treat_term( (:- coinductive P / K), _ ) :-         % declaration of coinductive
         (atom( P ), integer( K ), K >= 0),         %  seems OK
@@ -115,6 +145,17 @@ treat_term( Clause, _ ) :-
         write( error, 'Erroeneous clause: \"' ),
         write( error, Clause ),
         writeln( error, '\"' ).
+
+
+%% Include files whose names are in this list.
+
+include_files( List ) :-
+        member( FileName, List ),
+        process_file( FileName ),
+        fail.
+
+include_files( _ ).
+
 
 
 %% Treat a query, i.e., produce and display solutions until
