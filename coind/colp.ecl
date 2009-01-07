@@ -77,9 +77,9 @@ process_file( FileName ) :-
 
 %% Get rid of previous state:
 
-clean_up :-  retract( known( _, _ )    ),  !,  clean_up.
-clean_up :-  retract( coinductive( _ ) ),  !,  clean_up.
-clean_up.
+clean_up :-
+        retractall( known( _, _ )    ),
+        retractall( coinductive( _ ) ).
 
 
 %% If the file name has no extension, add ".clp".
