@@ -181,6 +181,9 @@ number_of_answers( 0 ).
 
 
 
+
+%%-----  The tables: access and modification  -----
+
 %% memo( + goal, + fact ):
 %% If the table "answer" does not contain a variant of this fact paired with
 %% a variant of this goal, then add the pair to the table, increasing
@@ -211,6 +214,67 @@ get_answer( Goal ) :-
         Goal = Ans .
 
 
+
+%% complete_goal( + goal ):
+%% Make sure the goal is marked as completed.
+
+complete_goal( Goal ) :-
+        is_completed( Goal ),
+        !.
+
+complete_goal( Goal ) :-
+        % \+ is_completed( Goal ),
+        assert( completed( Goal ) ).
+
+
+
+%% is_completed( + goal ):
+%% Succeeds iff the goal is a variant of a goal that has been stored in
+%% the table completed.
+
+is_completed( Goal ) :-
+        completed( CG ),
+        are_variants( Goal, CG ).
+
+
+
+%% is_a_pioneer( + goal ):
+%% Succeeds if the goal is not a variant of another goal that has already been
+%% encountered during this computation.
+%%
+%% SIDE EFFECT: adds the goal to table "pioneer".
+
+is_a_pioneer( Goal ) :-
+        \+ ( pioneer( PG ),  are_variants( Goal, PG ) ),
+        assert( pioneer( Goal ) ).
+
+
+
+%% mk_not_topmost( + goal ):
+%% Make sure that the goal is stored in "not_topmost".
+
+mk_not_topmost( Goal ) :-
+        \+ is_topmost( Goal ),
+        !.
+
+mk_not_topmost( Goal ) :-
+        % is_topmost( Goal ),
+        assert( not_topmost( Goal ) ).
+
+
+
+%% is_topmost( + goal ):
+%% Succeeds iff the goal is not a variant of a goal that has been saved in
+%% table "not_topmost".
+
+is_topmost( Goal ) :-
+        \+ ( not_topmost( G ),  are_variants( Goal, G ) ).
+
+
+
+
+
+%%-----  Custom-tailored utilities  -----
 
 %% fatal_error( + message, + stack ):
 %% Display the message and stack, then abort.
