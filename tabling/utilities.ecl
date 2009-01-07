@@ -51,7 +51,7 @@ mk_ground_auxs( [ T | Ts ], N, N2 ) :-
 %%    variables.
 
 is_an_instance( T1, T2 ) :-
-        check( (mk_ground( T1 ), T1 = T2) ).
+        check( (mk_ground( T1 ) , T1 = T2) ).
 
 
 %%------------------------------------------------------------------------------
@@ -60,6 +60,7 @@ is_an_instance( T1, T2 ) :-
 %%    Does not instantiate any variables.
 
 are_variants( T1, T2 ) :-
+        check( T1 = T2 ),                % to weed out obvious "misfits" cheaply
         is_an_instance( T1, T2 ),
         is_an_instance( T2, T1 ).
 
