@@ -167,7 +167,7 @@
 :- [ utilities ].
 
 
-%% The tables:
+%% Initialization of tables:
 :- dynamic rule/2 .
 :- dynamic tabled/1 .
 :- dynamic answer/2 .
@@ -182,7 +182,162 @@ number_of_answers( 0 ).
 
 
 
+%%-----  The main interpreter  -----
+
+
+%% solve( + goal, + stack ):
+%% Solve the goal, maintaining information about the current chain of ancestors
+%% (stack).
+
+% true/0 is not traced, as it is considered a spurious artefact (of encoding
+% facts in rule/2).
+
+solve( true, _ ) :-
+        !.
+
+
+% A conjunction of goals: solve the first one first.
+
+solve( (Goal , Goals), Stack ) :-
+        solve( Goal, Stack ),
+        solve( Goals, Stack ).
+
+
+% A "normal" (i.e., not tabled) goal.
+
+solve( Goal, Stack ) :-
+        \+ tabled( Goal ),
+        !,
+        solve_by_rules( Goal, Stack ).
+
+
+% A tabled goal that has been completed: all the results are in "answer".
+
+solve( Goal, _ ) :-
+        is_completed( Goal ),
+        !,
+        get_answer( Goal ).
+
+
+% A pioneer goal is solved by rules, producing results that are stored in
+% "answer": after this is done, "answer" is used to pass on the results.
+%
+% Moreover, if the goal is also a topmost goal (i.e., not inside a larger
+% "loop"), then its answer set is extended to the least fixed point and its
+% cluster is marked as complete.
+%
+% (Note that a pioneer is topmost by default, but may cease to become topmost
+% when some descendant goal finds a variant ancestor, dynamically adding
+% "inner" goals of the loop to "not_topmost".  See the call to
+% variant_of_ancestor/2 in the next clause.)
+
+solve( Goal, Stack ) :-
+        is_a_pioneer( Goal ),
+        !,
+        store_all_solutions_by_rules( Goal, Stack ),
+        (
+            is_topmost( Goal ),
+            !,
+            number_of_answers( NAns ),
+            compute_fixed_point( Goal, Stack, NAns ),
+            complete_cluster( Goal )
+        ;
+            true
+        ),
+        get_answer( Goal ).
+
+
+% A tabled goal that is not a pioneer and that, moreover, has a variant among
+% its ancestors.  All the intermediate ancestors are marked as not topmost, and
+% a new cluster is identified.
+% Then only the existing (most likely incomplete) results from "answer" are
+% returned before failure.
+
+solve( Goal, Stack ) :-
+        variant_of_ancestor( Goal, Stack ),
+        !,
+        get_answer( Goal ).
+
+
+% A tabled goal that is not completed, not a pioneer, and has no variant among
+% its ancestors.  Something is wrong!
+
+solve( Goal, Stack ) :-
+        fatal_error( "Impossible!", [ Goal | Stack ] ).
+
+
+
+
+
+%% store_all_solutions_by_rules( + goal, + stack ):
+%% Invoke solve_by_rules/2 until there are no solutions left, storing
+%% the results in "answer".
+
+store_all_solutions_by_rules( Goal, Stack ) :-
+        solve_by_rules( Goal, Stack ),
+        memo( Goal ),
+        fail.
+
+store_all_solutions_by_rules( _, _ ).
+
+
+
+%% solve_by_rules( + goal, + stack ):
+%% Solves the goal by using rules (i.e., clauses) only.
+
+solve_by_rules( Goal, Stack ) :-
+        copy_term( Goal, OriginalGoal ),
+        rule( Goal, Body ),
+        solve( Body, [ OriginalGoal | Stack ] ).
+
+
+
+
+%% compute_fixed_point( + goal, + stack, + branch, + size of "answer" ):
+%% Solve the goal by rules until no more answers are produced, then succeed
+%% _without_ instantiating the goal.
+
+compute_fixed_point( Goal, Stack, _ ) :-
+        solve_by_rules( Goal, Stack, _ ),                       % all solutions
+        memo( Goal ),
+        fail.
+
+compute_fixed_point( _, _, NAns ) :-
+        number_of_answers( NAns ),                              % no new answers
+        !.
+
+compute_fixed_point( Goal, Stack, NAns ) :-
+        number_of_answers( NA ),
+        NA =\= NAns,                                            % new answers,
+        compute_fixed-point( Goal, Stack, NA ).                 %   so iterate
+
+
+
+%% variant_of_ancestor( + goal, + list of goals ):
+%% Succeeds if the goal is a variant of some member of the list.
+%%
+%% SIDE EFFECT: If successful, then then intermediary goals will be marked as
+%%              not topmost, and the entire prefix of the list upto (and
+%%              including) the variant ancestor will be identified as a cluster.
+
+variant_of_ancestor( Goal, List ) :-
+        append( Prefix, [ G | _ ], List ),               % i.e., split the list
+        are_variants( Goal, G ),
+        assert( cluster( G, Prefix ) ),
+        (
+            member( M, Prefix ),
+            mk_not_topmost( M ),
+            fail
+        ;
+            true
+        ).
+
+
+
+
+
 %%-----  The tables: access and modification  -----
+
 
 %% memo( + goal, + fact ):
 %% If the table "answer" does not contain a variant of this fact paired with
@@ -240,16 +395,21 @@ is_completed( Goal ) :-
 
 %% complete_cluster( + goal ):
 %% If the goal has an associated cluster, make sure all the goals in the cluster
-%% are marked as complete.
+%% are marked as complete.  If there is no associated cluster, just mark the
+%% goal as complete.
 
 complete_cluster( Goal ) :-
+        complete_goal( Goal ),
+        complete_cluster_if_any( Goal ).
+
+%
+complete_cluster_if_any( Goal ) :-
         cluster( G, Gs ),
         are_variants( G, Goal ),
         !,
-        complete_goal( Goal ),
         complete_goals( Gs ).
 
-complete_cluster( _ ).
+complete_cluster_if_any( _ ).
 
 %
 complete_goals( Gs ) :-
@@ -266,7 +426,7 @@ complete_goals( _ ).
 %% Succeeds if the goal is not a variant of another goal that has already been
 %% encountered during this computation.
 %%
-%% SIDE EFFECT: adds the goal to table "pioneer".
+%% SIDE EFFECT: Adds the goal to table "pioneer".
 
 is_a_pioneer( Goal ) :-
         \+ ( pioneer( PG ),  are_variants( Goal, PG ) ),
@@ -300,6 +460,7 @@ is_topmost( Goal ) :-
 
 %%-----  Custom-tailored utilities  -----
 
+
 %% fatal_error( + message, + stack ):
 %% Display the message and stack, then abort.
 
@@ -326,7 +487,9 @@ show_stack( [ H | T ] ) :-
 
 
 
-%%%%  The top level  %%%%
+
+
+%%-----  The top level  -----
 
 go :-   putchars( "What is the name of the program file? " ),
         getline( Name ),
@@ -335,7 +498,6 @@ go :-   putchars( "What is the name of the program file? " ),
         putline( "OK!" ).
 
 
-
-%%%%  Start the interpreter.  %%%%
+%%  Start the interpreter!
 
 % :- go.
