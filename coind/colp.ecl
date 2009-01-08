@@ -1,6 +1,7 @@
 %%%                                                                     %%%
 %%% A meta-interpreter for co-logic programming.                        %%%
 %%% Based on "colp.pro" by Luke Evans Simon.                            %%%
+%%% Written by Feliks Kluzniak at UTD.                                  %%%
 %%%                                                                     %%%
 
 %%% NOTE:
