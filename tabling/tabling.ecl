@@ -1,6 +1,35 @@
+%%%                                                                      %%%
+%%% A meta-interpreter for tabled logic programming: see the description %%%
+%%% below for more information.                                          %%%
+%%% Written by Feliks Kluzniak at UTD.                                   %%%
+%%%                                                                      %%%
+
+%%% NOTE:
+%%%
+%%%    1. See ../general/top_level.ecl for a description of how to load
+%%%       and run programs.
+%%%
+%%%    2. A tabled predicate should be declared as such in the program
+%%%       file, e.g.,
+%%%           :- tabled comember/2 .
+%%%
+%%%       To include files use the usual Prolog syntax:
+%%            :- [ file1, file2, ... ].
+%%%
+%%%    2. The program should contain no other directives. It may, however,
+%%%       contain queries, which will be executed immediately upon reading.
+%%%
+%%%    3. If the program invokes a built-in predicate, that predicate must
+%%%       be declared in the table builtin/1 below.
+
+%%% LIMITATIONS: - The interpreted program should not contain cuts or
+%%%                occurrences of the if-then-else construct.
+%%%              - Error detection is quite rudimentary.
+
+
 /*******************************************************************************
 
-   General description
+General description
    -------------------
 
    A simple (and very inefficient) metainterpreter that attempts to emulate
@@ -164,7 +193,7 @@
 
 
 
-:- [ utilities ].
+:- [ 'general/utilities' ].
 
 
 %% Initialization of tables:
@@ -181,8 +210,75 @@ number_of_answers( 0 ).
 
 
 
+%%%%%  Built-in predicates  %%%%
+%%
+%%  NOTE: Just adding "!" or " _ -> _ ; _" won't do the trick, the main
+%%        metainterpreter would have to be modified.
+%%        Certain other built-ins may also require special treatment.
 
-%%-----  The main interpreter  -----
+builtin( true      ).
+builtin( false     ).
+builtin( fail      ).
+builtin( _ = _     ).
+builtin( _ \= _    ).
+builtin( \+( _ )   ).   % there is special treatment for this, see solve/2
+builtin( once( _ ) ).   % there is special treatment for this, see solve/2
+
+
+
+%%%%%  Administration  %%%%%
+
+:- op( 1000, fy, tabled ).    % allow  ":- tabled p/k ."
+
+
+
+%% The legal directives (check external form only).
+
+legal_directive( coinductive _ ).
+
+
+%% Check and process the legal directives
+
+treat_directive( coinductive P / K ) :-            % declaration of coinductive
+        (atom( P ), integer( K ), K >= 0),         %  seems OK
+        !,
+        mk_pattern( P, K, Pattern ),               % Pattern = P( _, _, ... )
+        assert( coinductive( Pattern ) ).
+
+treat_directive( coinductive P / K ) :-            % declaration of coinductive
+        (\+ atom( P ) ; \+ integer( K ) ; K < 0),  %  obviously wrong
+        !,
+        write( error, 'Erroneous directive: \"' ),
+        write( error, (:- coinductive P / K) ),
+        writeln( error, '\"' ).
+
+
+%% Make sure the predicate of this clause is dynamic.
+%% known/2 is used to avoid multiple declarations (not that it matters...)
+
+ensure_dynamic( Clause ) :-
+        ( Clause = (Hd :- _ ) ;  Hd = Clause ),                   % get the head
+        functor( Hd, PredicateSymbol, Arity ),
+        \+ known( PredicateSymbol, Arity ),
+        assert( known( PredicateSymbol, Arity ) ),
+        dynamic( PredicateSymbol / Arity ),
+        fail.
+
+ensure_dynamic( _ ).
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%  The meta-interpreter  %%%%%
+
+
+%% Execute a query.
+query( Goal ) :-
+        solve( Goal, [] ).
+
 
 
 %% solve( + goal, + stack ):
@@ -484,20 +580,3 @@ show_stack( [ H | T ] ) :-
         write( H ),
         nl,
         show_stack( T ).
-
-
-
-
-
-%%-----  The top level  -----
-
-go :-   putchars( "What is the name of the program file? " ),
-        getline( Name ),
-        putchars( "opening " ),  putchars( Name ),
-        open( Name, read, ProgStream ),
-        putline( "OK!" ).
-
-
-%%  Start the interpreter!
-
-% :- go.
