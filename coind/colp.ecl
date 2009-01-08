@@ -56,21 +56,33 @@ builtin( once( _ ) ).   % there is special treatment for this, see
 default_extension( ".clp" ).       % default extension for file names
 
 
-%% Initialise, then load a program from this file.
+%% initialise:
+%% Get rid of previous state.
+
+initialise :-
+        retractall( known( _, _ )    ),
+        retractall( coinductive( _ ) ).
+
+
+
+%% prog( + file name ):
+%% Initialise, then load a program from this file, processing directives and
+%% queries.
 
 prog( FileName ) :-
-        clean_up,
+        initialise,
         process_file( FileName ).
 
 
-%% Load a program from this file.
+%% process_file( + file name ):
+%% Load a program from this file, processing directives and queries.
 
 process_file( FileName ) :-
         \+ atom( FileName ),
         !,
-        write(   error, "*** Illegal file name '" ),
+        write(   error, "*** Illegal file name \"" ),
         write(   error, FileName ),
-        writeln( error, "'.  The file will be ignored." ).
+        writeln( error, "\" (not an atom) will be ignored. ***" ).
 
 process_file( FileName ) :-
         atom( FileName ),
@@ -80,26 +92,20 @@ process_file( FileName ) :-
         repeat,
         readvar( ProgStream, Term, VarDict ),
         % write( '<processing \"' ),  write( Term ),  writeln( '\">' ),
-        treat_term( Term, VarDict ),
+        process_term( Term, VarDict ),
         Term = end_of_file,
         !,
 
         close( ProgStream ).
 
 
-%% Get rid of previous state:
-
-clean_up :-
-        retractall( known( _, _ )    ),
-        retractall( coinductive( _ ) ).
-
-
+%% ensure_extension( + file name, - ditto possibly extended ):
 %% If the file name has no extension, add the default extension, if any
 
 ensure_extension( FileName, FullFileName ) :-
         atom_string( FileName, FileNameString ),
-        \+ substring( FileNameString, ".", _ ),              % no extension
-        default_extension( ExtString ),                      % default specified
+        \+ substring( FileNameString, ".", _ ),   % no extension
+        default_extension( ExtString ),           % provided by metainterpreter?
         !,
         concat_strings( FileNameString, ExtString, FullFileName ).
 
@@ -107,50 +113,51 @@ ensure_extension( FileName, FileName ).       % extension present, or no default
 
 
 
-%% Treat a term, which should be a directive, a program clause or end_of_file.
-%% The second argument is a variable dictionary, used for printing out the
-%% results of a query
+%% process_term( + term, + variable dictionary ):
+%% Process a term, which should be a directive, a query, a program clause or
+%% end_of_file.
+%% The variable dictionary is used for printing out the results of a query.
 
-treat_term( end_of_file, _ ) :-  !.                % just ignore this
+process_term( end_of_file, _ ) :-  !.            % just ignore this
 
-treat_term( (:- [ H | T ]), _ ) :-                 % include
+process_term( (:- [ H | T ]), _ ) :-             % include
         !,
         include_files( [ H | T ] ).
 
-treat_term( (:- Directive), _ ) :-
-        legal_directive( Directive ),
+process_term( (:- Directive), _ ) :-
+        legal_directive( Directive ),            % provided by a metainterpreter
         !,
-        treat_directive( Directive ).
+        process_directive( Directive ).          % provided by a metainterpreter
 
-treat_term( (:- Directive), _ ) :-                 % another directive
+process_term( (:- Directive), _ ) :-             % unsupported directive
         \+ legal_directive( Directive ),
         !,
         write(   error, 'Unknown directive: \"' ),
         write(   error, Directive ),
         writeln( error, '\"' ).
 
-treat_term( (?- Query), VarDict ) :-
+process_term( (?- Query), VarDict ) :-
         !,
-        write( 'Query: ' ),  write( Query ), writeln( '.' ),
-        treat_query( Query, VarDict ).
+        process_query( Query, VarDict ).
 
-treat_term( Clause, _ ) :-
+process_term( Clause, _ ) :-
         Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
         ( good_head( Clause ) ; Clause = (H :- _), good_head( H ) ),
         !,
         ensure_dynamic( Clause ),
         assertz( Clause ).
 
-treat_term( Clause, _ ) :-
+process_term( Clause, _ ) :-
         Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
         \+ ( good_head( Clause ) ; Clause = (H :- _), good_head( H ) ),
         !,
-        write( error, 'Erroneous clause: \"' ),
-        write( error, Clause ),
+        write(   error, 'Erroneous clause: \"' ),
+        write(   error, Clause ),
         writeln( error, '\"' ).
 
 
-%% Include files whose names are in this list.
+%% include_files( + list of file names ):
+%% Process the files whose names are in the list.
 
 include_files( List ) :-
         member( FileName, List ),
@@ -160,21 +167,44 @@ include_files( List ) :-
 include_files( _ ).
 
 
+%% good_head( + term ):
 %% Is this term a good head of a clause?
 
-good_head( Hd ) :-  atom( Hd ),  !.
-good_head( Hd ) :-  compound( Hd ),  \+ is_list( Hd ).
+good_head( Hd ) :-
+        atom( Hd ),
+        !.
+
+good_head( Hd ) :-
+        compound( Hd ),
+        \+ is_list( Hd ).
 
 
-%% Treat a query, i.e., produce and display solutions until
+%% process_query( + query, + variable dictionary ):
+%% Process a query, i.e., produce and display solutions until
 %% no more can be found.
 
-treat_query( Query, VarDict ) :-
-        query( Query ),
-        write( 'Yes: ' ),  show_results( VarDict ).
+process_query( Query, VarDict ) :-
+        write( '-- Query: ' ),  write( Query ), writeln( '.  --' ),
+        execute_query( Query, VarDict ).
 
-treat_query( _, _ ) :-
+%
+execute_query( Query, VarDict ) :-
+        query( Query ),                          % provided by a metainterpreter
+        write( 'Yes: ' ),
+        show_results( VarDict ).
+
+execute_query( _, _ ) :-
             writeln( 'No' ).
+
+
+%% show_results( + variable dictionary ):
+%% Use the variable dictionary to show the results of a query.
+
+show_results( Dict ) :-
+        member( [ Name | Var ], Dict ),
+        write( Name ), write( ' = ' ),  writeln( Var ),
+        fail.
+show_results( _ ).
 
 
 
@@ -183,15 +213,16 @@ treat_query( _, _ ) :-
 legal_directive( coinductive _ ).
 
 
-%% Check and process the legal directives
+%% process_directive( + directive ):
+%% Check and process the legal directives.
 
-treat_directive( coinductive P / K ) :-            % declaration of coinductive
+process_directive( coinductive P / K ) :-          % declaration of coinductive
         (atom( P ), integer( K ), K >= 0),         %  seems OK
         !,
         mk_pattern( P, K, Pattern ),               % Pattern = P( _, _, ... )
         assert( coinductive( Pattern ) ).
 
-treat_directive( coinductive P / K ) :-            % declaration of coinductive
+process_directive( coinductive P / K ) :-          % declaration of coinductive
         (\+ atom( P ) ; \+ integer( K ) ; K < 0),  %  obviously wrong
         !,
         write( error, 'Erroneous directive: \"' ),
@@ -199,6 +230,19 @@ treat_directive( coinductive P / K ) :-            % declaration of coinductive
         writeln( error, '\"' ).
 
 
+%% mk_pattern( + an atom representing the name of a predicate,
+%%             + an integer representing the arity of the predicate,
+%%             - the most general pattern that matches all invocations of the
+%%               predicate
+%%           )
+%% Given p/k, produce p( _, _, ... _ )  (of arity k)
+
+mk_pattern( P, K, Pattern ) :-
+        length( Args, K ),                           % Args = K fresh variables
+        Pattern =.. [ P | Args ].
+
+
+%% ensure_dynamic( + clause ):
 %% Make sure the predicate of this clause is dynamic.
 %% known/2 is used to avoid multiple declarations (not that it matters...)
 
@@ -213,22 +257,6 @@ ensure_dynamic( Clause ) :-
 ensure_dynamic( _ ).
 
 
-%% Use the variable dictionary to show the results of a query.
-
-show_results( Dict ) :-
-        member( [ Name | Var ], Dict ),
-        write( Name ), write( ' = ' ),  writeln( Var ),
-        fail.
-show_results( _ ).
-
-
-%% Given p/k, produce p( _, _, ... _ )  (of arity k)
-
-mk_pattern( P, K, Pattern ) :-
-        length( Args, K ),                           % Args = K fresh variables
-        Pattern =.. [ P | Args ].
-
-
 
 
 
@@ -237,11 +265,15 @@ mk_pattern( P, K, Pattern ) :-
 %%%%%  The meta-interpreter  %%%%%
 
 
+%% query( + goal ):
 %% Execute a query.
-query( Goal ) :- solve( [], Goal ).
+
+query( Goal ) :-
+        solve( [], Goal ).
 
 
 
+%% solve( + list of coinductive hypotheses, + goal ):
 %% Solve a goal, given this table of co-inductive hypotheses.
 %% NOTE: cut or if-then-else not supported.
 
@@ -294,7 +326,7 @@ solve_coinductive_call( Hypotheses, Call ) :-
             solve( [ Call | Hypotheses ], Body ).          % then the clauses
 
 
-% A single built-in call
+% A single built-in call:
 
 solve_builtin_call( Hypotheses, once( Call ) ) :-
         once( solve( Hypotheses, Call ) ).
