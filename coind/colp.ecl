@@ -72,16 +72,16 @@ initialise :-
 legal_directive( coinductive _ ).
 
 
-%% process_directive( + directive ):
+%% execute_directive( + directive ):
 %% Check and process the legal directives.
 
-process_directive( coinductive P / K ) :-          % declaration of coinductive
+execute_directive( coinductive P / K ) :-          % declaration of coinductive
         (atom( P ), integer( K ), K >= 0),         %  seems OK
         !,
         mk_pattern( P, K, Pattern ),               % Pattern = P( _, _, ... )
         assert( coinductive( Pattern ) ).
 
-process_directive( coinductive P / K ) :-          % declaration of coinductive
+execute_directive( coinductive P / K ) :-          % declaration of coinductive
         (\+ atom( P ) ; \+ integer( K ) ; K < 0),  %  obviously wrong
         !,
         write( error, 'Erroneous directive: \"' ),
