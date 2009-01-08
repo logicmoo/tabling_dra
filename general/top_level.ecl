@@ -4,13 +4,35 @@
 %%%                                                                      %%%
 
 %%% NOTE:
+%%%
 %%%    1. To load a new program use the query:
+%%%
 %%%           ?- prog( filename ).
+%%%
 %%%       If the filename has no extension, the default extension will be
 %%%       used if provided (see the description of "default_extension" below).
 %%%
-%%%       To include files use the usual Prolog syntax:
+%%%       To enter interactive mode use the query:
+%%%
+%%%           ?- top.
+%%%
+%%%       (this is not done automatically after a program is loaded, since
+%%%       it does not always work well in tkeclipse).
+%%%
+%%%       To exit interactive mode enter end of file (^D), or just write
+%%%
+%%%           quit.
+%%%
+%%%       To include files (interactively or from other files) use
+%%%       the usual Prolog syntax:
+%%%
 %%%           :- [ file1, file2, ... ].
+%%%
+%%%       Please note that there is a difference between "prog( file )" and
+%%%       ":- [ file ].".  If the former is used, the metainterpreter is
+%%%       (re)initialised before loading the file; if the latter is used,
+%%%        the file is just loaded.
+%%%
 %%%
 %%%    2. The metainterpreter should provide the following predicates
 %%%       ("hooks" that will be called by the top level:
@@ -35,9 +57,9 @@
 %%%                 a chance to process the directive (see below), otherwise
 %%%                 the directive will be ignored (with a suitable warning).
 %%%
-%%%          - process_directive/1:
+%%%          - execute_directive/1:
 %%%                 Whenever the top level encounters a legal directive
-%%%                 ":- D" (see above), it invokes "process_directive( D )"
+%%%                 ":- D" (see above), it invokes "execute_directive( D )"
 %%%                 to give the interpreter a chance to act upon the
 %%%                 directive.
 %%%
@@ -77,15 +99,21 @@ process_file( FileName ) :-
         atom( FileName ),
         ensure_extension( FileName, FullFileName ),
         open( FullFileName, read, ProgStream ),
+        process_input( ProgStream ),
+        close( ProgStream ).
 
+
+%% process_input( + input stream ):
+%% Read the stream, processing directives and queries and storing clauses.
+%% If the stream is "stdin",
+
+process_input( ProgStream ) :-
         repeat,
         readvar( ProgStream, Term, VarDict ),
         % write( '<processing \"' ),  write( Term ),  writeln( '\">' ),
         process_term( Term, VarDict ),
         Term = end_of_file,
-        !,
-
-        close( ProgStream ).
+        !.
 
 
 %% ensure_extension( + file name, - ditto possibly extended ):
@@ -114,20 +142,13 @@ process_term( (:- [ H | T ]), _ ) :-             % include
         include_files( [ H | T ] ).
 
 process_term( (:- Directive), _ ) :-
-        legal_directive( Directive ),            % provided by a metainterpreter
         !,
-        process_directive( Directive ).          % provided by a metainterpreter
-
-process_term( (:- Directive), _ ) :-             % unsupported directive
-        \+ legal_directive( Directive ),
-        !,
-        write(   error, '+++ Unknown directive: \"' ),
-        write(   error, (:- Directive) ),
-        writeln( error, '.\" +++' ).
+        process_directive( Directive ).
 
 process_term( (?- Query), VarDict ) :-
         !,
-        process_query( Query, VarDict ).
+        process_query( Query, VarDict ),
+        !.                                            % no alternative solutions
 
 process_term( Clause, _ ) :-
         Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
@@ -156,6 +177,24 @@ include_files( List ) :-
 include_files( _ ).
 
 
+
+%% process_directive( + directive ):
+%% Process a directive.
+
+process_directive( Directive ) :-
+        legal_directive( Directive ),            % provided by a metainterpreter
+        !,
+        execute_directive( Directive ).          % provided by a metainterpreter
+
+process_directive( Directive ) :-                % unsupported directive
+        \+ legal_directive( Directive ),
+        !,
+        write(   error, '+++ Unknown directive: \"' ),
+        write(   error, (:- Directive) ),
+        writeln( error, '.\" +++' ).
+
+
+
 %% good_head( + term ):
 %% Is this term a good head of a clause?
 
@@ -174,8 +213,7 @@ good_head( Hd ) :-
 
 process_query( Query, VarDict ) :-
         write( '-- Query: ' ),  write( Query ), writeln( '.  --' ),
-        execute_query( Query, VarDict ),
-        !.                                            % no alternative solutions
+        execute_query( Query, VarDict ).
 
 %
 execute_query( Query, VarDict ) :-
@@ -195,5 +233,72 @@ show_results( Dict ) :-
         write( Name ), write( ' = ' ),  writeln( Var ),
         fail.
 show_results( _ ).
+
+
+
+%% top:
+%% Interactive mode.  Each term that is not a directive or a query is treated
+%% as an abbreviated query.  After displaying the results of each query read
+%% characters upt the nearest newline: if the first character is ";",
+%% backtrack to find alternative solutions.
+%% Exit upon encountering end of file.
+
+top :-
+        repeat,
+        write( stdout, ': ' ),                                          % prompt
+        readvar( stdin, Term, VarDict ),
+        interactive_term( Term, VarDict ),
+        ( Term = end_of_file ; Term = quit ),
+        !.
+
+
+%% interactive_term( + term, + variable dictionary ):
+%% Process a term in interactive mode.
+%% The variable dictionary is used for printing out the results of a query.
+
+interactive_term( end_of_file, _ ) :-  !.              % just ignore this
+
+interactive_term( quit       , _ ) :-  !.              % just ignore this
+
+interactive_term( (:- [ H | T ]), _ ) :-               % include
+        !,
+        include_files( [ H | T ] ).
+
+interactive_term( (:- Directive), _ ) :-               % directive
+        !,
+        process_directive( Directive ).
+
+interactive_term( (?- Query), VarDict ) :-             % query
+        !,
+        process_query( Query, VarDict ),
+        user_accepts,
+        !.
+
+interactive_term( Other, VarDict ) :-                  % other: treat as a query
+        % Other \= end_of_file,
+        % Other \= (:- _),
+        % Other \= (?- _),
+        % Other \= quit
+        interactive_term( (?- Other), VarDict ).
+
+
+%% user_accepts:
+%% Read input upto the nearest newline.
+%% If the first character is a semicolon, fail.
+
+user_accepts :-
+        getline( Line ),
+        Line \= [ ";" | _ ].             % i.e., fail if 1st char is a semicolon
+
+
+getline( List ) :-  get_char( C ),  getline_( C, List ).
+
+%
+getline_( "\n", []         ) :-  !.
+
+getline_( C   , [ C | Cs ] ) :-
+        % C \= "\n",
+        get_char( NC ),
+        getline_( NC, Cs ).
 
 %-------------------------------------------------------------------------------
