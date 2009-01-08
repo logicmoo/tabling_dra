@@ -66,12 +66,25 @@ are_variants( T1, T2 ) :-
 
 
 %%------------------------------------------------------------------------------
+%% mk_pattern( + an atom representing the name of a predicate,
+%%             + an integer representing the arity of the predicate,
+%%             - the most general pattern that matches all invocations of the
+%%               predicate
+%%           )
+%% Given p/k, produce p( _, _, ... _ )  (of arity k)
+
+mk_pattern( P, K, Pattern ) :-
+        length( Args, K ),                            % Args = K fresh variables
+        Pattern =.. [ P | Args ].
+
+
+%%------------------------------------------------------------------------------
 %% getline( - list of character strings ) :
 %%    Reads characters from the current input stream upto (and including) the
 %%    nearest newline.  The newline is not included in the list of characters
 %%    that is returned.
 
-getline( Name ) :-  get_char( C ),  getline_( C, Name ).
+getline( Line ) :-  get_char( C ),  getline_( C, Line ).
 
 %
 getline_( "\n", []         ) :-  !.
