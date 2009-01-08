@@ -44,10 +44,12 @@
 %%%          - query/1:
 %%%                 This would be the main entry point of the metainterpreter.
 %%%                 Whenever the top level encounters a query (of the form
-%%%                 "?- Q."), it will call "query( Q )".  Depending on the
-%%%                 result, it will then display "No", or "Yes" followed by
-%%%                 a display of bindings acquired by the variables occurring
-%%%                 in "Q".
+%%%                 "?- Q."), it will display the query and then call
+%%%                 "query( Q )".  Depending on the result, it will then
+%%%                 display "No", or "Yes" (preceded by a display of bindings
+%%%                 acquired by the variables occurring in "Q").
+%%%                 Please note that a query read in from a file will not be
+%%%                 be retried for alternative solutions.
 %%%
 
 
@@ -172,16 +174,17 @@ good_head( Hd ) :-
 
 process_query( Query, VarDict ) :-
         write( '-- Query: ' ),  write( Query ), writeln( '.  --' ),
-        execute_query( Query, VarDict ).
+        execute_query( Query, VarDict ),
+        !.                                            % no alternative solutions
 
 %
 execute_query( Query, VarDict ) :-
         query( Query ),                          % provided by a metainterpreter
-        write( 'Yes: ' ),
-        show_results( VarDict ).
+        show_results( VarDict ),
+        writeln( 'Yes' ).
 
 execute_query( _, _ ) :-
-            writeln( 'No' ).
+        writeln( 'No' ).
 
 
 %% show_results( + variable dictionary ):
