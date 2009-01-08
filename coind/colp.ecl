@@ -53,6 +53,9 @@ builtin( once( _ ) ).   % there is special treatment for this, see
 :- op( 1000, fy, coinductive ).    % allow  ":- coinductive p/k ."
 
 
+default_extension( ".clp" ).       % default extension for file names
+
+
 %% Initialise, then load a program from this file.
 
 prog( FileName ) :-
@@ -91,17 +94,16 @@ clean_up :-
         retractall( coinductive( _ ) ).
 
 
-%% If the file name has no extension, add ".clp".
-
-ensure_extension( FileName, FileName ) :-
-        atom_string( FileName, FileNameString ),
-        substring( FileNameString, ".", _ ),
-        !.
+%% If the file name has no extension, add the default extension, if any
 
 ensure_extension( FileName, FullFileName ) :-
         atom_string( FileName, FileNameString ),
-        % \+ substring( FileNameString, ".", _ ),
-        concat_strings( FileNameString, ".clp", FullFileName ).
+        \+ substring( FileNameString, ".", _ ),              % no extension
+        default_extension( ExtString ),                      % default specified
+        !,
+        concat_strings( FileNameString, ExtString, FullFileName ).
+
+ensure_extension( FileName, FileName ).       % extension present, or no default
 
 
 
