@@ -1,8 +1,8 @@
-%%%                                                                     %%%
-%%% A meta-interpreter for co-logic programming.                        %%%
-%%% Based on "colp.pro" by Luke Evans Simon.                            %%%
-%%% Written by Feliks Kluzniak at UTD.                                  %%%
-%%%                                                                     %%%
+%%%                                                                      %%%
+%%%  A meta-interpreter for co-logic programming.                        %%%
+%%%  Based on "colp.pro" by Luke Evans Simon.                            %%%
+%%%  Written by Feliks Kluzniak at UTD.                                  %%%
+%%%                                                                      %%%
 
 %%% NOTE:
 %%%
@@ -26,6 +26,9 @@
 %%% LIMITATIONS: - The interpreted program should not contain cuts or
 %%%                occurrences of the if-then-else construct.
 %%%              - Error detection is quite rudimentary.
+
+
+:- [ '../general/top_level.ecl' ].
 
 
 
@@ -62,150 +65,6 @@ default_extension( ".clp" ).       % default extension for file names
 initialise :-
         retractall( known( _, _ )    ),
         retractall( coinductive( _ ) ).
-
-
-
-%% prog( + file name ):
-%% Initialise, then load a program from this file, processing directives and
-%% queries.
-
-prog( FileName ) :-
-        initialise,
-        process_file( FileName ).
-
-
-%% process_file( + file name ):
-%% Load a program from this file, processing directives and queries.
-
-process_file( FileName ) :-
-        \+ atom( FileName ),
-        !,
-        write(   error, "*** Illegal file name \"" ),
-        write(   error, FileName ),
-        writeln( error, "\" (not an atom) will be ignored. ***" ).
-
-process_file( FileName ) :-
-        atom( FileName ),
-        ensure_extension( FileName, FullFileName ),
-        open( FullFileName, read, ProgStream ),
-
-        repeat,
-        readvar( ProgStream, Term, VarDict ),
-        % write( '<processing \"' ),  write( Term ),  writeln( '\">' ),
-        process_term( Term, VarDict ),
-        Term = end_of_file,
-        !,
-
-        close( ProgStream ).
-
-
-%% ensure_extension( + file name, - ditto possibly extended ):
-%% If the file name has no extension, add the default extension, if any
-
-ensure_extension( FileName, FullFileName ) :-
-        atom_string( FileName, FileNameString ),
-        \+ substring( FileNameString, ".", _ ),   % no extension
-        default_extension( ExtString ),           % provided by metainterpreter?
-        !,
-        concat_strings( FileNameString, ExtString, FullFileName ).
-
-ensure_extension( FileName, FileName ).       % extension present, or no default
-
-
-
-%% process_term( + term, + variable dictionary ):
-%% Process a term, which should be a directive, a query, a program clause or
-%% end_of_file.
-%% The variable dictionary is used for printing out the results of a query.
-
-process_term( end_of_file, _ ) :-  !.            % just ignore this
-
-process_term( (:- [ H | T ]), _ ) :-             % include
-        !,
-        include_files( [ H | T ] ).
-
-process_term( (:- Directive), _ ) :-
-        legal_directive( Directive ),            % provided by a metainterpreter
-        !,
-        process_directive( Directive ).          % provided by a metainterpreter
-
-process_term( (:- Directive), _ ) :-             % unsupported directive
-        \+ legal_directive( Directive ),
-        !,
-        write(   error, 'Unknown directive: \"' ),
-        write(   error, Directive ),
-        writeln( error, '\"' ).
-
-process_term( (?- Query), VarDict ) :-
-        !,
-        process_query( Query, VarDict ).
-
-process_term( Clause, _ ) :-
-        Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
-        ( good_head( Clause ) ; Clause = (H :- _), good_head( H ) ),
-        !,
-        ensure_dynamic( Clause ),
-        assertz( Clause ).
-
-process_term( Clause, _ ) :-
-        Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
-        \+ ( good_head( Clause ) ; Clause = (H :- _), good_head( H ) ),
-        !,
-        write(   error, 'Erroneous clause: \"' ),
-        write(   error, Clause ),
-        writeln( error, '\"' ).
-
-
-%% include_files( + list of file names ):
-%% Process the files whose names are in the list.
-
-include_files( List ) :-
-        member( FileName, List ),
-        process_file( FileName ),
-        fail.
-
-include_files( _ ).
-
-
-%% good_head( + term ):
-%% Is this term a good head of a clause?
-
-good_head( Hd ) :-
-        atom( Hd ),
-        !.
-
-good_head( Hd ) :-
-        compound( Hd ),
-        \+ is_list( Hd ).
-
-
-%% process_query( + query, + variable dictionary ):
-%% Process a query, i.e., produce and display solutions until
-%% no more can be found.
-
-process_query( Query, VarDict ) :-
-        write( '-- Query: ' ),  write( Query ), writeln( '.  --' ),
-        execute_query( Query, VarDict ).
-
-%
-execute_query( Query, VarDict ) :-
-        query( Query ),                          % provided by a metainterpreter
-        write( 'Yes: ' ),
-        show_results( VarDict ).
-
-execute_query( _, _ ) :-
-            writeln( 'No' ).
-
-
-%% show_results( + variable dictionary ):
-%% Use the variable dictionary to show the results of a query.
-
-show_results( Dict ) :-
-        member( [ Name | Var ], Dict ),
-        write( Name ), write( ' = ' ),  writeln( Var ),
-        fail.
-show_results( _ ).
-
 
 
 %% The legal directives (check external form only).
