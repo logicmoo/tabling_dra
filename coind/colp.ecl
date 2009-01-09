@@ -28,7 +28,10 @@
 %%%              - Error detection is quite rudimentary.
 
 
-:- [ '../general/top_level.ecl' ].
+:- ensure_loaded( [ '../general/top_level.ecl',
+                    '../general/utilities.ecl'
+                  ]
+                ).
 
 
 
@@ -87,18 +90,6 @@ execute_directive( coinductive P / K ) :-          % declaration of coinductive
         write( error, 'Erroneous directive: \"' ),
         write( error, (:- coinductive P / K) ),
         writeln( error, '\"' ).
-
-
-%% mk_pattern( + an atom representing the name of a predicate,
-%%             + an integer representing the arity of the predicate,
-%%             - the most general pattern that matches all invocations of the
-%%               predicate
-%%           )
-%% Given p/k, produce p( _, _, ... _ )  (of arity k)
-
-mk_pattern( P, K, Pattern ) :-
-        length( Args, K ),                           % Args = K fresh variables
-        Pattern =.. [ P | Args ].
 
 
 %% ensure_dynamic( + clause ):
