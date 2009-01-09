@@ -5,6 +5,14 @@
 
 %%% NOTE:
 %%%
+%%%    0. To use this top level, just include it in your the file that
+%%%       contains the code for your metainterpreter:
+%%%
+%%%           :- ensure_loaded( '../general/top_level' ).
+%%%
+%%%       Then load the metainterpreter into your logic programming system.
+%%%
+%%%
 %%%    1. To load a new program use the query:
 %%%
 %%%           ?- prog( filename ).
@@ -12,29 +20,35 @@
 %%%       If the filename has no extension, the default extension will be
 %%%       used if provided (see the description of "default_extension" below).
 %%%
-%%%       To enter interactive mode use the query:
+%%%       After the file is loaded (and all the directives and queries it
+%%%       contains are executed), interactive mode is started.  This is very
+%%%       much like the usual top-level loop, except that the associated
+%%%       metainterpreter is
+%%%
+%%%
+%%%       To just enter interactive mode use the query:
 %%%
 %%%           ?- top.
-%%%
-%%%       (this is not done automatically after a program is loaded, since
-%%%       it does not always work well in tkeclipse).
 %%%
 %%%       To exit interactive mode enter end of file (^D), or just write
 %%%
 %%%           quit.
 %%%
-%%%       To include files (interactively or from other files) use
+%%%       (the former method appears not to work with tkeclipse).
+%%%
+%%%
+%%%    2. To include files (interactively or from other files) use
 %%%       the usual Prolog syntax:
 %%%
 %%%           :- [ file1, file2, ... ].
 %%%
 %%%       Please note that there is a difference between "prog( file )" and
 %%%       ":- [ file ].".  If the former is used, the metainterpreter is
-%%%       (re)initialised before loading the file; if the latter is used,
-%%%        the file is just loaded.
+%%%       (re)initialised before loading the file (see description of
+%%%       initialise/0  below); if the latter is used, the file is just loaded.
 %%%
 %%%
-%%%    2. The metainterpreter should provide the following predicates
+%%%    3. The metainterpreter should provide the following predicates
 %%%       ("hooks" that will be called by the top level:
 %%%
 %%%          - default_extension/1:
@@ -75,14 +89,18 @@
 %%%
 
 
+:- ensure_loaded( utilities ).
+
+
 
 %% prog( + file name ):
 %% Initialise, then load a program from this file, processing directives and
-%% queries.
+%% queries.  After this is done, enter interactive mode.
 
 prog( FileName ) :-
         initialise,                              % provided by a metainterpreter
-        process_file( FileName ).
+        process_file( FileName ),
+        top.
 
 
 %% process_file( + file name ):
@@ -105,7 +123,6 @@ process_file( FileName ) :-
 
 %% process_input( + input stream ):
 %% Read the stream, processing directives and queries and storing clauses.
-%% If the stream is "stdin",
 
 process_input( ProgStream ) :-
         repeat,
@@ -212,7 +229,8 @@ good_head( Hd ) :-
 %% no more can be found.
 
 process_query( Query, VarDict ) :-
-        write( '-- Query: ' ),  write( Query ), writeln( '.  --' ),
+        write( output, '-- Query: ' ), write( output, Query ),
+        writeln( output, '.  --' ),
         execute_query( Query, VarDict ).
 
 %
@@ -230,7 +248,7 @@ execute_query( _, _ ) :-
 
 show_results( Dict ) :-
         member( [ Name | Var ], Dict ),
-        write( Name ), write( ' = ' ),  writeln( Var ),
+        write( output, Name ), write( output, ' = ' ),  writeln( output, Var ),
         fail.
 show_results( _ ).
 
@@ -245,8 +263,9 @@ show_results( _ ).
 
 top :-
         repeat,
-        write( stdout, ': ' ),                                          % prompt
-        readvar( stdin, Term, VarDict ),
+        write( output, ': ' ),                                          % prompt
+        flush( output ),
+        readvar( input, Term, VarDict ),
         interactive_term( Term, VarDict ),
         ( Term = end_of_file ; Term = quit ),
         !.
@@ -270,7 +289,7 @@ interactive_term( (:- Directive), _ ) :-               % directive
 
 interactive_term( (?- Query), VarDict ) :-             % query
         !,
-        process_query( Query, VarDict ),
+        execute_query( Query, VarDict ),
         user_accepts,
         !.
 
@@ -289,16 +308,5 @@ interactive_term( Other, VarDict ) :-                  % other: treat as a query
 user_accepts :-
         getline( Line ),
         Line \= [ ";" | _ ].             % i.e., fail if 1st char is a semicolon
-
-
-getline( List ) :-  get_char( C ),  getline_( C, List ).
-
-%
-getline_( "\n", []         ) :-  !.
-
-getline_( C   , [ C | Cs ] ) :-
-        % C \= "\n",
-        get_char( NC ),
-        getline_( NC, Cs ).
 
 %-------------------------------------------------------------------------------
