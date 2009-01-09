@@ -192,8 +192,10 @@ General description
 *******************************************************************************/
 
 
-
-:- [ 'general/utilities' ].
+:- ensure_loaded( [ '../general/top_level.ecl',
+                    '../general/utilities.ecl'
+                  ]
+                ).
 
 
 %% Initialization of tables:
@@ -234,22 +236,22 @@ builtin( once( _ ) ).   % there is special treatment for this, see solve/2
 
 %% The legal directives (check external form only).
 
-legal_directive( coinductive _ ).
+legal_directive( tabled _ ).
 
 
 %% Check and process the legal directives
 
-treat_directive( coinductive P / K ) :-            % declaration of coinductive
+treat_directive( tabled P / K ) :-                 % declaration of tabled
         (atom( P ), integer( K ), K >= 0),         %  seems OK
         !,
         mk_pattern( P, K, Pattern ),               % Pattern = P( _, _, ... )
-        assert( coinductive( Pattern ) ).
+        assert( tabled( Pattern ) ).
 
-treat_directive( coinductive P / K ) :-            % declaration of coinductive
+treat_directive( tabled P / K ) :-                 % declaration of tabled
         (\+ atom( P ) ; \+ integer( K ) ; K < 0),  %  obviously wrong
         !,
         write( error, 'Erroneous directive: \"' ),
-        write( error, (:- coinductive P / K) ),
+        write( error, (:- tabled P / K) ),
         writeln( error, '\"' ).
 
 
