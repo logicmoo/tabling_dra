@@ -122,10 +122,13 @@ General description
                          p( a, a ).
                          p( a, b ).
 
-               query:    ?-  p( U, V ),  p( W, W ),  p( a, X ),  p( Y, b ).
+               queries:  ?-  p( U, V ).
+                         ?-  p( W, W ).
+                         ?-  p( a, X ).
+                         ?-  p( Y, b ).
 
-           During "normal" execution of this Prolog program each goal in the
-           query would generate a different set of results; to wit:
+           During "normal" execution of this Prolog program each of the queries
+           would generate a different set of results; to wit:
 
                p( U, V )  would generate  p( U, U ), p( a, a ), p( a, b )
                p( W, W )  ..............  p( W, W ), p( a, a )
