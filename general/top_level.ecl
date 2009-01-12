@@ -92,12 +92,19 @@
 :- ensure_loaded( utilities ).
 
 
+% If p/k has already been seen (and declared as dynamic), the fact is recorded
+% as known( p, k ).
+
+:- dynamic known/2 .
+
+
 
 %% prog( + file name ):
 %% Initialise, then load a program from this file, processing directives and
 %% queries.  After this is done, enter interactive mode.
 
 prog( FileName ) :-
+        retractall( known( _, _ ) ),
         initialise,                              % provided by a metainterpreter
         process_file( FileName ),
         top.
@@ -222,6 +229,21 @@ good_head( Hd ) :-
 good_head( Hd ) :-
         compound( Hd ),
         \+ is_list( Hd ).
+
+
+%% ensure_dynamic( + clause ):
+%% Make sure the predicate of this clause is dynamic.
+%% known/2 is used to avoid multiple declarations (not that it matters...)
+
+ensure_dynamic( Clause ) :-
+        ( Clause = (Hd :- _ ) ;  Hd = Clause ),                   % get the head
+        functor( Hd, PredicateSymbol, Arity ),
+        \+ known( PredicateSymbol, Arity ),
+        assert( known( PredicateSymbol, Arity ) ),
+        dynamic( PredicateSymbol / Arity ),
+        fail.
+
+ensure_dynamic( _ ).
 
 
 %% process_query( + query, + variable dictionary ):

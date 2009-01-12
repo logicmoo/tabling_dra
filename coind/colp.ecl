@@ -54,7 +54,6 @@ builtin( once( _ ) ).   % there is special treatment for this, see
 %%%%%  Administration  %%%%%
 
 :- dynamic coinductive/1 .         % e.g., coinductive( comember( _, _ ) ).
-:- dynamic known/2 .               % known( p, k ). if p/k has already been seen
 
 :- op( 1000, fy, coinductive ).    % allow  ":- coinductive p/k ."
 
@@ -66,7 +65,6 @@ default_extension( ".clp" ).       % default extension for file names
 %% Get rid of previous state.
 
 initialise :-
-        retractall( known( _, _ )    ),
         retractall( coinductive( _ ) ).
 
 
@@ -90,21 +88,6 @@ execute_directive( coinductive P / K ) :-          % declaration of coinductive
         write( error, 'Erroneous directive: \"' ),
         write( error, (:- coinductive P / K) ),
         writeln( error, '\"' ).
-
-
-%% ensure_dynamic( + clause ):
-%% Make sure the predicate of this clause is dynamic.
-%% known/2 is used to avoid multiple declarations (not that it matters...)
-
-ensure_dynamic( Clause ) :-
-        ( Clause = (Hd :- _ ) ;  Hd = Clause ),                   % get the head
-        functor( Hd, PredicateSymbol, Arity ),
-        \+ known( PredicateSymbol, Arity ),
-        assert( known( PredicateSymbol, Arity ) ),
-        dynamic( PredicateSymbol / Arity ),
-        fail.
-
-ensure_dynamic( _ ).
 
 
 

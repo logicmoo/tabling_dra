@@ -251,20 +251,6 @@ treat_directive( tabled P / K ) :-                 % declaration of tabled
         writeln( error, '\" ignored! +++' ).
 
 
-%% Make sure the predicate of this clause is dynamic.
-%% known/2 is used to avoid multiple declarations (not that it matters...)
-
-ensure_dynamic( Clause ) :-
-        ( Clause = (Hd :- _ ) ;  Hd = Clause ),                   % get the head
-        functor( Hd, PredicateSymbol, Arity ),
-        \+ known( PredicateSymbol, Arity ),
-        assert( known( PredicateSymbol, Arity ) ),
-        dynamic( PredicateSymbol / Arity ),
-        fail.
-
-ensure_dynamic( _ ).
-
-
 
 
 
