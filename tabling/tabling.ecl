@@ -71,10 +71,9 @@ General description
    Limitations
    -----------
 
-   The interpreted program must not contain cuts, disjunctions (i.e.,
-   semicolons) or "if-then"/"if-then-else" constructs.  It also must not contain
-   calls to built-in-predicates, except for the handful of predicates listed in
-   builtin/1 below.
+   The interpreted program must not contain cuts or "if-then"/"if-then-else"
+   constructs.  It also must not contain calls to built-in-predicates, except
+   for the handful of predicates listed in builtin/1 below.
 
 
    Data structures
@@ -101,7 +100,7 @@ General description
            further stages of the computation.
 
            The "fact" 'FAILURE' indicates that a goal fails without producing
-           any results.
+           any results.  Otherwise the fact is an instantiation of the goal.
 
            In general, a side-effect of each computation will be the generation
            -- for each tabled goal encounted during the computation -- of a set
@@ -158,11 +157,12 @@ General description
 
    -- pioneer( goal )
 
-           If the current goal is one whose variant has not yet been encountered
-           during the computation, the goal is called a "pioneer" and recorded
-           in this table.  If a variant goal is encountered subsequently, it
-           will be treated as a "follower".  The table is used to detect whether
-           a goal (when first encountered) is a pioneer or a follower.
+           If the current goal is tabled, and its variants have not yet been
+           encountered during the computation, the goal is called a "pioneer"
+           and recorded in this table.  If a variant goal is encountered
+           subsequently, it will be treated as a "follower".  The table is used
+           to detect whether a tabled goal (when first encountered) is
+           a pioneer or a follower.
 
    -- not_topmost( goal )
 
@@ -181,9 +181,9 @@ General description
 
    -- completed( goal )
 
-           Indicates that the fixpoint for this goal has been computed, and all
-           the possible results for variants of the goal can be found in table
-           "answer".
+           Indicates that the fixpoint for this tabled goal has been computed,
+           and all the possible results for variants of the goal can be found
+           in table "answer".
 
 *******************************************************************************/
 
@@ -260,27 +260,37 @@ treat_directive( tabled P / K ) :-                 % declaration of tabled
 
 
 %% Execute a query.
-query( Goal ) :-
-        solve( Goal, [] ).
+query( Goals ) :-
+        solve( Goals, [] ).
 
 
 
-%% solve( + goal, + stack ):
-%% Solve the goal, maintaining information about the current chain of ancestors
-%% (stack).
+%% solve( + sequence of goals, + stack ):
+%% Solve the sequence of goals, maintaining information about the current chain
+%% of ancestors (stack).
 
-% true/0 is not traced, as it is considered a spurious artefact (of encoding
-% facts in rule/2).
+solve( BuiltIn, _ ) :-
+        built_in( BuiltIn ),
+        !,
+        call( BuiltIn ).
 
-solve( true, _ ) :-
-        !.
 
+% A disjunction
 
-% A conjunction of goals: solve the first one first.
-
-solve( (Goal , Goals), Stack ) :-
-        solve( Goal, Stack ),
+solve( (Goals ; _), Stack ) :-
         solve( Goals, Stack ).
+
+solve( (_ ; Goals), Stack ) :-
+        !,
+        solve( Goals, Stack ).
+
+
+% A conjunction
+
+solve( (Goals1 , Goals2), Stack ) :-
+        !,
+        solve( Goals1, Stack ),
+        solve( Goals2, Stack ).
 
 
 % A "normal" (i.e., not tabled) goal.
@@ -316,7 +326,7 @@ solve( Goal, Stack ) :-
         !,
         store_all_solutions_by_rules( Goal, Stack ),
         (
-            is_topmost( Goal ),
+            \+ is_not_topmost( Goal ),
             !,
             number_of_answers( NAns ),
             compute_fixed_point( Goal, Stack, NAns ),
@@ -465,11 +475,11 @@ complete_goal( Goal ) :-
 
 %% is_completed( + goal ):
 %% Succeeds iff the goal is a variant of a goal that has been stored in
-%% the table completed.
+%% the table "completed".
 
 is_completed( Goal ) :-
-        completed( CG ),
-        are_variants( Goal, CG ).
+        completed( G ),
+        are_variants( Goal, G ).
 
 
 
@@ -518,21 +528,22 @@ is_a_pioneer( Goal ) :-
 %% Make sure that the goal is stored in "not_topmost".
 
 mk_not_topmost( Goal ) :-
-        \+ is_topmost( Goal ),
+        is_not_topmost( Goal ),
         !.
 
 mk_not_topmost( Goal ) :-
-        % is_topmost( Goal ),
+        % \+ is_not_topmost( Goal ),
         assert( not_topmost( Goal ) ).
 
 
 
-%% is_topmost( + goal ):
-%% Succeeds iff the goal is not a variant of a goal that has been saved in
+%% is_not_topmost( + goal ):
+%% Succeeds iff the goal is a variant of a goal that has been saved in
 %% table "not_topmost".
 
-is_topmost( Goal ) :-
-        \+ ( not_topmost( G ),  are_variants( Goal, G ) ).
+is_not_topmost( Goal ) :-
+        not_topmost( G ),
+        are_variants( Goal, G ).
 
 
 
@@ -545,22 +556,19 @@ is_topmost( Goal ) :-
 %% Display the message and stack, then abort.
 
 fatal_error( Message, Stack ) :-
-        write( "---- FATAL ERROR: " ),
-        nl,
-        write( "---- " ),
-        write( Message ),
-        nl,
-        nl,
-        write( "---- The current stack:" ),
-        nl,
+        writeln( error, "*** FATAL ERROR: " ),
+        write(   error, "*** " ),
+        writeln( error, Message ),
+        writeln( error, "" ),
+        writeln( error, "*** The current stack:" ),
         show_stack( Stack ),
-        write( "----" ),
-        nl,
+        writeln( error, "***" ),
         abort.
 
 %
-show_stack( [] ).
-show_stack( [ H | T ] ) :-
-        write( H ),
-        nl,
-        show_stack( T ).
+show_stack( Stack ) :-
+        member( Call, Stack ),
+        writeln( error, Call ),
+        fail.
+
+show_stack( _ ).
