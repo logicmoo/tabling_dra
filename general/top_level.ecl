@@ -13,22 +13,28 @@
 %%%       Then load the metainterpreter into your logic programming system.
 %%%
 %%%
-%%%    1. To load a new program use the query:
+%%%    1. To begin execution by loading a new program, invoke
 %%%
-%%%           ?- prog( filename ).
+%%%           prog( filename ).
 %%%
 %%%       If the filename has no extension, the default extension will be
 %%%       used if provided (see the description of "default_extension" below).
 %%%
+%%%       As the file is loaded, directives and queries are executed on-the-fly
+%%%       by invoking the metainterpreter.  A query is evaluated to give all
+%%%       solutions (it is as if the user kept responding with a semicolon):
+%%%       to avoid that use the built-in predicate once/1 .
+%%%
 %%%       After the file is loaded (and all the directives and queries it
 %%%       contains are executed), interactive mode is started.  This is very
 %%%       much like the usual top-level loop, except that the associated
-%%%       metainterpreter is
+%%%       metainterpreter -- and not the underlying Logic Programming system --
+%%%       is used to evaluate queries and directives.
 %%%
 %%%
-%%%       To just enter interactive mode use the query:
+%%%       To just enter interactive mode invoke
 %%%
-%%%           ?- top.
+%%%           top
 %%%
 %%%       To exit interactive mode enter end of file (^D), or just write
 %%%
@@ -84,9 +90,8 @@
 %%%                 "?- Q."), it will display the query and then call
 %%%                 "query( Q )".  Depending on the result, it will then
 %%%                 display "No", or "Yes" (preceded by a display of bindings
-%%%                 acquired by the variables occurring in "Q").
-%%%                 Please note that a query read in from a file will not be
-%%%                 be retried for alternative solutions.
+%%%                 acquired by the variables occurring in "Q"); in the latter
+%%%                 case it will also backtrack to obtain more solutions.
 %%%
 
 
@@ -254,7 +259,8 @@ ensure_dynamic( _ ).
 process_query( Query, VarDict ) :-
         write( output, '-- Query: ' ), write( output, Query ),
         writeln( output, '.  --' ),
-        execute_query( Query, VarDict, _ ).
+        execute_query( Query, VarDict, Answer ),
+        Answer = no.                             % i.e., backtrack if 'yes'.
 
 %
 execute_query( Query, VarDict, yes ) :-
