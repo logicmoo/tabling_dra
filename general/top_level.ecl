@@ -254,15 +254,15 @@ ensure_dynamic( _ ).
 process_query( Query, VarDict ) :-
         write( output, '-- Query: ' ), write( output, Query ),
         writeln( output, '.  --' ),
-        execute_query( Query, VarDict ).
+        execute_query( Query, VarDict, Answer ).
 
 %
-execute_query( Query, VarDict ) :-
+execute_query( Query, VarDict, yes ) :-
         query( Query ),                          % provided by a metainterpreter
         show_results( VarDict ),
         writeln( 'Yes' ).
 
-execute_query( _, _ ) :-
+execute_query( _, _, no ) :-
         writeln( 'No' ).
 
 
@@ -312,8 +312,8 @@ interactive_term( (:- Directive), _ ) :-               % directive
 
 interactive_term( (?- Query), VarDict ) :-             % query
         !,
-        execute_query( Query, VarDict ),
-        user_accepts,
+        execute_query( Query, VarDict, Ans ),
+        continue_query( Ans ),
         !.
 
 interactive_term( Other, VarDict ) :-                  % other: treat as a query
@@ -322,6 +322,15 @@ interactive_term( Other, VarDict ) :-                  % other: treat as a query
         % Other \= (?- _),
         % Other \= quit
         interactive_term( (?- Other), VarDict ).
+
+
+%% continue_query( + answer ):
+%% Give the user a chance to type ";" if the answer is "yes".
+continue_query( yes ) :-
+        user_accepts,
+        !.
+
+continue_query( no ).
 
 
 %% user_accepts:
