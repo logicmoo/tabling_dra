@@ -254,7 +254,7 @@ ensure_dynamic( _ ).
 process_query( Query, VarDict ) :-
         write( output, '-- Query: ' ), write( output, Query ),
         writeln( output, '.  --' ),
-        execute_query( Query, VarDict, Answer ).
+        execute_query( Query, VarDict, _ ).
 
 %
 execute_query( Query, VarDict, yes ) :-
