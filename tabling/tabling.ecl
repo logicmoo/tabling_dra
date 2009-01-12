@@ -215,6 +215,17 @@ default_extension( ".tlp" ).
 number_of_answers( 0 ).
 
 
+initialise :-
+        retractall( tabled( _ )            ),
+        retractall( answer( _, _ )         ),
+        retractall( number_of_answers( _ ) ),
+        retractall( pioneer( _ )           ),
+        retractall( not_topmost( _ )       ),
+        retractall( cluster( _, _ )        ),
+        retractall( completed( _ )         ),
+        assert( number_of_answers( 0 ) ).
+
+
 
 %%%%%  Built-in predicates  %%%%
 %%
@@ -245,13 +256,13 @@ legal_directive( tabled _ ).
 
 %% Check and process the legal directives
 
-treat_directive( tabled P / K ) :-                 % declaration of tabled
+execute_directive( tabled P / K ) :-                 % declaration of tabled
         (atom( P ), integer( K ), K >= 0),         %  seems OK
         !,
         mk_pattern( P, K, Pattern ),               % Pattern = P( _, _, ... )
         assert( tabled( Pattern ) ).
 
-treat_directive( tabled P / K ) :-                 % declaration of tabled
+execute_directive( tabled P / K ) :-                 % declaration of tabled
         (\+ atom( P ) ; \+ integer( K ) ; K < 0),  %  obviously wrong
         !,
         write( error, '+++ Erroneous directive: \"' ),
@@ -278,7 +289,7 @@ query( Goals ) :-
 %% of ancestors (stack).
 
 solve( BuiltIn, _ ) :-
-        built_in( BuiltIn ),
+        builtin( BuiltIn ),
         !,
         call( BuiltIn ).
 
@@ -371,8 +382,9 @@ solve( Goal, Stack ) :-
 %% the results in "answer".
 
 store_all_solutions_by_rules( Goal, Stack ) :-
+        copy_term( Goal, OriginalGoal ),
         solve_by_rules( Goal, Stack ),
-        memo( Goal ),
+        memo( OriginalGoal, Goal ),
         fail.
 
 store_all_solutions_by_rules( _, _ ).
@@ -395,13 +407,12 @@ solve_by_rules( Goal, Stack ) :-
 %% _without_ instantiating the goal.
 
 compute_fixed_point( Goal, Stack ) :-
-        number_of_anwers( NAns ),
+        number_of_answers( NAns ),
         compute_fixed_point_( Goal, Stack, NAns ).
 
 %
 compute_fixed_point_( Goal, Stack ) :-
         solve_by_rules( Goal, Stack, _ ),                       % all solutions
-        memo( Goal ),
         fail.
 
 compute_fixed_point_( _, _, NAns ) :-
@@ -447,7 +458,7 @@ keep_tabled( [ G | Gs ], [ G | TGs ] ) :-
         !,
         keep_tabled( Gs, TGs ).
 
-keep_tabled( [ G | Gs ], TGs ) :-
+keep_tabled( [ _G | Gs ], TGs ) :-
         % \+ tabled( G ),
         keep_tabled( Gs, TGs ).
 
