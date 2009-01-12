@@ -233,13 +233,13 @@ initialise :-
 %%        metainterpreter would have to be modified.
 %%        Certain other built-ins may also require special treatment.
 
-builtin( true      ).
-builtin( false     ).
-builtin( fail      ).
-builtin( _ = _     ).
-builtin( _ \= _    ).
-% builtin( \+( _ )   ).   % there is special treatment for this, see solve/2
-% builtin( once( _ ) ).   % there is special treatment for this, see solve/2
+builtin( true    ).
+builtin( false   ).
+builtin( fail    ).
+builtin( _ = _   ).
+builtin( _ \= _  ).
+builtin( \+( _ ) ).   % there is special treatment for this, see solve/2
+builtin( once _  ).   % there is special treatment for this, see solve/2
 
 
 
@@ -287,6 +287,22 @@ query( Goals ) :-
 %% solve( + sequence of goals, + stack ):
 %% Solve the sequence of goals, maintaining information about the current chain
 %% of ancestors (stack).
+
+% Note that even during the computation of once/1 a whole set of answers
+% may become tabled.
+
+solve( once Goal, Stack ) :-
+        !,
+        solve( Goal, Stack ),
+        !.
+
+% Note that even during the computation of \+/1 a whole set of answers
+% may become tabled.
+
+solve( \+ Goal, Stack ) :-
+        !,
+        \+ solve( Goal, Stack ).
+
 
 solve( BuiltIn, _ ) :-
         builtin( BuiltIn ),
