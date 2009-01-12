@@ -1,8 +1,8 @@
-%%%                                                                      %%%
-%%% A meta-interpreter for tabled logic programming: see the description %%%
-%%% below for more information.                                          %%%
-%%% Written by Feliks Kluzniak at UTD.                                   %%%
-%%%                                                                      %%%
+%%%                                                                        %%%
+%%%  A meta-interpreter for tabled logic programming: see the description  %%%
+%%%  below for more information.                                           %%%
+%%%  Written by Feliks Kluzniak at UTD.                                    %%%
+%%%                                                                        %%%
 
 %%% NOTE:
 %%%
@@ -20,7 +20,9 @@
 %%%       contain queries, which will be executed immediately upon reading.
 %%%
 %%%    3. If the program invokes a built-in predicate, that predicate must
-%%%       be declared in the table builtin/1 below.
+%%%       be declared in the table builtin/1 below.  Every addition should
+%%%       be considered carefully: some might require special treatment by
+%%%       the metainterpreter.
 
 %%% LIMITATIONS: - The interpreted program should not contain cuts or
 %%%                occurrences of the if-then-else construct.
@@ -44,7 +46,7 @@ General description
          (TPLP 2008 (?))
 
    The interpreter follows -- somewhat loosely -- the description in the latter
-   paper but without "semi-naive optimization".  Moreover, "clusters" are
+   paper, but without "semi-naive optimization".  Moreover, "clusters" are
    detected dynamically, to achieve greater precision (a dependency graph among
    static calls can only be a rough approximation, a dependency graph among
    predicates is rougher still).
@@ -55,7 +57,7 @@ General description
 
    Some predicates are "tabled", because the user has declared them to be such
    by using a directive.  E.g.,
-       :- tabled p/2.
+       :- tabled p/2 .
 
    All calls to a tabled predicate that are present in the interpreted program
    are called "tabled calls".  Instances of such calls are called "tabled
@@ -71,7 +73,8 @@ General description
 
    The interpreted program must not contain cuts, disjunctions (i.e.,
    semicolons) or "if-then"/"if-then-else" constructs.  It also must not contain
-   calls to built-in-predicates.
+   calls to built-in-predicates, except for the handful of predicates listed in
+   builtin/1 below.
 
 
    Data structures
@@ -83,19 +86,11 @@ General description
 
    The tables (implemented as dynamic predicates of Prolog) are:
 
-   -- rule( head, body )
-
-           Used for storing the clauses of the interpreted program.  The body
-           must be a non-empty conjuction that ends with 'true' (the conjunction
-           operator is the comma, i.e., ",/2" treated as an infix operator).
-           Note that the final "true/0" is added automatically to each clause of
-           the interpreted program.
-
    -- tabled( generic head )
 
            Contains an entry for each predicate that has been declared as
            tabled.  For instance, when the interpreter reads
-               :- tabled p/2.
+               :- tabled p/2 .
            it stores the fact
                tabled( p( _, _ ) ).
 
@@ -137,9 +132,10 @@ General description
                p( a, X )  ..............  p( a, a ) (twice!)
                p( Y, b )  ..............  p( b, b ), p( a, b ).
 
-           In other words, the set of results depends not on the predicate, but
-           the form of the goal.  If "p/2" is tabled, the proper contents of
-           "answer" would be as follows (not necessarily in this order):
+           In other words, the set of results depends not only on the predicate,
+           but also on the form of the goal.  If "p/2" is tabled, the proper
+           contents of "answer" would be as follows (not necessarily in this
+           order):
 
                answer( p( U, V ), p( U, U ) ).
                answer( p( U, V ), p( a, a ) ).
@@ -151,8 +147,8 @@ General description
                answer( p( Y, b ), p( a, b ) ).
 
            Please note that the repetition of p( a, a ) for the goal p( a, X )
-           may be avoided.  In general, entries in "answer" will not be variants
-           of each other.
+           will be avoided.  In general, entries in "answer" will not be
+           variants of each other.
 
    -- number_of_answers( natural number )
 
@@ -162,7 +158,7 @@ General description
 
    -- pioneer( goal )
 
-           If a goal is encountered whose variant has not yet been encountered
+           If the current goal is one whose variant has not yet been encountered
            during the computation, the goal is called a "pioneer" and recorded
            in this table.  If a variant goal is encountered subsequently, it
            will be treated as a "follower".  The table is used to detect whether
@@ -199,7 +195,7 @@ General description
 
 
 %% Initialization of tables:
-:- dynamic rule/2 .
+
 :- dynamic tabled/1 .
 :- dynamic answer/2 .
 :- dynamic number_of_answers/1 .
@@ -223,8 +219,8 @@ builtin( false     ).
 builtin( fail      ).
 builtin( _ = _     ).
 builtin( _ \= _    ).
-builtin( \+( _ )   ).   % there is special treatment for this, see solve/2
-builtin( once( _ ) ).   % there is special treatment for this, see solve/2
+% builtin( \+( _ )   ).   % there is special treatment for this, see solve/2
+% builtin( once( _ ) ).   % there is special treatment for this, see solve/2
 
 
 
@@ -250,9 +246,9 @@ treat_directive( tabled P / K ) :-                 % declaration of tabled
 treat_directive( tabled P / K ) :-                 % declaration of tabled
         (\+ atom( P ) ; \+ integer( K ) ; K < 0),  %  obviously wrong
         !,
-        write( error, 'Erroneous directive: \"' ),
+        write( error, '+++ Erroneous directive: \"' ),
         write( error, (:- tabled P / K) ),
-        writeln( error, '\"' ).
+        writeln( error, '\" ignored! +++' ).
 
 
 %% Make sure the predicate of this clause is dynamic.
