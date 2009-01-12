@@ -99,8 +99,9 @@ General description
            computation.  Once present, these results are also used during
            further stages of the computation.
 
-           The "fact" 'FAILURE' indicates that a goal fails without producing
-           any results.  Otherwise the fact is an instantiation of the goal.
+           Note that the fact is an instantiation of the goal.  If a tabled
+           goal has no solutions, it will have no entry in "answer", even though
+           it may have an entry in "completed" (see below).
 
            In general, a side-effect of each computation will be the generation
            -- for each tabled goal encounted during the computation -- of a set
@@ -178,6 +179,8 @@ General description
            may be nested, so the topmost goal in a cluster is not necessarily
            the "topmost looping goal" in the sense of ref. [2] (i.e., it may be
            stored in the table "not_topmost").
+           Information about goals that are not tabled is not stored in
+           "cluster".
 
    -- completed( goal )
 
@@ -192,6 +195,11 @@ General description
                     '../general/utilities.ecl'
                   ]
                 ).
+
+
+% If a file name has no extension, add ".tlp"
+
+default_extension( ".tlp" ).
 
 
 %% Initialization of tables:
@@ -328,8 +336,7 @@ solve( Goal, Stack ) :-
         (
             \+ is_not_topmost( Goal ),
             !,
-            number_of_answers( NAns ),
-            compute_fixed_point( Goal, Stack, NAns ),
+            compute_fixed_point( Goal, Stack ),
             complete_cluster( Goal )
         ;
             true
@@ -338,8 +345,8 @@ solve( Goal, Stack ) :-
 
 
 % A tabled goal that is not a pioneer and that, moreover, has a variant among
-% its ancestors.  All the intermediate ancestors are marked as not topmost, and
-% a new cluster is identified.
+% its ancestors.  All the intermediate tabled ancestors are marked as not
+% topmost, and a new cluster is identified.
 % Then only the existing (most likely incomplete) results from "answer" are
 % returned before failure.
 
@@ -377,50 +384,72 @@ store_all_solutions_by_rules( _, _ ).
 
 solve_by_rules( Goal, Stack ) :-
         copy_term( Goal, OriginalGoal ),
-        rule( Goal, Body ),
+        clause( Goal, Body ),
         solve( Body, [ OriginalGoal | Stack ] ).
 
 
 
 
-%% compute_fixed_point( + goal, + stack, + branch, + size of "answer" ):
+%% compute_fixed_point( + goal, + stack ):
 %% Solve the goal by rules until no more answers are produced, then succeed
 %% _without_ instantiating the goal.
 
-compute_fixed_point( Goal, Stack, _ ) :-
+compute_fixed_point( Goal, Stack ) :-
+        number_of_anwers( NAns ),
+        compute_fixed_point_( Goal, Stack, NAns ).
+
+%
+compute_fixed_point_( Goal, Stack ) :-
         solve_by_rules( Goal, Stack, _ ),                       % all solutions
         memo( Goal ),
         fail.
 
-compute_fixed_point( _, _, NAns ) :-
+compute_fixed_point_( _, _, NAns ) :-
         number_of_answers( NAns ),                              % no new answers
         !.
 
-compute_fixed_point( Goal, Stack, NAns ) :-
+compute_fixed_point_( Goal, Stack, NAns ) :-
         number_of_answers( NA ),
         NA =\= NAns,                                            % new answers,
-        compute_fixed-point( Goal, Stack, NA ).                 %   so iterate
+        compute_fixed-point_( Goal, Stack, NA ).                %   so iterate
 
 
 
 %% variant_of_ancestor( + goal, + list of goals ):
 %% Succeeds if the goal is a variant of some member of the list.
 %%
-%% SIDE EFFECT: If successful, then then intermediary goals will be marked as
+%% SIDE EFFECT: If successful, then intermediary tabled goals will be marked as
 %%              not topmost, and the entire prefix of the list upto (and
-%%              including) the variant ancestor will be identified as a cluster.
+%%              including) the variant ancestor will be identified as a cluster
+%%              after filtering out goals that are not tabled.
 
 variant_of_ancestor( Goal, List ) :-
         append( Prefix, [ G | _ ], List ),               % i.e., split the list
         are_variants( Goal, G ),
-        assert( cluster( G, Prefix ) ),
+        keep_tabled( Prefix, TabledPrefix ),
+        assert( cluster( G, TabledPrefix ) ),
         (
-            member( M, Prefix ),
+            member( M, TabledPrefix ),
             mk_not_topmost( M ),
             fail
         ;
             true
         ).
+
+
+%% keep_tabled( + list of goals, - list of goals ):
+%% Filter away goals that are not tabled.
+
+keep_tabled( [], [] ).
+
+keep_tabled( [ G | Gs ], [ G | TGs ] ) :-
+        tabled( G ),
+        !,
+        keep_tabled( Gs, TGs ).
+
+keep_tabled( [ G | Gs ], TGs ) :-
+        % \+ tabled( G ),
+        keep_tabled( Gs, TGs ).
 
 
 
@@ -456,7 +485,8 @@ memo( Goal, Fact ) :-
 get_answer( Goal ) :-
         answer( G, Ans ),
         are_variants( Goal, G ),
-        Goal = Ans .
+        Goal = G,                 % make sure that variables are the right ones
+        Goal = Ans .              % instantiate
 
 
 
