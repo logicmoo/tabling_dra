@@ -387,11 +387,10 @@ solve( Goal, Stack ) :-
 
 
 % A tabled goal that is not completed, not a pioneer, and has no variant among
-% its ancestors.  Something is wrong!
+% its ancestors.  Just return the answers that are currently available.
 
 solve( Goal, Stack ) :-
-        fatal_error( "Impossible!", [ Goal | Stack ] ).
-
+        get_answer( Goal ).
 
 
 
