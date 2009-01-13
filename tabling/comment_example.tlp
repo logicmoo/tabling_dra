@@ -1,0 +1,10 @@
+:- tabled p/2 .
+
+p( A, A ).
+p( a, a ).
+p( a, b ).
+
+?-  p( U, V ).
+?-  p( W, W ).
+?-  p( a, X ).
+?-  p( Y, b ).

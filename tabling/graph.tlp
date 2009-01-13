@@ -1,0 +1,21 @@
+edge( a, b ).
+edge( a, c ).
+edge( b, c ).
+edge( c, a ).
+
+edge( d, e ).
+edge( d, a ).
+
+
+:- tabled path/2 .
+
+path( A, B ) :-  edge( A, B ).
+
+path( A, B ) :-  path( A, C ), path( C, B ).
+
+
+?- path( a, a ).
+?- answer( X, Y ).
+?- path( a, d ).
+?- path( c, c ).
+?- path( X, Y ).
