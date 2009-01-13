@@ -259,14 +259,14 @@ legal_directive( tabled _ ).
 
 %% Check and process the legal directives
 
-execute_directive( tabled P / K ) :-                 % declaration of tabled
-        (atom( P ), integer( K ), K >= 0),         %  seems OK
+execute_directive( tabled P / K ) :-                  % declaration of tabled
+        (atom( P ), integer( K ), K >= 0),            %  seems OK
         !,
-        mk_pattern( P, K, Pattern ),               % Pattern = P( _, _, ... )
+        mk_pattern( P, K, Pattern ),                  % Pattern = P( _, _, ... )
         assert( tabled( Pattern ) ).
 
-execute_directive( tabled P / K ) :-                 % declaration of tabled
-        (\+ atom( P ) ; \+ integer( K ) ; K < 0),  %  obviously wrong
+execute_directive( tabled P / K ) :-                  % declaration of tabled
+        (\+ atom( P ) ; \+ integer( K ) ; K < 0),     %  obviously wrong
         !,
         write( error, '+++ Erroneous directive: \"' ),
         write( error, (:- tabled P / K) ),
