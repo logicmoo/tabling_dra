@@ -389,7 +389,7 @@ solve( Goal, Stack ) :-
 % A tabled goal that is not completed, not a pioneer, and has no variant among
 % its ancestors.  Just return the answers that are currently available.
 
-solve( Goal, Stack ) :-
+solve( Goal, _ ) :-
         get_answer( Goal ).
 
 
@@ -429,8 +429,8 @@ compute_fixed_point( Goal, Stack ) :-
         compute_fixed_point_( Goal, Stack, NAns ).
 
 %
-compute_fixed_point_( Goal, Stack ) :-
-        solve_by_rules( Goal, Stack, _ ),                       % all solutions
+compute_fixed_point_( Goal, Stack, _ ) :-
+        store_all_solutions_by_rules( Goal, Stack ),            % all solutions
         fail.
 
 compute_fixed_point_( _, _, NAns ) :-
@@ -440,7 +440,7 @@ compute_fixed_point_( _, _, NAns ) :-
 compute_fixed_point_( Goal, Stack, NAns ) :-
         number_of_answers( NA ),
         NA =\= NAns,                                            % new answers,
-        compute_fixed-point_( Goal, Stack, NA ).                %   so iterate
+        compute_fixed_point_( Goal, Stack, NA ).                %   so iterate
 
 
 
