@@ -263,46 +263,6 @@ process_directive( Directive ) :-                % unsupported directive
 
 
 
-%% is_good_clause( + term ):
-%% Is this term a reasonable clause?
-
-is_good_clause( Var ) :-
-        var( Var ),
-        !,
-        fail.
-
-is_good_clause( T ) :-
-        get_clause_head( T, H ),
-        is_good_clause_head( H ).
-
-
-%% get_clause_head( + term, - head ):
-%% Treat this non-variable term as a clause, get its head.
-
-:-mode get_clause_head( + ).
-
-get_clause_head( H :- _, H ) :- !.
-
-get_clause_head( H     , H ).
-
-
-%% is_good_clause_head( + term ):
-%% Is this term a good head for a clause?
-
-is_good_clause_head( Var ) :-
-        var( Var ),
-        !,
-        fail.
-
-is_good_clause_head( Hd ) :-
-        atom( Hd ),
-        !.
-
-is_good_clause_head( Hd ) :-
-        compound( Hd ),
-        \+ is_list( Hd ).
-
-
 %% ensure_dynamic( + clause ):
 %% Make sure the predicate of this clause is dynamic.
 %% known/2 is used to avoid multiple declarations (not that it matters...)
