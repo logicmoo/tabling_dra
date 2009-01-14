@@ -282,6 +282,9 @@ execute_directive( tabled P / K ) :-                  % declaration of tabled
 
 
 %% Execute a query.
+
+:- mode query( + ).
+
 query( Goals ) :-
         solve( Goals, [] ).
 
@@ -290,6 +293,8 @@ query( Goals ) :-
 %% solve( + sequence of goals, + stack ):
 %% Solve the sequence of goals, maintaining information about the current chain
 %% of ancestors (stack).
+
+:- mode solve( +, + ).
 
 % Note that even during the computation of once/1 a whole set of answers
 % may become tabled.
@@ -364,8 +369,8 @@ solve( Goal, Stack ) :-
         !,
         store_all_solutions_by_rules( Goal, Stack ),
         (
-            \+ is_not_topmost( Goal ),
-            !,
+            \+ is_not_topmost( Goal )
+        ->
             compute_fixed_point( Goal, Stack ),
             complete_cluster( Goal )
         ;
@@ -399,6 +404,8 @@ solve( Goal, _ ) :-
 %% Invoke solve_by_rules/2 until there are no solutions left, storing
 %% the results in "answer".
 
+:- mode store_all_solutions_by_rules( +, + ).
+
 store_all_solutions_by_rules( Goal, Stack ) :-
         copy_term( Goal, OriginalGoal ),
         solve_by_rules( Goal, Stack ),
@@ -412,6 +419,8 @@ store_all_solutions_by_rules( _, _ ).
 %% solve_by_rules( + goal, + stack ):
 %% Solves the goal by using rules (i.e., clauses) only.
 
+:- mode solve_by_rules( +, + ).
+
 solve_by_rules( Goal, Stack ) :-
         copy_term( Goal, OriginalGoal ),
         clause( Goal, Body ),
@@ -424,11 +433,15 @@ solve_by_rules( Goal, Stack ) :-
 %% Solve the goal by rules until no more answers are produced, then succeed
 %% _without_ instantiating the goal.
 
+:- mode compute_fixed_point( +, + ).
+
 compute_fixed_point( Goal, Stack ) :-
         number_of_answers( NAns ),
         compute_fixed_point_( Goal, Stack, NAns ).
 
 %
+:- mode compute_fixed_point_( +, +, + ).
+
 compute_fixed_point_( Goal, Stack, _ ) :-
         store_all_solutions_by_rules( Goal, Stack ),            % all solutions
         fail.
@@ -452,6 +465,8 @@ compute_fixed_point_( Goal, Stack, NAns ) :-
 %%              including) the variant ancestor will be identified as a cluster
 %%              after filtering out goals that are not tabled.
 
+:- mode variant_of_ancestor( +, + ).
+
 variant_of_ancestor( Goal, List ) :-
         append( Prefix, [ G | _ ], List ),               % i.e., split the list
         are_variants( Goal, G ),
@@ -468,6 +483,8 @@ variant_of_ancestor( Goal, List ) :-
 
 %% keep_tabled( + list of goals, - list of goals ):
 %% Filter away goals that are not tabled.
+
+:- mode keep_tabled( +, - ).
 
 keep_tabled( [], [] ).
 
@@ -492,6 +509,8 @@ keep_tabled( [ _G | Gs ], TGs ) :-
 %% a variant of this goal, then add the pair to the table, increasing
 %% "number_of_answers".
 
+:- mode memo( +, + ).
+
 memo( Goal, Fact ) :-
         answer( G, F ),
         are_variants( F, Fact ),
@@ -511,6 +530,8 @@ memo( Goal, Fact ) :-
 %% Get an instantiation (if any) tabled in "answer" for variants of this goal.
 %% Sequence through all such instantiations on backtracking.
 
+:- mode get_answer( ? ).
+
 get_answer( Goal ) :-
         answer( G, Ans ),
         are_variants( Goal, G ),
@@ -521,6 +542,8 @@ get_answer( Goal ) :-
 
 %% complete_goal( + goal ):
 %% Make sure the goal is marked as completed.
+
+:- mode complete_goal( + ).
 
 complete_goal( Goal ) :-
         is_completed( Goal ),
@@ -536,6 +559,8 @@ complete_goal( Goal ) :-
 %% Succeeds iff the goal is a variant of a goal that has been stored in
 %% the table "completed".
 
+:- mode is_completed( + ).
+
 is_completed( Goal ) :-
         completed( G ),
         are_variants( Goal, G ).
@@ -547,11 +572,15 @@ is_completed( Goal ) :-
 %% are marked as complete.  If there is no associated cluster, just mark the
 %% goal as complete.
 
+:- mode complete_cluster( + ).
+
 complete_cluster( Goal ) :-
         complete_goal( Goal ),
         complete_cluster_if_any( Goal ).
 
 %
+:- mode complete_cluster_if_any( + ).
+
 complete_cluster_if_any( Goal ) :-
         cluster( G, Gs ),
         are_variants( G, Goal ),
@@ -561,6 +590,8 @@ complete_cluster_if_any( Goal ) :-
 complete_cluster_if_any( _ ).
 
 %
+:- mode complete_goals( + ).
+
 complete_goals( Gs ) :-
         member( G, Gs ),
         complete_goal( G ),
@@ -577,6 +608,8 @@ complete_goals( _ ).
 %%
 %% SIDE EFFECT: Adds the goal to table "pioneer".
 
+:- mode is_a_pioneer( + ).
+
 is_a_pioneer( Goal ) :-
         \+ ( pioneer( PG ),  are_variants( Goal, PG ) ),
         assert( pioneer( Goal ) ).
@@ -585,6 +618,8 @@ is_a_pioneer( Goal ) :-
 
 %% mk_not_topmost( + goal ):
 %% Make sure that the goal is stored in "not_topmost".
+
+:- mode mk_not_topmost( + ).
 
 mk_not_topmost( Goal ) :-
         is_not_topmost( Goal ),
@@ -600,6 +635,8 @@ mk_not_topmost( Goal ) :-
 %% Succeeds iff the goal is a variant of a goal that has been saved in
 %% table "not_topmost".
 
+:- mode is_not_topmost( + ).
+
 is_not_topmost( Goal ) :-
         not_topmost( G ),
         are_variants( Goal, G ).
@@ -613,6 +650,8 @@ is_not_topmost( Goal ) :-
 
 %% fatal_error( + message, + stack ):
 %% Display the message and stack, then abort.
+
+:- mode fatal_error( +, + ).
 
 fatal_error( Message, Stack ) :-
         writeln( error, "*** FATAL ERROR: " ),

@@ -109,6 +109,8 @@
 %% Initialise, then load a program from this file, processing directives and
 %% queries.  After this is done, enter interactive mode.
 
+:- mode porg( + ).
+
 prog( FileName ) :-
         retractall( known( _, _ ) ),
         initialise,                              % provided by a metainterpreter
@@ -118,6 +120,8 @@ prog( FileName ) :-
 
 %% process_file( + file name ):
 %% Load a program from this file, processing directives and queries.
+
+:- mode process_file( + ).
 
 process_file( FileName ) :-
         \+ atom( FileName ),
@@ -137,17 +141,30 @@ process_file( FileName ) :-
 %% process_input( + input stream ):
 %% Read the stream, processing directives and queries and storing clauses.
 
+:- mode process_input( + ).
+
 process_input( ProgStream ) :-
         repeat,
         readvar( ProgStream, Term, VarDict ),
         % write( '<processing \"' ),  write( Term ),  writeln( '\">' ),
-        process_term( Term, VarDict ),
-        Term = end_of_file,
+        (
+            var( Term ),
+        ->
+            write(   error, "--- WARNING: variable term (" ),
+            write(   error, Term ),
+            writeln( error, ".) is ignored. ---" ),
+            fail
+        ;
+            process_term( Term, VarDict ),
+            Term = end_of_file
+        ),
         !.
 
 
 %% ensure_extension( + file name, - ditto possibly extended ):
 %% If the file name has no extension, add the default extension, if any
+
+:- mode ensure_extension( +, - ).
 
 ensure_extension( FileName, FullFileName ) :-
         atom_string( FileName, FileNameString ),
@@ -164,6 +181,8 @@ ensure_extension( FileName, FileName ).       % extension present, or no default
 %% Process a term, which should be a directive, a query, a program clause or
 %% end_of_file.
 %% The variable dictionary is used for printing out the results of a query.
+
+:- mode process_term( +, + ).
 
 process_term( end_of_file, _ ) :-  !.            % just ignore this
 
@@ -199,6 +218,8 @@ process_term( Clause, _ ) :-
 %% include_files( + list of file names ):
 %% Process the files whose names are in the list.
 
+:- mode include_files( + ).
+
 include_files( List ) :-
         member( FileName, List ),
         process_file( FileName ),
@@ -210,6 +231,8 @@ include_files( _ ).
 
 %% process_directive( + directive ):
 %% Process a directive.
+
+:- mode process_directive( + ).
 
 process_directive( Directive ) :-
         legal_directive( Directive ),            % provided by a metainterpreter
@@ -228,6 +251,8 @@ process_directive( Directive ) :-                % unsupported directive
 %% good_head( + term ):
 %% Is this term a good head of a clause?
 
+:- mode good_head( + ).
+
 good_head( Hd ) :-
         atom( Hd ),
         !.
@@ -240,6 +265,8 @@ good_head( Hd ) :-
 %% ensure_dynamic( + clause ):
 %% Make sure the predicate of this clause is dynamic.
 %% known/2 is used to avoid multiple declarations (not that it matters...)
+
+:- mode ensure_dynamic( + ).
 
 ensure_dynamic( Clause ) :-
         ( Clause = (Hd :- _ ) ;  Hd = Clause ),                   % get the head
@@ -256,6 +283,8 @@ ensure_dynamic( _ ).
 %% Process a query, i.e., produce and display solutions until
 %% no more can be found.
 
+:- mode process_query( +, + ).
+
 process_query( Query, VarDict ) :-
         write( output, '-- Query: ' ), write( output, Query ),
         writeln( output, '.  --' ),
@@ -263,6 +292,8 @@ process_query( Query, VarDict ) :-
         Answer = no.                             % i.e., backtrack if 'yes'.
 
 %
+:- mode execute_query( +, +, + ).
+
 execute_query( Query, VarDict, yes ) :-
         query( Query ),                          % provided by a metainterpreter
         show_results( VarDict ),
@@ -275,10 +306,13 @@ execute_query( _, _, no ) :-
 %% show_results( + variable dictionary ):
 %% Use the variable dictionary to show the results of a query.
 
+:- mode show_results( + ).
+
 show_results( Dict ) :-
         member( [ Name | Var ], Dict ),
         write( output, Name ), write( output, ' = ' ),  writeln( output, Var ),
         fail.
+
 show_results( _ ).
 
 
@@ -295,7 +329,16 @@ top :-
         write( output, ': ' ),                                          % prompt
         flush( output ),
         readvar( input, Term, VarDict ),
-        interactive_term( Term, VarDict ),
+        (
+            var( Term )
+        ->
+            write(   error, "--- WARNING: variable term (" ),
+            write(   error, Term ),
+            writeln( error, ".) is ignored. ---" ),
+            fail
+        ;
+            interactive_term( Term, VarDict )
+        ),
         ( Term = end_of_file ; Term = quit ),
         !.
 
@@ -303,6 +346,8 @@ top :-
 %% interactive_term( + term, + variable dictionary ):
 %% Process a term in interactive mode.
 %% The variable dictionary is used for printing out the results of a query.
+
+:- mode interactive_term( +, + ).
 
 interactive_term( end_of_file, _ ) :-  !.              % just ignore this
 
@@ -332,6 +377,9 @@ interactive_term( Other, VarDict ) :-                  % other: treat as a query
 
 %% continue_query( + answer ):
 %% Give the user a chance to type ";" if the answer is "yes".
+
+:- mode continue_query( + ).
+
 continue_query( yes ) :-
         user_accepts,
         !.

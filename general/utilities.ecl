@@ -6,6 +6,8 @@
 %%    Succeeds iff goal succeeds, but without instantiating any variables
 %%    (side-effects may appear, though).
 
+:- mode check( + ).
+
 check( Goal ) :-  \+ \+ Goal .
 
 
@@ -18,9 +20,13 @@ check( Goal ) :-  \+ \+ Goal .
 %%              mk_ground( T ) :- numbervars( T, 0, _ ).
 %%    )
 
+:- mode mk_ground( ? ).
+
 mk_ground( T ) :-  mk_ground_aux( T, 0, _ ).
 
 %
+:- mode mk_ground_aux( ?, +, - ).
+
 mk_ground_aux( V, N, N1 ) :-
         var( V ),
         !,
@@ -39,6 +45,8 @@ mk_ground_aux( T, N, N1 ) :-
         mk_ground_auxs( Args, N, N1 ).
 
 %
+:- mode mk_ground_auxs( +, +, - ).
+
 mk_ground_auxs( []        , N, N  ).
 mk_ground_auxs( [ T | Ts ], N, N2 ) :-
         mk_ground_aux( T, N, N1 ),
@@ -73,6 +81,8 @@ are_variants( T1, T2 ) :-
 %%           )
 %% Given p/k, produce p( _, _, ... _ )  (of arity k)
 
+:- mode mk_pattern( +, +, - ).
+
 mk_pattern( P, K, Pattern ) :-
         length( Args, K ),                            % Args = K fresh variables
         Pattern =.. [ P | Args ].
@@ -84,9 +94,13 @@ mk_pattern( P, K, Pattern ) :-
 %%    nearest newline.  The newline is not included in the list of characters
 %%    that is returned.
 
+:- mode getline( - ).
+
 getline( Line ) :-  get_char( C ),  getline_( C, Line ).
 
 %
+:- mode getline_( +, - ).
+
 getline_( "\n", []         ) :-  !.
 
 getline_( C   , [ C | Cs ] ) :-
@@ -100,12 +114,16 @@ getline_( C   , [ C | Cs ] ) :-
 %%    Writes the characters to the current output stream and follows them with
 %%    a newline.
 
+:- mode putline( + ).
+
 putline( Cs ) :-  putchars( Cs ),  nl.
 
 
 %%------------------------------------------------------------------------------
 %% putchars( + list of character strings ) :
 %%    Writes the characters to the current output stream.
+
+:- mode putchars( + ).
 
 putchars( []         ).
 putchars( [ C | Cs ] ) :-  put_char( C ),  putchars( Cs ).
