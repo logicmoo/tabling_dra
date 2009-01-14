@@ -369,12 +369,18 @@ solve( Goal, Stack ) :-
         !,
         store_all_solutions_by_rules( Goal, Stack ),
         (
-            \+ is_not_topmost( Goal )
+            ground( Goal )              % a ground goal can have only one answer
         ->
-            compute_fixed_point( Goal, Stack ),
-            complete_cluster( Goal )
+            complete_goal( Goal )
         ;
-            true
+            (
+                is_not_topmost( Goal )
+            ->
+                true
+            ;
+                compute_fixed_point( Goal, Stack ),                    % topmost
+                complete_cluster( Goal )
+            )
         ),
         get_answer( Goal ).
 
