@@ -103,15 +103,16 @@ General description
            goal has no solutions, it will have no entry in "answer", even though
            it may have an entry in "completed" (see below).
 
-           In general, a side-effect of each computation will be the generation
-           -- for each tabled goal encounted during the computation -- of a set
-           of facts that form the goal's "least fixed point interpretation".
-           (Of course, if this set is not sufficiently small, the interpreter
-           will not terminate successfully.)  The facts (which need not be
-           ground!) are all entered into the table "answered", and the members
-           of different sets are distinguished by their association with the
-           appropriate goal: a fact in "answered" is a result that is valid only
-           for a variant of the accompanying goal.
+           In general, a side-effect of each evaluation of a query will be the
+           generation -- for each tabled goal encounted during the evaluation
+           -- of a set of facts that form the goal's "least fixed point
+           interpretation".(Of course, if this set is not sufficiently small,
+           the interpreter will not terminate successfully.)  The facts
+           (which need not be ground!) are all entered into the table
+           "answered", and the members of different sets are distinguished by
+           their association with the appropriate goal: a fact in "answered"
+           is a result that is valid only for a variant of the accompanying
+           goal.
 
            The need for annotating a fact with information about the
            corresponding goal might not be immediately obvious.  Consider the
@@ -162,28 +163,34 @@ General description
    -- pioneer( goal )
 
            If the current goal is tabled, and its variants have not yet been
-           encountered during the computation, the goal is called a "pioneer"
-           and recorded in this table.  If a variant goal is encountered
-           subsequently, it will be treated as a "follower".  The table is used
-           to detect whether a tabled goal (when first encountered) is
-           a pioneer or a follower.
+           encountered during the evaluation of the current query, the goal
+           is called a "pioneer" and recorded in this table.  If a variant goal
+           is encountered subsequently, it will be treated as a "follower".
+           The table is used to detect whether a tabled goal (when first
+           encountered) is a pioneer or a follower.
+           This table is cleared each time the evaluation of a query terminates.
 
    -- not_topmost( goal )
 
            If a pioneer is determined not to be the "topmost looping goal" in a
            "cluster" of interdependent goals (see ref. [2]), then this is
            recorded in the table.
+           This table is cleared each time the evaluation of a query terminates.
 
    -- cluster( goal, list of goals )
 
            Whenever a "cluster" of interdependent goals is encountered, it is
            entered into this table.  The first argument is the topmost goal in
-           the cluster, the list contains the rest.  Please note that clusters
-           may be nested, so the topmost goal in a cluster is not necessarily
-           the "topmost looping goal" in the sense of ref. [2] (i.e., it may be
-           stored in the table "not_topmost").
+           the cluster (which is always a pioneer), the list contains the rest.
            Information about goals that are not tabled is not stored in
            "cluster".
+           Please note that clusters may be nested, so the topmost goal in
+           a cluster is not necessarily the "topmost looping goal" in the sense
+           of ref. [2] (i.e., it may be stored in the table "not_topmost").
+           Note also that the first arguments of two different entries in
+           "cluster" cannot be variants of each other, as only one such goal
+           can be a pioneer.
+           This table is cleared each time the evaluation of a query terminates.
 
    -- completed( goal )
 
@@ -286,7 +293,11 @@ execute_directive( tabled P / K ) :-                  % declaration of tabled
 :- mode query( + ).
 
 query( Goals ) :-
-        solve( Goals, [] ).
+        solve( Goals, [] ),
+        retractall( pioneer( _ )     ),
+        retractall( not_topmost( _ ) ),
+        retractall( cluster( _, _ )  ).
+
 
 
 
