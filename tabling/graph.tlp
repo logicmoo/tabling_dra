@@ -15,7 +15,6 @@ path( A, B ) :-  path( A, C ), path( C, B ).
 
 
 ?- path( a, a ).
-?- answer( X, Y ).
 ?- path( a, d ).
 ?- path( c, c ).
 ?- path( X, Y ).
