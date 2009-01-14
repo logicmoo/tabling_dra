@@ -1,0 +1,6 @@
+% Just to check there is no name conflict with the metainterpreters tables.
+
+answer( p( A ), p( a ) ).
+answer( p( A ), p( b ) ).
+
+?- answer( p( A ), Ans ).
