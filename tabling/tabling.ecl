@@ -423,7 +423,7 @@ store_all_solutions_by_rules( _, _ ).
 
 solve_by_rules( Goal, Stack ) :-
         copy_term( Goal, OriginalGoal ),
-        clause( Goal, Body ),
+        clause( Goal, Body )@interpreted,
         solve( Body, [ OriginalGoal | Stack ] ).
 
 

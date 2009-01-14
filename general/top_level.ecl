@@ -5,7 +5,14 @@
 
 %%% NOTE:
 %%%
-%%%    0. To use this top level, just include it in your the file that
+%%%    0. The clauses read in by the top level are loaded into the module
+%%%       "interpreted".  This is done to avoid conflicts with predicates
+%%%       used in the metainterpreter (and the top level).  The metainterpreter
+%%%       must access them by using
+%%%          clause( ... )@interpreted.
+%%%
+%%%
+%%%    1. To use this top level, just include it in your the file that
 %%%       contains the code for your metainterpreter:
 %%%
 %%%           :- ensure_loaded( '../general/top_level' ).
@@ -13,7 +20,7 @@
 %%%       Then load the metainterpreter into your logic programming system.
 %%%
 %%%
-%%%    1. To begin execution by loading a new program, invoke
+%%%    2. To begin execution by loading a new program, invoke
 %%%
 %%%           prog( filename ).
 %%%
@@ -43,7 +50,7 @@
 %%%       (the former method appears not to work with tkeclipse).
 %%%
 %%%
-%%%    2. To include files (interactively or from other files) use
+%%%    3. To include files (interactively or from other files) use
 %%%       the usual Prolog syntax:
 %%%
 %%%           :- [ file1, file2, ... ].
@@ -54,7 +61,7 @@
 %%%       initialise/0  below); if the latter is used, the file is just loaded.
 %%%
 %%%
-%%%    3. The metainterpreter should provide the following predicates
+%%%    4. The metainterpreter should provide the following predicates
 %%%       ("hooks" that will be called by the top level:
 %%%
 %%%          - default_extension/1:
@@ -109,10 +116,12 @@
 %% Initialise, then load a program from this file, processing directives and
 %% queries.  After this is done, enter interactive mode.
 
-:- mode porg( + ).
+:- mode prog( + ).
 
 prog( FileName ) :-
         retractall( known( _, _ ) ),
+        erase_module( interpreted ),
+        create_module( interpreted ),
         initialise,                              % provided by a metainterpreter
         process_file( FileName ),
         top.
@@ -147,17 +156,9 @@ process_input( ProgStream ) :-
         repeat,
         readvar( ProgStream, Term, VarDict ),
         % write( '<processing \"' ),  write( Term ),  writeln( '\">' ),
-        (
-            var( Term ),
-        ->
-            write(   error, "--- WARNING: variable term (" ),
-            write(   error, Term ),
-            writeln( error, ".) is ignored. ---" ),
-            fail
-        ;
-            process_term( Term, VarDict ),
-            Term = end_of_file
-        ),
+        check_non_variable( Term ),
+        process_term( Term, VarDict ),
+        Term = end_of_file,
         !.
 
 
@@ -174,6 +175,21 @@ ensure_extension( FileName, FullFileName ) :-
         concat_strings( FileNameString, ExtString, FullFileName ).
 
 ensure_extension( FileName, FileName ).       % extension present, or no default
+
+
+%% check_non_variable( + term ):
+%% If the term is a variable, fail after printing a warning.
+
+check_non_variable( V ) :-
+        var( V ),
+        !,
+        write(   error, "--- WARNING: variable term (" ),
+        write(   error, V ),
+        writeln( error, ".) is ignored. ---" ),
+        fail.
+
+check_non_variable( _ ).
+
 
 
 
@@ -200,16 +216,15 @@ process_term( (?- Query), VarDict ) :-
         !.                                            % no alternative solutions
 
 process_term( Clause, _ ) :-
-        Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
-        ( good_head( Clause ) ; Clause = (H :- _), good_head( H ) ),
+        % Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
+        is_good_clause( Clause ),
         !,
         ensure_dynamic( Clause ),
-        assertz( Clause ).
+        assertz( Clause )@interpreted.
 
 process_term( Clause, _ ) :-
-        Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
-        \+ ( good_head( Clause ) ; Clause = (H :- _), good_head( H ) ),
-        !,
+        % Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
+        % \+ is_good_clause( Clause ),
         write(   error, 'Erroneous clause: \"' ),
         write(   error, Clause ),
         writeln( error, '\"' ).
@@ -248,16 +263,42 @@ process_directive( Directive ) :-                % unsupported directive
 
 
 
-%% good_head( + term ):
-%% Is this term a good head of a clause?
+%% is_good_clause( + term ):
+%% Is this term a reasonable clause?
 
-:- mode good_head( + ).
+is_good_clause( Var ) :-
+        var( Var ),
+        !,
+        fail.
 
-good_head( Hd ) :-
+is_good_clause( T ) :-
+        get_clause_head( T, H ),
+        is_good_clause_head( H ).
+
+
+%% get_clause_head( + term, - head ):
+%% Treat this non-variable term as a clause, get its head.
+
+:-mode get_clause_head( + ).
+
+get_clause_head( H :- _, H ) :- !.
+
+get_clause_head( H     , H ).
+
+
+%% is_good_clause_head( + term ):
+%% Is this term a good head for a clause?
+
+is_good_clause_head( Var ) :-
+        var( Var ),
+        !,
+        fail.
+
+is_good_clause_head( Hd ) :-
         atom( Hd ),
         !.
 
-good_head( Hd ) :-
+is_good_clause_head( Hd ) :-
         compound( Hd ),
         \+ is_list( Hd ).
 
@@ -269,11 +310,11 @@ good_head( Hd ) :-
 :- mode ensure_dynamic( + ).
 
 ensure_dynamic( Clause ) :-
-        ( Clause = (Hd :- _ ) ;  Hd = Clause ),                   % get the head
-        functor( Hd, PredicateSymbol, Arity ),
+        get_clause_head( Clause, Head ),
+        functor( Head, PredicateSymbol, Arity ),
         \+ known( PredicateSymbol, Arity ),
         assert( known( PredicateSymbol, Arity ) ),
-        dynamic( PredicateSymbol / Arity ),
+        dynamic( PredicateSymbol / Arity )@interpreted,
         fail.
 
 ensure_dynamic( _ ).
@@ -329,16 +370,8 @@ top :-
         write( output, ': ' ),                                          % prompt
         flush( output ),
         readvar( input, Term, VarDict ),
-        (
-            var( Term )
-        ->
-            write(   error, "--- WARNING: variable term (" ),
-            write(   error, Term ),
-            writeln( error, ".) is ignored. ---" ),
-            fail
-        ;
-            interactive_term( Term, VarDict )
-        ),
+        check_non_variable( Term ),
+        interactive_term( Term, VarDict ),
         ( Term = end_of_file ; Term = quit ),
         !.
 

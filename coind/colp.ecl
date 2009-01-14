@@ -145,7 +145,7 @@ solve_call( Hypotheses, Call ) :-                         % coinductive
 solve_call( Hypotheses, Call ) :-                         % not coinductive
         \+ builtin( Call ),
         \+ coinductive( Call ),
-        clause( Call, Body ),
+        clause( Call, Body )@interpreted,
         solve( Hypotheses, Body ).
 
 
@@ -155,7 +155,7 @@ solve_coinductive_call( Hypotheses, Call ) :-
             member( Call, Hypotheses ).                   % the hypotheses first
 
 solve_coinductive_call( Hypotheses, Call ) :-
-            clause( Call, Body ),
+            clause( Call, Body )@interpreted,
             solve( [ Call | Hypotheses ], Body ).          % then the clauses
 
 
