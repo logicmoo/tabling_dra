@@ -58,8 +58,10 @@ mk_ground_auxs( [ T | Ts ], N, N2 ) :-
 %%    Succeeds iff arg1 is an instance of arg2, but does not instantiate any
 %%    variables.
 
-is_an_instance( T1, T2 ) :-
-        check( (mk_ground( T1 ) , T1 = T2) ).
+% is_an_instance( T1, T2 ) :-
+%         check( (mk_ground( T1 ) , T1 = T2) ).
+
+is_an_instance( T1, T2 ) :-  instance( T1, T2 ). % use the built-in from Eclipse
 
 
 %%------------------------------------------------------------------------------
@@ -67,10 +69,12 @@ is_an_instance( T1, T2 ) :-
 %%    Succeeds only if both arguments are variants of each other.
 %%    Does not instantiate any variables.
 
-are_variants( T1, T2 ) :-
-        check( T1 = T2 ),                % to weed out obvious "misfits" cheaply
-        is_an_instance( T1, T2 ),
-        is_an_instance( T2, T1 ).
+% are_variants( T1, T2 ) :-
+%         check( T1 = T2 ),              % to weed out obvious "misfits" cheaply
+%         is_an_instance( T1, T2 ),
+%         is_an_instance( T2, T1 ).
+
+are_variants( T1, T2 ) :-  variant( T1, T2 ).    % use the built-in from Eclipse
 
 
 %%------------------------------------------------------------------------------
