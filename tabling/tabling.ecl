@@ -46,10 +46,10 @@ General description
          (TPLP 2008 (?))
 
    The interpreter follows -- somewhat loosely -- the description in the latter
-   paper, but without "semi-naive optimization".  Moreover, "clusters" are
-   detected dynamically, to achieve greater precision (a dependency graph among
-   static calls can only be a rough approximation, a dependency graph among
-   predicates is rougher still).
+   paper, using the "lazy strategy", but without "semi-naive optimization".
+   Moreover, "clusters" are detected dynamically, to achieve greater precision
+   (a dependency graph among static calls can only be a rough approximation, a
+   dependency graph among predicates is rougher still).
 
 
    Nomenclature
