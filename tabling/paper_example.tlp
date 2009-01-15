@@ -13,4 +13,4 @@ q( c, d ) :-  p( X, Y ),  t( X, Y ).
 t( a, b ).
 
 
-?- p( X, Y ).
+?- p( X, Y ).  % expected: p( a, b ),  p( b, c ), p( b, d )
