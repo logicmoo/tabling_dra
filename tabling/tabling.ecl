@@ -11,10 +11,10 @@
 %%%
 %%%    2. A tabled predicate should be declared as such in the program
 %%%       file, e.g.,
-%%%           :- tabled comember/2 .
+%%%           :- tabled ancestor/2 .
 %%%
 %%%       To include files use the usual Prolog syntax:
-%%            :- [ file1, file2, ... ].
+%%%           :- [ file1, file2, ... ].
 %%%
 %%%    2. The program should contain no other directives. It may, however,
 %%%       contain queries, which will be executed immediately upon reading.
@@ -51,12 +51,16 @@ General description
    (a dependency graph among static calls can only be a rough approximation, a
    dependency graph among predicates is rougher still).
 
+   The "lazy strategy" consists in eagerly tabling answers to the subgoals
+   encountered during the evaluation of a query.
+
 
    Nomenclature
    ------------
 
    Some predicates are "tabled", because the user has declared them to be such
    by using a directive.  E.g.,
+
        :- tabled p/2 .
 
    All calls to a tabled predicate that are present in the interpreted program
@@ -106,7 +110,7 @@ General description
            In general, a side-effect of each evaluation of a query will be the
            generation -- for each tabled goal encounted during the evaluation
            -- of a set of facts that form the goal's "least fixed point
-           interpretation".(Of course, if this set is not sufficiently small,
+           interpretation".  (Of course, if this set is not sufficiently small,
            the interpreter will not terminate successfully.)  The facts
            (which need not be ground!) are all entered into the table
            "answered", and the members of different sets are distinguished by
@@ -160,37 +164,49 @@ General description
            for determining whether new answers have been generated during a
            phase of the computation.
 
-   -- pioneer( goal )
+   -- pioneer( goal, index )
 
            If the current goal is tabled, and its variants have not yet been
            encountered during the evaluation of the current query, the goal
-           is called a "pioneer" and recorded in this table.  If a variant goal
-           is encountered subsequently, it will be treated as a "follower".
+           is called a "pioneer" and recorded in this table.  (An unique index
+           is also stored.)
+           If a variant goal is encountered subsequently, it will be treated
+           as a "follower".
            The table is used to detect whether a tabled goal (when first
            encountered) is a pioneer or a follower.
-           This table is cleared each time the evaluation of a query terminates.
-
-   -- not_topmost( goal )
-
            If a pioneer is determined not to be the "topmost looping goal" in a
-           "cluster" of interdependent goals (see ref. [2]), then this is
-           recorded in the table.
+           "cluster" of interdependent goals (see ref. [2]), then it loses the
+           status of a pioneer.  This is because a pioneer is expected to
+           compute the fixpoint (by tabling answers) for itself and its cluster
+           before succeeding: the property is the reason why followers can query
+           only "answer", and do not use their clauses.
+           Note that no two entries in "pioneer" are variants of each other.
            This table is cleared each time the evaluation of a query terminates.
 
-   -- cluster( goal, list of goals )
+   -- pioneer_index( natural number )
 
-           Whenever a "cluster" of interdependent goals is encountered, it is
-           entered into this table.  The first argument is the topmost goal in
-           the cluster (which is always a pioneer), the list contains the rest.
-           Information about goals that are not tabled is not stored in
-           "cluster".
-           Please note that clusters may be nested, so the topmost goal in
-           a cluster is not necessarily the "topmost looping goal" in the sense
-           of ref. [2] (i.e., it may be stored in the table "not_topmost").
-           Note also that the first arguments of two different entries in
-           "cluster" cannot be variants of each other, as only one such goal
-           can be a pioneer.
+           This is a single fact that holds the index to be used for the next
+           entry in "loop".
+
+   -- loop( pioneer goal, list of goals, index )
+
+           A loop is discovered when the current goal is a variant of its
+           ancestor.  If the ancestor is a pioneer, information about the
+           pioneer ancestor and the tabled goals between the pioneer and
+           the variant is stored in "loop".  (An unique index is also stored.)
+           A number of "loop" entries may exist for a given pioneer: together,
+           they describe a "cluster" (see ref. [2]).  Before returning any
+           answers, a pioneer will compute its own fixpoint as well as
+           the fixpoints of the goals in its cluster.
+           When a goal loses its pioneer status (because it is determined to
+           be a part of a larger loop), the associated entries in "loop" are
+           removed.
            This table is cleared each time the evaluation of a query terminates.
+
+   -- loop_index( natural number )
+
+           This is a single fact that holds the index to be used for the next
+           entry in "loop".
 
    -- completed( goal )
 
@@ -217,23 +233,29 @@ default_extension( ".tlp" ).
 :- dynamic tabled/1 .
 :- dynamic answer/2 .
 :- dynamic number_of_answers/1 .
-:- dynamic pioneer/1 .
-:- dynamic not_topmost/1 .
-:- dynamic cluster/2 .
+:- dynamic pioneer/2 .
+:- dynamic pioneer_index/1 .
+:- dynamic loop/2 .
+:- dynamic loop_index/1 .
 :- dynamic completed/1 .
 
 number_of_answers( 0 ).
+pioneer_index( 0 ).
+loop_index( 0 ).
 
 
 initialise :-
         retractall( tabled( _ )            ),
         retractall( answer( _, _ )         ),
         retractall( number_of_answers( _ ) ),
-        retractall( pioneer( _ )           ),
-        retractall( not_topmost( _ )       ),
-        retractall( cluster( _, _ )        ),
+        retractall( pioneer( _, _ )         ),
+        retractall( pioneer_index( _ )     ),
+        retractall( loop( _, _ )           ),
+        retractall( loop_index( _ )        ),
         retractall( completed( _ )         ),
-        assert( number_of_answers( 0 ) ).
+        assert( number_of_answers( 0 ) ),
+        assert( pioneer_index( 0 ) ),
+        assert( loop_index( 0 ) ).
 
 
 
@@ -294,9 +316,12 @@ execute_directive( tabled P / K ) :-                  % declaration of tabled
 
 query( Goals ) :-
         solve( Goals, [] ),
-        retractall( pioneer( _ )     ),
-        retractall( not_topmost( _ ) ),
-        retractall( cluster( _, _ )  ).
+        retractall( pioneer( _, _ )    ),
+        retractall( pioneer_index( _ ) ),
+        retractall( loop( _, _ )       ),
+        retractall( loop_index( _ )    ),
+        assert( pioneer_index( 0 ) ),
+        assert( loop_index( 0 ) ).
 
 
 
@@ -304,6 +329,12 @@ query( Goals ) :-
 %% solve( + sequence of goals, + stack ):
 %% Solve the sequence of goals, maintaining information about the current chain
 %% of ancestors (stack).
+%%
+%% Please note that the following invariant must be maintained:
+%%    A pioneer is
+%%    (a) either an active goal (i.e., the current goal, or present in the
+%%        chain of ancestors);
+%%    (b) or marked as completed.
 
 :- mode solve( +, + ).
 
@@ -363,43 +394,10 @@ solve( Goal, _ ) :-
         get_answer( Goal ).
 
 
-% A pioneer goal is solved by rules, producing results that are stored in
-% "answer": after this is done, "answer" is used to pass on the results.
-%
-% Moreover, if the goal is also a topmost goal (i.e., not inside a larger
-% "loop"), then its answer set is extended to the least fixed point and its
-% cluster is marked as complete.
-%
-% (Note that a pioneer is topmost by default, but may cease to become topmost
-% when some descendant goal finds a variant ancestor, dynamically adding
-% "inner" goals of the loop to "not_topmost".  See the call to
-% variant_of_ancestor/2 in the next clause.)
-
-solve( Goal, Stack ) :-
-        is_a_pioneer( Goal ),
-        !,
-        store_all_solutions_by_rules( Goal, Stack ),
-        (
-            ground( Goal )              % a ground goal can have only one answer
-        ->
-            complete_goal( Goal )
-        ;
-            (
-                is_not_topmost( Goal )
-            ->
-                true
-            ;
-                compute_fixed_point( Goal, Stack ),                    % topmost
-                complete_cluster( Goal )
-            )
-        ),
-        get_answer( Goal ).
-
-
-% A tabled goal that is not a pioneer and that, moreover, has a variant among
-% its ancestors.  All the intermediate tabled ancestors are marked as not
-% topmost, and a new cluster is identified.
-% Then only the existing (most likely incomplete) results from "answer" are
+% A tabled goal that has a variant among its ancestors.
+% See the comment to variant_of_ancestor for a more detailed description of
+% the actions taken.
+% Only the existing (most likely incomplete) results from "answer" are
 % returned before failure.
 
 solve( Goal, Stack ) :-
@@ -408,11 +406,37 @@ solve( Goal, Stack ) :-
         get_answer( Goal ).
 
 
-% A tabled goal that is not completed, not a pioneer, and has no variant among
-% its ancestors.  Just return the answers that are currently available.
+% A pioneer goal is solved by rules, producing results that are stored in
+% "answer": after this is done, "answer" is used to pass on the results.
+%
+% Moreover, the goal's answer set is extended to the least fixed point and its
+% cluster is marked as complete.
+%
+% (Note that a pioneer but may cease to be one when some descendant goal finds
+%  a variant ancestor that is also an ancestor of the pioneer.
+%  See variant_of_ancestor/2.)
 
-solve( Goal, _ ) :-
+solve( Goal, Stack ) :-
+        \+ is_a_variant_of_a_pioneer( Goal ),
+        !,
+        add_pioneer( Goal ),
+        store_all_solutions_by_rules( Goal, Stack ),
+        (
+            is_a_variant_of_a_pioneer( Goal )      % might have lost its status!
+        ->
+            compute_fixed_point( Goal, Stack ),
+            complete_cluster( Goal )
+        ;
+            true
+        ),
         get_answer( Goal ).
+
+
+% A tabled goal that is not completed, not a pioneer on entry, and has no
+% variant among its ancestors.  Something is wrong!
+
+solve( Goal, Stack ) :-
+        fatal_error( "IMPOSSIBLE!", [ Goal| Stack ] ).
 
 
 
@@ -477,21 +501,24 @@ compute_fixed_point_( Goal, Stack, NAns ) :-
 %% variant_of_ancestor( + goal, + list of goals ):
 %% Succeeds if the goal is a variant of some member of the list.
 %%
-%% SIDE EFFECT: If successful, then intermediary tabled goals will be marked as
-%%              not topmost, and the entire prefix of the list upto (and
-%%              including) the variant ancestor will be identified as a cluster
-%%              after filtering out goals that are not tabled.
+%% SIDE EFFECT: If successful, then intermediate pioneer goals will lose their
+%%              status as pioneers, and the associated entries in "loop" will
+%%              be removed.  Moreover, if the variant ancestor is a pioneer,
+%%              the entire prefix of the list upto (and including) the variant
+%%              ancestor will be added to the cluster of that ancestor (by
+%%              storing it in "loop"), after filtering out goals that are not
+%%              tabled.
 
 :- mode variant_of_ancestor( +, + ).
 
 variant_of_ancestor( Goal, List ) :-
-        append( Prefix, [ G | _ ], List ),               % i.e., split the list
+        append( Prefix, [ G | _ ], List ),                % i.e., split the list
         are_variants( Goal, G ),
         keep_tabled( Prefix, TabledPrefix ),
-        assert( cluster( G, TabledPrefix ) ),
+        add_loop( G, TabledPrefix ),
         (
             member( M, TabledPrefix ),
-            mk_not_topmost( M ),
+            rescind_pioneer_status( M ),
             fail
         ;
             true
@@ -513,6 +540,55 @@ keep_tabled( [ G | Gs ], [ G | TGs ] ) :-
 keep_tabled( [ _G | Gs ], TGs ) :-
         % \+ tabled( G ),
         keep_tabled( Gs, TGs ).
+
+
+%% rescind_pioneer_status( + goal ):
+%% If the goal is tabled in "pioneer", remove the entry and the associated
+%% cluster (i.e., entries in "loop").
+
+:- mode rescind_pioneer_status( + ).
+
+rescind_pioneer_status( Goal ) :-
+        is_a_variant_of_a_pioneer( Goal ),
+        !,
+        remove_pioneer( Goal ),
+        remove_loops( Goal ).
+
+rescind_pioneer_status( _ ).
+
+
+%% complete_cluster( + goal ):
+%% If the goal has an associated cluster, make sure all the goals in the cluster
+%% are marked as complete.  If there is no associated cluster, just mark the
+%% goal as complete.
+%% Recall that a cluster may consist of a number of "loops".
+
+:- mode complete_cluster( + ).
+
+complete_cluster( Goal ) :-
+        complete_goal( Goal ),
+        complete_cluster_if_any( Goal ).
+
+%
+:- mode complete_cluster_if_any( + ).
+
+complete_cluster_if_any( Goal ) :-
+        loop( G, Gs ),
+        are_variants( G, Goal ),
+        complete_goals( Gs ),
+        fail.
+
+complete_cluster_if_any( _ ).
+
+%
+:- mode complete_goals( + ).
+
+complete_goals( Gs ) :-
+        member( G, Gs ),
+        complete_goal( G ),
+        fail.
+
+complete_goals( _ ).
 
 
 
@@ -584,79 +660,68 @@ is_completed( Goal ) :-
 
 
 
-%% complete_cluster( + goal ):
-%% If the goal has an associated cluster, make sure all the goals in the cluster
-%% are marked as complete.  If there is no associated cluster, just mark the
-%% goal as complete.
+%% is_a_variant_of_a_pioneer( + goal ):
+%% Succeeds if the goal is a variant of another goal that is tabled in
+%% "pioneer".
 
-:- mode complete_cluster( + ).
+:- mode is_a_variant_of_a_pioneer( + ).
 
-complete_cluster( Goal ) :-
-        complete_goal( Goal ),
-        complete_cluster_if_any( Goal ).
+is_a_variant_of_a_pioneer( Goal ) :-
+        pioneer( PG, _Index ),
+        are_variants( Goal, PG ).
 
-%
-:- mode complete_cluster_if_any( + ).
 
-complete_cluster_if_any( Goal ) :-
-        cluster( G, Gs ),
+
+%% make_a_pioneer( + goal ):
+%% Add an entry for this goal to "pioneer".
+
+:- mode add_pioneer( + ).
+
+add_pioneer( Goal ) :-
+        once( retract( pioneer_index( NewIndex ) ) ),
+        N is NewIndex + 1,
+        assert( pioneer_index( N ) ),
+        assert( pioneer( Goal, NewIndex ) ).
+
+
+
+%% remove_pioneer( + goal ):
+%% Remove the pioneer entry for this goal.
+
+:- mode remove_pioneer( + ).
+
+remove_pioneer( Goal ) :-
+        pioneer( G, Index ),
         are_variants( G, Goal ),
-        !,
-        complete_goals( Gs ).
+        once( retract( pioneer( _, Index ) ) ).
 
-complete_cluster_if_any( _ ).
 
-%
-:- mode complete_goals( + ).
 
-complete_goals( Gs ) :-
-        member( G, Gs ),
-        complete_goal( G ),
+%% add_loop( + goal, + list of goals ):
+%% Add an entry to "loop".
+
+:- mode add_loop( +, + ).
+
+add_loop( Goal, Goals ) :-
+        once( retract( loop_index( NextIndex ) ) ),
+        N is NextIndex + 1,
+        assert( loop_index( N ) ),
+        assert( loop( Goal, Goals, NextIndex ) ).
+
+
+
+%% remove_loops( + goal ):
+%% Remove all entries in "loop" that are associated with this goal.
+
+:- mode remove_loops( + ).
+
+remove_loops( Goal ) :-
+        loop( G,_, Indx ),
+        are_variants( G, Goal ),
+        once( retract( loop( _, _, Indx ) ) ),
         fail.
 
-complete_goals( _ ).
-
-
-
-
-%% is_a_pioneer( + goal ):
-%% Succeeds if the goal is not a variant of another goal that has already been
-%% encountered during this computation.
-%%
-%% SIDE EFFECT: Adds the goal to table "pioneer".
-
-:- mode is_a_pioneer( + ).
-
-is_a_pioneer( Goal ) :-
-        \+ ( pioneer( PG ),  are_variants( Goal, PG ) ),
-        assert( pioneer( Goal ) ).
-
-
-
-%% mk_not_topmost( + goal ):
-%% Make sure that the goal is stored in "not_topmost".
-
-:- mode mk_not_topmost( + ).
-
-mk_not_topmost( Goal ) :-
-        is_not_topmost( Goal ),
-        !.
-
-mk_not_topmost( Goal ) :-
-        % \+ is_not_topmost( Goal ),
-        assert( not_topmost( Goal ) ).
-
-
-
-%% is_not_topmost( + goal ):
-%% Succeeds iff the goal is a variant of a goal that has been saved in
-%% table "not_topmost".
-
-:- mode is_not_topmost( + ).
-
-is_not_topmost( Goal ) :-
-        not_topmost( G ),
-        are_variants( Goal, G ).
+remove_loops( _ ).
 
 
 
