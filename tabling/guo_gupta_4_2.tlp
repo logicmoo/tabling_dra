@@ -1,0 +1,11 @@
+:- tabled r/2.
+
+r( X, Y ) :-  p( X, Z ),  r( Z, Y ).
+r( X, Y ) :-  p( X, Y ).
+
+p( a, b ).
+p( b, a ).
+
+?- r( a, Y ).
+
+?- r( b, Y ).
