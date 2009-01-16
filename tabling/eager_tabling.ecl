@@ -262,13 +262,23 @@ initialise :-
 builtin( true         ).
 builtin( false        ).
 builtin( fail         ).
-builtin( _ = _        ).
-builtin( _ \= _       ).
 builtin( \+( _ )      ).   % there is special treatment for this, see solve/2
 builtin( once _       ).   % there is special treatment for this, see solve/2
 builtin( (_ -> _ ; _) ).   % there is special treatment for this, see solve/2
 builtin( (_ ; _)      ).   % there is special treatment for this, see solve/2
 builtin( (_ , _)      ).   % there is special treatment for this, see solve/2
+builtin( _ = _        ).
+builtin( _ \= _       ).
+builtin( _ > _        ).
+builtin( _ >= _       ).
+builtin( _ =< _       ).
+builtin( _ < _        ).
+builtin( _ is _       ).
+builtin( write( _ )   ).
+builtin( writeln( _ ) ).
+builtin( nl           ).
+builtin( read( _ )    ).
+
 
 
 
