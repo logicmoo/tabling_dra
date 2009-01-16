@@ -268,7 +268,7 @@ process_directive( Directive ) :-                % unsupported directive
 
 %% ensure_dynamic( + clause ):
 %% Make sure the predicate of this clause is dynamic.
-%% known/2 is used to avoid multiple declarations (not that it matters...)
+%% known/2 is used to avoid multiple declarations.
 
 :- mode ensure_dynamic( + ).
 
