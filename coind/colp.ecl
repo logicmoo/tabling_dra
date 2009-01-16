@@ -103,65 +103,65 @@ execute_directive( coinductive P / K ) :-          % declaration of coinductive
 %% Execute a query.
 
 query( Goal ) :-
-        solve( [], Goal ).
+        solve( Goal, [] ).
 
 
 
-%% solve( + list of coinductive hypotheses, + goal ):
+%% solve( + goal, + list of coinductive hypotheses ):
 %% Solve a goal, given this table of co-inductive hypotheses.
 %% NOTE: the cut is not supported.
 
 
-solve( Hypotheses, (Cond -> Then ; _Else) ) :-    % conditional, 1st alternative
-        solve( Hypotheses, Cond ),
+solve( (Cond -> Then ; _Else), Hypotheses ) :-    % conditional, 1st alternative
+        solve( Cond, Hypotheses ),
         !,
-        solve( Hypotheses, Then ).
+        solve( Then, Hypotheses ).
 
-solve( Hypotheses, (_Cond -> _Then ; Else) ) :-   % conditional, 2nd alternative
+solve( (_Cond -> _Then ; Else), Hypotheses ) :-   % conditional, 2nd alternative
         !,
-        solve( Hypotheses, Else ).
+        solve( Else, Hypotheses ).
 
-solve( Hypotheses, ( Goal ; _ ) ) :-              % disjunction, 1st alternative
-        solve( Hypotheses, Goal ).
+solve( ( Goal ; _ ), Hypotheses ) :-              % disjunction, 1st alternative
+        solve( Goal, Hypotheses ).
 
-solve( Hypotheses, ( _ ; Goal ) ) :-              % disjunction, 2nd alternative
+solve( ( _ ; Goal ), Hypotheses ) :-              % disjunction, 2nd alternative
         !,
-        solve( Hypotheses, Goal ).
+        solve( Goal, Hypotheses ).
 
-solve( Hypotheses, ( Goal1 , Goal2 ) ) :-         % conjunction
+solve( ( Goal1 , Goal2 ), Hypotheses ) :-         % conjunction
         !,
-        solve( Hypotheses, Goal1 ),
-        solve( Hypotheses, Goal2 ).
+        solve( Goal1, Hypotheses ),
+        solve( Goal2, Hypotheses ).
 
-solve( Hypotheses, once Goal ) :-                 % yield only one solution
+solve( once Goal, Hypotheses ) :-                 % yield only one solution
         !,
-        once solve( Hypotheses, Goal ).
+        once solve( Goal, Hypotheses ).
 
-solve( _Hypotheses, Goal ) :-                     % other supported built-in
+solve( Goal, _Hypotheses ) :-                     % other supported built-in
         builtin( Goal ),
         !,
         call( Goal ).
 
-solve( Hypotheses, Goal ) :-                      % call a coinductive predicate
+solve( Goal, Hypotheses ) :-                      % call a coinductive predicate
         coinductive( Goal ),
         !,
-        solve_coinductive_call( Hypotheses, Goal ).
+        solve_coinductive_call( Goal, Hypotheses ).
 
-solve( Hypotheses, Goal ) :-                      % call a "normal" predicate
+solve( Goal, Hypotheses ) :-                      % call a "normal" predicate
         clause( Goal, Body )@interpreted,
-        solve( Hypotheses, Body ).
+        solve( Body, Hypotheses ).
 
 
 
 %% solve_coinductive_call( + list of coinductive hypotheses, + goal ):
 % Solve a call to a coinductive predicate.
 
-solve_coinductive_call( Hypotheses, Goal ) :-
+solve_coinductive_call( Goal, Hypotheses ) :-
             member( Goal, Hypotheses ).                   % the hypotheses first
 
-solve_coinductive_call( Hypotheses, Goal ) :-
+solve_coinductive_call( Goal, Hypotheses ) :-
             clause( Goal, Body )@interpreted,
-            solve( [ Goal | Hypotheses ], Body ).         % then the clauses
+            solve( Body, [ Goal | Hypotheses ] ).         % then the clauses
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
