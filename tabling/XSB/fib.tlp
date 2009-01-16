@@ -26,9 +26,9 @@
 
 
 demo :-
-	write('Enter N : '), read(N), nl,
-	fib(N, Fib),
-	write('Fib of '), write(N), write(' is '), writeln(Fib).
+        write('Enter N : '), read(N), nl,
+        fib(N, Fib),
+        write('Fib of '), write(N), write(' is '), writeln(Fib).
 
 fib(N, X) :- fib0(N, X, _).
 
@@ -37,15 +37,16 @@ fib(N, X) :- fib0(N, X, _).
 fib0(0, 1, 0).
 fib0(1, 1, 1).
 fib0(N, X, X1) :-
-	N > 1,
-	N2 is N - 2,
-	fib0(N2, X2, X3),
-	X1 is X2 + X3,
-	X is X1+X2.
+        N > 1,
+        N2 is N - 2,
+        fib0(N2, X2, X3),
+        X1 is X2 + X3,
+        X is X1+X2.
 
 ?- fib( 0, N ).
 ?- fib( 1, N ).
 ?- fib( 2, N ).
 ?- fib( 3, N ).
+?- fib( 9, N ).
 
 ?- demo.
