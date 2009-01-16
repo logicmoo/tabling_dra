@@ -24,8 +24,7 @@
 %%%       be considered carefully: some might require special treatment by
 %%%       the metainterpreter.
 
-%%% LIMITATIONS: - The interpreted program should not contain cuts or
-%%%                occurrences of the if-then-else construct.
+%%% LIMITATIONS: - The interpreted program should not contain cuts.
 %%%              - Error detection is quite rudimentary.
 
 
@@ -256,17 +255,20 @@ initialise :-
 
 %%%%%  Built-in predicates  %%%%
 %%
-%%  NOTE: Just adding "!" or " _ -> _ ; _" won't do the trick, the main
-%%        metainterpreter would have to be modified.
+%%  NOTE: Just adding "!" won't do the trick, the main metainterpreter would
+%%        have to be modified substantially.
 %%        Certain other built-ins may also require special treatment.
 
-builtin( true    ).
-builtin( false   ).
-builtin( fail    ).
-builtin( _ = _   ).
-builtin( _ \= _  ).
-builtin( \+( _ ) ).   % there is special treatment for this, see solve/2
-builtin( once _  ).   % there is special treatment for this, see solve/2
+builtin( true         ).
+builtin( false        ).
+builtin( fail         ).
+builtin( _ = _        ).
+builtin( _ \= _       ).
+builtin( \+( _ )      ).   % there is special treatment for this, see solve/2
+builtin( once _       ).   % there is special treatment for this, see solve/2
+builtin( (_ -> _ ; _) ).   % there is special treatment for this, see solve/2
+builtin( (_ ; _)      ).   % there is special treatment for this, see solve/2
+builtin( (_ , _)      ).   % there is special treatment for this, see solve/2
 
 
 
@@ -331,13 +333,6 @@ query( Goals ) :-
 
 :- mode solve( +, + ).
 
-% Note that even during the computation of once/1 a whole set of answers
-% may become tabled.
-
-solve( once Goal, Stack ) :-
-        !,
-        solve( Goal, Stack ),
-        !.
 
 % Note that even during the computation of \+/1 a whole set of answers
 % may become tabled.
@@ -347,13 +342,28 @@ solve( \+ Goal, Stack ) :-
         \+ solve( Goal, Stack ).
 
 
-solve( BuiltIn, _ ) :-
-        builtin( BuiltIn ),
+% Note that even during the computation of once/1 a whole set of answers
+% may become tabled.
+
+solve( once Goal, Stack ) :-
         !,
-        call( BuiltIn ).
+        solve( Goal, Stack ),
+        !.
 
 
-% A disjunction
+% A conditional.
+
+solve( (Cond -> Then ; _Else), Stack ) :-
+        solve( Cond, Stack ),
+        !,
+        solve( Then, Stack ).
+
+solve( (_Cond -> _Then ; Else), Stack ) :-
+        !,
+        solve( Else, Stack ).
+
+
+% A disjunction without a conditional.
 
 solve( (Goals ; _), Stack ) :-
         solve( Goals, Stack ).
@@ -363,12 +373,20 @@ solve( (_ ; Goals), Stack ) :-
         solve( Goals, Stack ).
 
 
-% A conjunction
+% A conjunction.
 
 solve( (Goals1 , Goals2), Stack ) :-
         !,
         solve( Goals1, Stack ),
         solve( Goals2, Stack ).
+
+
+% Some other supported built-in.
+
+solve( BuiltIn, _ ) :-
+        builtin( BuiltIn ),
+        !,
+        call( BuiltIn ).
 
 
 % A "normal" (i.e., not tabled) goal.
@@ -683,7 +701,7 @@ add_pioneer( Goal ) :-
 remove_pioneer( Goal ) :-
         pioneer( G, Index ),
         are_variants( G, Goal ),
-        once( retract( pioneer( _, Index ) ) ).
+        once retract( pioneer( _, Index ) ).
 
 
 
@@ -707,7 +725,7 @@ add_loop( Goal, Goals ) :-
 remove_loops( Goal ) :-
         loop( G,_, Indx ),
         are_variants( G, Goal ),
-        once( retract( loop( _, _, Indx ) ) ),
+        once retract( loop( _, _, Indx ) ),
         fail.
 
 remove_loops( _ ).
