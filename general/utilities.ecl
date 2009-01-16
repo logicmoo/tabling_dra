@@ -147,7 +147,7 @@ is_good_clause( T ) :-
 %% get_clause_head( + term, - head ):
 %% Treat this non-variable term as a clause, get its head.
 
-:-mode get_clause_head( + ).
+:-mode get_clause_head( +, - ).
 
 get_clause_head( H :- _, H ) :-  !.
 get_clause_head( H     , H ).
