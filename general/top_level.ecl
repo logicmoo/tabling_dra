@@ -137,7 +137,8 @@ process_file( FileName ) :-
         !,
         write(   error, "*** Illegal file name \"" ),
         write(   error, FileName ),
-        writeln( error, "\" (not an atom) will be ignored. ***" ).
+        writeln( error, "\" (not an atom). ***" ),
+        abort.
 
 process_file( FileName ) :-
         atom( FileName ),
@@ -183,9 +184,9 @@ ensure_extension( FileName, FileName ).       % extension present, or no default
 check_non_variable( V ) :-
         var( V ),
         !,
-        write(   error, "--- WARNING: variable term (" ),
-        write(   error, V ),
-        writeln( error, ".) is ignored. ---" ),
+        write(   warning_output, "--- WARNING: variable term (" ),
+        write(   warning_output, V ),
+        writeln( warning_output, ".) is ignored. ---" ),
         fail.
 
 check_non_variable( _ ).
@@ -225,9 +226,10 @@ process_term( Clause, _ ) :-
 process_term( Clause, _ ) :-
         % Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
         % \+ is_good_clause( Clause ),
-        write(   error, 'Erroneous clause: \"' ),
+        write(   error, '*** Erroneous clause: \"' ),
         write(   error, Clause ),
-        writeln( error, '\"' ).
+        writeln( error, '\" ***' ),
+        abort.
 
 
 %% include_files( + list of file names ):
@@ -257,9 +259,10 @@ process_directive( Directive ) :-
 process_directive( Directive ) :-                % unsupported directive
         \+ legal_directive( Directive ),
         !,
-        write(   error, '+++ Unknown directive: \"' ),
+        write(   error, '*** Unknown directive: \"' ),
         write(   error, (:- Directive) ),
-        writeln( error, '.\" +++' ).
+        writeln( error, '.\" ***' ),
+        abort.
 
 
 
