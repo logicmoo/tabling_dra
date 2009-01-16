@@ -23,8 +23,7 @@
 %%%    3. If the program invokes a built-in predicate, that predicate must
 %%%       be declared in the table builtin/1 below.
 
-%%% LIMITATIONS: - The interpreted program should not contain cuts or
-%%%                occurrences of the if-then-else construct.
+%%% LIMITATIONS: - The interpreted program should not contain cuts.
 %%%              - Error detection is quite rudimentary.
 
 
@@ -37,17 +36,19 @@
 
 %%%%%  Built-in predicates  %%%%
 %%
-%%  NOTE: Just adding "!" or " _ -> _ ; _" won't do the trick, the main
-%%        metainterpreter would have to be modified.
+%%  NOTE: Just adding "!" won't do the trick, the main metainterpreter
+%%        would have to be modified.
 
-builtin( true      ).
-builtin( false     ).
-builtin( fail      ).
-builtin( \+( _ )   ).
-builtin( _ = _     ).
-builtin( _ \= _    ).
-builtin( once( _ ) ).   % there is special treatment for this, see
-                        % solve_builtin_call/2 below.
+builtin( true        ).
+builtin( false       ).
+builtin( fail        ).
+builtin( _ = _       ).
+builtin( _ \= _      ).
+builtin( \+( _ )     ).
+builtin( once _      ).   % special treatment in solve_builtin_call/2.
+builtin( (_ ->_ ; _) ).   % special treatment in solve_builtin_call/2.
+builtin( (_ ; _)     ).   % special treatment in solve_builtin_call/2.
+builtin( (_ , _)     ).   % special treatment in solve_builtin_call/2.
 
 
 
@@ -108,66 +109,59 @@ query( Goal ) :-
 
 %% solve( + list of coinductive hypotheses, + goal ):
 %% Solve a goal, given this table of co-inductive hypotheses.
-%% NOTE: cut or if-then-else not supported.
+%% NOTE: the cut is not supported.
 
-% General goal:
 
-solve( Hypotheses, ( Goal ; _ ) ) :-          % a disjunction, 1st alternative
+solve( Hypotheses, (Cond -> Then ; _Else) ) :-    % conditional, 1st alternative
+        solve( Hypotheses, Cond ),
+        !,
+        solve( Hypotheses, Then ).
+
+solve( Hypotheses, (_Cond -> _Then ; Else) ) :-   % conditional, 2nd alternative
+        !,
+        solve( Hypotheses, Else ).
+
+solve( Hypotheses, ( Goal ; _ ) ) :-              % disjunction, 1st alternative
         solve( Hypotheses, Goal ).
 
-solve( Hypotheses, ( _ ; Goal ) ) :-          % a disjunction, 2nd alternative
+solve( Hypotheses, ( _ ; Goal ) ) :-              % disjunction, 2nd alternative
         !,
         solve( Hypotheses, Goal ).
 
-solve( Hypotheses, ( Goal1 , Goal2 ) ) :-     % a conjunction
+solve( Hypotheses, ( Goal1 , Goal2 ) ) :-         % conjunction
         !,
         solve( Hypotheses, Goal1 ),
         solve( Hypotheses, Goal2 ).
 
-solve( Hypotheses, Call ) :-                  % a single call
-        Call \= ( _ ; _ ),
-        Call \= ( _ , _ ),
-        solve_call( Hypotheses, Call ).
-
-
-% A single call:
-
-solve_call( Hypotheses, Call ) :-                         % a built-in
-        builtin( Call ),
+solve( Hypotheses, once Goal ) :-                 % yield only one solution
         !,
-        solve_builtin_call( Hypotheses, Call ).
+        once solve( Hypotheses, Goal ).
 
-solve_call( Hypotheses, Call ) :-                         % coinductive
-        coinductive( Call ),
+solve( _Hypotheses, Goal ) :-                     % other supported built-in
+        builtin( Goal ),
         !,
-        solve_coinductive_call( Hypotheses, Call ).
+        call( Goal ).
 
-solve_call( Hypotheses, Call ) :-                         % not coinductive
-        \+ builtin( Call ),
-        \+ coinductive( Call ),
-        clause( Call, Body )@interpreted,
+solve( Hypotheses, Goal ) :-                      % call a coinductive predicate
+        coinductive( Goal ),
+        !,
+        solve_coinductive_call( Hypotheses, Goal ).
+
+solve( Hypotheses, Goal ) :-                      % call a "normal" predicate
+        clause( Goal, Body )@interpreted,
         solve( Hypotheses, Body ).
 
 
-% A single coinductive call:
 
-solve_coinductive_call( Hypotheses, Call ) :-
-            member( Call, Hypotheses ).                   % the hypotheses first
+%% solve_coinductive_call( + list of coinductive hypotheses, + goal ):
+% Solve a call to a coinductive predicate.
 
-solve_coinductive_call( Hypotheses, Call ) :-
-            clause( Call, Body )@interpreted,
-            solve( [ Call | Hypotheses ], Body ).          % then the clauses
+solve_coinductive_call( Hypotheses, Goal ) :-
+            member( Goal, Hypotheses ).                   % the hypotheses first
 
-
-% A single built-in call:
-
-solve_builtin_call( Hypotheses, once( Call ) ) :-
-        once( solve( Hypotheses, Call ) ).
-
-
-solve_builtin_call( _, Call ) :-
-        Call \= once( _ ),
-        Call.
+solve_coinductive_call( Hypotheses, Goal ) :-
+            clause( Goal, Body )@interpreted,
+            solve( [ Goal | Hypotheses ], Body ).         % then the clauses
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
