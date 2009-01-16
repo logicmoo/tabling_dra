@@ -158,11 +158,11 @@ General description
            will be avoided.  In general, entries in "answer" will not be
            variants of each other.
 
-   -- number_of_answers( natural number )
+   -- number_of_answers
 
-           This is a single fact that records the size of "answer".  It is used
-           for determining whether new answers have been generated during a
-           phase of the computation.
+           This is a non-logical variable that  records the size of "answer".
+           It is used for determining whether new answers have been generated
+           during a phase of the computation.
 
    -- pioneer( goal, index )
 
@@ -183,10 +183,10 @@ General description
            Note that no two entries in "pioneer" are variants of each other.
            This table is cleared each time the evaluation of a query terminates.
 
-   -- pioneer_index( natural number )
+   -- pioneer_index
 
-           This is a single fact that holds the index to be used for the next
-           entry in "loop".
+           This is a non-logical variable that holds the index to be used for
+           the next entry in "pioneer".
 
    -- loop( pioneer goal, list of goals, index )
 
@@ -203,10 +203,10 @@ General description
            removed.
            This table is cleared each time the evaluation of a query terminates.
 
-   -- loop_index( natural number )
+   -- loop_index
 
-           This is a single fact that holds the index to be used for the next
-           entry in "loop".
+           This is a non-logical variable that holds the index to be used for
+           the next entry in "loop".
 
    -- completed( goal )
 
@@ -223,6 +223,8 @@ General description
                 ).
 
 
+
+
 % If a file name has no extension, add ".tlp"
 
 default_extension( ".tlp" ).
@@ -232,30 +234,23 @@ default_extension( ".tlp" ).
 
 :- dynamic tabled/1 .
 :- dynamic answer/2 .
-:- dynamic number_of_answers/1 .
 :- dynamic pioneer/2 .
-:- dynamic pioneer_index/1 .
-:- dynamic loop/2 .
-:- dynamic loop_index/1 .
+:- dynamic loop/3 .
 :- dynamic completed/1 .
 
-number_of_answers( 0 ).
-pioneer_index( 0 ).
-loop_index( 0 ).
-
+:- setval( number_of_answers, 0 ).
+:- setval( pioneer_index,     0 ).
+:- setval( loop_index,        0 ).
 
 initialise :-
-        retractall( tabled( _ )            ),
-        retractall( answer( _, _ )         ),
-        retractall( number_of_answers( _ ) ),
-        retractall( pioneer( _, _ )         ),
-        retractall( pioneer_index( _ )     ),
-        retractall( loop( _, _ )           ),
-        retractall( loop_index( _ )        ),
-        retractall( completed( _ )         ),
-        assert( number_of_answers( 0 ) ),
-        assert( pioneer_index( 0 ) ),
-        assert( loop_index( 0 ) ).
+        retractall( tabled( _ )     ),
+        retractall( answer( _, _ )  ),
+        retractall( pioneer( _, _ ) ),
+        retractall( loop( _, _, _ ) ),
+        retractall( completed( _ )  ),
+        setval( number_of_answers, 0 ),
+        setval( pioneer_index,     0 ),
+        setval( loop_index,        0 ).
 
 
 
@@ -316,12 +311,10 @@ execute_directive( tabled P / K ) :-                  % declaration of tabled
 
 query( Goals ) :-
         solve( Goals, [] ),
-        retractall( pioneer( _, _ )    ),
-        retractall( pioneer_index( _ ) ),
-        retractall( loop( _, _ )       ),
-        retractall( loop_index( _ )    ),
-        assert( pioneer_index( 0 ) ),
-        assert( loop_index( 0 ) ).
+        retractall( pioneer( _, _ )  ),
+        retractall( loop( _, _ , _ ) ),
+        setval( pioneer_index, 0 ),
+        setval( loop_index,    0 ).
 
 
 
@@ -477,7 +470,7 @@ solve_by_rules( Goal, Stack ) :-
 :- mode compute_fixed_point( +, + ).
 
 compute_fixed_point( Goal, Stack ) :-
-        number_of_answers( NAns ),
+        getval( number_of_answers, NAns ),
         compute_fixed_point_( Goal, Stack, NAns ).
 
 %
@@ -488,11 +481,11 @@ compute_fixed_point_( Goal, Stack, _ ) :-
         fail.
 
 compute_fixed_point_( _, _, NAns ) :-
-        number_of_answers( NAns ),                              % no new answers
+        getval( number_of_answers, NAns ),                      % no new answers
         !.
 
 compute_fixed_point_( Goal, Stack, NAns ) :-
-        number_of_answers( NA ),
+        getval( number_of_answers, NA ),
         NA =\= NAns,                                            % new answers,
         compute_fixed_point_( Goal, Stack, NA ).                %   so iterate
 
@@ -573,7 +566,7 @@ complete_cluster( Goal ) :-
 :- mode complete_cluster_if_any( + ).
 
 complete_cluster_if_any( Goal ) :-
-        loop( G, Gs ),
+        loop( G, Gs, _ ),
         are_variants( G, Goal ),
         complete_goals( Gs ),
         fail.
@@ -613,9 +606,7 @@ memo( Goal, Fact ) :-
 memo( Goal, Fact ) :-
         % No variant pair in "answer",
         assert( answer( Goal, Fact ) ),
-        retract( number_of_answers( N ) ),
-        N1 is N + 1,
-        assert( number_of_answers( N1 ) ).
+        incval( number_of_answers ).
 
 
 
@@ -678,9 +669,8 @@ is_a_variant_of_a_pioneer( Goal ) :-
 :- mode add_pioneer( + ).
 
 add_pioneer( Goal ) :-
-        once( retract( pioneer_index( NewIndex ) ) ),
-        N is NewIndex + 1,
-        assert( pioneer_index( N ) ),
+        getval( pioneer_index, NewIndex ),
+        incval( pioneer_index ),
         assert( pioneer( Goal, NewIndex ) ).
 
 
@@ -703,9 +693,8 @@ remove_pioneer( Goal ) :-
 :- mode add_loop( +, + ).
 
 add_loop( Goal, Goals ) :-
-        once( retract( loop_index( NextIndex ) ) ),
-        N is NextIndex + 1,
-        assert( loop_index( N ) ),
+        getval( loop_index, NextIndex ),
+        incval( loop_index ),
         assert( loop( Goal, Goals, NextIndex ) ).
 
 
