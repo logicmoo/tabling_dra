@@ -119,12 +119,24 @@
 :- mode prog( + ).
 
 prog( FileName ) :-
+        set_event_handler( 136, redefinition_of_built_in/2 ),
         retractall( known( _, _ ) ),
         erase_module( interpreted ),
         create_module( interpreted ),
         initialise,                              % provided by a metainterpreter
         process_file( FileName ),
         top.
+
+%% An Eclipse-specific handler for redefinition of built-ins.
+%% Eclipse has a great many seldom-used built-ins that restrict the name space
+%% of the interpreted program.  Not much can be done about this, but at least
+%% we can provide an error message in a consistent format.
+
+redefinition_of_built_in( 136, dynamic Culprit ) :-
+        write(   error, "*** Can't allow redefinition of built in \"" ),
+        write(   error, Culprit ),
+        writeln( error, "\" ***" ),
+        abort.
 
 
 %% process_file( + file name ):
