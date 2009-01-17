@@ -43,9 +43,6 @@
 demo :- solve(fwgc(e,e,e,e), fwgc(w,w,w,w), Sol), write_result(Sol), fail.
 demo.
 
-demo1 :- bagof(Sol, solve(fwgc(e,e,e,e), fwgc(w,w,w,w), Sol), Solution),
-        write(Solution).
-
 solve( S, G, P ) :- path( S, G, [S], P ).
 
 path( G, G, H, H ).
