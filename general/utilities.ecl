@@ -170,6 +170,138 @@ is_good_clause_head( Hd ) :-
         compound( Hd ),
         \+ is_list( Hd ).
 
+
+%%------------------------------------------------------------------------------
+%% warning( + term ):
+%% warning( + list of terms ):
+%% Print this term or list of terms as a warning.
+%% There are no spaces between items on the list.
+%% Strings are printed without quotes.
+
+warning( V ) :-
+        var( V ),
+        !,
+        warning( [ "Incorrect invocation of warning/1: \"",
+                   warning( V ),
+                   "\""
+                 ]
+               ).
+
+warning( [] ) :-
+        !,
+        begin_warning,
+        end_warning.
+
+warning( [ A | B ] ) :-
+        !,
+        begin_warning,
+        write_list( warning_output, [ A | B ] ),
+        end_warning.
+
+warning( NotAList ) :-
+        begin_warning,
+        write( warning_output, NotAList ),
+        end_warning.
+
+
+%%------------------------------------------------------------------------------
+%% begin_warning:
+%% Begin a warning printout.
+
+begin_warning :-
+        write( warning_output, "--- WARNING: " ).
+
+
+%%------------------------------------------------------------------------------
+%% end_warning:
+%% End a warning printout.
+
+end_warning :-
+        writeln( warning_output, " ---" ).
+
+
+%%------------------------------------------------------------------------------
+%% error( + term ):
+%% error( + list of terms ):
+%% Print this term or list of terms as a error, then abort the computation.
+%% There are no spaces between items on the list.
+%% Strings are printed without quotes.
+
+error( V ) :-
+        var( V ),
+        !,
+        warning( [ "Incorrect invocation of error/1: \"",
+                   error( V ),
+                   "\""
+                 ]
+               ).
+
+error( [] ) :-
+        !,
+        begin_error,
+        end_error.
+
+error( [ A | B ] ) :-
+        !,
+        begin_error,
+        write_list( error, [ A | B ] ),
+        end_error.
+
+error( NotAList ) :-
+        begin_error,
+        write( error, NotAList ),
+        end_error.
+
+
+%%------------------------------------------------------------------------------
+%% begin_error:
+%% Begin a error printout.
+
+begin_error :-
+        write( error, "*** ERROR: " ).
+
+
+%%------------------------------------------------------------------------------
+%% end_error:
+%% End a error printout.
+
+end_error :-
+        writeln( error, " ***" ),
+        abort.
+
+
+%%------------------------------------------------------------------------------
+%% write_list( +stream, +list ):
+%% Output the items on this list to this stream.
+%% There are no spaces between items on the list.
+%% Strings are printed without quotes.
+
+write_list( S, V ) :-
+        var( V ),
+        !,
+        warning( [ "Incorrect invocation of write_list/1: \"",
+                   write_list( S, V ),
+                   "\""
+                 ]
+               ).
+
+write_list( _S, [] ) :-
+        !.
+
+write_list( S, [ H | T ] ) :-
+        !,
+        write( S, H ),
+        write_list( S, T ).
+
+write_list( S, NotAList ) :-
+        !,
+        warning( [ "Incorrect invocation of write_list/1: \"",
+                   write_list( S, NotAList ),
+                   "\""
+                 ]
+               ).
+
+
 %%------------------------------------------------------------------------------
 
 

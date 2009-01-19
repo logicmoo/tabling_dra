@@ -133,10 +133,11 @@ prog( FileName ) :-
 %% we can provide an error message in a consistent format.
 
 redefinition_of_built_in( 136, dynamic Culprit ) :-
-        write(   error, "*** Can't allow redefinition of built in \"" ),
-        write(   error, Culprit ),
-        writeln( error, "\" ***" ),
-        abort.
+        error( [ "*** Can't allow redefinition of built in \"",
+                 Culprit,
+                 "\" ***"
+               ]
+             ).
 
 
 %% process_file( + file name ):
@@ -147,10 +148,8 @@ redefinition_of_built_in( 136, dynamic Culprit ) :-
 process_file( FileName ) :-
         \+ atom( FileName ),
         !,
-        write(   error, "*** Illegal file name \"" ),
-        write(   error, FileName ),
-        writeln( error, "\" (not an atom). ***" ),
-        abort.
+        error( [ "*** Illegal file name \"", FileName, "\" (not an atom). ***" ]
+             ).
 
 process_file( FileName ) :-
         atom( FileName ),
@@ -196,9 +195,7 @@ ensure_extension( FileName, FileName ).       % extension present, or no default
 check_non_variable( V ) :-
         var( V ),
         !,
-        write(   warning_output, "--- WARNING: variable term (" ),
-        write(   warning_output, V ),
-        writeln( warning_output, ".) is ignored. ---" ),
+        warning( [ "variable term (", V, ".) is ignored. ---" ] ),
         fail.
 
 check_non_variable( _ ).
@@ -238,10 +235,7 @@ process_term( Clause, _ ) :-
 process_term( Clause, _ ) :-
         % Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
         % \+ is_good_clause( Clause ),
-        write(   error, '*** Erroneous clause: \"' ),
-        write(   error, Clause ),
-        writeln( error, '\" ***' ),
-        abort.
+        error( [ "*** Erroneous clause: \"", Clause, "\" ***" ] ).
 
 
 %% include_files( + list of file names ):
@@ -271,10 +265,7 @@ process_directive( Directive ) :-
 process_directive( Directive ) :-                % unsupported directive
         \+ legal_directive( Directive ),
         !,
-        write(   error, '*** Unknown directive: \"' ),
-        write(   error, (:- Directive) ),
-        writeln( error, '.\" ***' ),
-        abort.
+        error( [ "*** Unknown directive: \"", (:- Directive), ".\" ***" ] ).
 
 
 

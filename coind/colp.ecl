@@ -45,10 +45,10 @@ builtin( fail        ).
 builtin( _ = _       ).
 builtin( _ \= _      ).
 builtin( \+( _ )     ).
-builtin( once _      ).   % special treatment in solve_builtin_call/2.
-builtin( (_ ->_ ; _) ).   % special treatment in solve_builtin_call/2.
-builtin( (_ ; _)     ).   % special treatment in solve_builtin_call/2.
-builtin( (_ , _)     ).   % special treatment in solve_builtin_call/2.
+builtin( once _      ).   % special treatment in solve/2
+builtin( (_ ->_ ; _) ).   % special treatment in solve/2
+builtin( (_ ; _)     ).   % special treatment in solve/2
+builtin( (_ , _)     ).   % special treatment in solve/2
 
 
 
@@ -86,9 +86,7 @@ execute_directive( coinductive P / K ) :-          % declaration of coinductive
 execute_directive( coinductive P / K ) :-          % declaration of coinductive
         (\+ atom( P ) ; \+ integer( K ) ; K < 0),  %  obviously wrong
         !,
-        write( error, 'Erroneous directive: \"' ),
-        write( error, (:- coinductive P / K) ),
-        writeln( error, '\"' ).
+        warning( [ "Erroneous directive: \"", (:- coinductive P / K), '\"' ] ).
 
 
 

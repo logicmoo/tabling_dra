@@ -305,9 +305,11 @@ execute_directive( tabled P / K ) :-                  % declaration of tabled
 execute_directive( tabled P / K ) :-                  % declaration of tabled
         (\+ atom( P ) ; \+ integer( K ) ; K < 0),     %  obviously wrong
         !,
-        write( error, '+++ Erroneous directive: \"' ),
-        write( error, (:- tabled P / K) ),
-        writeln( error, '\" ignored! +++' ).
+        warning( [ "Erroneous directive: \"",
+                   (:- tabled P / K),
+                   "\" ignored! +++"
+                 ]
+               ).
 
 
 
@@ -754,19 +756,17 @@ remove_loops( _ ).
 :- mode fatal_error( +, + ).
 
 fatal_error( Message, Stack ) :-
-        writeln( error, "*** FATAL ERROR: " ),
-        write(   error, "*** " ),
+        begin_error,
         writeln( error, Message ),
         writeln( error, "" ),
         writeln( error, "*** The current stack:" ),
-        show_stack( Stack ),
-        writeln( error, "***" ),
-        abort.
+        show_stack( error, Stack ),
+        end_error.
 
 %
-show_stack( Stack ) :-
+show_stack( Stream, Stack ) :-
         member( Call, Stack ),
-        writeln( error, Call ),
+        writeln( Stream, Call ),
         fail.
 
 show_stack( _ ).
