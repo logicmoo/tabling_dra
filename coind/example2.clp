@@ -55,4 +55,4 @@ comember( X, L ) :-  drop( X, L, L1 ),  comember( X, L1 ).
     comember( s( 0 ), X ).
 
 ?-  X = [ 0, s( 0 ), s( s( 0 ) ) | X ],
-    once( comember( s( 0 ), X ) ).
+    once comember( s( 0 ), X ).
