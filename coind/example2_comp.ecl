@@ -44,8 +44,8 @@ member1( E, L , Hyp ) :-
 
 member1( H, [ H | _ ], _ ).
 
-member1( X, [ H | T ], Hyp ) :-
-        NHyp = [ member1( X, [ H | T ] ) | Hyp ],
+member1( X, [ _ | T ], Hyp ) :-
+        NHyp = [ member1( X, [ _ | T ] ) | Hyp ],
         member1( X, T, NHyp ).
 
 
