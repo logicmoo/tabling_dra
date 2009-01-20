@@ -280,6 +280,7 @@ process_terms( [ Term | Terms ], CurrentPred, [ NewTerm | NewTerms ] ) :-
         process_terms( Terms, NewCurrentPred, NewTerms ).
 
 
+
 %% is_a_translator_directive( + directive ):
 %% Is this one of the directives that are interpreted by the translator?
 
@@ -287,6 +288,7 @@ process_terms( [ Term | Terms ], CurrentPred, [ NewTerm | NewTerms ] ) :-
 is_a_translator_directive( coinductive _ ).
 is_a_translator_directive( bottom      _ ).
 is_a_translator_directive( top         _ ).
+
 
 
 %% process_translator_directive( + directive ):
@@ -307,12 +309,14 @@ process_translator_directive( top PredSpecs ) :-
         declare_top( PredSpecs ).
 
 
+
 %% check_predspecs( + a conjunction of predicate specification (or just one),
 %%                  - list of predicate specifications
 %%                ):
 %% Given one or several predicate specifications (in the form "p/k" or
 %% "p/k, q/l, ...") check whether they are well-formed: if not, raise a fatal
-%% error; otherwise return a list of the predicate specifications.
+%% error; otherwise return a list of the most general instances that correspond
+%% to the predicate specifications.
 
 check_predspecs( Var, _ ) :-
         var( Var ),
@@ -323,16 +327,17 @@ check_predspecs( Var, _ ) :-
                ]
              ).
 
-check_predspecs( (PredSpec , PredSpecs), [ PredSpec | PredSpecsOnList ] ) :-
+check_predspecs( (PredSpec , PredSpecs), [ Pattern | Patterns ] ) :-
         !,
-        check_predspec( PredSpec ),
-        check_predspecs( PredSpecs, PredSpecsOnList ).
+        check_predspec( PredSpec, Pattern ),
+        check_predspecs( PredSpecs, Patterns ).
 
-check_predspecs( PredSpec, [ PredSpec ] ) :-
-        check_predspec( PredSpec ).
+check_predspecs( PredSpec, [ Pattern ] ) :-
+        check_predspec( PredSpec, Pattern ).
 
-%
-check_predspec( Var ) :-
+
+%%
+check_predspec( Var, _ ) :-
         var( Var ),
         !,
         error( [ "A variable instead of a predicate specification: \", ",
@@ -341,13 +346,93 @@ check_predspec( Var ) :-
                ]
              ).
 
-check_predspec( P / K ) :-
+check_predspec( P / K, Pattern ) :-
         atom( P ),
         integer( K ),
         K >= 0,
-        !.
+        !,
+        mk_pattern( P, K, Pattern ).
 
-check_predspec( PredSpec ) :-
+check_predspec( PredSpec, _ ) :-
         error( [ "An incorrect predicate specification: \"", PredSpec, "\"" ] ).
 
 
+
+%% declare_coinductive( + list of general instances ):
+%% Store the general instances in coinductive, warning about duplications.
+%% An overlap with bottom is a fatal error.
+
+declare_coinductive( Patterns ) :-
+        member( Pattern, Patterns ),
+        (
+            coinductive( Pattern )
+        ->
+            functor( Pattern, P, K ),
+            warning( [ "Duplicate declaration of ", P / K,
+                       " as a coinductive predicate"
+                     ]
+                   )
+        ;
+            bottom( Pattern )
+        ->
+            functor( Pattern, P, K ),
+            error( [ P/K, " declared both as \"bottom\" and as \"coinductive\""
+                   ]
+                 )
+        ;
+            assert( coinductive( Pattern ) )
+        ),
+        fail.
+
+declare_coinductive( _ ).
+
+
+
+%% declare_bottom( + list of general instances ):
+%% Store the general instances in bottom, warning about duplications.
+%% An overlap with coinductive is a fatal error.
+
+declare_bottom( Patterns ) :-
+        member( Pattern, Patterns ),
+        (
+            bottom( Pattern )
+        ->
+            functor( Pattern, P, K ),
+            warning( [ "Duplicate declaration of ", P / K,
+                       " as a bottom predicate"
+                     ]
+                   )
+        ;
+            coinductive( Pattern )
+        ->
+            functor( Pattern, P, K ),
+            error( [ P/K, " declared both as \"coinductive\" and as \"bottom\""
+                   ]
+                 )
+        ;
+            assert( bottom( Pattern ) )
+        ),
+        fail.
+
+declare_bottom( _ ).
+
+
+
+%% declare_top( + list of general instances ):
+%% Store the general instances in top, warning about duplications.
+
+declare_top( Patterns ) :-
+        member( Pattern, Patterns ),
+        (
+            top( Pattern )
+        ->
+            functor( Pattern, P, K ),
+            warning( [ "Duplicate declaration of ", P / K, " as a top predicate"
+                     ]
+                   )
+        ;
+            assert( top( Pattern ) )
+        ),
+        fail.
+
+declare_top( _ ).
