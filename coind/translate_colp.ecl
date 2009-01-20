@@ -43,9 +43,7 @@
 %%%   precedes the slash is the name of a predicate, and the item that follows
 %%%   the slash is a natural number denoting the predicate's arity).
 %%%
-%%%  These directives are treated as declarations of coinductive predicates.  A
-%%%  coinductive predicate should be declared in this fashion before it is
-%%%  defined.
+%%%  These directives are treated as declarations of coinductive predicates.
 %%%
 %%% 2.
 %%%     :- top PredSpec.
@@ -71,6 +69,11 @@
 %%%           "bottom".
 %%%        2. It is not necessary to declare built-in predicates in this
 %%%           fashion.
+%%%
+%%%
+%%% Please note that the declarations of predicates should precede their
+%%% definitions.  (In this version of the translator a declaration that follows
+%%% a definition will work anyway, but a warning will be given.)
 
 
 %%% The transformation
@@ -217,11 +220,15 @@ translate( InputStream, OutputStream ) :-
 
 
 %% A translator directive will be remembered in a dedicated table,
-%$ e.g., ":- coinductive p/2" as "coinductive( p( _, _ ) ).
+%% e.g., ":- coinductive p/2" as "coinductive( p( _, _ ) ).
+%%
+%% Moreover, information about each predicate the processing of whose definition
+%% has been started (and possibly finished) will be stored in "defined".
 
 :- dynamic coinductive/1.
 :- dynamic bottom/1.
 :- dynamic top/1.
+:- dynamic defined/1.
 
 
 %% initialise_tables:
@@ -231,7 +238,8 @@ translate( InputStream, OutputStream ) :-
 initialise_tables :-
         retractall( coinductive( _ ) ),
         retractall( bottom( _ )      ),
-        retractall( top( _ )         ).
+        retractall( top( _ )         ),
+        retractall( defined( _ )     ).
 
 
 
@@ -245,6 +253,9 @@ initialise_tables :-
 %% Information about the current predicate is provided to assist in the
 %% detection of the first clause of a coinductive predicate, which requires
 %% special treatment; it also helps detect non-contiguous predicate definitions.
+
+%% >>> THIS ERROR CHECKING SHOULD BE FACTORED OUT TO A GENERAL ROUTINE
+%% >>> FOR VERIFYING THAT A LIST OF TERMS REPRESENTS A PROGRAM.
 
 process_terms( [], _, [] ) :-
         !.
@@ -359,26 +370,20 @@ check_predspec( PredSpec, _ ) :-
 
 
 %% declare_coinductive( + list of general instances ):
-%% Store the general instances in coinductive, warning about duplications.
+%% Store the general instances in "coinductive", warning about duplications.
 %% An overlap with bottom is a fatal error.
 
 declare_coinductive( Patterns ) :-
         member( Pattern, Patterns ),
+        check_declaration_order( Pattern, "coinductive" ),
         (
             coinductive( Pattern )
         ->
-            functor( Pattern, P, K ),
-            warning( [ "Duplicate declaration of ", P / K,
-                       " as a coinductive predicate"
-                     ]
-                   )
+            duplicate_warning( Pattern, "coinductive" )
         ;
             bottom( Pattern )
         ->
-            functor( Pattern, P, K ),
-            error( [ P/K, " declared both as \"bottom\" and as \"coinductive\""
-                   ]
-                 )
+            overlap_error( Pattern )
         ;
             assert( coinductive( Pattern ) )
         ),
@@ -387,28 +392,21 @@ declare_coinductive( Patterns ) :-
 declare_coinductive( _ ).
 
 
-
 %% declare_bottom( + list of general instances ):
-%% Store the general instances in bottom, warning about duplications.
+%% Store the general instances in "bottom", warning about duplications.
 %% An overlap with coinductive is a fatal error.
 
 declare_bottom( Patterns ) :-
         member( Pattern, Patterns ),
+        check_declaration_order( Pattern, "bottom" ),
         (
             bottom( Pattern )
         ->
-            functor( Pattern, P, K ),
-            warning( [ "Duplicate declaration of ", P / K,
-                       " as a bottom predicate"
-                     ]
-                   )
+            duplicate_warning( Pattern, "bottom" )
         ;
             coinductive( Pattern )
         ->
-            functor( Pattern, P, K ),
-            error( [ P/K, " declared both as \"coinductive\" and as \"bottom\""
-                   ]
-                 )
+            overlap_error( Pattern )
         ;
             assert( bottom( Pattern ) )
         ),
@@ -417,12 +415,12 @@ declare_bottom( Patterns ) :-
 declare_bottom( _ ).
 
 
-
 %% declare_top( + list of general instances ):
-%% Store the general instances in top, warning about duplications.
+%% Store the general instances in "top", warning about duplications.
 
 declare_top( Patterns ) :-
         member( Pattern, Patterns ),
+        check_declaration_order( Pattern, "top" ),
         (
             top( Pattern )
         ->
@@ -436,3 +434,51 @@ declare_top( Patterns ) :-
         fail.
 
 declare_top( _ ).
+
+
+%% duplicate_warning( + most general instance of a predicate,
+%%                    + kind of declaration
+%%                  ):
+%% The predicate has been declared twice for this kind: raise a warning.
+
+:- mode duplicate_warning( +, + ).
+
+duplicate_warning( Pattern, Kind ) :-
+            functor( Pattern, P, K ),
+            warning( [ "Duplicate declaration of ", P / K,
+                       " as a \"", Kind, "\" predicate"
+                     ]
+                   ).
+
+
+%% overlap_error( + most general instance of a predicate ):
+%% The predicate has been declared as both "coinductive" and "bottom":
+%% raise a fatal error.
+
+:- mode overlap_error( + ).
+
+overlap_error( Pattern ) :-
+            functor( Pattern, P, K ),
+            error( [ P/K, " declared both as \"coinductive\" and as \"bottom\""
+                   ]
+                 ).
+
+
+%% check_declaration_order( + most general instance of a predicate,
+%%                          + kind of declaration
+%%                        ):
+%% Raise a warning if the definition of this predicate has already been seen
+
+:- mode check_declaration_order( +, + ).
+
+check_declaration_order( Pattern, Kind ) :-
+        (
+            defined( Pattern )
+        ->
+            functor( Pattern, P, K ),
+            warning( [ P/K,
+                       " declared as \"", Kind, "\" after it has been defined" ]
+                   )
+        ;
+            true
+        ).
