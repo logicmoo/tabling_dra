@@ -202,7 +202,7 @@ open_streams( FileName, InputStream, OutputStream ) :-
 translate( InputStream, OutputStream ) :-
         read_terms( InputStream, Terms ),
         initialise_tables,
-        process( Terms, ''/0, ProcessedTerms ),
+        process_terms( Terms, '', ProcessedTerms ),
         write_terms( ProcessedTerms, OutputStream ).
 
 
@@ -216,12 +216,12 @@ translate( InputStream, OutputStream ) :-
 :- op( 1000, fy, bottom ).         % allow  ":- bottom p/k ."
 
 
-%% A translator directive, e.g., ":- coinductive p/2" will be remembered in
-%% a table, e.g., as "coinductive( p( _, _ ), p/2 ).
+%% A translator directive will be remembered in a dedicated table,
+%$ e.g., ":- coinductive p/2" as "coinductive( p( _, _ ) ).
 
-:- dynamic coinductive/2.
-:- dynamic bottom/2.
-:- dynamic top/2.
+:- dynamic coinductive/1.
+:- dynamic bottom/1.
+:- dynamic top/1.
 
 
 %% initialise_tables:
@@ -229,21 +229,125 @@ translate( InputStream, OutputStream ) :-
 %% invocation.
 
 initialise_tables :-
-        retractall( coinductive( _, _ ) ),
-        retractall( bottom( _, _ )      ),
-        retractall( top( _, _ )         ).
+        retractall( coinductive( _ ) ),
+        retractall( bottom( _ )      ),
+        retractall( top( _ )         ).
 
 
 
 
-%% process( + list of terms,
-%%          + name/arity of the current predicate,
-%%          - list of processed terms
-%%        ):
+%% process_terms( + list of terms,
+%%                + most general instance of the current predicate,
+%%                - list of processed terms
+%%              ):
 %% Process the terms, i.e., interpret translator directives and transform
 %% other directives, queries and clauses.
 %% Information about the current predicate is provided to assist in the
 %% detection of the first clause of a coinductive predicate, which requires
 %% special treatment; it also helps detect non-contiguous predicate definitions.
 
-process( Terms, _, Terms ).
+process_terms( [], _, [] ) :-
+        !.
+
+process_terms( [ Var | _ ], _, _ ) :-
+        var( Var ),
+        !,
+        error( [ "A variable clause: \"", Var, "\"" ] ).
+
+process_terms( [ (:- Var) | _ ], _, _ ) :-
+        var( Var ),
+        !,
+        error( [ "A variable directive: \"", (:- Var), "\"" ] ).
+
+process_terms( [ (?- Var) | _ ], _, _ ) :-
+        var( Var ),
+        !,
+        error( [ "A variable query: \"", (?- Var), "\"" ] ).
+
+process_terms( [ (Var :- Body) | _ ], _, _ ) :-
+        var( Var ),
+        !,
+        error( [ "A variable clause head: \"", (Var :- Body), "\"" ] ).
+
+process_terms( [ (:- Directive) | Terms ], _, NewTerms ) :-
+        is_a_translator_directive( Directive ),
+        !,
+        process_translator_directive( Directive ),
+        process_terms( Terms, '', NewTerms ).
+
+process_terms( [ Term | Terms ], CurrentPred, [ NewTerm | NewTerms ] ) :-
+        process_term( Term, CurrentPred, NewTerm, NewCurrentPred ),
+        process_terms( Terms, NewCurrentPred, NewTerms ).
+
+
+%% is_a_translator_directive( + directive ):
+%% Is this one of the directives that are interpreted by the translator?
+
+:- mode is_a_translator_directive( + ).
+is_a_translator_directive( coinductive _ ).
+is_a_translator_directive( bottom      _ ).
+is_a_translator_directive( top         _ ).
+
+
+%% process_translator_directive( + directive ):
+%% Interpret a translator directive.
+
+:-  mode process_translator_directive( + ).
+
+process_translator_directive( coinductive PredSpecs ) :-
+        check_predspecs( PredSpecs, PredSpecList ),
+        declare_coinductive( PredSpecList ).
+
+process_translator_directive( bottom PredSpecs ) :-
+        check_predspecs( PredSpecs ),
+        declare_bottom( PredSpecs ).
+
+process_translator_directive( top PredSpecs ) :-
+        check_predspecs( PredSpecs ),
+        declare_top( PredSpecs ).
+
+
+%% check_predspecs( + a conjunction of predicate specification (or just one),
+%%                  - list of predicate specifications
+%%                ):
+%% Given one or several predicate specifications (in the form "p/k" or
+%% "p/k, q/l, ...") check whether they are well-formed: if not, raise a fatal
+%% error; otherwise return a list of the predicate specifications.
+
+check_predspecs( Var, _ ) :-
+        var( Var ),
+        !,
+        error( [ "A variable instead of predicate specifications: \", ",
+                 Var,
+                 "\""
+               ]
+             ).
+
+check_predspecs( (PredSpec , PredSpecs), [ PredSpec | PredSpecsOnList ] ) :-
+        !,
+        check_predspec( PredSpec ),
+        check_predspecs( PredSpecs, PredSpecsOnList ).
+
+check_predspecs( PredSpec, [ PredSpec ] ) :-
+        check_predspec( PredSpec ).
+
+%
+check_predspec( Var ) :-
+        var( Var ),
+        !,
+        error( [ "A variable instead of a predicate specification: \", ",
+                 Var,
+                 "\""
+               ]
+             ).
+
+check_predspec( P / K ) :-
+        atom( P ),
+        integer( K ),
+        K >= 0,
+        !.
+
+check_predspec( PredSpec ) :-
+        error( [ "An incorrect predicate specification: \"", PredSpec, "\"" ] ).
+
+
