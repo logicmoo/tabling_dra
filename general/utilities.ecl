@@ -303,5 +303,17 @@ write_list( S, NotAList ) :-
 
 
 %%------------------------------------------------------------------------------
+%% ensure_filename_is_an_atom( + filename ):
+%% Verify that the filename is an atom.  If not, produce a fatal error.
+
+ensure_filename_is_an_atom( FileName ) :-
+        atom( FileName ),
+        !.
+
+ensure_filename_is_an_atom( FileName ) :-
+        % \+ atom( FileName ),
+        error( [ "*** Illegal file name \"", FileName, "\" (not an atom). ***" ]
+             ).
 
 
+%%------------------------------------------------------------------------------

@@ -116,8 +116,6 @@
 %% Initialise, then load a program from this file, processing directives and
 %% queries.  After this is done, enter interactive mode.
 
-:- mode prog( + ).
-
 prog( FileName ) :-
         set_event_handler( 136, redefinition_of_built_in/2 ),
         retractall( known( _, _ ) ),
@@ -146,13 +144,7 @@ redefinition_of_built_in( 136, dynamic Culprit ) :-
 :- mode process_file( + ).
 
 process_file( FileName ) :-
-        \+ atom( FileName ),
-        !,
-        error( [ "*** Illegal file name \"", FileName, "\" (not an atom). ***" ]
-             ).
-
-process_file( FileName ) :-
-        atom( FileName ),
+        ensure_filename_is_an_atom( FileName ),
         ensure_extension( FileName, FullFileName ),
         open( FullFileName, read, ProgStream ),
         process_input( ProgStream ),
