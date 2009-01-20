@@ -34,8 +34,7 @@
 %%%
 %%% Queries and directives will undergo suitable transformation and be output
 %%% with the translated program.  However, the following directives will be
-%%% interpreted directly by the translator (and in the translated program will
-%%% be enclosed in comments):
+%%% interpreted directly by the translator (and not written to the output):
 %%%
 %%% 1.
 %%%     :- coinductive PredSpec .
@@ -153,12 +152,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-:- module( compile_colp ).
+% :- module( translate_colp ).
 
-:- export tc/1.   % i.e., translate_colp( + filename )
+% :- export tc/1.   % i.e., translate_colp( + filename )
 
 
 :- ensure_loaded( '../general/utilities' ).
+
+
+
+%-----  Wrapper  -----
 
 
 %% tc( + filename ):
@@ -166,14 +169,81 @@
 %% on "filename.ecl".
 
 tc( FileName ) :-
+        open_streams( FileName, InputStream, OutputStream ),
+
+        translate( InputStream, OutputStream ),
+
+        close( InputStream  ),
+        close( OutputStream ).
+
+%
+:- mode open_streams( +, -, - ).
+
+open_streams( FileName, InputStream, OutputStream ) :-
         ensure_filename_is_an_atom( FileName ),
         atom_string( FileName, FileNameString ),
         concat_strings( FileNameString, ".clp", InputFileName ),
         concat_strings( FileNameString, ".ecl", OutputFileName ),
         open( InputFileName , read , InputStream  ),
-        open( OutputFileName, write, OutputStream ),
-        translate( InputStream, OutputStream ),
-        close( InputStream ),
-        close( OutputStream ).
+        open( OutputFileName, write, OutputStream ).
 
 
+
+%% translate( + input stream, + output stream ):
+%% Translate the program on the input stream, writing the translation onto
+%% the output stream.
+%%
+%% For greater flexibility (though not necessarily efficiency) we read all the
+%% terms from the input stream to memory first, then process them in memory,
+%% then write them out.
+
+:- mode translate( +, + ).
+
+translate( InputStream, OutputStream ) :-
+        read_terms( InputStream, Terms ),
+        initialise_tables,
+        process( Terms, ''/0, ProcessedTerms ),
+        write_terms( ProcessedTerms, OutputStream ).
+
+
+
+
+%-----  The main translator  -----
+
+
+:- op( 1000, fy, coinductive ).    % allow  ":- coinductive p/k ."
+:- op( 1000, fy, top ).            % allow  ":- top p/k ."
+:- op( 1000, fy, bottom ).         % allow  ":- bottom p/k ."
+
+
+%% A translator directive, e.g., ":- coinductive p/2" will be remembered in
+%% a table, e.g., as "coinductive( p( _, _ ), p/2 ).
+
+:- dynamic coinductive/2.
+:- dynamic bottom/2.
+:- dynamic top/2.
+
+
+%% initialise_tables:
+%% Initialise the translator (make sure that no garbage is left from a previous
+%% invocation.
+
+initialise_tables :-
+        retractall( coinductive( _, _ ) ),
+        retractall( bottom( _, _ )      ),
+        retractall( top( _, _ )         ).
+
+
+
+
+%% process( + list of terms,
+%%          + name/arity of the current predicate,
+%%          - list of processed terms
+%%        ):
+%% Process the terms, i.e., interpret translator directives and transform
+%% other directives, queries and clauses.
+%% Information about the current predicate is provided to assist in the
+%% detection of the first clause of a coinductive predicate, which requires
+%% special treatment; it also helps detect non-contiguous predicate definitions.
+
+process( Terms, _, Terms ).
