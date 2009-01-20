@@ -317,3 +317,43 @@ ensure_filename_is_an_atom( FileName ) :-
 
 
 %%------------------------------------------------------------------------------
+%% read_terms( + input stream, - list of terms ):
+%% Given an open input stream, produce all the terms that can be read from it.
+%%
+%% The algorithm uses a d-list.
+
+:- mode read_terms( +, - ).
+
+read_terms( InputStream, Terms ) :-
+        read_terms_( InputStream, Terms-Terms ).
+
+%
+read_terms_( InputStream, Terms-End ) :-
+        read( InputStream, Term ),
+        (
+            Term == end_of_file
+        ->
+            End = []
+        ;
+            End = [ Term | NewEnd ],
+            read_terms_( InputStream, Terms - NewEnd )
+        ).
+
+
+%%------------------------------------------------------------------------------
+%% write_terms( + list of terms, + output stream ):
+%% Given an open output stream, write onto it all the terms from the list,
+%% one per line but without any other pretty-printing.
+
+:- mode write_terms( +, + ).
+
+write_terms( Terms, OutputStream ) :-
+        member( Term, Terms ),
+        write( OutputStream, Term ),
+        writeln( OutputStream, '.' ),
+        fail.
+
+write_terms( _, _ ).
+
+
+%%------------------------------------------------------------------------------
