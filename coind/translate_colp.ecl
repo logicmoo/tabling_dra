@@ -71,9 +71,8 @@
 %%%           fashion.
 %%%
 %%%
-%%% Please note that the declarations of predicates should precede their
-%%% definitions.  (In this version of the translator a declaration that follows
-%%% a definition will work anyway, but a warning will be given.)
+%%% Please note that the various declarations of predicates should precede their
+%%% definitions.  (It is a fatal error if they don't.)
 
 
 %%% The transformation
@@ -205,7 +204,7 @@ open_streams( FileName, InputStream, OutputStream ) :-
 translate( InputStream, OutputStream ) :-
         read_terms( InputStream, Terms ),
         initialise_tables,
-        process_terms( Terms, '', ProcessedTerms ),
+        transform( Terms, '', ProcessedTerms ),
         write_terms( ProcessedTerms, OutputStream ).
 
 
@@ -244,7 +243,7 @@ initialise_tables :-
 
 
 
-%% process_terms( + list of terms,
+%% transform( + list of terms,
 %%                + most general instance of the current predicate,
 %%                - list of processed terms
 %%              ):
@@ -257,39 +256,143 @@ initialise_tables :-
 %% >>> THIS ERROR CHECKING SHOULD BE FACTORED OUT TO A GENERAL ROUTINE
 %% >>> FOR VERIFYING THAT A LIST OF TERMS REPRESENTS A PROGRAM.
 
-process_terms( [], _, [] ) :-
+transform( [], _, [] ) :-
         !.
 
-process_terms( [ Var | _ ], _, _ ) :-
+transform( [ Var | _ ], _, _ ) :-
         var( Var ),
         !,
         error( [ "A variable clause: \"", Var, "\"" ] ).
 
-process_terms( [ (:- Var) | _ ], _, _ ) :-
+transform( [ (:- Var) | _ ], _, _ ) :-
         var( Var ),
         !,
         error( [ "A variable directive: \"", (:- Var), "\"" ] ).
 
-process_terms( [ (?- Var) | _ ], _, _ ) :-
+transform( [ (?- Var) | _ ], _, _ ) :-
         var( Var ),
         !,
         error( [ "A variable query: \"", (?- Var), "\"" ] ).
 
-process_terms( [ (Var :- Body) | _ ], _, _ ) :-
+transform( [ (Var :- Body) | _ ], _, _ ) :-
         var( Var ),
         !,
         error( [ "A variable clause head: \"", (Var :- Body), "\"" ] ).
 
-process_terms( [ (:- Directive) | Terms ], _, NewTerms ) :-
+transform( [ (:- Directive) | Terms ], _, NewTerms ) :-
         is_a_translator_directive( Directive ),
         !,
         process_translator_directive( Directive ),
-        process_terms( Terms, '', NewTerms ).
+        transform( Terms, '', NewTerms ).
 
-process_terms( [ Term | Terms ], CurrentPred, [ NewTerm | NewTerms ] ) :-
-        process_term( Term, CurrentPred, NewTerm, NewCurrentPred ),
-        process_terms( Terms, NewCurrentPred, NewTerms ).
+transform( [ (:- Directive) | Terms ], _, [ NewDirective | NewTerms ]
+         ) :-
+        !,
+        NewDirective = (:- Directive),    %% <<< STUB: should do conversion <<<<
+        transform( Terms, '', NewTerms ).
 
+transform( [ (?- Query) | Terms ], _, [ NewQuery | NewTerms ] ) :-
+        !,
+        NewQuery = (?- Query),            %% <<< STUB: should do conversion <<<<
+        transform( Terms, '', NewTerms ).
+
+transform( [ Clause | Terms ], CurrentPred,
+           [ ExtraClause, NewClause | NewTerms ]
+         ) :-
+        get_clause_head( Clause, Head ),
+        Head \= CurrentPred,
+        coinductive( Head ),             % beginning a new coinductive predicate
+        !,
+        most_general_instance( Head, Pattern ),
+        starting_new_predicate( Pattern ),
+        transform_logical_atom( Pattern, HypVar, NewPattern ),
+        ExtraClause = (NewPattern :- member( Pattern, HypVar )),
+        transform_clause( Clause, NewClause ),
+        transform( Terms, Pattern, NewTerms ).
+
+transform( [ Clause | Terms ], CurrentPred, [ NewClause | NewTerms ] ) :-
+        get_clause_head( Clause, Head ),
+        Head \= CurrentPred,
+        % \+ coinductive( Head ),        % beginning a new "normal" predicate
+        !,
+        most_general_instance( Head, Pattern ),
+        starting_new_predicate( Pattern ),
+        transform_clause( Clause, NewClause ),
+        transform( Terms, Pattern, NewTerms ).
+
+transform( [ Clause | Terms ], CurrentPred, [ NewClause | NewTerms ] ) :-
+        % get_clause_head( Clause, Head ),
+        % check( Head = CurrentPred ),              % i.e., not the first clause
+        !,
+        transform_clause( Clause, NewClause ),
+        transform( Terms, CurrentPred, NewTerms ).
+
+
+
+%% starting_new_predicate( + most general instance of a predicate ):
+%% We are beginning to work on the definition of this predicate.
+%% Check that there is no contiguity error, mark the predicate as defined.
+starting_new_predicate( Pattern ) :-
+        check_contiguity( Pattern ),
+        assert( defined( Pattern ).
+
+
+%% check_contiguity( + head of a clause ):
+%% We have encountered what seems to be the first clause of a predicate.
+%% If this predicate has already been defined, raise a fatal error.
+
+:- mode check_contiguity( + ).
+
+check_contiguity( Head ) :-
+        defined( Head ),
+        functor( Head, P, K ),
+        error( [ "Clauses for predicate ", P/K, " are not contiguous" ] ).
+
+
+
+%% transform_clause( + clause, - transformed clause ):
+%% Transform a clause.
+%% See the main comment for a description of the transformation.
+
+:- mode transform_clause( +, - ).
+
+transform_clause( (Head :- Body), NewClause ) :-
+        coinductive( Head ),
+        !,
+        transform_logical_atom( Head, HypVar, NewHead ),
+        transform_body( Body, NewHypVar, NewBody ),
+        NewClause = (NewHead :- NewHypVar = [ Head | HypVar ], NewBody).
+
+transform_clause( (Head :- Body), (NewHead :- NewBody) ) :-
+        % \+ coinductive( Head ),
+        !,
+        transform_logical_atom( Head, HypVar, NewHead ),
+        transform_body( Body, HypVar, NewBody ).
+
+transform_clause( Fact, NewFact ) :-
+        % Fact \= (_ :- _),
+        transform_logical_atom( Fact, HypVar, NewFact ).
+
+
+%% transform_body( + body, + variable with set of hypotheses, - new body ):
+%% Transfrom the body of a clause.
+transform_body( Body, HypVar, NewBody ).
+%  >>>.        .....
+
+
+%% transform_logical_atom( + logical atom,
+%%                         + variable with set of hypotheses,
+%%                         - transformed atom
+%%                        ):
+%% Transform this head or call.
+
+transform_logical_atom( Pred, HypVar, NewPred ).
+%  >>>        .....
+
+
+
+
+%%%%%  Translator directives
 
 
 %% is_a_translator_directive( + directive ):
@@ -464,21 +567,21 @@ overlap_error( Pattern ) :-
                  ).
 
 
-%% check_declaration_order( + most general instance of a predicate,
+%% check_declaration_order( + the most general instance of a predicate,
 %%                          + kind of declaration
 %%                        ):
-%% Raise a warning if the definition of this predicate has already been seen
+%% Raise a fatal error if the definition of this predicate has already been
+%% seen.
 
 :- mode check_declaration_order( +, + ).
 
 check_declaration_order( Pattern, Kind ) :-
-        (
-            defined( Pattern )
-        ->
-            functor( Pattern, P, K ),
-            warning( [ P/K,
-                       " declared as \"", Kind, "\" after it has been defined" ]
-                   )
-        ;
-            true
-        ).
+        defined( Pattern ),
+        !,
+        functor( Pattern, P, K ),
+        error( [ P/K, " declared as \"", Kind, "\" after it has been defined" ]
+             ).
+
+check_declaration_order( _, _ ).
+
+%-------------------------------------------------------------------------------
