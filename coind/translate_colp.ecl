@@ -291,9 +291,9 @@ transform( [ (:- Directive) | Terms ], _, [ NewDirective | NewTerms ]
         NewDirective = (:- Directive),    %% <<< STUB: should do conversion <<<<
         transform( Terms, '', NewTerms ).
 
-transform( [ (?- Query) | Terms ], _, [ NewQuery | NewTerms ] ) :-
+transform( [ (?- Query) | Terms ], _, [ (?- NewQuery) | NewTerms ] ) :-
         !,
-        NewQuery = (?- Query),            %% <<< STUB: should do conversion <<<<
+        transform_body( Query, [], NewQuery ),
         transform( Terms, '', NewTerms ).
 
 transform( [ Clause | Terms ], CurrentPred,
@@ -334,7 +334,7 @@ transform( [ Clause | Terms ], CurrentPred, [ NewClause | NewTerms ] ) :-
 %% Check that there is no contiguity error, mark the predicate as defined.
 starting_new_predicate( Pattern ) :-
         check_contiguity( Pattern ),
-        assert( defined( Pattern ).
+        assert( defined( Pattern ) ).
 
 
 %% check_contiguity( + head of a clause ):
@@ -345,8 +345,12 @@ starting_new_predicate( Pattern ) :-
 
 check_contiguity( Head ) :-
         defined( Head ),
+        !,
         functor( Head, P, K ),
         error( [ "Clauses for predicate ", P/K, " are not contiguous" ] ).
+
+check_contiguity( _ ).
+
 
 
 
@@ -371,23 +375,52 @@ transform_clause( (Head :- Body), (NewHead :- NewBody) ) :-
 
 transform_clause( Fact, NewFact ) :-
         % Fact \= (_ :- _),
-        transform_logical_atom( Fact, HypVar, NewFact ).
+        transform_logical_atom( Fact, _, NewFact ).
+
 
 
 %% transform_body( + body, + variable with set of hypotheses, - new body ):
-%% Transfrom the body of a clause.
-transform_body( Body, HypVar, NewBody ).
-%  >>>.        .....
+%% Transform the body of a clause.
+
+transform_body( (Calls1 , Calls2), HypVar, (NewCalls1 , NewCalls2) ) :-
+        transform_body( Calls1, HypVar, NewCalls1 ),
+        transform_body( Calls2, HypVar, NewCalls2 ).
+
+% >>> treatment of disjunction etc.
+
+transform_body( Call, HypVar, NewCall ) :-
+        transform_logical_atom( Call, HypVar, NewCall ).
+
 
 
 %% transform_logical_atom( + logical atom,
 %%                         + variable with set of hypotheses,
 %%                         - transformed atom
-%%                        ):
-%% Transform this head or call.
+%%                       ):
+%% Transform this head or simple call.
 
-transform_logical_atom( Pred, HypVar, NewPred ).
-%  >>>        .....
+        %% >>> Special treatment for once/1 etc. etc.
+
+transform_logical_atom( once Calls, Hyp, once NewCalls ) :-
+        transform_body( Calls, Hyp, NewCalls ).
+
+transform_logical_atom( Pred, _, Pred ) :-
+        (bottom( Pred ) ; is_builtin( Pred )),
+        !.
+
+transform_logical_atom( Pred, HypVar, NewPred ) :-
+        % \+ (bottom( Pred ) ; current_built_in( Pred )),
+        Pred =.. [ Name | Args ],
+        concat_atoms( Name, '_', NewName ),
+        append( Args, [ HypVar ], NewArgs ),
+        !,
+        NewPred =.. [ NewName | NewArgs ].
+
+
+%%
+is_builtin( Pred ) :-
+        functor( Pred, P, K ),
+        current_built_in( P/K ).
 
 
 
