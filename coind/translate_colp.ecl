@@ -205,7 +205,7 @@ translate( InputStream, OutputStream ) :-
         read_terms( InputStream, Terms ),
         initialise_tables,
         transform( Terms, '', ProcessedTerms ),
-        write_terms( ProcessedTerms, OutputStream ).
+        write_clauses( ProcessedTerms, OutputStream ).
 
 
 
@@ -383,10 +383,26 @@ transform_clause( Fact, NewFact ) :-
 %% Transform the body of a clause.
 
 transform_body( (Calls1 , Calls2), HypVar, (NewCalls1 , NewCalls2) ) :-
+        !,
         transform_body( Calls1, HypVar, NewCalls1 ),
         transform_body( Calls2, HypVar, NewCalls2 ).
 
-% >>> treatment of disjunction etc.
+transform_body( (Calls1 ; Calls2), HypVar, (NewCalls1 ; NewCalls2) ) :-
+        !,
+        transform_body( Calls1, HypVar, NewCalls1 ),
+        transform_body( Calls2, HypVar, NewCalls2 ).
+
+transform_body( (If -> Then ; Else), HypVar, (NewIf -> NewThen ; NewElse) ) :-
+        !,
+        transform_body( If, HypVar, NewIf ),
+        transform_body( Then, HypVar, NewThen ),
+        transform_body( Else, HypVar, NewElse ).
+
+transform_body( (If -> Then), HypVar, (NewIf -> NewThen) ) :-
+        !,
+        transform_body( If, HypVar, NewIf ),
+        transform_body( Then, HypVar, NewThen ).
+
 
 transform_body( Call, HypVar, NewCall ) :-
         transform_logical_atom( Call, HypVar, NewCall ).
@@ -400,6 +416,7 @@ transform_body( Call, HypVar, NewCall ) :-
 %% Transform this head or simple call.
 
         %% >>> Special treatment for once/1 etc. etc.
+        %% >>> Complain about negation???
 
 transform_logical_atom( once Calls, Hyp, once NewCalls ) :-
         transform_body( Calls, Hyp, NewCalls ).
