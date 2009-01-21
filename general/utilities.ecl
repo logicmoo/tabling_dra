@@ -370,3 +370,17 @@ write_terms( _, _ ).
 
 
 %%------------------------------------------------------------------------------
+%% write_clauses( + list of clauses, + output stream ):
+%% Given an open output stream, write onto it all the clauses from the list.
+
+:- mode write_clauses( +, + ).
+
+write_clauses( Clauses, OutputStream ) :-
+        member( Clause, Clauses ),
+        writeclause( OutputStream, Clause ),
+        fail.
+
+write_clauses( _, _ ).
+
+
+%%------------------------------------------------------------------------------
