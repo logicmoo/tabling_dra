@@ -93,6 +93,19 @@ mk_pattern( P, K, Pattern ) :-
 
 
 %%------------------------------------------------------------------------------
+%% most_general_instance( + a term,
+%%                        - a most general instance with the same main functor
+%%                      ):
+%% E.g., p( a, q( X, Y ) )  is transformed to  p( _, _ ).
+
+:- mode most_general_instance( + ).
+
+most_general_instance( Term, Pattern ) :-
+        functor( Term, P, K ),
+        mk_pattern( P, K, Pattern ).
+
+
+%%------------------------------------------------------------------------------
 %% getline( - list of character strings ) :
 %%    Reads characters from the current input stream upto (and including) the
 %%    nearest newline.  The newline is not included in the list of characters
