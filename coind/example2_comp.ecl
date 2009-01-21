@@ -18,7 +18,7 @@ stream( S, Hyp ) :-
 
 stream( [ H | T ], Hyp ) :-
         NHyp = [ stream( [ H | T ] ) | Hyp ],
-        num( H, H, NHyp ),
+        num( H, NHyp ),
         stream( T, NHyp ).
 
 
