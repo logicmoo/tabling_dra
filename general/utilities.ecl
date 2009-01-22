@@ -330,6 +330,22 @@ ensure_filename_is_an_atom( FileName ) :-
 
 
 %%------------------------------------------------------------------------------
+%% open_file( + root filename string,
+%%            + filename extension string,
+%%            + mode,
+%%            - stream
+%%          ):
+%% Construct the file name, and open the file in this mode.
+
+:- mode open_file( +, +, +, - ).
+
+open_file( RootFileNameString, ExtensionString, Mode, Stream ) :-
+        concat_strings( RootFileNameString, ExtensionString, FileNameString ),
+        open( FileNameString, Mode, Stream ).
+
+
+
+%%------------------------------------------------------------------------------
 %% read_terms( + input stream, - list of terms ):
 %% Given an open input stream, produce all the terms that can be read from it.
 %%

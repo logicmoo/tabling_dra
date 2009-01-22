@@ -9,13 +9,14 @@
 %%%
 %%% This translator transforms co-logic programming programs into
 %%% straightforward logic programming programs that can be compiled/executed
-%%% in any logic programming system that does not incorporate occur check.
+%%% in any logic programming system that does not incorporate the "occur check"
+%%% in normal unification.
 %%%
 %%% The transformed programs may cause errors if they invoke built-in predicates
 %%% that cannot handle cyclic terms (e.g., copy_term/2).
 %%%
 %%% NOTE: A transformed program cannot contain variable literals or invocations
-%%%       of call/1.
+%%%       of "call/1".
 
 
 %%% Usage
@@ -52,21 +53,22 @@
 %%%     :- top PredSpec.
 %%%
 %%%  These are treated as declarations of predicates that will be invoked
-%%%  directly by the user or non-coinductive programs.  In the translated form,
-%%%  these predicates will be available also in their original form (i.e., there
-%%%  will be no need to take the transformation into account by providing an
-%%%  additional argument, see the description of the transformation below).
+%%%  directly by the user or non-coinductive programs.  In the translated
+%%%  program these predicates will be available also in their original form
+%%%  (i.e., there will be no need to take the transformation into account by
+%%%  providing an additional argument: see the description of the transformation
+%%%  below).
 %%%
 %%% 3.
 %%%     :- bottom PredSpec.
 %%%
 %%%  These are treated as declarations of predicates that should be treated as
-%%%  "normal" logic programming predicates, and should not therefore undergo
-%%%  transformation.  A declaration of this sort constitues a claim by the
-%%%  programmer that the "bottom" predicate will not invoke --- directly or
-%%%  indirectly --- any coinductive predicates.
+%%%  "normal" logic programming predicates, and should, therefore, not be
+%%%  subjected to transformation.  A declaration of this sort constitues a claim
+%%%  by the programmer that the "bottom" predicate will not invoke --- directly
+%%%  or indirectly --- any coinductive predicates.
 %%%  If any of the "bottom" predicates are defined in the translated file,
-%%%  the translator will actually verify this claim.
+%%%  the translator will actually verify this claim. (TBD!!).
 %%%
 %%%  NOTE: 1. It is an error for a coinductive predicate to be declared as
 %%%           "bottom".
@@ -82,7 +84,7 @@
 %%% ------------------
 %%%
 %%% A. Every "normal" predicate (i.e., one that has not been declared as
-%%%    "coinductive", "top" or "bottom") will:
+%%%    "coinductive" or "bottom") will:
 %%%
 %%%      1. have its name extended with an underscore;
 %%%
@@ -102,7 +104,7 @@
 %%%            p_( X, X, _   ).
 %%%
 %%%
-%%% B. If a predicate has been declared as "top", an additional "hook" will be
+%%% B. If a predicate has been declared as "top", an additional hook will be
 %%%    provided to facilitate invocation.  For example, if the definition of
 %%%    p/2 above were preceded by
 %%%
@@ -115,7 +117,7 @@
 %%%    N.B. This feature is the reason predicate names are extended with an
 %%%         undescore.  Our example program might well contain also occurrences
 %%%         of p/1, which --- if the names were not changed --- would get
-%%%         transformed to occurrences of p/2 that would clash with this
+%%%         transformed to occurrences of p/2, and those would clash with this
 %%%         additional "convenience predicate".
 %%%
 %%%
@@ -123,7 +125,7 @@
 %%%    transformed.  (This applies also to built-in predicates, with the obvious
 %%%    exception of "meta-predicates" such as ",/2", "once/1" etc., some of
 %%%    whose arguments are interpreted as predicates and must undergo the
-%%%    transformation).
+%%%    transformation.)
 %%%
 %%%
 %%% D. If a predicate has been declared as "coinductive", the transformation
@@ -184,13 +186,11 @@ tc( FileName ) :-
 %
 :- mode open_streams( +, -, - ).
 
-open_streams( FileName, InputStream, OutputStream ) :-
-        ensure_filename_is_an_atom( FileName ),
-        atom_string( FileName, FileNameString ),
-        concat_strings( FileNameString, ".clp", InputFileName ),
-        concat_strings( FileNameString, ".ecl", OutputFileName ),
-        open( InputFileName , read , InputStream  ),
-        open( OutputFileName, write, OutputStream ).
+open_streams( RootFileName, InputStream, OutputStream ) :-
+        ensure_filename_is_an_atom( RootFileName ),
+        atom_string( RootFileName, RootFileNameString ),
+        open_file( RootFileNameString, ".clp", read , InputStream  ),
+        open_file( RootFileNameString, ".ecl", write, OutputStream ).
 
 
 
