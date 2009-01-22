@@ -399,3 +399,41 @@ write_clauses( _, _ ).
 
 
 %%------------------------------------------------------------------------------
+%% verify_program( + list of terms ):
+%% Given a list of terms that should all be clauses, directives, or queries,
+%% raise an error if any of the terms is obviously incorrect.
+
+:- mode verify_program( + ).
+
+verify_program( Terms ) :-
+        member( Term, Terms ),
+        verify_program_item( Term ),
+        fail.
+
+verify_program( _ ).
+
+%
+verify_program_item( Var ) :-
+        var( Var ),
+        !,
+        error( [ "A variable clause: \"", Var, "\"" ] ).
+
+verify_program_item( (:- Var) ) :-
+        var( Var ),
+        !,
+        error( [ "A variable directive: \"", (:- Var), "\"" ] ).
+
+verify_program_item( (?- Var) ) :-
+        var( Var ),
+        !,
+        error( [ "A variable query: \"", (?- Var), "\"" ] ).
+
+verify_program_item( Clause ) :-
+        get_clause_head( Clause, Head ),
+        \+ is_good_clause_head( Head ),
+        !,
+        error( [ "Incorrect head in clause: \"", Clause, ".\"" ] ).
+
+verify_program_item( _ ).
+
+%%------------------------------------------------------------------------------

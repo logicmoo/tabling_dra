@@ -206,6 +206,7 @@ open_streams( RootFileName, InputStream, OutputStream ) :-
 
 translate( InputStream, OutputStream ) :-
         read_terms( InputStream, Terms ),
+        verify_program( Terms ),
         initialise_tables,
         transform( Terms, '', ProcessedTerms ),
         write_declarations_as_comments( OutputStream ),
@@ -312,26 +313,6 @@ write_top_predicates( OutputStream ) :-
 
 transform( [], _, [] ) :-
         !.
-
-transform( [ Var | _ ], _, _ ) :-
-        var( Var ),
-        !,
-        error( [ "A variable clause: \"", Var, "\"" ] ).
-
-transform( [ (:- Var) | _ ], _, _ ) :-
-        var( Var ),
-        !,
-        error( [ "A variable directive: \"", (:- Var), "\"" ] ).
-
-transform( [ (?- Var) | _ ], _, _ ) :-
-        var( Var ),
-        !,
-        error( [ "A variable query: \"", (?- Var), "\"" ] ).
-
-transform( [ (Var :- Body) | _ ], _, _ ) :-
-        var( Var ),
-        !,
-        error( [ "A variable clause head: \"", (Var :- Body), "\"" ] ).
 
 transform( [ (:- Directive) | Terms ], _, NewTerms ) :-
         is_a_translator_directive( Directive ),
