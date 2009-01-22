@@ -13,6 +13,9 @@
 %%%
 %%% The transformed programs may cause errors if they invoke built-in predicates
 %%% that cannot handle cyclic terms (e.g., copy_term/2).
+%%%
+%%% NOTE: A transformed program cannot contain variable literals or invocations
+%%%       of call/1.
 
 
 %%% Usage
@@ -205,6 +208,8 @@ translate( InputStream, OutputStream ) :-
         read_terms( InputStream, Terms ),
         initialise_tables,
         transform( Terms, '', ProcessedTerms ),
+        write_declarations_as_comments( OutputStream ),
+        write_top_predicates( OutputStream ),
         write_clauses( ProcessedTerms, OutputStream ).
 
 
@@ -239,6 +244,42 @@ initialise_tables :-
         retractall( bottom( _ )      ),
         retractall( top( _ )         ),
         retractall( defined( _ )     ).
+
+
+
+%% Write_declarations_as_comments( + output stream ):
+%% Output comments that list the declarations of coinductive and bottom
+%% predicates.
+
+:- mode write_declarations_as_comments( + ).
+
+write_declarations_as_comments( OutputStream ) :-
+        writeln( OutputStream, "%% COINDUCTIVE PREDICATES:" ),
+        coinductive( Pattern ),                   % i.e., sequence through these
+        functor( Pattern, P, K ),
+        write(   OutputStream, "%% " ),
+        writeln( OutputStream, P / K ),
+        fail.
+
+write_declarations_as_comments( OutputStream ) :-
+        nl( OutputStream ).
+
+
+%% write_top_predicates( + output stream ).
+%% Output the top predicates.
+
+:- mode write_top_predicates( + ).
+
+write_top_predicates( OutputStream ) :-
+        top( Pattern ),                           % i.e., sequence through these
+        Pattern =.. [ F | Args ],
+        once append( Args, [ [] ], ExtendedArgs ),
+        Call =.. [ F | ExtendedArgs ],
+        writeclause( OutputStream, (Pattern :- Call) ),
+        fail.
+
+write_top_predicates( OutputStream ) :-
+        nl( OutputStream ).
 
 
 
@@ -382,6 +423,10 @@ transform_clause( Fact, NewFact ) :-
 %% transform_body( + body, + variable with set of hypotheses, - new body ):
 %% Transform the body of a clause.
 
+transform_body( Var ) :-
+        !,
+        error( [ "Variable literal: \"", Var, "\"" ] ).
+
 transform_body( (Calls1 , Calls2), HypVar, (NewCalls1 , NewCalls2) ) :-
         !,
         transform_body( Calls1, HypVar, NewCalls1 ),
@@ -418,7 +463,12 @@ transform_body( Call, HypVar, NewCall ) :-
         %% >>> Special treatment for once/1 etc. etc.
         %% >>> Complain about negation???
 
+transform_logical_atom( call( C ), _, _ ) :-
+        !,
+        error( [ "Invocation of \"call/1\": \"", call( C ), "\"" ] ).
+
 transform_logical_atom( once Calls, Hyp, once NewCalls ) :-
+        !,
         transform_body( Calls, Hyp, NewCalls ).
 
 transform_logical_atom( Pred, _, Pred ) :-
@@ -426,11 +476,10 @@ transform_logical_atom( Pred, _, Pred ) :-
         !.
 
 transform_logical_atom( Pred, HypVar, NewPred ) :-
-        % \+ (bottom( Pred ) ; current_built_in( Pred )),
+        % \+ (bottom( Pred ) ; is_built_in( Pred )),
         Pred =.. [ Name | Args ],
         concat_atoms( Name, '_', NewName ),
-        append( Args, [ HypVar ], NewArgs ),
-        !,
+        once append( Args, [ HypVar ], NewArgs ),
         NewPred =.. [ NewName | NewArgs ].
 
 
@@ -465,12 +514,12 @@ process_translator_directive( coinductive PredSpecs ) :-
         declare_coinductive( PredSpecList ).
 
 process_translator_directive( bottom PredSpecs ) :-
-        check_predspecs( PredSpecs ),
-        declare_bottom( PredSpecs ).
+        check_predspecs( PredSpecs, PredSpecList ),
+        declare_bottom( PredSpecList ).
 
 process_translator_directive( top PredSpecs ) :-
-        check_predspecs( PredSpecs ),
-        declare_top( PredSpecs ).
+        check_predspecs( PredSpecs, PredSpecList ),
+        declare_top( PredSpecList ).
 
 
 
