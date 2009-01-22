@@ -1,5 +1,7 @@
 %% This is example2.clp from Luke Simon's thesis, with some tweaks.
 
+% :- bottom num/1, drop/3 .
+% :- top comember/2.
 
 % A number.
 num( 0 ).
@@ -45,14 +47,22 @@ comember( X, L ) :-  drop( X, L, L1 ),  comember( X, L1 ).
 
 
 % Example queries:
-?-  X = [ 0, s( 0 ), s( s( 0 ) ) ],
-    member2( s( 0 ), X ).
+?-  writeln( "Query1" ),
+    X = [ 0, s( 0 ), s( s( 0 ) ) ],
+    member2( s( 0 ), X ),
+    writeln( "Yes1 !" ).
 
-?-  X = [ 0, s( 0 ), s( s( 0 ) ) ],
-    member1( s( 0 ), X ).
+?-  writeln( "Query2"),
+    X = [ 0, s( 0 ), s( s( 0 ) ) ],
+    member1( s( 0 ), X ),
+    writeln( "Yes2 !" ).
 
-?-  X = [ 0, s( 0 ), s( s( 0 ) ) ],
-    comember( s( 0 ), X ).
+?-  writeln( "Query3"),
+    X = [ 0, s( 0 ), s( s( 0 ) ) ],
+    comember( s( 0 ), X ),
+    writeln( "Yes3 !" ).
 
-?-  X = [ 0, s( 0 ), s( s( 0 ) ) | X ],
-    once comember( s( 0 ), X ).
+?-  writeln( "Query4"),
+    X = [ 0, s( 0 ), s( s( 0 ) ) | X ],
+    once comember( s( 0 ), X ),
+    writeln( "Yes4 !" ).
