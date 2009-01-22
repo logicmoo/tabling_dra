@@ -219,15 +219,15 @@ translate( InputStream, OutputStream ) :-
 
 
 :- op( 1000, fy, coinductive ).    % allow  ":- coinductive p/k ."
-:- op( 1000, fy, top ).            % allow  ":- top p/k ."
 :- op( 1000, fy, bottom ).         % allow  ":- bottom p/k ."
+:- op( 1000, fy, top ).            % allow  ":- top p/k ."
 
 
 %% A translator directive will be remembered in a dedicated table,
 %% e.g., ":- coinductive p/2" as "coinductive( p( _, _ ) ).
 %%
-%% Moreover, information about each predicate the processing of whose definition
-%% has been started (and possibly finished) will be stored in "defined".
+%% Moreover, the table "defined" will contain the name of each predicate the
+%% processing of whose definition has been started (and possibly finished).
 
 :- dynamic coinductive/1.
 :- dynamic bottom/1.
@@ -237,7 +237,7 @@ translate( InputStream, OutputStream ) :-
 
 %% initialise_tables:
 %% Initialise the translator (make sure that no garbage is left from a previous
-%% invocation.
+%% invocation).
 
 initialise_tables :-
         retractall( coinductive( _ ) ),
@@ -256,13 +256,26 @@ initialise_tables :-
 write_declarations_as_comments( OutputStream ) :-
         writeln( OutputStream, "%% COINDUCTIVE PREDICATES:" ),
         coinductive( Pattern ),                   % i.e., sequence through these
-        functor( Pattern, P, K ),
-        write(   OutputStream, "%% " ),
-        writeln( OutputStream, P / K ),
+        write_pred_spec_comment( Pattern, OutputStream ),
+        fail.
+
+write_declarations_as_comments( OutputStream ) :-
+        writeln( OutputStream, "%% \"BOTTOM\" PREDICATES:" ),
+        bottom( Pattern ),                        % i.e., sequence through these
+        write_pred_spec_comment( Pattern, OutputStream ),
         fail.
 
 write_declarations_as_comments( OutputStream ) :-
         nl( OutputStream ).
+
+%
+:- mode write_pred_spec_comment( +, + ).
+
+write_pred_spec_comment( Pattern, OutputStream ) :-
+        functor( Pattern, P, K ),
+        write(   OutputStream, "%%   " ),
+        writeln( OutputStream, P / K ).
+
 
 
 %% write_top_predicates( + output stream ).
@@ -273,8 +286,9 @@ write_declarations_as_comments( OutputStream ) :-
 write_top_predicates( OutputStream ) :-
         top( Pattern ),                           % i.e., sequence through these
         Pattern =.. [ F | Args ],
+        transform_predicate_name( F, NF ),
         once append( Args, [ [] ], ExtendedArgs ),
-        Call =.. [ F | ExtendedArgs ],
+        Call =.. [ NF | ExtendedArgs ],
         writeclause( OutputStream, (Pattern :- Call) ),
         fail.
 
@@ -285,17 +299,16 @@ write_top_predicates( OutputStream ) :-
 
 
 %% transform( + list of terms,
-%%                + most general instance of the current predicate,
-%%                - list of processed terms
-%%              ):
+%%            + most general instance of the current predicate,
+%%            - list of processed terms
+%%          ):
 %% Process the terms, i.e., interpret translator directives and transform
 %% other directives, queries and clauses.
 %% Information about the current predicate is provided to assist in the
 %% detection of the first clause of a coinductive predicate, which requires
 %% special treatment; it also helps detect non-contiguous predicate definitions.
 
-%% >>> THIS ERROR CHECKING SHOULD BE FACTORED OUT TO A GENERAL ROUTINE
-%% >>> FOR VERIFYING THAT A LIST OF TERMS REPRESENTS A PROGRAM.
+:- mode transform( +, +, - ).
 
 transform( [], _, [] ) :-
         !.
@@ -326,10 +339,9 @@ transform( [ (:- Directive) | Terms ], _, NewTerms ) :-
         process_translator_directive( Directive ),
         transform( Terms, '', NewTerms ).
 
-transform( [ (:- Directive) | Terms ], _, [ NewDirective | NewTerms ]
-         ) :-
+transform( [ (:- Directive) | Terms ], _, [ (:- NewDirective) | NewTerms ] ) :-
         !,
-        NewDirective = (:- Directive),    %% <<< STUB: should do conversion <<<<
+        transform_body( Directive, [], NewDirective ),
         transform( Terms, '', NewTerms ).
 
 transform( [ (?- Query) | Terms ], _, [ (?- NewQuery) | NewTerms ] ) :-
@@ -478,7 +490,7 @@ transform_logical_atom( Pred, _, Pred ) :-
 transform_logical_atom( Pred, HypVar, NewPred ) :-
         % \+ (bottom( Pred ) ; is_built_in( Pred )),
         Pred =.. [ Name | Args ],
-        concat_atoms( Name, '_', NewName ),
+        transform_predicate_name( Name, NewName ),
         once append( Args, [ HypVar ], NewArgs ),
         NewPred =.. [ NewName | NewArgs ].
 
@@ -487,6 +499,15 @@ transform_logical_atom( Pred, HypVar, NewPred ) :-
 is_builtin( Pred ) :-
         functor( Pred, P, K ),
         current_built_in( P/K ).
+
+
+%% transform_predicate_name( + name, - new name ):
+%% Transform the name of a predicate (by extending it with "_").
+
+:- mode transform_predicate_name( +, - ).
+
+transform_predicate_name( Name, NewName ) :-
+        concat_atoms( Name, '_', NewName ).
 
 
 

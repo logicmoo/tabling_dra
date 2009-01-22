@@ -344,7 +344,6 @@ open_file( RootFileNameString, ExtensionString, Mode, Stream ) :-
         open( FileNameString, Mode, Stream ).
 
 
-
 %%------------------------------------------------------------------------------
 %% read_terms( + input stream, - list of terms ):
 %% Given an open input stream, produce all the terms that can be read from it.
