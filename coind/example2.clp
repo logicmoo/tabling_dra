@@ -1,7 +1,7 @@
 %% This is example2.clp from Luke Simon's thesis, with some tweaks.
 
-% :- bottom num/1, drop/3 .
-% :- top comember/2.
+:- bottom num/1, drop/3 .
+:- top comember/2.
 
 % A number.
 num( 0 ).
@@ -62,7 +62,7 @@ comember( X, L ) :-  drop( X, L, L1 ),  comember( X, L1 ).
     comember( s( 0 ), X ),
     writeln( "Yes3 !" ).
 
-?-  writeln( "Query4"),
+:-  writeln( "Query4"),
     X = [ 0, s( 0 ), s( s( 0 ) ) | X ],
     once comember( s( 0 ), X ),
     writeln( "Yes4 !" ).
