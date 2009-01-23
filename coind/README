@@ -1,0 +1,29 @@
+--------------------------------------------------------------------------------
+
+This directory includes the following files:
+
+colp.ecl:
+        A metainterpreter of "co-logic programming".  Just load it into
+        Eclipse!  The head comment explains how to use it.
+
+translate_colp.ecl:
+        A translator that converts "co-logic programming" programs into
+        straightforward logic programs.  The head comment explains how
+        to use it.
+
+example.clp:
+        This trivial file illustrates the use of file inclusion (works
+        both with the metainterpreter and with the translator).  It
+        includes another file that contains the real example.
+
+examples:
+        Some examples of coinductive programs, all with the extension
+        ".clp".
+        Files with translated programs will have the extension ".ecl".
+
+original:
+        A directory that contains a metainterpreter (and an example)
+        almost exactly as they appeared in Luke Simon's Ph.D. thesis.
+
+
+--------------------------------------------------------------------------------
