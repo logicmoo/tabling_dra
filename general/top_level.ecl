@@ -15,7 +15,7 @@
 %%%       "interpreted".  This is done to avoid conflicts with predicates
 %%%       used in the metainterpreter (and the top level).  The metainterpreter
 %%%       must access them by using
-%%%          clause( ... )@interpreted.
+%%%          clause( ... ) @ interpreted.
 %%%
 %%%
 %%%    1. To use this top level, just include it in your the file that
@@ -123,25 +123,12 @@
 %% queries.  After this is done, enter interactive mode.
 
 prog( FileName ) :-
-        set_event_handler( 136, redefinition_of_built_in/2 ),
         retractall( known( _, _ ) ),
         erase_module( interpreted ),
         create_module( interpreted ),
         initialise,                              % provided by a metainterpreter
         process_file( FileName ),
         top.
-
-%% An Eclipse-specific handler for redefinition of built-ins.
-%% Eclipse has a great many seldom-used built-ins that restrict the name space
-%% of the interpreted program.  Not much can be done about this, but at least
-%% we can provide an error message in a consistent format.
-
-redefinition_of_built_in( 136, dynamic Culprit ) :-
-        error( [ "*** Can't allow redefinition of built in \"",
-                 Culprit,
-                 "\" ***"
-               ]
-             ).
 
 
 %% process_file( + file name ):
@@ -216,8 +203,9 @@ process_term( (?- Query), VarDict ) :-
 
 process_term( Clause, _ ) :-
         % Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
+        check_not_builtin( Clause ),         % fatal error if redefining builtin
         ensure_dynamic( Clause ),
-        assertz( Clause )@interpreted.
+        assertz( Clause ) @ interpreted.
 
 
 %% include_files( + list of file names ):
@@ -262,7 +250,7 @@ ensure_dynamic( Clause ) :-
         functor( Head, PredicateSymbol, Arity ),
         \+ known( PredicateSymbol, Arity ),
         assert( known( PredicateSymbol, Arity ) ),
-        dynamic( PredicateSymbol / Arity )@interpreted,
+        dynamic( PredicateSymbol / Arity ) @ interpreted,
         fail.
 
 ensure_dynamic( _ ).
@@ -303,6 +291,21 @@ show_results( Dict ) :-
         fail.
 
 show_results( _ ).
+
+
+
+%% check_not_builtin( + clause ):
+%% Raise a fatal error if this clause attempts to redefine a built-in predicate.
+
+check_not_builtin( Clause ) :-
+        get_clause_head( Clause, Head ),
+        functor( Head, P, K ),
+        current_built_in( P/K ) @ interpreted,
+        error( [ "An attempt to redefine a built-in predicate:\n\t",
+                 Clause,
+                 ".\n"
+               ]
+             ).
 
 
 
