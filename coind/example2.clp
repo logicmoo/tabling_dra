@@ -62,7 +62,7 @@ comember( X, L ) :-  drop( X, L, L1 ),  comember( X, L1 ).
     comember( s( 0 ), X ),
     writeln( "Yes3 !" ).
 
-:-  writeln( "Query4"),
+?-  writeln( "Query4"),
     X = [ 0, s( 0 ), s( s( 0 ) ) | X ],
     once comember( s( 0 ), X ),
     writeln( "Yes4 !" ).
