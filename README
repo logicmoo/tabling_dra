@@ -1,0 +1,56 @@
+--------------------------------------------------------------------------------
+
+This directory contains metainterpreters and/or translators for various
+extensions of logic programming.
+
+The code is written in Eclipse Prolog.  No attempt has been made to make
+it portable to different versions of Prolog, but such porting should be
+possible with only moderate effort. The main difficulties are:
+
+1. Use has been made of the "string" data type that can be used in
+   Eclipse for input, output, naming files etc. etc.
+
+2. In order to avoid name conflicts, interpreted programs are stored in
+   a special module.  The module facility of Eclipse is quite advanced,
+   and different from that found in some other Prolog systems.
+   To port, one could simply remove all references to modules (in
+   particular, occurrences of "@interpreted") and either live with the
+   possibility of name conflicts, or solve the problem in a different
+   way (e.g., by adding "i_" at the beginning of each interpreted
+   predicate).
+
+3. Eclipse has many convenient built-ins that might not be present in
+   other Prolog systems (and that might, therefore, require
+   implementation in Prolog in terms of the available built-ins).
+
+It should be noted that in principle porting is not necessary.  Eclipse
+is freely available from  http://www.eclipse-clp.org .
+
+
+
+Here is a short description of the subdirectories:
+
+colp
+----
+Subdirectory "colp" contains a simple metainterpreter for "co-logic
+programming", i.e., logic programming that allows coinductive
+interpretation of selected predicates.
+
+It also contains a simple translator that will transform a program that
+includes coinductive predicates to a straihgtforward logic program
+(conceptually, the translated version can be seen as a result of
+partially evaluating the program together with the metainterpreter).
+
+
+tabling
+-------
+Subdirectory "tabling" contains metainterpreters that illustrate various
+approaches to logic programming with tabling.
+
+
+general
+-------
+Subdirectory "general" contains utility code that is used by the other
+programs.
+
+--------------------------------------------------------------------------------
