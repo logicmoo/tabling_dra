@@ -36,8 +36,22 @@
 %%% (Notice that one does not write down the extension ".clp".)
 %%% The translator will read the program and --- if there are no fatal
 %%% errors --- will write the transformed program on "filename.ecl".
-%%
+%%%
 %%% NOTE: If "filename.ecl" exists, it will be overwritten without warning.
+%%%
+%%% NOTE: A program that works in the coinductive interpreter should work almost
+%%%       in the same fashion after it is translated and loaded directly into
+%%%       Eclipse. The only difference should be that the interpreter executes
+%%%       queries somewhat differently (more or less as if they were entered
+%%%       interactively at the top level).
+%%%       Unlike the interpreter, the translator does not act upon directives
+%%%       that include files (e.g., ":- [ filename ].": such directives are
+%%%       simply copied to output.  This is done on purpose, to allow separate
+%%%       translation: if the file names are given without extensions, and all
+%%%       the included files are also translated, then the effect of directives
+%%%       in the translated program will be to include the translated files
+%%%       (because the default extension will be different when loaded into
+%%%       Eclipse).
 
 
 %%% Directives
