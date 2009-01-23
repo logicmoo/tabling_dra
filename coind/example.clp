@@ -1,1 +1,1 @@
-:- [ ex_comember ].
+:- [ 'examples/comember' ].
