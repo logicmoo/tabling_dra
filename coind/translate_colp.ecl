@@ -43,9 +43,11 @@
 %%% Directives
 %%% ----------
 %%%
-%%% Queries and directives will undergo suitable transformation and be output
-%%% with the translated program.  However, the following directives will be
-%%% interpreted directly by the translator (and not written to the output):
+%%% Queries will undergo the same transformation as clause bodies and be output
+%%% with the translated program.
+%%% Directives will be just copied to the translated program (i.e., without
+%%% transformation). However, the following directives will be interpreted
+%%% directly by the translator (and not copied):
 %%%
 %%% 1.
 %%%     :- coinductive PredSpec .
@@ -320,9 +322,8 @@ transform( [ (:- Directive) | Terms ], _, NewTerms ) :-
         process_translator_directive( Directive ),
         transform( Terms, '', NewTerms ).
 
-transform( [ (:- Directive) | Terms ], _, [ (:- NewDirective) | NewTerms ] ) :-
+transform( [ (:- Directive) | Terms ], _, [ (:- Directive) | NewTerms ] ) :-
         !,
-        transform_body( Directive, [], NewDirective ),
         transform( Terms, '', NewTerms ).
 
 transform( [ (?- Query) | Terms ], _, [ (?- NewQuery) | NewTerms ] ) :-
