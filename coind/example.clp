@@ -1,1 +1,1 @@
-:- [ example2 ].
+:- [ ex_comember ].
