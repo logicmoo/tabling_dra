@@ -224,7 +224,12 @@ verify_program( Terms ) :-
 
 verify_program( _ ).
 
-%
+
+%%------------------------------------------------------------------------------
+%% verify_program_item( + list of terms ):
+%% Given a term that should  be a clause, a directive, or a query,
+%% raise an error if it is obviously incorrect.
+
 verify_program_item( Var ) :-
         var( Var ),
         !,
@@ -241,10 +246,9 @@ verify_program_item( (?- Var) ) :-
         error( [ "A variable query: \"", (?- Var), "\"" ] ).
 
 verify_program_item( Clause ) :-
-        get_clause_head( Clause, Head ),
-        \+ is_good_clause_head( Head ),
+        \+ is_good_clause( Clause ),
         !,
-        error( [ "Incorrect head in clause: \"", Clause, ".\"" ] ).
+        error( [ "Incorrect clause: \"", Clause, ".\"" ] ).
 
 verify_program_item( _ ).
 
