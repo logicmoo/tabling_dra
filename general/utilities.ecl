@@ -7,6 +7,7 @@
 %%%        minor tweaking for other Prolog systems.                      %%%
 
 
+
 %%------------------------------------------------------------------------------
 %% check( + goal ) :
 %%    Succeeds iff goal succeeds, but without instantiating any variables
@@ -15,6 +16,7 @@
 :- mode check( + ).
 
 check( Goal ) :-  \+ \+ Goal .
+
 
 
 %%------------------------------------------------------------------------------
@@ -59,6 +61,7 @@ mk_ground_auxs( [ T | Ts ], N, N2 ) :-
         mk_ground_auxs( Ts, N1, N2 ).
 
 
+
 %%------------------------------------------------------------------------------
 %% is_an_instance( + term, + term ) :
 %%    Succeeds iff arg1 is an instance of arg2, but does not instantiate any
@@ -81,6 +84,7 @@ is_an_instance( T1, T2 ) :-  instance( T1, T2 ). % use the built-in from Eclipse
 %         is_an_instance( T2, T1 ).
 
 are_variants( T1, T2 ) :-  variant( T1, T2 ).    % use the built-in from Eclipse
+
 
 
 %%------------------------------------------------------------------------------
@@ -109,6 +113,62 @@ mk_pattern( P, K, Pattern ) :-
 most_general_instance( Term, Pattern ) :-
         functor( Term, P, K ),
         mk_pattern( P, K, Pattern ).
+
+
+
+%%------------------------------------------------------------------------------
+%% predspecs_to_patterns( + a conjunction of predicate specifications,
+%%                        - list of most general instances of these predicates
+%%                      ):
+%% Given one or several predicate specifications (in the form "p/k" or
+%% "p/k, q/l, ...") check whether they are well-formed: if not, raise a fatal
+%% error; otherwise return a list of the most general instances that correspond
+%% to the predicate specifications.
+
+predspecs_to_patterns( Var, _ ) :-
+        var( Var ),
+        !,
+        error( [ "A variable instead of predicate specifications: \", ",
+                 Var,
+                 "\""
+               ]
+             ).
+
+predspecs_to_patterns( (PredSpec , PredSpecs), [ Pattern | Patterns ] ) :-
+        !,
+        predspec_to_pattern( PredSpec, Pattern ),
+        predspecs_to_patterns( PredSpecs, Patterns ).
+
+predspecs_to_patterns( PredSpec, [ Pattern ] ) :-
+        predspec_to_pattern( PredSpec, Pattern ).
+
+
+%%
+predspec_to_pattern( PredSpec, Pattern ) :-
+        check_predspec( PredSpec ),
+        PredSpec = P / K,
+        mk_pattern( P, K, Pattern ).
+
+
+%%
+check_predspec( Var ) :-
+        var( Var ),
+        !,
+        error( [ "A variable instead of a predicate specification: \", ",
+                 Var,
+                 "\""
+               ]
+             ).
+
+check_predspec( P / K ) :-
+        atom( P ),
+        integer( K ),
+        K >= 0,
+        !.
+
+check_predspec( PredSpec ) :-
+        error( [ "An incorrect predicate specification: \"", PredSpec, "\"" ] ).
+
 
 
 %%------------------------------------------------------------------------------
@@ -147,6 +207,7 @@ is_good_clause_head( Hd ) :-
 is_good_clause_head( Hd ) :-
         compound( Hd ),
         \+ is_list( Hd ).
+
 
 
 %%------------------------------------------------------------------------------
@@ -188,6 +249,7 @@ verify_program_item( Clause ) :-
 verify_program_item( _ ).
 
 
+
 %%------------------------------------------------------------------------------
 %% ensure_filename_is_an_atom( + filename ):
 %% Verify that the filename is an atom.  If not, produce a fatal error.
@@ -217,6 +279,7 @@ open_file( RootFileNameString, ExtensionString, Mode, Stream ) :-
         open( FileNameString, Mode, Stream ).
 
 
+
 %%------------------------------------------------------------------------------
 %% read_terms( + input stream, - list of terms ):
 %% Given an open input stream, produce all the terms that can be read from it.
@@ -239,6 +302,7 @@ read_terms_( InputStream, Terms-End ) :-
             End = [ Term | NewEnd ],
             read_terms_( InputStream, Terms - NewEnd )
         ).
+
 
 
 %%------------------------------------------------------------------------------
@@ -303,6 +367,7 @@ write_list( S, NotAList ) :-
                ).
 
 
+
 %%------------------------------------------------------------------------------
 %% getline( - list of character strings ) :
 %%    Reads characters from the current input stream upto (and including) the
@@ -342,6 +407,7 @@ putline( Cs ) :-  putchars( Cs ),  nl.
 
 putchars( []         ).
 putchars( [ C | Cs ] ) :-  put_char( C ),  putchars( Cs ).
+
 
 
 %%------------------------------------------------------------------------------
@@ -391,6 +457,7 @@ begin_warning :-
 
 end_warning :-
         writeln( warning_output, " ---" ).
+
 
 
 %%------------------------------------------------------------------------------

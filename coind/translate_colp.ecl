@@ -535,60 +535,6 @@ process_translator_directive( top PredSpecs ) :-
 
 
 
-%% predspecs_to_patterns( + a conjunction of predicate specifications,
-%%                        - list of most general instances of these predicates
-%%                      ):
-%% Given one or several predicate specifications (in the form "p/k" or
-%% "p/k, q/l, ...") check whether they are well-formed: if not, raise a fatal
-%% error; otherwise return a list of the most general instances that correspond
-%% to the predicate specifications.
-
-predspecs_to_patterns( Var, _ ) :-
-        var( Var ),
-        !,
-        error( [ "A variable instead of predicate specifications: \", ",
-                 Var,
-                 "\""
-               ]
-             ).
-
-predspecs_to_patterns( (PredSpec , PredSpecs), [ Pattern | Patterns ] ) :-
-        !,
-        predspec_to_pattern( PredSpec, Pattern ),
-        predspecs_to_patterns( PredSpecs, Patterns ).
-
-predspecs_to_patterns( PredSpec, [ Pattern ] ) :-
-        predspec_to_pattern( PredSpec, Pattern ).
-
-
-%%
-predspec_to_pattern( PredSpec, Pattern ) :-
-        check_predspec( PredSpec ),
-        PredSpec = P / K,
-        mk_pattern( P, K, Pattern ).
-
-
-%%
-check_predspec( Var ) :-
-        var( Var ),
-        !,
-        error( [ "A variable instead of a predicate specification: \", ",
-                 Var,
-                 "\""
-               ]
-             ).
-
-check_predspec( P / K ) :-
-        atom( P ),
-        integer( K ),
-        K >= 0,
-        !.
-
-check_predspec( PredSpec ) :-
-        error( [ "An incorrect predicate specification: \"", PredSpec, "\"" ] ).
-
-
-
 %% declare_coinductive( + list of general instances ):
 %% Store the general instances in "coinductive", warning about duplications.
 %% An overlap with "bottom" is a fatal error.
