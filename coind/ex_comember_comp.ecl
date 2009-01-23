@@ -1,5 +1,7 @@
 %% This is example2.clp from Luke Simon's thesis, with some tweaks.
-%% "Compiled" by hand.
+
+%% "Compiled" to Prolog (by hand, but in the spirit of the transformation
+%% performed by translate_colp).
 
 
 % A number.
@@ -79,38 +81,22 @@ comember( X, L, Hyp ) :-
 
 
 % Example queries:
-?-  X = [ 0, s( 0 ), s( s( 0 ) ) ],
-    (
-        member2( s( 0 ), X, [] ),
-        write( "YES: " ),
-        writeln( member2( s( 0 ), X ) ),
-        fail
-    ;
-        writeln( "NO" )
-    ).
+?-  writeln( "Query1" ),
+    X = [ 0, s( 0 ), s( s( 0 ) ) ],
+    member2( s( 0 ), X, [] ),
+    writeln( "Yes1 !" ).
 
-?-  X = [ 0, s( 0 ), s( s( 0 ) ) ],
-    (
-        member1( s( 0 ), X, [] ),
-        write( "YES: " ),
-        writeln( member1( s( 0 ), X ) ),
-        fail
-    ;
-        writeln( "NO" )
-    ).
+?-  writeln( "Query2"),
+    X = [ 0, s( 0 ), s( s( 0 ) ) ],
+    member1( s( 0 ), X, [] ),
+    writeln( "Yes2 !" ).
 
-
-?-  X = [ 0, s( 0 ), s( s( 0 ) ) ],
-    (
-        comember( s( 0 ), X, [] ),
-        write( "YES: " ),
-        writeln( comember( s( 0 ), X ) ),
-        fail
-    ;
-        writeln( "NO" )
-    ).
-
-?-  X = [ 0, s( 0 ), s( s( 0 ) ) | X ],
+?-  writeln( "Query3"),
+    X = [ 0, s( 0 ), s( s( 0 ) ) ],
     comember( s( 0 ), X, [] ),
-    write( "YES: " ),
-    writeln( comember( s( 0 ), X ) ).
+    writeln( "WHAT? SHOULD HAVE FAILED !" ).
+
+?-  writeln( "Query4"),
+    X = [ 0, s( 0 ), s( s( 0 ) ) | X ],
+    once comember( s( 0 ), X, [] ),
+    writeln( "Yes4 !" ).
