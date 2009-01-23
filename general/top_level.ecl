@@ -1,5 +1,5 @@
 %%%                                                                      %%%
-%%%  A general top level for metainterpreters.                           %%%
+%%%  A simple (!) general top level for metainterpreters.                %%%
 %%%                                                                      %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
 %%%                                                                      %%%
@@ -261,7 +261,7 @@ process_directive( Directive ) :-
         execute_directive( Directive ).          % provided by a metainterpreter
 
 process_directive( Directive ) :-                % unsupported directive
-        \+ legal_directive( Directive ),
+        % \+ legal_directive( Directive ),
         !,
         error( [ "*** Unknown directive: \"", (:- Directive), ".\" ***" ] ).
 
