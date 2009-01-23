@@ -2,12 +2,16 @@
 %%%  A translator for co-logic programming.                              %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
 %%%                                                                      %%%
+%%%  Last update: 22 January 2009.                                       %%%
+%%%                                                                      %%%
+%%%  NOTE: Some of the code may be Eclipse-specific and may require      %%%
+%%%        minor tweaking for other Prolog systems.                      %%%
 
 
 %%% General description
 %%% -------------------
 %%%
-%%% This translator transforms co-logic programming programs into
+%%% This translator transforms "co-logic programming" programs into
 %%% straightforward logic programming programs that can be compiled/executed
 %%% in any logic programming system that does not incorporate the "occur check"
 %%% in normal unification.
@@ -17,6 +21,9 @@
 %%%
 %%% NOTE: A transformed program cannot contain variable literals or invocations
 %%%       of "call/1".
+%%%       A transformed program cannot contain negative literals. (It could
+%%%       be done, but the machinery would have to be much heavier.)
+%%%
 
 
 %%% Usage
@@ -64,11 +71,9 @@
 %%%
 %%%  These are treated as declarations of predicates that should be treated as
 %%%  "normal" logic programming predicates, and should, therefore, not be
-%%%  subjected to transformation.  A declaration of this sort constitues a claim
-%%%  by the programmer that the "bottom" predicate will not invoke --- directly
-%%%  or indirectly --- any coinductive predicates.
-%%%  If any of the "bottom" predicates are defined in the translated file,
-%%%  the translator will actually verify this claim. (TBD!!).
+%%%  subjected to transformation.  A declaration of this sort constitutes a
+%%%  claim by the programmer that the "bottom" predicate will not invoke ---
+%%%  directly or indirectly --- any coinductive predicates.
 %%%
 %%%  NOTE: 1. It is an error for a coinductive predicate to be declared as
 %%%           "bottom".
@@ -157,11 +162,6 @@
 %%%           p_( X, X, _ ).
 %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-% :- module( translate_colp ).
-
-% :- export tc/1.   % i.e., translate_colp( + filename )
 
 
 :- ensure_loaded( '../general/utilities' ).
@@ -366,6 +366,9 @@ transform( [ Clause | Terms ], CurrentPred, [ NewClause | NewTerms ] ) :-
 %% starting_new_predicate( + most general instance of a predicate ):
 %% We are beginning to work on the definition of this predicate.
 %% Check that there is no contiguity error, mark the predicate as defined.
+
+:- mode starting_new_predicate( + ).
+
 starting_new_predicate( Pattern ) :-
         check_contiguity( Pattern ),
         assert( defined( Pattern ) ).
@@ -413,8 +416,11 @@ transform_clause( Fact, NewFact ) :-
 
 
 
-%% transform_body( + body, + variable with set of hypotheses, - new body ):
+%% transform_body( + body, + set of hypotheses, - new body ):
 %% Transform the body of a clause.
+%% NOTE: The set of hypotheses may be a variable that will be instantiated only
+%%       when the transformed program is run.
+
 
 transform_body( Var ) :-
         !,
@@ -453,8 +459,11 @@ transform_body( Call, HypVar, NewCall ) :-
 %%                       ):
 %% Transform this head or simple call.
 
-        %% >>> Special treatment for once/1 etc. etc.
-        %% >>> Complain about negation???
+:- mode transform_logical_atom( +, ?, - ).
+
+transform_logical_atom( \+ C, _, _ ) :-
+        !,
+        error( [ "Negative literal: \"", \+ C, "\"" ] ).
 
 transform_logical_atom( call( C ), _, _ ) :-
         !,
@@ -500,6 +509,7 @@ transform_predicate_name( Name, NewName ) :-
 %% Is this one of the directives that are interpreted by the translator?
 
 :- mode is_a_translator_directive( + ).
+
 is_a_translator_directive( coinductive _ ).
 is_a_translator_directive( bottom      _ ).
 is_a_translator_directive( top         _ ).
@@ -512,28 +522,28 @@ is_a_translator_directive( top         _ ).
 :-  mode process_translator_directive( + ).
 
 process_translator_directive( coinductive PredSpecs ) :-
-        check_predspecs( PredSpecs, PredSpecList ),
-        declare_coinductive( PredSpecList ).
+        predspecs_to_patterns( PredSpecs, Patterns ),
+        declare_coinductive( Patterns ).
 
 process_translator_directive( bottom PredSpecs ) :-
-        check_predspecs( PredSpecs, PredSpecList ),
-        declare_bottom( PredSpecList ).
+        predspecs_to_patterns( PredSpecs, Patterns ),
+        declare_bottom( Patterns ).
 
 process_translator_directive( top PredSpecs ) :-
-        check_predspecs( PredSpecs, PredSpecList ),
-        declare_top( PredSpecList ).
+        predspecs_to_patterns( PredSpecs, Patterns ),
+        declare_top( Patterns ).
 
 
 
-%% check_predspecs( + a conjunction of predicate specification (or just one),
-%%                  - list of predicate specifications
-%%                ):
+%% predspecs_to_patterns( + a conjunction of predicate specifications,
+%%                        - list of most general instances of these predicates
+%%                      ):
 %% Given one or several predicate specifications (in the form "p/k" or
 %% "p/k, q/l, ...") check whether they are well-formed: if not, raise a fatal
 %% error; otherwise return a list of the most general instances that correspond
 %% to the predicate specifications.
 
-check_predspecs( Var, _ ) :-
+predspecs_to_patterns( Var, _ ) :-
         var( Var ),
         !,
         error( [ "A variable instead of predicate specifications: \", ",
@@ -542,17 +552,24 @@ check_predspecs( Var, _ ) :-
                ]
              ).
 
-check_predspecs( (PredSpec , PredSpecs), [ Pattern | Patterns ] ) :-
+predspecs_to_patterns( (PredSpec , PredSpecs), [ Pattern | Patterns ] ) :-
         !,
-        check_predspec( PredSpec, Pattern ),
-        check_predspecs( PredSpecs, Patterns ).
+        predspec_to_pattern( PredSpec, Pattern ),
+        predspecs_to_patterns( PredSpecs, Patterns ).
 
-check_predspecs( PredSpec, [ Pattern ] ) :-
-        check_predspec( PredSpec, Pattern ).
+predspecs_to_patterns( PredSpec, [ Pattern ] ) :-
+        predspec_to_pattern( PredSpec, Pattern ).
 
 
 %%
-check_predspec( Var, _ ) :-
+predspec_to_pattern( PredSpec, Pattern ) :-
+        check_predspec( PredSpec ),
+        PredSpec = P / K,
+        mk_pattern( P, K, Pattern ).
+
+
+%%
+check_predspec( Var ) :-
         var( Var ),
         !,
         error( [ "A variable instead of a predicate specification: \", ",
@@ -561,33 +578,35 @@ check_predspec( Var, _ ) :-
                ]
              ).
 
-check_predspec( P / K, Pattern ) :-
+check_predspec( P / K ) :-
         atom( P ),
         integer( K ),
         K >= 0,
-        !,
-        mk_pattern( P, K, Pattern ).
+        !.
 
-check_predspec( PredSpec, _ ) :-
+check_predspec( PredSpec ) :-
         error( [ "An incorrect predicate specification: \"", PredSpec, "\"" ] ).
 
 
 
 %% declare_coinductive( + list of general instances ):
 %% Store the general instances in "coinductive", warning about duplications.
-%% An overlap with bottom is a fatal error.
+%% An overlap with "bottom" is a fatal error.
 
 declare_coinductive( Patterns ) :-
-        member( Pattern, Patterns ),
+        member( Pattern, Patterns ),              % i.e., sequence through these
         check_declaration_order( Pattern, "coinductive" ),
+        (
+            bottom( Pattern )
+        ->
+            overlap_error( Pattern )
+        ;
+            true
+        ),
         (
             coinductive( Pattern )
         ->
             duplicate_warning( Pattern, "coinductive" )
-        ;
-            bottom( Pattern )
-        ->
-            overlap_error( Pattern )
         ;
             assert( coinductive( Pattern ) )
         ),
@@ -598,19 +617,22 @@ declare_coinductive( _ ).
 
 %% declare_bottom( + list of general instances ):
 %% Store the general instances in "bottom", warning about duplications.
-%% An overlap with coinductive is a fatal error.
+%% An overlap with "coinductive" is a fatal error.
 
 declare_bottom( Patterns ) :-
-        member( Pattern, Patterns ),
+        member( Pattern, Patterns ),              % i.e., sequence through these
         check_declaration_order( Pattern, "bottom" ),
+        (
+            coinductive( Pattern )
+        ->
+            overlap_error( Pattern )
+        ;
+            true
+        ),
         (
             bottom( Pattern )
         ->
             duplicate_warning( Pattern, "bottom" )
-        ;
-            coinductive( Pattern )
-        ->
-            overlap_error( Pattern )
         ;
             assert( bottom( Pattern ) )
         ),
@@ -623,15 +645,12 @@ declare_bottom( _ ).
 %% Store the general instances in "top", warning about duplications.
 
 declare_top( Patterns ) :-
-        member( Pattern, Patterns ),
+        member( Pattern, Patterns ),             % i.e., sequence through these
         check_declaration_order( Pattern, "top" ),
         (
             top( Pattern )
         ->
-            functor( Pattern, P, K ),
-            warning( [ "Duplicate declaration of ", P / K, " as a top predicate"
-                     ]
-                   )
+            duplicate_warning( Pattern, "top" )
         ;
             assert( top( Pattern ) )
         ),
