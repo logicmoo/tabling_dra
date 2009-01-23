@@ -318,7 +318,7 @@ top :-
         write( output, ': ' ),                                          % prompt
         flush( output ),
         readvar( input, Term, VarDict ),
-        check_non_variable( Term ),
+        verify_program_item( Term ),
         interactive_term( Term, VarDict ),
         ( Term = end_of_file ; Term = quit ),
         !.
