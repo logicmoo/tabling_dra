@@ -166,7 +166,7 @@ process_input( ProgStream ) :-
         repeat,
         readvar( ProgStream, Term, VarDict ),
         % write( '<processing \"' ),  write( Term ),  writeln( '\">' ),
-        check_non_variable( Term ),
+        verify_program_item( Term ),
         process_term( Term, VarDict ),
         Term = end_of_file,
         !.
@@ -180,23 +180,11 @@ process_input( ProgStream ) :-
 ensure_extension( FileName, FullFileName ) :-
         atom_string( FileName, FileNameString ),
         \+ substring( FileNameString, ".", _ ),   % no extension
-        default_extension( ExtString ),           % provided by metainterpreter?
+        default_extension( ExtString ),           % provided by metainterpreter
         !,
         concat_strings( FileNameString, ExtString, FullFileName ).
 
 ensure_extension( FileName, FileName ).       % extension present, or no default
-
-
-%% check_non_variable( + term ):
-%% If the term is a variable, fail after printing a warning.
-
-check_non_variable( V ) :-
-        var( V ),
-        !,
-        warning( [ "variable term (", V, ".) is ignored. ---" ] ),
-        fail.
-
-check_non_variable( _ ).
 
 
 
@@ -205,6 +193,9 @@ check_non_variable( _ ).
 %% Process a term, which should be a directive, a query, a program clause or
 %% end_of_file.
 %% The variable dictionary is used for printing out the results of a query.
+%%
+%% NOTE: The superficial correctness of this term as a program item has already
+%%       been verified by "verify_program_item/1".
 
 :- mode process_term( +, + ).
 
@@ -225,15 +216,8 @@ process_term( (?- Query), VarDict ) :-
 
 process_term( Clause, _ ) :-
         % Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
-        is_good_clause( Clause ),
-        !,
         ensure_dynamic( Clause ),
         assertz( Clause )@interpreted.
-
-process_term( Clause, _ ) :-
-        % Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
-        % \+ is_good_clause( Clause ),
-        error( [ "*** Erroneous clause: \"", Clause, "\" ***" ] ).
 
 
 %% include_files( + list of file names ):
