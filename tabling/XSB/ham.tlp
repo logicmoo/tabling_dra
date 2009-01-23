@@ -39,56 +39,56 @@ cycle_ham( [X|Y], [X, T|L] ):-
         edge( T, X ).		%  the last connect_ion
 
 chain_ham( [X|Y], K, L ):-
-        delete_( Z, Y, T ),
+        delete( Z, Y, T ),
         edge( X, Z ),
         chain_ham( [Z|T], [X|K], L ).
 chain_ham( [X], L, [X|L] ).
 
-delete_( X, [U|Y], [U|Z] ):-
-        delete_( X, Y, Z ).
-delete_( X, [X|Y], Y ).
+delete( X, [U|Y], [U|Z] ):-
+        delete( X, Y, Z ).
+delete( X, [X|Y], Y ).
 
 edge( X, Y ):-
-        connect_( X, L ),
+        connect( X, L ),
         el1( Y, L ).
 
 el1( X, [X|_] ).
 el1( X, [_|L] ):-
 	el1( X, L ).
 
-connect_( a, [b, j, k] ).
-connect_( b, [a, c, p] ).
-connect_( c, [b, d, l] ).
-connect_( d, [c, e, q] ).
-connect_( e, [d, f, m] ).
-connect_( f, [e, g, r] ).
-connect_( g, [f, h, n] ).
-connect_( h, [i, g, s] ).
-connect_( i, [j, h, o] ).
-connect_( j, [a, i, t] ).
-connect_( k, [o, l, a] ).
-connect_( l, [k, m, c] ).
-connect_( m, [l, n, e] ).
-connect_( n, [m, o, g] ).
-connect_( o, [n, k, i] ).
-connect_( p, [b, q, t] ).
-connect_( q, [p, r, d] ).
-connect_( r, [q, s, f] ).
-connect_( s, [r, t, h] ).
-connect_( t, [p, s, j] ).
+connect( a, [b, j, k] ).
+connect( b, [a, c, p] ).
+connect( c, [b, d, l] ).
+connect( d, [c, e, q] ).
+connect( e, [d, f, m] ).
+connect( f, [e, g, r] ).
+connect( g, [f, h, n] ).
+connect( h, [i, g, s] ).
+connect( i, [j, h, o] ).
+connect( j, [a, i, t] ).
+connect( k, [o, l, a] ).
+connect( l, [k, m, c] ).
+connect( m, [l, n, e] ).
+connect( n, [m, o, g] ).
+connect( o, [n, k, i] ).
+connect( p, [b, q, t] ).
+connect( q, [p, r, d] ).
+connect( r, [q, s, f] ).
+connect( s, [r, t, h] ).
+connect( t, [p, s, j] ).
 
 /*-----------------------------------------
 	this is another graph example
-connect_( 0, [1, 2, 3, 4, 5, 6, 7, 8, 9] ).
-connect_( 1, [0, 2, 3, 4, 5, 6, 7, 8, 9] ).
-connect_( 2, [0, 1, 3, 4, 5, 6, 7, 8, 9] ).
-connect_( 3, [0, 1, 2, 4, 5, 6, 7, 8, 9] ).
-connect_( 4, [0, 1, 2, 3, 5, 6, 7, 8, 9] ).
-connect_( 5, [0, 1, 2, 3, 4, 6, 7, 8, 9] ).
-connect_( 6, [0, 1, 2, 3, 4, 5, 7, 8, 9] ).
-connect_( 7, [0, 1, 2, 3, 4, 5, 6, 8, 9] ).
-connect_( 8, [0, 1, 2, 3, 4, 5, 6, 7, 9] ).
-connect_( 9, [0, 1, 2, 3, 4, 5, 6, 7, 8] ).
+connect( 0, [1, 2, 3, 4, 5, 6, 7, 8, 9] ).
+connect( 1, [0, 2, 3, 4, 5, 6, 7, 8, 9] ).
+connect( 2, [0, 1, 3, 4, 5, 6, 7, 8, 9] ).
+connect( 3, [0, 1, 2, 4, 5, 6, 7, 8, 9] ).
+connect( 4, [0, 1, 2, 3, 5, 6, 7, 8, 9] ).
+connect( 5, [0, 1, 2, 3, 4, 6, 7, 8, 9] ).
+connect( 6, [0, 1, 2, 3, 4, 5, 7, 8, 9] ).
+connect( 7, [0, 1, 2, 3, 4, 5, 6, 8, 9] ).
+connect( 8, [0, 1, 2, 3, 4, 5, 6, 7, 9] ).
+connect( 9, [0, 1, 2, 3, 4, 5, 6, 7, 8] ).
 -----------------------------------------*/
 
 ?- set_flag( print_depth, 100 ), demo.
