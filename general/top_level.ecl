@@ -122,13 +122,85 @@
 %% Initialise, then load a program from this file, processing directives and
 %% queries.  After this is done, enter interactive mode.
 
+
 prog( FileName ) :-
         retractall( known( _, _ ) ),
-        erase_module( interpreted ),
-        create_module( interpreted ),
+        erase_modules,
+        create_modules,
         initialise,                              % provided by a metainterpreter
         process_file( FileName ),
         top.
+
+
+
+%% NOTE: In order to avoid name conflicts with the numerous built-in predicates
+%%       of Eclipse, the only thing "interpreted" imports is the module
+%%       "interface".  The module "interface" is created by the top-level from
+%%       a declaration of built-ins allowed by the metainterpreter (and provided
+%%       by the latter in table "builtin").  The difficulty is that Eclipse does
+%%       not allow direct exportation of built-ins: this is solved by defining
+%%       yet another module, called "interface_aux".
+%%       The exact mechanics are best explained by means of an example:
+%%
+%%       1. Let the metainterpreter contain a declaration of only one built-in:
+%%             builtin( writeln( _ ) ).
+%%
+%%       2. The top level will add the following clause to module
+%%          "interface_aux" (which imports all the built-ins by default):
+%%             xxx_writeln( X ) :-  writeln( X ).
+%%
+%%       3. "xxx_writeln/1" will be exported by "interface_aux".
+%%
+%%       4. Module "interface" will import only "interface_aux", and will be
+%%          closed to default importation of built-ins.  It will define clause:
+%%             writeln( X) :- xxx_writeln( X ).
+%%
+%%       5. "writeln/1" is now a user-defined predicate and can be exported from
+%%          "interface".
+%%
+%%       6. "interpreted" will import only "interface", and will be closed to
+%%          default importation of built-ins.  The interpreted program can use
+%%          "writeln/1" and no other built-ins.  It can also define predicates
+%%          whose names would normally clash with names of built-ins (e.g.,
+%%          "connect/2", which might be useful in, say, a graph-processing
+%%          application).
+
+
+%% erase_modules:
+%% Erase the modules that might be there after interpreting the previous
+%% program.
+
+erase_modules :-
+        erase_module( interpreted ),
+        erase_module( interface ),
+        erase_module( interface_aux ).
+
+%% create_modules:
+%% Create the modules.
+
+create_modules :-
+        create_module( interface_aux ),
+        create_module( interface  , [], [ interface_aux ] ),
+        create_module( interpreted, [], [ interface     ] ),
+        fill_interface_modules.
+
+%
+fill_interface_modules :-
+        builtin( Pattern ),
+        functor( Pattern, F, K ),
+        concat_atoms( 'xxx_', F, ExtF ),
+        mk_pattern( ExtF, K, ExtPattern ),
+        ExtPattern =.. [ _ | Args ],
+        Pattern    =.. [ _ | Args ],     % i.e., unify arguments of the patterns
+        assert( (ExtPattern :- Pattern) ) @ interface_aux,
+        assert( (Pattern :- ExtPattern) ) @ interface,
+        export( ExtF / K ) @ interface_aux,
+        export( F    / K ) @ interface,
+        fail.
+
+fill_interface_modules.
+
+
 
 
 %% process_file( + file name ):
@@ -299,13 +371,15 @@ show_results( _ ).
 
 check_not_builtin( Clause ) :-
         get_clause_head( Clause, Head ),
-        functor( Head, P, K ),
-        current_built_in( P/K ) @ interpreted,
+        builtin( Head ),
+        !,
         error( [ "An attempt to redefine a built-in predicate:\n\t",
                  Clause,
                  ".\n"
                ]
              ).
+
+check_not_builtin( _ ).
 
 
 
