@@ -1,7 +1,7 @@
 %%%  Some generally-useful utilities.                                    %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
 %%%                                                                      %%%
-%%%  Last update: 22 January 2009.                                       %%%
+%%%  Last update: 23 January 2009.                                       %%%
 %%%                                                                      %%%
 %%%  NOTE: Some of the code may be Eclipse-specific and may require      %%%
 %%%        minor tweaking for other Prolog systems.                      %%%
