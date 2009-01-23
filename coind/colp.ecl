@@ -1,7 +1,13 @@
 %%%                                                                      %%%
 %%%  A meta-interpreter for co-logic programming.                        %%%
 %%%  Based on "colp.pro" by Luke Evans Simon.                            %%%
-%%%  Written by Feliks Kluzniak at UTD.                                  %%%
+%%%                                                                      %%%
+%%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
+%%%                                                                      %%%
+%%%  Last update: 22 January 2009.                                       %%%
+%%%                                                                      %%%
+%%%  NOTE: Some of the code may be Eclipse-specific and may require      %%%
+%%%        minor tweaking for other Prolog systems.                      %%%
 %%%                                                                      %%%
 
 %%% NOTE:
@@ -39,16 +45,19 @@
 %%  NOTE: Just adding "!" won't do the trick, the main metainterpreter
 %%        would have to be modified.
 
-builtin( true        ).
-builtin( false       ).
-builtin( fail        ).
-builtin( _ = _       ).
-builtin( _ \= _      ).
-builtin( \+( _ )     ).
-builtin( once _      ).   % special treatment in solve/2
-builtin( (_ ->_ ; _) ).   % special treatment in solve/2
-builtin( (_ ; _)     ).   % special treatment in solve/2
-builtin( (_ , _)     ).   % special treatment in solve/2
+builtin( true         ).
+builtin( false        ).
+builtin( fail         ).
+builtin( _ = _        ).
+builtin( _ \= _       ).
+builtin( \+( _ )      ).
+builtin( once _       ).   % special treatment in solve/2
+builtin( (_ ->_ ; _)  ).   % special treatment in solve/2
+builtin( (_ ; _)      ).   % special treatment in solve/2
+builtin( (_ , _)      ).   % special treatment in solve/2
+builtin( writeln( _ ) ).
+builtin( write( _ )   ).
+builtin( nl           ).
 
 
 
@@ -57,6 +66,8 @@ builtin( (_ , _)     ).   % special treatment in solve/2
 :- dynamic coinductive/1 .         % e.g., coinductive( comember( _, _ ) ).
 
 :- op( 1000, fy, coinductive ).    % allow  ":- coinductive p/k ."
+:- op( 1000, fy, bottom ).         % allow  ":- bottom p/k ."        (see below)
+:- op( 1000, fy, top ).            % allow  ":- top p/k ."           (see below)
 
 
 default_extension( ".clp" ).       % default extension for file names
@@ -70,8 +81,13 @@ initialise :-
 
 
 %% The legal directives (check external form only).
+%% Note: ":- top ..." and ":- bottom ..." are ignored by this metainterpreter,
+%%       and are allowed only to allow the same examples to be translated
+%%       by "translate_colp".
 
 legal_directive( coinductive _ ).
+legal_directive( bottom      _ ).
+legal_directive( top         _ ).
 
 
 %% execute_directive( + directive ):
@@ -87,6 +103,10 @@ execute_directive( coinductive P / K ) :-          % declaration of coinductive
         (\+ atom( P ) ; \+ integer( K ) ; K < 0),  %  obviously wrong
         !,
         warning( [ "Erroneous directive: \"", (:- coinductive P / K), '\"' ] ).
+
+execute_directive( bottom _ ).
+
+execute_directive( top    _ ).
 
 
 
