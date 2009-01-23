@@ -12,8 +12,8 @@
 %%% -------------------
 %%%
 %%% This translator transforms "co-logic programming" programs into
-%%% straightforward logic programming programs that can be compiled/executed
-%%% in any logic programming system that does not incorporate the "occur check"
+%%% straightforward logic programs that can be compiled/executed in any
+%%% logic programming system that does not incorporate the "occur check"
 %%% in normal unification.
 %%%
 %%% The transformed programs may cause errors if they invoke built-in predicates
