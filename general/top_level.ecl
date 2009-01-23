@@ -1,6 +1,12 @@
 %%%                                                                      %%%
 %%%  A general top level for metainterpreters.                           %%%
-%%%  Written by Feliks Kluzniak at UTD.                                  %%%
+%%%                                                                      %%%
+%%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
+%%%                                                                      %%%
+%%%  Last update: 22 January 2009.                                       %%%
+%%%                                                                      %%%
+%%%  NOTE: Some of the code may be Eclipse-specific and may require      %%%
+%%%        minor tweaking for other Prolog systems.                      %%%
 %%%                                                                      %%%
 
 %%% NOTE:
