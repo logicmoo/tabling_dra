@@ -510,7 +510,7 @@ begin_error :-
 %% End a error printout.
 
 end_error :-
-        writeln( error, " ***" ),
+        writeln( error, "***" ),
         abort.
 
 %%------------------------------------------------------------------------------
