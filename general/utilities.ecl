@@ -1,4 +1,10 @@
-%%%%  Some generally-useful utilities.  %%%%
+%%%  Some generally-useful utilities.                                    %%%
+%%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
+%%%                                                                      %%%
+%%%  Last update: 22 January 2009.                                       %%%
+%%%                                                                      %%%
+%%%  NOTE: Some of the code may be Eclipse-specific and may require      %%%
+%%%        minor tweaking for other Prolog systems.                      %%%
 
 
 %%------------------------------------------------------------------------------
@@ -106,6 +112,198 @@ most_general_instance( Term, Pattern ) :-
 
 
 %%------------------------------------------------------------------------------
+%% is_good_clause( + term ):
+%% Is this term a reasonable clause?
+
+is_good_clause( T ) :-
+        nonvar( T ),
+        get_clause_head( T, H ),
+        is_good_clause_head( H ).
+
+
+%%------------------------------------------------------------------------------
+%% get_clause_head( + term, - head ):
+%% Treat this non-variable term as a clause, get its head.
+
+:-mode get_clause_head( +, - ).
+
+get_clause_head( H :- _, H ) :-  !.
+get_clause_head( H     , H ).
+
+
+%%------------------------------------------------------------------------------
+%% is_good_clause_head( + term ):
+%% Is this term a good head for a clause?
+
+is_good_clause_head( Var ) :-
+        var( Var ),
+        !,
+        fail.
+
+is_good_clause_head( Hd ) :-
+        atom( Hd ),
+        !.
+
+is_good_clause_head( Hd ) :-
+        compound( Hd ),
+        \+ is_list( Hd ).
+
+
+%%------------------------------------------------------------------------------
+%% verify_program( + list of terms ):
+%% Given a list of terms that should all be clauses, directives, or queries,
+%% raise an error if any of the terms is obviously incorrect.
+
+:- mode verify_program( + ).
+
+verify_program( Terms ) :-
+        member( Term, Terms ),
+        verify_program_item( Term ),
+        fail.
+
+verify_program( _ ).
+
+%
+verify_program_item( Var ) :-
+        var( Var ),
+        !,
+        error( [ "A variable clause: \"", Var, "\"" ] ).
+
+verify_program_item( (:- Var) ) :-
+        var( Var ),
+        !,
+        error( [ "A variable directive: \"", (:- Var), "\"" ] ).
+
+verify_program_item( (?- Var) ) :-
+        var( Var ),
+        !,
+        error( [ "A variable query: \"", (?- Var), "\"" ] ).
+
+verify_program_item( Clause ) :-
+        get_clause_head( Clause, Head ),
+        \+ is_good_clause_head( Head ),
+        !,
+        error( [ "Incorrect head in clause: \"", Clause, ".\"" ] ).
+
+verify_program_item( _ ).
+
+
+%%------------------------------------------------------------------------------
+%% ensure_filename_is_an_atom( + filename ):
+%% Verify that the filename is an atom.  If not, produce a fatal error.
+
+ensure_filename_is_an_atom( FileName ) :-
+        atom( FileName ),
+        !.
+
+ensure_filename_is_an_atom( FileName ) :-
+        % \+ atom( FileName ),
+        error( [ "*** Illegal file name \"", FileName, "\" (not an atom). ***" ]
+             ).
+
+
+%%------------------------------------------------------------------------------
+%% open_file( + root filename string,
+%%            + filename extension string,
+%%            + mode,
+%%            - stream
+%%          ):
+%% Construct the file name, and open the file in this mode.
+
+:- mode open_file( +, +, +, - ).
+
+open_file( RootFileNameString, ExtensionString, Mode, Stream ) :-
+        concat_strings( RootFileNameString, ExtensionString, FileNameString ),
+        open( FileNameString, Mode, Stream ).
+
+
+%%------------------------------------------------------------------------------
+%% read_terms( + input stream, - list of terms ):
+%% Given an open input stream, produce all the terms that can be read from it.
+%%
+%% The algorithm uses a d-list.
+
+:- mode read_terms( +, - ).
+
+read_terms( InputStream, Terms ) :-
+        read_terms_( InputStream, Terms-Terms ).
+
+%
+read_terms_( InputStream, Terms-End ) :-
+        read( InputStream, Term ),
+        (
+            Term == end_of_file
+        ->
+            End = []
+        ;
+            End = [ Term | NewEnd ],
+            read_terms_( InputStream, Terms - NewEnd )
+        ).
+
+
+%%------------------------------------------------------------------------------
+%% write_terms( + list of terms, + output stream ):
+%% Given an open output stream, write onto it all the terms from the list,
+%% one per line but without any other pretty-printing.
+
+:- mode write_terms( +, + ).
+
+write_terms( Terms, OutputStream ) :-
+        member( Term, Terms ),
+        write( OutputStream, Term ),
+        writeln( OutputStream, '.' ),
+        fail.
+
+write_terms( _, _ ).
+
+
+%%------------------------------------------------------------------------------
+%% write_clauses( + list of clauses, + output stream ):
+%% Given an open output stream, write onto it all the clauses from the list.
+
+:- mode write_clauses( +, + ).
+
+write_clauses( Clauses, OutputStream ) :-
+        member( Clause, Clauses ),
+        writeclause( OutputStream, Clause ),
+        fail.
+
+write_clauses( _, _ ).
+
+
+%%------------------------------------------------------------------------------
+%% write_list( +stream, +list ):
+%% Output the items on this list to this stream.
+%% There are no spaces between items on the list.
+%% Strings are printed without quotes.
+
+write_list( S, V ) :-
+        var( V ),
+        !,
+        warning( [ "Incorrect invocation of write_list/1: \"",
+                   write_list( S, V ),
+                   "\""
+                 ]
+               ).
+
+write_list( _S, [] ) :-
+        !.
+
+write_list( S, [ H | T ] ) :-
+        !,
+        write( S, H ),
+        write_list( S, T ).
+
+write_list( S, NotAList ) :-
+        !,
+        warning( [ "Incorrect invocation of write_list/1: \"",
+                   write_list( S, NotAList ),
+                   "\""
+                 ]
+               ).
+
+
+%%------------------------------------------------------------------------------
 %% getline( - list of character strings ) :
 %%    Reads characters from the current input stream upto (and including) the
 %%    nearest newline.  The newline is not included in the list of characters
@@ -144,44 +342,6 @@ putline( Cs ) :-  putchars( Cs ),  nl.
 
 putchars( []         ).
 putchars( [ C | Cs ] ) :-  put_char( C ),  putchars( Cs ).
-
-
-%%------------------------------------------------------------------------------
-%% is_good_clause( + term ):
-%% Is this term a reasonable clause?
-
-is_good_clause( T ) :-
-        nonvar( T ),
-        get_clause_head( T, H ),
-        is_good_clause_head( H ).
-
-
-%%------------------------------------------------------------------------------
-%% get_clause_head( + term, - head ):
-%% Treat this non-variable term as a clause, get its head.
-
-:-mode get_clause_head( +, - ).
-
-get_clause_head( H :- _, H ) :-  !.
-get_clause_head( H     , H ).
-
-
-%%------------------------------------------------------------------------------
-%% is_good_clause_head( + term ):
-%% Is this term a good head for a clause?
-
-is_good_clause_head( Var ) :-
-        var( Var ),
-        !,
-        fail.
-
-is_good_clause_head( Hd ) :-
-        atom( Hd ),
-        !.
-
-is_good_clause_head( Hd ) :-
-        compound( Hd ),
-        \+ is_list( Hd ).
 
 
 %%------------------------------------------------------------------------------
@@ -281,159 +441,5 @@ begin_error :-
 end_error :-
         writeln( error, " ***" ),
         abort.
-
-
-%%------------------------------------------------------------------------------
-%% write_list( +stream, +list ):
-%% Output the items on this list to this stream.
-%% There are no spaces between items on the list.
-%% Strings are printed without quotes.
-
-write_list( S, V ) :-
-        var( V ),
-        !,
-        warning( [ "Incorrect invocation of write_list/1: \"",
-                   write_list( S, V ),
-                   "\""
-                 ]
-               ).
-
-write_list( _S, [] ) :-
-        !.
-
-write_list( S, [ H | T ] ) :-
-        !,
-        write( S, H ),
-        write_list( S, T ).
-
-write_list( S, NotAList ) :-
-        !,
-        warning( [ "Incorrect invocation of write_list/1: \"",
-                   write_list( S, NotAList ),
-                   "\""
-                 ]
-               ).
-
-
-%%------------------------------------------------------------------------------
-%% ensure_filename_is_an_atom( + filename ):
-%% Verify that the filename is an atom.  If not, produce a fatal error.
-
-ensure_filename_is_an_atom( FileName ) :-
-        atom( FileName ),
-        !.
-
-ensure_filename_is_an_atom( FileName ) :-
-        % \+ atom( FileName ),
-        error( [ "*** Illegal file name \"", FileName, "\" (not an atom). ***" ]
-             ).
-
-
-%%------------------------------------------------------------------------------
-%% open_file( + root filename string,
-%%            + filename extension string,
-%%            + mode,
-%%            - stream
-%%          ):
-%% Construct the file name, and open the file in this mode.
-
-:- mode open_file( +, +, +, - ).
-
-open_file( RootFileNameString, ExtensionString, Mode, Stream ) :-
-        concat_strings( RootFileNameString, ExtensionString, FileNameString ),
-        open( FileNameString, Mode, Stream ).
-
-
-%%------------------------------------------------------------------------------
-%% read_terms( + input stream, - list of terms ):
-%% Given an open input stream, produce all the terms that can be read from it.
-%%
-%% The algorithm uses a d-list.
-
-:- mode read_terms( +, - ).
-
-read_terms( InputStream, Terms ) :-
-        read_terms_( InputStream, Terms-Terms ).
-
-%
-read_terms_( InputStream, Terms-End ) :-
-        read( InputStream, Term ),
-        (
-            Term == end_of_file
-        ->
-            End = []
-        ;
-            End = [ Term | NewEnd ],
-            read_terms_( InputStream, Terms - NewEnd )
-        ).
-
-
-%%------------------------------------------------------------------------------
-%% write_terms( + list of terms, + output stream ):
-%% Given an open output stream, write onto it all the terms from the list,
-%% one per line but without any other pretty-printing.
-
-:- mode write_terms( +, + ).
-
-write_terms( Terms, OutputStream ) :-
-        member( Term, Terms ),
-        write( OutputStream, Term ),
-        writeln( OutputStream, '.' ),
-        fail.
-
-write_terms( _, _ ).
-
-
-%%------------------------------------------------------------------------------
-%% write_clauses( + list of clauses, + output stream ):
-%% Given an open output stream, write onto it all the clauses from the list.
-
-:- mode write_clauses( +, + ).
-
-write_clauses( Clauses, OutputStream ) :-
-        member( Clause, Clauses ),
-        writeclause( OutputStream, Clause ),
-        fail.
-
-write_clauses( _, _ ).
-
-
-%%------------------------------------------------------------------------------
-%% verify_program( + list of terms ):
-%% Given a list of terms that should all be clauses, directives, or queries,
-%% raise an error if any of the terms is obviously incorrect.
-
-:- mode verify_program( + ).
-
-verify_program( Terms ) :-
-        member( Term, Terms ),
-        verify_program_item( Term ),
-        fail.
-
-verify_program( _ ).
-
-%
-verify_program_item( Var ) :-
-        var( Var ),
-        !,
-        error( [ "A variable clause: \"", Var, "\"" ] ).
-
-verify_program_item( (:- Var) ) :-
-        var( Var ),
-        !,
-        error( [ "A variable directive: \"", (:- Var), "\"" ] ).
-
-verify_program_item( (?- Var) ) :-
-        var( Var ),
-        !,
-        error( [ "A variable query: \"", (?- Var), "\"" ] ).
-
-verify_program_item( Clause ) :-
-        get_clause_head( Clause, Head ),
-        \+ is_good_clause_head( Head ),
-        !,
-        error( [ "Incorrect head in clause: \"", Clause, ".\"" ] ).
-
-verify_program_item( _ ).
 
 %%------------------------------------------------------------------------------
