@@ -21,7 +21,7 @@
 %%%           :- coinductive comember/2 .
 %%%
 %%%       To include files use the usual Prolog syntax:
-%%            :- [ file1, file2, ... ].
+%%%           :- [ file1, file2, ... ].
 %%%
 %%%    2. The program should contain no other directives. It may, however,
 %%%       contain queries, which will be executed immediately upon reading.
@@ -93,20 +93,31 @@ legal_directive( top         _ ).
 %% execute_directive( + directive ):
 %% Check and process the legal directives.
 
-execute_directive( coinductive P / K ) :-          % declaration of coinductive
-        (atom( P ), integer( K ), K >= 0),         %  seems OK
-        !,
-        mk_pattern( P, K, Pattern ),               % Pattern = P( _, _, ... )
-        assert( coinductive( Pattern ) ).
-
-execute_directive( coinductive P / K ) :-          % declaration of coinductive
-        (\+ atom( P ) ; \+ integer( K ) ; K < 0),  %  obviously wrong
-        !,
-        warning( [ "Erroneous directive: \"", (:- coinductive P / K), '\"' ] ).
+execute_directive( coinductive PredSpecs ) :-      % declaration of coinductive
+        predspecs_to_patterns( PredSpecs, Patterns ),
+        declare_coinductive( Patterns ).
 
 execute_directive( bottom _ ).
 
 execute_directive( top    _ ).
+
+
+
+%% declare_coinductive( + list of general instances ):
+%% Store the general instances in "coinductive", warning about duplications.
+
+declare_coinductive( Patterns ) :-
+        member( Pattern, Patterns ),              % i.e., sequence through these
+        (
+            coinductive( Pattern )
+        ->
+            duplicate_warning( Pattern, "coinductive" )
+        ;
+            assert( coinductive( Pattern ) )
+        ),
+        fail.
+
+declare_coinductive( _ ).
 
 
 
