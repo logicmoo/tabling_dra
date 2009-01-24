@@ -44,14 +44,21 @@ General description
          Linear Tabling Strategies and Optimizations
          (TPLP 2008 (?))
 
-   The interpreter follows -- somewhat loosely -- the description in the latter
-   paper, using the "lazy strategy", but without "semi-naive optimization".
+   The interpreter follows -- somewhat loosely(*) -- the description in the
+   latter paper, using the "lazy strategy", but without "semi-naive
+   optimization".
    Moreover, "clusters" are detected dynamically, to achieve greater precision
    (a dependency graph among static calls can only be a rough approximation, a
    dependency graph among predicates is rougher still).
 
    The "lazy strategy" consists in eagerly tabling answers to the subgoals
    encountered during the evaluation of a query.
+
+   [(*) The main difference with respect to the paper is that pioneers that are
+        not topmost looping goals are not treated in a special manner, so more
+        re-evaluation may occur.  In this program, the term "pioneer" is
+        used to denote a "topmost looping pioneer".
+   ]
 
 
    Nomenclature
