@@ -140,9 +140,11 @@ General description
                p( Y, b )  ..............  p( b, b ), p( a, b ).
 
            In other words, the set of results depends not only on the predicate,
-           but also on the form of the goal.  If "p/2" is tabled, the proper
-           contents of "answer" would be as follows (not necessarily in this
-           order):
+           but also on the form of the goal. In particular, "p( b, b )" is a
+           valid answer only for goals whose second argument is "b".
+
+           If "p/2" is tabled, the proper contents of "answer" would be as
+           follows (not necessarily in this order):
 
                answer( p( U, V ), p( U, U ) ).
                answer( p( U, V ), p( a, a ) ).
