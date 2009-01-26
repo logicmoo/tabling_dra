@@ -47,22 +47,22 @@ comember( X, L ) :-  drop( X, L, L1 ),  comember( X, L1 ).
 
 
 % Example queries:
-?-  writeln( "Query1" ),
+?-  write( 'Query1' ),  nl,
     X = [ 0, s( 0 ), s( s( 0 ) ) ],
     member2( s( 0 ), X ),
-    writeln( "Yes1 !" ).
+    write( 'Yes1 !' ),  nl.
 
-?-  writeln( "Query2"),
+?-  write( 'Query2'),  nl,
     X = [ 0, s( 0 ), s( s( 0 ) ) ],
     member1( s( 0 ), X ),
-    writeln( "Yes2 !" ).
+    write( 'Yes2 !' ),  nl.
 
-?-  writeln( "Query3"),
+?-  write( 'Query3'),  nl,
     X = [ 0, s( 0 ), s( s( 0 ) ) ],
     comember( s( 0 ), X ),
-    writeln( "WHAT? SHOULD HAVE FAILED !" ).
+    write( 'WHAT? SHOULD HAVE FAILED !' ),  nl.
 
-?-  writeln( "Query4"),
+?-  write( 'Query4'),  nl,
     X = [ 0, s( 0 ), s( s( 0 ) ) | X ],
-    once comember( s( 0 ), X ),
-    writeln( "Yes4 !" ).
+    once( comember( s( 0 ), X ) ),
+    write( 'Yes4 !' ),  nl.
