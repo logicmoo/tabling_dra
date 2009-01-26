@@ -224,7 +224,6 @@ process_file( FileName ) :-
 process_input( ProgStream ) :-
         repeat,
         readvar( ProgStream, Term, VarDict ),
-        % write( '<processing \"' ),  write( Term ),  writeln( '\">' ),
         verify_program_item( Term ),
         process_term( Term, VarDict ),
         Term = end_of_file,
@@ -335,7 +334,8 @@ ensure_dynamic( _ ).
 :- mode process_query( +, + ).
 
 process_query( Query, VarDict ) :-
-        write( output, '-- Query: ' ), write( output, Query ),
+        write( output, '-- Query: ' ),
+        write( output, Query ),
         writeln( output, '.  --' ),
         execute_query( Query, VarDict, Answer ),
         Answer = no.                             % i.e., backtrack if 'yes'.
@@ -346,10 +346,10 @@ process_query( Query, VarDict ) :-
 execute_query( Query, VarDict, yes ) :-
         query( Query ),                          % provided by a metainterpreter
         show_results( VarDict ),
-        writeln( 'Yes' ).
+        writeln( output, 'Yes' ).
 
 execute_query( _, _, no ) :-
-        writeln( 'No' ).
+        writeln( output, 'No' ).
 
 
 %% show_results( + variable dictionary ):
@@ -359,7 +359,9 @@ execute_query( _, _, no ) :-
 
 show_results( Dict ) :-
         member( [ Name | Var ], Dict ),
-        write( output, Name ), write( output, ' = ' ),  writeln( output, Var ),
+        write(   output, Name ),
+        write(   output, ' = ' ),
+        writeln( output, Var ),
         fail.
 
 show_results( _ ).
@@ -373,7 +375,7 @@ check_not_builtin( Clause ) :-
         get_clause_head( Clause, Head ),
         builtin( Head ),
         !,
-        error( [ "An attempt to redefine a built-in predicate:\n\t",
+        error( [ "An attempt to redefine a built-in predicate:\n  ",
                  Clause,
                  ".\n"
                ]

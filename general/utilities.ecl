@@ -187,8 +187,8 @@ is_good_clause( T ) :-
 
 :-mode get_clause_head( +, - ).
 
-get_clause_head( H :- _, H ) :-  !.
-get_clause_head( H     , H ).
+get_clause_head( (H :- _), H ) :-  !.
+get_clause_head( H       , H ).
 
 
 %%------------------------------------------------------------------------------

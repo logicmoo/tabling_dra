@@ -111,7 +111,11 @@ declare_coinductive( Patterns ) :-
         (
             coinductive( Pattern )
         ->
-            duplicate_warning( Pattern, "coinductive" )
+            functor( Pattern, P, K ),
+            warning( [ "Duplicate declaration of ", P / K,
+                       " as a \"coinductive\" predicate"
+                     ]
+                   )
         ;
             assert( coinductive( Pattern ) )
         ),

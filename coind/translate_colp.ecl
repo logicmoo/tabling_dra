@@ -241,7 +241,7 @@ translate( InputStream, OutputStream ) :-
 
 
 %% A translator directive will be remembered in a dedicated table,
-%% e.g., ":- coinductive p/2" as "coinductive( p( _, _ ) ).
+%% e.g., ":- coinductive p/2" as "coinductive( p( _, _ ) )".
 %%
 %% Moreover, the table "defined" will contain the name of each predicate the
 %% processing of whose definition has been started (and possibly finished).
