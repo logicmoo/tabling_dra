@@ -766,9 +766,9 @@ remove_loops( _ ).
 
 fatal_error( Message, Stack ) :-
         begin_error,
-        writeln( error, Message ),
-        writeln( error, "" ),
-        writeln( error, "*** The current stack:" ),
+        writeln(    error, Message ),
+        writeln(    error, "" ),
+        writeln(    error, "*** The current stack:" ),
         show_stack( error, Stack ),
         end_error.
 
