@@ -225,8 +225,8 @@ General description
 *******************************************************************************/
 
 
-:- ensure_loaded( [ '../general/top_level.ecl',
-                    '../general/utilities.ecl'
+:- ensure_loaded( [ '../general/top_level',
+                    '../general/utilities'
                   ]
                 ).
 
