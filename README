@@ -3,9 +3,10 @@
 This directory contains metainterpreters and/or translators for various
 extensions of logic programming.
 
-The code is written in Eclipse Prolog.  No attempt has been made to make
-it portable to different versions of Prolog, but such porting should be
-possible with only moderate effort. The main difficulties are:
+The code has originally been written in Eclipse Prolog.  No attempt has
+been made to make it portable to different versions of Prolog, but such
+porting should be possible with only moderate effort. The main
+difficulties are:
 
 1. Use has been made of the "string" data type that can be used in
    Eclipse for input, output, naming files etc. etc.
@@ -23,8 +24,20 @@ possible with only moderate effort. The main difficulties are:
    other Prolog systems (and that might, therefore, require
    implementation in Prolog in terms of the available built-ins).
 
-It should be noted that in principle porting is not necessary.  Eclipse
-is freely available from  http://www.eclipse-clp.org .
+(It should be noted that in principle porting is not necessary.  Eclipse
+is freely available from  http://www.eclipse-clp.org .)
+
+
+Most of the code has then been (somewhat hastily) converted to Sicstus
+Prolog.  Conversion to other Prolog systems may require some work.  In
+particular, Sicstus Prolog's module facility is used to store
+interpreted programs.  If you don't have access to such a facility, you
+will either have to live with the possibility of name clashes (not
+recommended!), or just store the interpreted clauses as facts of a
+dynamic predicate, say rule/2 (i.e., access via "rule( Head, Body )"
+instead of via "clause( Head, Body )"), which might mean a slight
+decrease in efficiencey due to loss of indexing on the first argument of
+a clause head.
 
 
 
