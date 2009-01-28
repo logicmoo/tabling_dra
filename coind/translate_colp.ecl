@@ -53,6 +53,11 @@
 %%%       in the translated program will be to include the translated files
 %%%       (because the default extension will be different when loaded into
 %%%       Eclipse).
+%%%       There is, however, one special directive that must be recognized if we
+%%%       are to run programs that take advantage of both coinduction and
+%%%       tabling: namely ":- tabled ... ".  So the translator automatically
+%%%       transforms the predicate specifcations in such directives (unless they
+%%%       refer to predicates declared as "bottom").
 
 
 %%% Directives
@@ -60,9 +65,13 @@
 %%%
 %%% Queries will undergo the same transformation as clause bodies and be output
 %%% with the translated program.
-%%% Directives will be just copied to the translated program (i.e., without
-%%% transformation). However, the following directives will be interpreted
-%%% directly by the translator (and not copied):
+-%%% Directives will be just copied to the translated program (i.e., without
+-%%% transformation). However, the following directives will be interpreted
+-%%% directly by the translator (and not copied):
+%%% In general, directives will be just copied to the translated program (i.e.,
+%%% without transformation. However, there are two kinds of exceptions.  The
+%%% first is ":- tabled...", discussed above.  The second is that the following
+%%% directives will be interpreted directly by the translator (and not copied):
 %%%
 %%% 1.
 %%%     :- coinductive PredSpec .
@@ -240,6 +249,8 @@ translate( InputStream, OutputStream ) :-
 :- op( 1000, fy, bottom ).         % allow  ":- bottom p/k ."
 :- op( 1000, fy, top ).            % allow  ":- top p/k ."
 
+:- op( 1000, fy, tabled ).         % allow also  ":- tabled p/k ."
+
 
 %% A translator directive will be remembered in a dedicated table,
 %% e.g., ":- coinductive p/2" as "coinductive( p( _, _ ) )".
@@ -331,6 +342,13 @@ write_top_predicates( OutputStream ) :-
 transform( [], _, [] ) :-
         !.
 
+transform( [ (:- tabled PredSpecs) | Terms ],
+           _,
+           [(:- tabled NewPredSpecs) | NewTerms ]
+         ) :-
+        transform_pred_specs( PredSpecs, NewPredSpecs ),
+        transform( Terms, '', NewTerms ).
+
 transform( [ (:- Directive) | Terms ], _, NewTerms ) :-
         is_a_translator_directive( Directive ),
         !,
@@ -405,6 +423,28 @@ check_contiguity( Head ) :-
 check_contiguity( _ ).
 
 
+
+
+%% transform_pred_specs( + predicate specifications, - ditto transformed ):
+%% Transform each p/k into p_/(k+1), unless p/k is declared as "bottom".
+
+transform_pred_specs( (PredSpec , PredSpecs), (NewPredSpec , NewPredSpecs) ) :-
+        !,
+        transform_pred_spec( PredSpec, NewPredSpec ),
+        transform_pred_specs( PredSpecs, NewPredSpecs ).
+
+transform_pred_specs( PredSpec, NewPredSpec ) :-
+        transform_pred_spec( PredSpec, NewPredSpec ).
+
+%
+transform_pred_spec( PredSpec, PredSpec ) :-
+        predspec_to_pattern( PredSpec, Pattern ),      % also checks correctness
+        bottom( Pattern ),
+        !.
+
+transform_pred_spec( P / K, NP / K1 ) :-
+        transform_predicate_name( P, NP ),
+        K1 is K + 1.
 
 
 %% transform_clause( + clause, - transformed clause ):
