@@ -1,7 +1,7 @@
 %%%  Some generally-useful utilities.                                    %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
 %%%                                                                      %%%
-%%%  Last update: 23 January 2009.                                       %%%
+%%%  Last update: 28 January 2009.                                       %%%
 %%%                                                                      %%%
 %%%  NOTE: Some of the code may be Eclipse-specific and may require      %%%
 %%%        minor tweaking for other Prolog systems.                      %%%
@@ -489,17 +489,19 @@ error( [ A | B ] ) :-
         !,
         begin_error,
         write_list( error, [ A | B ] ),
+        write( error, ' ' ),
         end_error.
 
 error( NotAList ) :-
         begin_error,
         write( error, NotAList ),
+        write( error, ' ' ),
         end_error.
 
 
 %%------------------------------------------------------------------------------
 %% begin_error:
-%% Begin a error printout.
+%% Begin an error printout.
 
 begin_error :-
         write( error, "*** ERROR: " ).
@@ -507,7 +509,7 @@ begin_error :-
 
 %%------------------------------------------------------------------------------
 %% end_error:
-%% End a error printout.
+%% End an error printout.
 
 end_error :-
         writeln( error, "***" ),

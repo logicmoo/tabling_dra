@@ -2,7 +2,7 @@
 %%%  A translator for co-logic programming.                              %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
 %%%                                                                      %%%
-%%%  Last update: 23 January 2009.                                       %%%
+%%%  Last update: 28 January 2009.                                       %%%
 %%%                                                                      %%%
 %%%  NOTE: Some of the code may be Eclipse-specific and may require      %%%
 %%%        minor tweaking for other Prolog systems.                      %%%
@@ -21,8 +21,9 @@
 %%%
 %%% NOTE: A transformed program cannot contain variable literals or invocations
 %%%       of "call/1".
-%%%       A transformed program cannot contain negative literals. (It could
-%%%       be done, but the machinery would have to be much heavier.)
+%%%       A transformed program cannot contain negative literals, unless they
+%%%       are invocations of predicates that were declared as "bottom".
+%%%       (It could be done, but the machinery would have to be much heavier.)
 %%%
 
 
@@ -475,6 +476,10 @@ transform_body( Call, HypVar, NewCall ) :-
 %% Transform this head or simple call.
 
 :- mode transform_logical_atom( +, ?, - ).
+
+transform_logical_atom( \+ C, _, \+ C ) :-
+        bottom( C ),
+        !.
 
 transform_logical_atom( \+ C, _, _ ) :-
         !,

@@ -3,6 +3,8 @@
 %%%  below for more information.                                           %%%
 %%%  Written by Feliks Kluzniak at UTD.                                    %%%
 %%%                                                                        %%%
+%%%  Last update: 28 January 2009.                                         %%%
+%%%                                                                        %%%
 
 %%% NOTE:
 %%%
@@ -283,11 +285,13 @@ builtin( _ >= _           ).
 builtin( _ =< _           ).
 builtin( _ < _            ).
 builtin( _ is _           ).
+builtin( atom( _ )        ).
 builtin( write( _ )       ).
 builtin( writeln( _ )     ).
 builtin( nl               ).
 builtin( read( _ )        ).
 builtin( set_flag( _, _ ) ).
+builtin( member( _, _ )   ).
 
 
 
