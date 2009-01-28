@@ -1,0 +1,59 @@
+%% Get the translated interpreter.
+
+:- [ 'ltl_interpreter.pl' ].
+
+
+%--- An example: some states, some queries...
+
+% NOTE: A "final" state must have an edge to itself.
+
+state( s0 ).
+state( s1 ).
+state( s2 ).
+state( s3 ).
+
+trans( s0, s1 ).
+trans( s0, s2 ).
+
+trans( s1, s1 ).
+
+trans( s2, s3 ).
+
+trans( s3, s4 ).
+
+trans( s4, s2 ).
+
+holds( s1, t ).
+
+holds( s2, p ).
+holds( s2, q ).
+
+holds( s3, p ).
+holds( s3, r ).
+
+holds( s4, p ).
+holds( s4, s ).
+
+%
+% ?- check( s0, g( p ) ).                         % NO
+%
+% ?- check( s0, f( p ) ).                         % NO
+%
+% ?- check( s0, f( p ) or f( t ) ).               % YES
+%
+% ?- check( s1, g( p ) ).                         % NO
+%
+% ?- check( s1, f( p ) ).                         % NO
+%
+% ?- check( s0, f( g( p ) ) ).                    % NO
+%
+% ?- check( s2, g( p ) ).                         % YES
+%
+% ?- check( s2, f( g( p ) ) ).                    % YES
+%
+% ?- check( s2, f( and( q, r ) ) ).               % NO,  requires tabling
+%
+% ?- check( s2, and( f( q ), f( r ) ) ).          % YES
+%
+% ?- check( s2, g( f( s ) ) ).                    % YES
+%
