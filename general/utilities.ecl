@@ -143,14 +143,24 @@ predspecs_to_patterns( PredSpec, [ Pattern ] ) :-
         predspec_to_pattern( PredSpec, Pattern ).
 
 
-%%
+%%------------------------------------------------------------------------------
+%% predspecs_to_pattern( + a predicate specification,
+%%                       - a most general instance of this predicate
+%%                     ):
+%% Given a predicate specification (in the form "p/k") check whether it is
+%% well-formed: if not, raise a fatal error; otherwise return a most general
+%% instance that correspond to the predicate specification.
+
 predspec_to_pattern( PredSpec, Pattern ) :-
         check_predspec( PredSpec ),
         PredSpec = P / K,
         mk_pattern( P, K, Pattern ).
 
 
-%%
+%%------------------------------------------------------------------------------
+%% check_predspec:
+%% Raise an error if this is not a good predicate specification.
+
 check_predspec( Var ) :-
         var( Var ),
         !,

@@ -1,7 +1,7 @@
 %%%  Some generally-useful utilities.                                    %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
 %%%                                                                      %%%
-%%%  Last update: 23 January 2009.                                       %%%
+%%%  Last update: 28 January 2009.                                       %%%
 %%%                                                                      %%%
 %%%  Converted to Sicstus Prolog: 26 January 2009.                       %%%
 %%%                                                                      %%%
@@ -15,7 +15,8 @@
 
 %%------------------------------------------------------------------------------
 %% setval( + name, + value ):
-%% A naive implementation of Eclipse's setval/2: set this counter to this value.
+%% A naive implementation of setval/2 (available in Eclipse): 
+%% set this counter to this value.
 
 setval( Name, Value ) :-
         Pattern =.. [ Name, _ ],
@@ -26,8 +27,8 @@ setval( Name, Value ) :-
 
 %%------------------------------------------------------------------------------
 %% getval( + name, - value ):
-%% A naive implementation of Eclipse's getval/2: get the value associated with
-%% this counter.
+%% A naive implementation of getval/2 (available in Eclipse):
+%% get the value associated with this counter.
 
 getval( Name, Value ) :-
         Fact =.. [ Name, Value ],
@@ -36,7 +37,8 @@ getval( Name, Value ) :-
 
 %%------------------------------------------------------------------------------
 %% incval( + name ):
-%% A naive implementation of Eclipse's incval/2: increment this counter by 1.
+%% A naive implementation of incval/2 (available in Eclipse):
+%% increment this counter by 1.
 
 incval( Name ) :-
         getval( Name, Value ),
@@ -181,14 +183,23 @@ predspecs_to_patterns( PredSpec, [ Pattern ] ) :-
         predspec_to_pattern( PredSpec, Pattern ).
 
 
-%%
+%%------------------------------------------------------------------------------
+%% predspecs_to_pattern( + a predicate specification,
+%%                       - a most general instance of this predicate
+%%                     ):
+%% Given a predicate specification (in the form "p/k") check whether it is
+%% well-formed: if not, raise a fatal error; otherwise return a most general
+%% instance that correspond to the predicate specification.
+
 predspec_to_pattern( PredSpec, Pattern ) :-
         check_predspec( PredSpec ),
         PredSpec = P / K,
         mk_pattern( P, K, Pattern ).
 
 
-%%
+%%------------------------------------------------------------------------------
+%% check_predspec:
+%% Raise an error if this is not a good predicate specification.
 check_predspec( Var ) :-
         var( Var ),
         !,
@@ -566,17 +577,19 @@ error( [ A | B ] ) :-
         !,
         begin_error,
         write_list( user_error, [ A | B ] ),
+        write( user_error, ' ' ),
         end_error.
 
 error( NotAList ) :-
         begin_error,
         write( user_error, NotAList ),
+        write( user_error, ' ' ),
         end_error.
 
 
 %%------------------------------------------------------------------------------
 %% begin_error:
-%% Begin a error printout.
+%% Begin an error printout.
 
 begin_error :-
         write( user_error, '*** ERROR: ' ).
@@ -584,7 +597,7 @@ begin_error :-
 
 %%------------------------------------------------------------------------------
 %% end_error:
-%% End a error printout.
+%% End an error printout.
 
 end_error :-
         writeln( user_error, '***' ),
