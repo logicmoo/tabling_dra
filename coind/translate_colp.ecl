@@ -2,7 +2,7 @@
 %%%  A translator for co-logic programming.                              %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
 %%%                                                                      %%%
-%%%  Last update: 28 January 2009.                                       %%%
+%%%  Last update: 29 January 2009.                                       %%%
 %%%                                                                      %%%
 %%%  NOTE: Some of the code may be Eclipse-specific and may require      %%%
 %%%        minor tweaking for other Prolog systems.                      %%%
@@ -53,11 +53,14 @@
 %%%       in the translated program will be to include the translated files
 %%%       (because the default extension will be different when loaded into
 %%%       Eclipse).
-%%%       There is, however, one special directive that must be recognized if we
-%%%       are to run programs that take advantage of both coinduction and
-%%%       tabling: namely ":- tabled ... ".  So the translator automatically
-%%%       transforms the predicate specifcations in such directives (unless they
-%%%       refer to predicates declared as "bottom").
+%%%       There are, however, two directives that must be recognized. The first
+%%%       is the operator declaration (i.e., ":- op( ... )") (and this is
+%%        dealt with by "read_terms/2" in "utilities".  The second is
+%%%       ":- tabled ...", which we must allow in order to process programs
+%%%       that take advantage of both coinduction and tabling.  The translator
+%%%       automatically transforms the predicate specifications in
+%%%       ":- tabled ..." (unless they refer to predicates declared as
+%%%       "bottom").
 
 
 %%% Directives
@@ -70,8 +73,9 @@
 -%%% directly by the translator (and not copied):
 %%% In general, directives will be just copied to the translated program (i.e.,
 %%% without transformation. However, there are two kinds of exceptions.  The
-%%% first is ":- tabled...", discussed above.  The second is that the following
-%%% directives will be interpreted directly by the translator (and not copied):
+%%% first is ":- tabled ..." and ":- op( ... )", discussed above.  The second is
+%%% that the following directives will be interpreted directly by the translator
+%%% (and not copied):
 %%%
 %%% 1.
 %%%     :- coinductive PredSpec .
