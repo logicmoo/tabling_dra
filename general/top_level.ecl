@@ -34,7 +34,8 @@
 %%%       used if provided (see the description of "default_extension" below).
 %%%
 %%%       As the file is loaded, directives and queries are executed on-the-fly
-%%%       by invoking the metainterpreter.  A query is evaluated to give all
+%%%       by invoking the metainterpreter (except the ":- op ..." directive,
+%%%       which is interpreted directly). A query is evaluated to give all
 %%%       solutions (it is as if the user kept responding with a semicolon):
 %%%       to avoid that use the built-in predicate once/1 .
 %%%
@@ -262,6 +263,10 @@ process_term( end_of_file, _ ) :-  !.            % just ignore this
 process_term( (:- [ H | T ]), _ ) :-             % include
         !,
         include_files( [ H | T ] ).
+
+process_term( (:- op( P, F, Ops )), _ ) :-
+        !,
+        op( P, F, Ops ).
 
 process_term( (:- Directive), _ ) :-
         !,
