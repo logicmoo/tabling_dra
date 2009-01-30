@@ -1,7 +1,7 @@
 %%%  Some generally-useful utilities.                                    %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
 %%%                                                                      %%%
-%%%  Last update: 28 January 2009.                                       %%%
+%%%  Last update: 29 January 2009.                                       %%%
 %%%                                                                      %%%
 %%%  Converted to Sicstus Prolog: 26 January 2009.                       %%%
 %%%                                                                      %%%
@@ -338,6 +338,9 @@ open_file( RootFileNameChars, ExtensionChars, Mode, Stream ) :-
 %% read_terms( + input stream, - list of terms ):
 %% Given an open input stream, produce all the terms that can be read from it.
 %%
+%% NOTE: Operator declarations are interpreted on the fly, but not deleted from
+%%       output.
+%%
 %% The algorithm uses a d-list.
 
 :- mode read_terms( +, - ).
@@ -353,9 +356,17 @@ read_terms_( InputStream, Terms-End ) :-
         ->
             End = []
         ;
+            process_if_op_directive( Term ),
             End = [ Term | NewEnd ],
             read_terms_( InputStream, Terms - NewEnd )
         ).
+
+%
+process_if_op_directive( (:- op( P, F, Ops)) ) :-
+        !,
+        op( P, F, Ops ).
+
+process_if_op_directive( _ ).
 
 
 
