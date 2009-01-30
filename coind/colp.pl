@@ -4,7 +4,7 @@
 %%%                                                                      %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
 %%%                                                                      %%%
-%%%  Last update: 22 January 2009.                                       %%%
+%%%  Last update: 29 January 2009.                                       %%%
 %%%                                                                      %%%
 %%%  Converted to Sicstus Prolog: 26 January 2009.                       %%%
 %%%                                                                      %%%
@@ -67,6 +67,7 @@ builtin( nl           ).
 :- op( 1000, fy, coinductive ).    % allow  ":- coinductive p/k ."
 :- op( 1000, fy, bottom ).         % allow  ":- bottom p/k ."        (see below)
 :- op( 1000, fy, top ).            % allow  ":- top p/k ."           (see below)
+:- op( 1000, fy, tabled ).         % allow  ":- tabled p/k ."        (see below)
 
 
 default_extension( ".clp" ).       % default extension for file names
@@ -80,13 +81,14 @@ initialise :-
 
 
 %% The legal directives (check external form only).
-%% Note: ":- top ..." and ":- bottom ..." are ignored by this metainterpreter,
-%%       and are allowed only to allow the same examples to be translated
-%%       by "translate_colp".
+%% Note: ":- top ...", ":- bottom ..." and ":- tabled ..." are ignored by this
+%%       metainterpreter, and are allowed only to allow the same examples to be
+%%       translated by "translate_colp".
 
 legal_directive( (coinductive _) ).
 legal_directive( (bottom      _) ).
 legal_directive( (top         _) ).
+legal_directive( (tabled      _) ).
 
 
 %% execute_directive( + directive ):
@@ -97,8 +99,8 @@ execute_directive( (coinductive PredSpecs) ) :-     % declaration of coinductive
         declare_coinductive( Patterns ).
 
 execute_directive( (bottom _) ).
-
 execute_directive( (top    _) ).
+execute_directive( (tabled _) ).
 
 
 
