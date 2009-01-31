@@ -2,7 +2,7 @@
 %%%  A translator for co-logic programming.                              %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
 %%%                                                                      %%%
-%%%  Last update: 29 January 2009.                                       %%%
+%%%  Last update: 30 January 2009.                                       %%%
 %%%                                                                      %%%
 %%%  NOTE: Some of the code may be Eclipse-specific and may require      %%%
 %%%        minor tweaking for other Prolog systems.                      %%%
@@ -22,8 +22,9 @@
 %%% NOTE: A transformed program cannot contain variable literals or invocations
 %%%       of "call/1".
 %%%       A transformed program cannot contain negative literals, unless they
-%%%       are invocations of predicates that were declared as "bottom".
-%%%       (It could be done, but the machinery would have to be much heavier.)
+%%%       are invocations of simple builtins or of predicates that were declared
+%%%       as "bottom".
+%%%       (Full negation will be provided in a forthcoming version.)
 %%%
 
 
@@ -60,6 +61,11 @@
 %%%       that take advantage of both coinduction and tabling.  The translator
 %%%       automatically transforms the predicate specifications in
 %%%       ":- tabled ..." (unless they refer to predicates declared as
+%%%       Moreover, the translator issues appropriate "essence_hook" clauses
+%%%       that allow the implementation of tabling to strip the additional
+%%%       "administrative" argument from instances of tabled predicates.  In
+%%%       order to do that, it stores information about these predicates in an
+%%%       internal table called "tabled".
 %%%       "bottom").
 
 
@@ -241,6 +247,7 @@ translate( InputStream, OutputStream ) :-
         transform( Terms, '', ProcessedTerms ),
         write_declarations_as_comments( OutputStream ),
         write_top_predicates( OutputStream ),
+        write_essence_hook( OutputStream ),
         write_clauses( ProcessedTerms, OutputStream ).
 
 
@@ -259,12 +266,15 @@ translate( InputStream, OutputStream ) :-
 %% A translator directive will be remembered in a dedicated table,
 %% e.g., ":- coinductive p/2" as "coinductive( p( _, _ ) )".
 %%
+%% A ":- tabled ..." directive will also be remembered in a dedicated table.
+%%
 %% Moreover, the table "defined" will contain the name of each predicate the
 %% processing of whose definition has been started (and possibly finished).
 
 :- dynamic coinductive/1.
 :- dynamic bottom/1.
 :- dynamic top/1.
+:- dynamic tabled/1.
 :- dynamic defined/1.
 
 
@@ -276,6 +286,7 @@ initialise_tables :-
         retractall( coinductive( _ ) ),
         retractall( bottom( _ )      ),
         retractall( top( _ )         ),
+        retractall( tabled( _ )      ),
         retractall( defined( _ )     ).
 
 
@@ -311,7 +322,7 @@ write_pred_spec_comment( Pattern, OutputStream ) :-
 
 
 
-%% write_top_predicates( + output stream ).
+%% write_top_predicates( + output stream ):
 %% Output the top predicates.
 
 :- mode write_top_predicates( + ).
@@ -327,6 +338,32 @@ write_top_predicates( OutputStream ) :-
 
 write_top_predicates( OutputStream ) :-
         nl( OutputStream ).
+
+
+
+%% write_essence_hook( + output stream ):
+%% Output "essence_hook/2" clauses for those tabled predicates that have not
+%% been declared as bottom.
+
+write_essence_hook( OutputStream ) :-
+        tabled( Pattern ),                       % i.e., sequence through tabled
+        \+ bottom( Pattern ),
+        Pattern =.. [ F | Args ],
+        drop_last( Args, ArgsButLast ),
+        PatternButLast =.. [ F | ArgsButLast ],
+        write_clause( essence_hook( Pattern, PatternButLast ), OutputStream ),
+        fail.
+
+write_essence_hook( _ ).
+
+%
+% Note that the pattern is after transformation, so must contain at least the
+% last argument!
+
+drop_last( List, ListWithoutLast ) :-
+        append( ListWithoutLast, [ _ ], List ),
+        !.
+
 
 
 
@@ -351,6 +388,7 @@ transform( [ (:- tabled PredSpecs) | Terms ],
            [(:- tabled NewPredSpecs) | NewTerms ]
          ) :-
         transform_pred_specs( PredSpecs, NewPredSpecs ),
+        store_info_about_tabled( NewPredSpecs ),
         transform( Terms, '', NewTerms ).
 
 transform( [ (:- Directive) | Terms ], _, NewTerms ) :-
@@ -399,6 +437,19 @@ transform( [ Clause | Terms ], CurrentPred, [ NewClause | NewTerms ] ) :-
         transform_clause( Clause, NewClause ),
         transform( Terms, CurrentPred, NewTerms ).
 
+
+
+%% store_info_about_tabled( + predicate specifications ):
+%% Remember the tabled predicates in order to be able to issue appropriate
+%% "essence_hook/2" clauses.
+
+store_info_about_tabled( PredSpecs ) :-
+        predspecs_to_patterns( PredSpecs, Patterns ),
+        member( Pattern, Patterns ),               % i.e., sequence through list
+        assert( tabled( Pattern ) ),
+        fail.
+
+store_info_about_tabled( _ ).
 
 
 %% starting_new_predicate( + most general instance of a predicate ):
@@ -523,6 +574,12 @@ transform_body( Call, HypVar, NewCall ) :-
 
 transform_logical_atom( \+ C, _, \+ C ) :-
         bottom( C ),
+        !.
+
+transform_logical_atom( \+ C, _, \+ C ) :-
+        is_builtin( C ),
+        C \= once( _ ),
+        C \= call( _ ),
         !.
 
 transform_logical_atom( \+ C, _, _ ) :-
