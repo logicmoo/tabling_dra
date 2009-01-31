@@ -4,7 +4,7 @@
 %%%                                                                      %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
 %%%                                                                      %%%
-%%%  Last update: 29 January 2009.                                       %%%
+%%%  Last update: 22 January 2009.                                       %%%
 %%%                                                                      %%%
 %%%  Converted to Sicstus Prolog: 26 January 2009.                       %%%
 %%%                                                                      %%%
