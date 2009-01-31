@@ -144,9 +144,9 @@ predspecs_to_patterns( PredSpec, [ Pattern ] ) :-
 
 
 %%------------------------------------------------------------------------------
-%% predspecs_to_pattern( + a predicate specification,
-%%                       - a most general instance of this predicate
-%%                     ):
+%% predspec_to_pattern( + a predicate specification,
+%%                      - a most general instance of this predicate
+%%                    ):
 %% Given a predicate specification (in the form "p/k") check whether it is
 %% well-formed: if not, raise a fatal error; otherwise return a most general
 %% instance that correspond to the predicate specification.
