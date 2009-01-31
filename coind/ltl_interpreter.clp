@@ -38,22 +38,33 @@ check_consistency :-
         check_propositions,
         check_transitions.
 
+
 % Make sure propositions don't clash with operators.
 
 check_propositions :-
-        ( proposition( 'v' ) 
-        ; proposition( 'x' )
-        ; proposition( 'f' )
-        ; proposition( 'g' )
-        ; proposition( 'u' )
-        ; proposition( 'r' )
-        ),
+        proposition( P ),
+        member( P, [ 'v', 'x', 'f', 'g', 'u', 'r' ] ),
         !,
-        write( user_error,
+        write( user_error, '\"' ),
+        write( user_error, P ),
+        write( user_error, '\": ' ),
+        write( user_error, 
           '\"v\", \"x\", \"f\", \"g\", \"u\" and \"r\" cannot be propositions!'
              ),
         nl( user_error ),
         fail.
+
+check_propositions :-
+        proposition( P ),
+        \+ atom( P ),
+        !,
+        write( user_error, '\"' ),
+        write( user_error, P ),
+        write( user_error, '\": ' ),
+        write( user_error, 'a proposition must be an atom!' ),
+        nl( user_error ),
+        fail.
+       
 
 check_propositions.
 
