@@ -3,7 +3,7 @@
 %%%                                                                      %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
 %%%                                                                      %%%
-%%%  Last update: 29 January 2009.                                       %%%
+%%%  Last update: 30 January 2009.                                       %%%
 %%%                                                                      %%%
 %%%  Converted to Sicstus Prolog: 26 January 2009.                       %%%
 %%%                                                                      %%%
@@ -106,6 +106,18 @@
 %%%                 acquired by the variables occurring in "Q"); in the latter
 %%%                 case it will also backtrack to obtain more solutions.
 %%%
+%%%
+%%%    5. The metainterpreter can also define hooks of its own.  A hook 
+%%%       predicate should be declared in a fact of "hook_predicate/1".
+%%%       For example,
+%%%
+%%%           hook_predicate( essence_hook( _, _ ) ).
+%%%
+%%%       declares that "essence_hook/2" is a metainterpreter hook.  A hook
+%%%       predicate should be dynamic.  When the top level encounters a clause
+%%%       whose head matches a hook declaration, the clause is asserted at the 
+%%%       front (!) of the predicate (in the module of the running program, not
+%%%       in "interpreted").
 
 
 :- ensure_loaded( utilities ).
@@ -231,7 +243,13 @@ process_term( (?- Query), VarDict ) :-
         !.                                            % no alternative solutions
 
 process_term( Clause, _ ) :-
-        % Clause \= end_of_file, Clause \= (:- _), Clause \= (?- _),
+        get_clause_head( Clause, Head ),
+        hook_predicate( Head ),              % metainterpreter's hook predicate
+        !,
+        check_not_builtin( Clause ),         % fatal error if redefining builtin
+        asserta( Clause ).
+
+process_term( Clause, _ ) :-
         check_not_builtin( Clause ),         % fatal error if redefining builtin
         assertz( interpreted : Clause ).
 
