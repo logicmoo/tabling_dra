@@ -3,7 +3,7 @@
 %%%  below for more information.                                           %%%
 %%%  Written by Feliks Kluzniak at UTD.                                    %%%
 %%%                                                                        %%%
-%%%  Last update: 28 January 2009.                                         %%%
+%%%  Last update: 30 January 2009.                                         %%%
 %%%                                                                        %%%
 
 %%% NOTE:
@@ -25,6 +25,38 @@
 %%%       be declared in the table builtin/1 below.  Every addition should
 %%%       be considered carefully: some might require special treatment by
 %%%       the metainterpreter.
+%%%
+%%%    4. The program may contain clauses that modify the definition of the
+%%%       interpreter's predicate "essence_hook/2" (the clauses will be asserted
+%%%       at the fron of the predicate, and will thus override the default 
+%%%       definition for some cases).  The default definition is
+%%%
+%%%          essence_hook( T, T ).
+%%%
+%%%       This predicate is invoked _in certain contexts_ when:
+%%%          - two terms are about to be compared (either for equality or to
+%%%            check whether they are variants of each other);
+%%%          - an answer is tabled;
+%%%          - an answer is retrieved from the table.
+%%%
+%%%       The primary intended use is to suppress arguments that carry only
+%%%       administrative information and that may differ in two terms that are
+%%%       "semantically" equal or variants of each other. (Such, for example, is
+%%%       the argument that carries the set of coinductive hypotheses in a
+%%%       co-logic program translated into prolog).
+%%%
+%%%       For example, the presence of
+%%%
+%%%          essence_hook( p( A, B, _ ),  p( A, B ) ).
+%%%
+%%%       will result in "p( a, b, c )" and "p( a, b, d )" being treated as 
+%%%       identical, as each of them will be translated to "p( a, b )" before
+%%%       comparison.
+%%%
+%%%       NOTE: This facility should be used with the utmost caution, as it 
+%%%             may drastically affect the semantics of the interpreted program
+%%%             in a fashion that would be hard to understand for someone who
+%%%             does not understand the details of the interpreter.
 
 %%% LIMITATIONS: - The interpreted program should not contain cuts.
 %%%              - Error detection is quite rudimentary.
@@ -115,6 +147,9 @@ General description
            goal has no solutions, it will have no entry in "answer", even though
            it may have an entry in "completed" (see below).
 
+           NOTE: Both the goal and the fact are filtered through
+                 "essence_hook/2" before they are stored in the table.
+
            In general, a side-effect of each evaluation of a query will be the
            generation -- for each tabled goal encounted during the evaluation
            -- of a set of facts that form the"least fixed point interpretation"
@@ -191,6 +226,8 @@ General description
            before succeeding: the property is the reason why followers can query
            only "answer", and do not use their clauses.
            Note that no two entries in "pioneer" are variants of each other.
+           NOTE: The goal is filtered through "essence_hook/2" before it is 
+                 stored in the table.
            This table is cleared each time the evaluation of a query terminates.
 
    -- pioneer_index
@@ -211,6 +248,8 @@ General description
            When a goal loses its pioneer status (because it is determined to
            be a part of a larger loop), the associated entries in "loop" are
            removed.
+           NOTE: The goal and goals are filtered through "essence_hook/2" before
+                 they are stored in the table.
            This table is cleared each time the evaluation of a query terminates.
 
    -- loop_index
@@ -223,6 +262,8 @@ General description
            Indicates that the fixpoint for this tabled goal has been computed,
            and all the possible results for variants of the goal can be found
            in table "answer".
+           NOTE: The goal is filtered through "essence_hook/2" before it is
+                 stored in the table.
 
 *******************************************************************************/
 
@@ -286,12 +327,39 @@ builtin( _ =< _           ).
 builtin( _ < _            ).
 builtin( _ is _           ).
 builtin( atom( _ )        ).
+builtin( var( _ )         ).
 builtin( write( _ )       ).
 builtin( writeln( _ )     ).
 builtin( nl               ).
 builtin( read( _ )        ).
 builtin( set_flag( _, _ ) ).
 builtin( member( _, _ )   ).
+
+
+
+%%%%  Hooks
+
+%% Declarations of hook predicates (for the top level):
+
+hook_predicate( essence_hook( _, _ ) ).
+
+
+%% The default essence_hook:
+
+:- dynamic essence_hook/2.
+
+essence_hook( T, T ).
+
+
+%% extract_essence( + list of terms, - list of their essences):
+%% Apply "essence_hook/2" to all the terms.
+
+:- mode extract_essence( +, - ).
+
+extract_essence(         [],         [] ).
+extract_essence( [ T | Ts ], [ E | Es ] ) :-
+        once( essence_hook( T, E ) ),
+        extract_essence( Ts, Es ).
 
 
 
@@ -302,7 +370,7 @@ builtin( member( _, _ )   ).
 
 
 
-%% The legal directives (check external form only).
+%% The legal directives (check external form only).  (Used by the top level.)
 
 legal_directive( (tabled _) ).
 
@@ -549,9 +617,12 @@ compute_fixed_point_( Goal, Stack, NAns ) :-
 :- mode variant_of_ancestor( +, + ).
 
 variant_of_ancestor( Goal, List ) :-
+        once( essence_hook( Goal, EssenceOfGoal ) ),
         append( Prefix, [ G | _ ], List ),                % i.e., split the list
-        are_variants( Goal, G ),
-        keep_tabled( Prefix, TabledPrefix ),
+        once( essence_hook( G, EssenceOfG ) ),
+        are_variants( EssenceOfGoal, EssenceOfG ),
+        !,
+        keep_tabled_goals( Prefix, TabledPrefix ),
         add_loop( G, TabledPrefix ),
         (
             member( M, TabledPrefix ),
@@ -562,21 +633,21 @@ variant_of_ancestor( Goal, List ) :-
         ).
 
 
-%% keep_tabled( + list of goals, - list of goals ):
+%% keep_tabled_goals( + list of goals, - list of goals ):
 %% Filter away goals that are not tabled.
 
-:- mode keep_tabled( +, - ).
+:- mode keep_tabled_goals( +, - ).
 
-keep_tabled( [], [] ).
+keep_tabled_goals( [], [] ).
 
-keep_tabled( [ G | Gs ], [ G | TGs ] ) :-
+keep_tabled_goals( [ G | Gs ], [ G | TGs ] ) :-
         tabled( G ),
         !,
-        keep_tabled( Gs, TGs ).
+        keep_tabled_goals( Gs, TGs ).
 
-keep_tabled( [ _G | Gs ], TGs ) :-
+keep_tabled_goals( [ _G | Gs ], TGs ) :-
         % \+ tabled( G ),
-        keep_tabled( Gs, TGs ).
+        keep_tabled_goals( Gs, TGs ).
 
 
 %% rescind_pioneer_status( + goal ):
@@ -587,9 +658,10 @@ keep_tabled( [ _G | Gs ], TGs ) :-
 
 rescind_pioneer_status( Goal ) :-
         is_a_variant_of_a_pioneer( Goal ),
+        once( essence_hook( Goal, EssenceOfGoal ) ),
         !,
-        remove_pioneer( Goal ),
-        remove_loops( Goal ).
+        remove_pioneer( EssenceOfGoal ),
+        remove_loops( EssenceOfGoal ).
 
 rescind_pioneer_status( _ ).
 
@@ -603,8 +675,9 @@ rescind_pioneer_status( _ ).
 :- mode complete_cluster( + ).
 
 complete_cluster( Goal ) :-
-        complete_goal( Goal ),
-        complete_cluster_if_any( Goal ).
+        once( essence_hook( Goal, EssenceOfGoal ) ),
+        complete_goal( EssenceOfGoal ),
+        complete_cluster_if_any( EssenceOfGoal ).
 
 %
 :- mode complete_cluster_if_any( + ).
@@ -642,12 +715,18 @@ complete_goals( _ ).
 :- mode memo( +, + ).
 
 memo( Goal, Fact ) :-
+        once( essence_hook( Goal, EssenceOfGoal ) ),
+        once( essence_hook( Fact, EssenceOfFact ) ),
+        memo_( EssenceOfGoal, EssenceOfFact ).
+
+%
+memo_( Goal, Fact ) :-
         answer( G, F ),
         are_variants( F, Fact ),
         are_variants( G, Goal ),
         !.
 
-memo( Goal, Fact ) :-
+memo_( Goal, Fact ) :-
         % No variant pair in "answer",
         assert( answer( Goal, Fact ) ),
         incval( number_of_answers ).
@@ -661,15 +740,19 @@ memo( Goal, Fact ) :-
 :- mode get_answer( ? ).
 
 get_answer( Goal ) :-
+        once( essence_hook( Goal, EssenceOfGoal ) ),
         answer( G, Ans ),
-        are_variants( Goal, G ),
-        Goal = G,                 % make sure that variables are the right ones
-        Goal = Ans .              % instantiate
+        are_variants( EssenceOfGoal, G ),
+        EssenceOfGoal = G,         % make sure that variables are the right ones
+        EssenceOfGoal = Ans .      % instantiate
 
 
 
 %% complete_goal( + goal ):
 %% Make sure the goal is marked as completed.
+%%
+%% NOTE: The assumption is that the goal has already been filtered through
+%%       "essence_hook/2".
 
 :- mode complete_goal( + ).
 
@@ -690,8 +773,9 @@ complete_goal( Goal ) :-
 :- mode is_completed( + ).
 
 is_completed( Goal ) :-
+        once( essence_hook( Goal, EssenceOfGoal ) ),
         completed( G ),
-        are_variants( Goal, G ).
+        are_variants( EssenceOfGoal, G ).
 
 
 
@@ -702,8 +786,9 @@ is_completed( Goal ) :-
 :- mode is_a_variant_of_a_pioneer( + ).
 
 is_a_variant_of_a_pioneer( Goal ) :-
+        essence_hook( Goal, EssenceOfGoal ),
         pioneer( PG, _Index ),
-        are_variants( Goal, PG ).
+        are_variants( EssenceOfGoal, PG ).
 
 
 
@@ -713,14 +798,18 @@ is_a_variant_of_a_pioneer( Goal ) :-
 :- mode add_pioneer( + ).
 
 add_pioneer( Goal ) :-
+        once( essence_hook( Goal, EssenceOfGoal ) ),
         getval( pioneer_index, NewIndex ),
         incval( pioneer_index ),
-        assert( pioneer( Goal, NewIndex ) ).
+        assert( pioneer( EssenceOfGoal, NewIndex ) ).
 
 
 
 %% remove_pioneer( + goal ):
 %% Remove the pioneer entry for this goal.
+%%
+%% NOTE: The assumption is that the goal has already been filtered through
+%%       "essence_hook/2".
 
 :- mode remove_pioneer( + ).
 
@@ -737,14 +826,18 @@ remove_pioneer( Goal ) :-
 :- mode add_loop( +, + ).
 
 add_loop( Goal, Goals ) :-
+        extract_essence( [ Goal | Goals ], [ EssenceOfGoal | EssenceOfGoals ] ),
         getval( loop_index, NextIndex ),
         incval( loop_index ),
-        assert( loop( Goal, Goals, NextIndex ) ).
+        assert( loop( EssenceOfGoal, EssenceOfGoals, NextIndex ) ).
 
 
 
 %% remove_loops( + goal ):
 %% Remove all entries in "loop" that are associated with this goal.
+%%
+%% NOTE: The assumption is that the goal has already been filtered through
+%%       "essence_hook/2".
 
 :- mode remove_loops( + ).
 
