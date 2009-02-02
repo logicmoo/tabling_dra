@@ -78,13 +78,13 @@ q6  :- check( s1, f p ).                  % no       loop      no
 
 q7  :- check( s0, f g p ).                % no       loop      no
 
-q8  :- check( s2, g p ).                  % yes      yes       NO <---
+q8  :- check( s2, g p ).                  % yes      yes       yes
 
-q9  :- check( s2, f g p ).                % yes      yes       NO <---
+q9  :- check( s2, f g p ).                % yes      yes       yes
 
 q10  :- check( s2, f( q ^ z ) ).          % no       loop      no
 
 q11 :- check( s2, f q ^ f z ).            % yes      yes       yes
 
-q12 :- check( s2, g f s ).                % yes      yes       NO <---
+q12 :- check( s2, g f s ).                % yes      yes       yes
 
