@@ -33,7 +33,7 @@
 %%%       used if provided (see the description of "default_extension" below).
 %%%
 %%%       As the file is loaded, directives and queries are executed on-the-fly
-%%%       by invoking the metainterpreter (except the ":- op ..." directive, 
+%%%       by invoking the metainterpreter (except the ":- op ..." directive,
 %%%       which is interpreted directly). A query is evaluated to give all
 %%%       solutions (it is as if the user kept responding with a semicolon):
 %%%       to avoid that use the built-in predicate once/1 .
@@ -54,6 +54,9 @@
 %%%           quit.
 %%%
 %%%       (the former method appears not to work with tkeclipse).
+%%%
+%%%       NOTE: In the interactive mode one cannot input more than one term per
+%%%             line.
 %%%
 %%%
 %%%    3. To include files (interactively or from other files) use
@@ -107,7 +110,7 @@
 %%%                 case it will also backtrack to obtain more solutions.
 %%%
 %%%
-%%%    5. The metainterpreter can also define hooks of its own.  A hook 
+%%%    5. The metainterpreter can also define hooks of its own.  A hook
 %%%       predicate should be declared in a fact of "hook_predicate/1".
 %%%       For example,
 %%%
@@ -298,34 +301,48 @@ process_query( Query, VarDict ) :-
         write( user_output, '-- Query: ' ),
         write( user_output, Query ),
         writeln( user_output, '.  --' ),
-        execute_query( Query, VarDict, Answer ),
-        Answer = no.                             % i.e., backtrack if 'yes'.
+        execute_query( Query, Result ),
+        show_result( Result, VarDict ),
+        nl( user_output ),
+        Result = no.                             % i.e., backtrack if 'yes'.
 
 %
-:- mode execute_query( +, +, + ).
+:- mode execute_query( +, + ).
 
-execute_query( Query, VarDict, yes ) :-
-        query( Query ),                          % provided by a metainterpreter
-        show_results( VarDict ),
-        writeln( user_output, 'Yes' ).
+execute_query( Query, yes ) :-
+        query( Query ).                          % provided by a metainterpreter
 
-execute_query( _, _, no ) :-
-        writeln( user_output, 'No' ).
+execute_query( _, no ).
 
 
-%% show_results( + variable dictionary ):
+%% show_result( + yes or no, + variable dictionary ).
+%% Write the bindings and "Yes", or just "No".
+%% NOTE: the newline is not written here, as it is not wanted in top/0.
+
+:- mode show_result( +, + ).
+
+show_result( yes, VarDict ) :-
+        !,
+        show_bindings( VarDict ),
+        write( user_output, 'Yes' ).
+
+show_result( no, _ ) :-
+        write( user_output, 'No' ).
+
+
+%% show_bindings( + variable dictionary ):
 %% Use the variable dictionary to show the results of a query.
 
-:- mode show_results( + ).
+:- mode show_bindings( + ).
 
-show_results( Dict ) :-
+show_bindings( Dict ) :-
         member( (Name = Var), Dict ),
         write(   user_output, Name ),
         write(   user_output, ' = ' ),
         writeln( user_output, Var ),
         fail.
 
-show_results( _ ).
+show_bindings( _ ).
 
 
 
@@ -349,18 +366,17 @@ check_not_builtin( _ ).
 %% top:
 %% Interactive mode.  Each term that is not a directive or a query is treated
 %% as an abbreviated query.  After displaying the results of each query read
-%% characters upt the nearest newline: if the first character is ";",
+%% characters upto the nearest newline: if the first character is ";",
 %% backtrack to find alternative solutions.
 %% Exit upon encountering end of file.
 
 top :-
         repeat,
-        write( user_output, ': ' ),                                     % prompt
-        flush_output( user_output ),
         read_term( user_input, Term, [ variable_names( VarDict ) ] ),
+        getline( user_input, _ ),                         % the rest of the line
         verify_program_item( Term ),
         interactive_term( Term, VarDict ),
-        ( Term = end_of_file ; Term = quit ),
+        ( Term = end_of_file ; Term = quit ),             % i.e., normally fails
         !.
 
 
@@ -384,28 +400,32 @@ interactive_term( (:- Directive), _ ) :-               % directive
 
 interactive_term( (?- Query), VarDict ) :-             % query
         !,
-        execute_query( Query, VarDict, Ans ),
-        continue_query( Ans ),
+        execute_query( Query, Result ),
+        show_result( Result, VarDict ),
+        satisfied_with_query( Result ),                % or backtrack to retry
         !.
 
 interactive_term( Other, VarDict ) :-                  % other: treat as a query
         % Other \= end_of_file,
+        % Other \= quit.
         % Other \= (:- _),
         % Other \= (?- _),
-        % Other \= quit
         interactive_term( (?- Other), VarDict ).
 
 
-%% continue_query( + answer ):
+%% satisfied_with_query( + answer ):
 %% Give the user a chance to type ";" if the answer is "yes".
 
-:- mode continue_query( + ).
+:- mode satisfied_with_query( + ).
 
-continue_query( yes ) :-
+satisfied_with_query( yes ) :-
+        flush_output( user_output ),
         user_accepts,
         !.
 
-continue_query( no ).
+satisfied_with_query( no ) :-
+        nl( user_output ),
+        flush_output( user_output ).
 
 
 %% user_accepts:
@@ -413,7 +433,9 @@ continue_query( no ).
 %% If the first character is a semicolon, fail.
 
 user_accepts :-
-        getline( Line ),
-        Line \= [ ";" | _ ].             % i.e., fail if 1st char is a semicolon
+        write( user_output, '  (more?) ' ),
+        flush_output( user_output ),
+        getline( user_input, Line ),
+        Line \= [ ';' | _ ].             % i.e., fail if 1st char is a semicolon
 
 %-------------------------------------------------------------------------------
