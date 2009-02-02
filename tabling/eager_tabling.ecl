@@ -3,7 +3,7 @@
 %%%  below for more information.                                             %%%
 %%%  Written by Feliks Kluzniak at UTD.                                      %%%
 %%%                                                                          %%%
-%%%  Last update: 30 January 2009.                                           %%%
+%%%  Last update: 2 February 2009.                                           %%%
 %%%                                                                          %%%
 
 %%% NOTE:
@@ -17,6 +17,13 @@
 %%%
 %%%       To include files use the usual Prolog syntax:
 %%%           :- [ file1, file2, ... ].
+%%%
+%%%       To produce a wallpaper trace use the trace directive. For example,
+%%%           :- trace p/3, q/0, r/1.
+%%%       will trace predicates p/3, q/0 and r/1.  If you want to trace
+%%%       everything, use
+%%%           :- trace all.
+%%%       These directives are cumulative.
 %%%
 %%%    2. The program should contain no other directives. It may, however,
 %%%       contain queries, which will be executed immediately upon reading.
@@ -265,6 +272,13 @@ General description
            NOTE: The goal is filtered through "essence_hook/2" before it is
                  stored in the table.
 
+   -- tracing( goal )
+
+           A goal that matches something in this table will show up on the
+           wallpaper trace.  This table is empty by default, and filled only
+           upon encountering "trace" directives when the interpreted program is
+           being read.
+
 *******************************************************************************/
 
 
@@ -288,6 +302,7 @@ default_extension( ".tlp" ).
 :- dynamic pioneer/2 .
 :- dynamic loop/3 .
 :- dynamic completed/1 .
+:- dynamic tracing/1.
 
 :- setval( number_of_answers, 0 ).
 :- setval( pioneer_index,     0 ).
@@ -299,6 +314,7 @@ initialise :-
         retractall( pioneer( _, _ ) ),
         retractall( loop( _, _, _ ) ),
         retractall( completed( _ )  ),
+        retractall( tracing( _ )    ),
         setval( number_of_answers, 0 ),
         setval( pioneer_index,     0 ),
         setval( loop_index,        0 ).
@@ -346,7 +362,8 @@ hook_predicate( essence_hook( _, _ ) ).
 
 %% The default essence_hook:
 
-:- dynamic essence_hook/2.
+:- multifile essence_hook/2.
+:- dynamic   essence_hook/2.
 
 essence_hook( T, T ).
 
@@ -367,12 +384,16 @@ extract_essence( [ T | Ts ], [ E | Es ] ) :-
 %%%%%  Administration  %%%%%
 
 :- op( 1000, fy, tabled ).    % allow  ":- tabled p/k ."
+:- op( 1000, fy, trace  ).    % allow  ":- trace  p/k ."
 
 
 
 %% The legal directives (check external form only).  (Used by the top level.)
 
 legal_directive( tabled _ ).
+legal_directive( (trace _) ).
+legal_directive( (dynamic _) ).
+legal_directive( (multifile _) ).
 
 
 %% Check and process the legal directives
@@ -392,6 +413,29 @@ execute_directive( tabled P / K ) :-                  % declaration of tabled
                  ]
                ).
 
+execute_directive( (trace all) ) :-
+        !,
+        will_trace( [ _ ] ).
+
+execute_directive( (trace PredSpecs) ) :-
+        predspecs_to_patterns( PredSpecs, Patterns ),
+        will_trace( Patterns ).
+
+execute_directive( (dynamic _) ).     % ignore
+
+execute_directive( (multifile _) ).   % ignore
+
+
+%% will_trace( + list of patterns ):
+%% Store the patterns in tracing/1:
+
+will_trace( Patterns ) :-
+        member( Pattern, Patterns ),
+        assert( tracing( Pattern ) ),
+        fail.
+
+will_trace( _ ).
+
 
 
 
@@ -406,7 +450,7 @@ execute_directive( tabled P / K ) :-                  % declaration of tabled
 :- mode query( + ).
 
 query( Goals ) :-
-        solve( Goals, [] ),
+        solve( Goals, [], 0 ),
         retractall( pioneer( _, _ )  ),
         retractall( loop( _, _ , _ ) ),
         setval( pioneer_index, 0 ),
@@ -415,9 +459,10 @@ query( Goals ) :-
 
 
 
-%% solve( + sequence of goals, + stack ):
+%% solve( + sequence of goals, + stack, + level ):
 %% Solve the sequence of goals, maintaining information about the current chain
-%% of ancestors (stack).
+%% of ancestors (stack).  The level is the level of recursion, and is used only
+%% for tracing.
 %%
 %% Please note that the following invariant must be maintained:
 %%    A pioneer is
@@ -425,59 +470,73 @@ query( Goals ) :-
 %%        chain of ancestors);
 %%    (b) or marked as completed.
 
-:- mode solve( +, + ).
+:- mode solve( +, +, + ).
 
 
 % Note that even during the computation of \+/1 a whole set of answers
 % may become tabled.
 
-solve( \+ Goal, Stack ) :-
-        !,
-        \+ solve( Goal, Stack ).
+solve( \+ Goal, Stack, Level ) :-
+        NLevel is Level + 1,
+        optional_trace( 'Entering normal: ', \+ Goal, Level ),
+        (
+            \+ solve( Goal, Stack, NLevel ),
+            optional_trace( 'Success normal: ', \+ Goal, Level )
+        ;
+            optional_trace( 'Failure normal: ', \+ Goal, Level ),
+            fail
+        ).
 
 
 % Note that even during the computation of once/1 a whole set of answers
 % may become tabled.
 
-solve( once Goal, Stack ) :-
+solve( once( Goal ), Stack, Level ) :-
         !,
-        solve( Goal, Stack ),
-        !.
+        NLevel is Level + 1,
+        optional_trace( 'Entering normal: ', once( Goal ), Level ),
+        (
+            once( solve( Goal, Stack, NLevel ) ),
+            optional_trace( 'Success normal: ', once( Goal ), Level )
+        ;
+            optional_trace( 'Failure normal: ', once( Goal ), Level ),
+            fail
+        ).
 
 
 % A conditional.
 
-solve( (Cond -> Then ; _Else), Stack ) :-
-        solve( Cond, Stack ),
+solve( (Cond -> Then ; _Else), Stack, Level ) :-
+        solve( Cond, Stack, Level ),
         !,
-        solve( Then, Stack ).
+        solve( Then, Stack, Level ).
 
-solve( (_Cond -> _Then ; Else), Stack ) :-
+solve( (_Cond -> _Then ; Else), Stack, Level ) :-
         !,
-        solve( Else, Stack ).
+        solve( Else, Stack, Level ).
 
 
 % A disjunction without a conditional.
 
-solve( (Goals ; _), Stack ) :-
-        solve( Goals, Stack ).
+solve( (Goals ; _), Stack, Level ) :-
+        solve( Goals, Stack, Level ).
 
-solve( (_ ; Goals), Stack ) :-
+solve( (_ ; Goals), Stack, Level ) :-
         !,
-        solve( Goals, Stack ).
+        solve( Goals, Stack, Level ).
 
 
 % A conjunction.
 
-solve( (Goals1 , Goals2), Stack ) :-
+solve( (Goals1 , Goals2), Stack, Level ) :-
         !,
-        solve( Goals1, Stack ),
-        solve( Goals2, Stack ).
+        solve( Goals1, Stack, Level ),
+        solve( Goals2, Stack, Level ).
 
 
 % Some other supported built-in.
 
-solve( BuiltIn, _ ) :-
+solve( BuiltIn, _, _ ) :-
         builtin( BuiltIn ),
         !,
         call( BuiltIn ).
@@ -485,18 +544,32 @@ solve( BuiltIn, _ ) :-
 
 % A "normal" (i.e., not tabled) goal.
 
-solve( Goal, Stack ) :-
+solve( Goal, Stack, Level ) :-
         \+ tabled( Goal ),
         !,
-        solve_by_rules( Goal, Stack ).
+        optional_trace( 'Entering normal: ', Goal, Level ),
+        (
+            solve_by_rules( Goal, Stack, Level ),
+            optional_trace( 'Success normal: ', Goal, Level )
+        ;
+            optional_trace( 'Failure normal: ', Goal, Level ),
+            fail
+        ).
 
 
 % A tabled goal that has been completed: all the results are in "answer".
 
-solve( Goal, _ ) :-
+solve( Goal, _, Level ) :-
         is_completed( Goal ),
         !,
-        get_answer( Goal ).
+        optional_trace( 'Entering completed: ', Goal, Level ),
+        (
+            get_answer( Goal ),
+            optional_trace( 'Success completed: ', Goal, Level )
+        ;
+            optional_trace( 'Failure completed: ', Goal, Level ),
+            fail
+        ).
 
 
 % A tabled goal that has a variant among its ancestors.
@@ -505,10 +578,17 @@ solve( Goal, _ ) :-
 % Only the existing (most likely incomplete) results from "answer" are
 % returned before failure.
 
-solve( Goal, Stack ) :-
+solve( Goal, Stack, Level ) :-
         variant_of_ancestor( Goal, Stack ),
         !,
-        get_answer( Goal ).
+        optional_trace( 'Entering variant: ', Goal, Level ),
+        (
+            get_answer( Goal ),
+            optional_trace( 'Success variant: ', Goal, Level )
+        ;
+            optional_trace( 'Failure variant: ', Goal, Level ),
+            fail
+        ).
 
 
 % A pioneer goal is solved by rules, producing results that are stored in
@@ -521,15 +601,16 @@ solve( Goal, Stack ) :-
 %  a variant ancestor that is also an ancestor of the pioneer.
 %  See variant_of_ancestor/2.)
 
-solve( Goal, Stack ) :-
+solve( Goal, Stack, Level ) :-
         \+ is_a_variant_of_a_pioneer( Goal ),
         !,
         add_pioneer( Goal ),
-        store_all_solutions_by_rules( Goal, Stack ),
+        optional_trace( 'Added pioneer: ', Goal, Level ),
+        store_all_solutions_by_rules( Goal, Stack, Level ),
         (
             is_a_variant_of_a_pioneer( Goal )      % might have lost its status!
         ->
-            compute_fixed_point( Goal, Stack ),
+            compute_fixed_point( Goal, Stack, Level ),
             complete_cluster( Goal )
         ;
             true
@@ -540,66 +621,68 @@ solve( Goal, Stack ) :-
 % A tabled goal that is not completed, not a pioneer on entry, and has no
 % variant among its ancestors.  Something is wrong!
 
-solve( Goal, Stack ) :-
+solve( Goal, Stack, _ ) :-
         fatal_error( "IMPOSSIBLE!", [ Goal| Stack ] ).
 
 
 
 
-%% store_all_solutions_by_rules( + goal, + stack ):
+%% store_all_solutions_by_rules( + goal, + stack, + level ):
 %% Invoke solve_by_rules/2 until there are no solutions left, storing
 %% the results in "answer".
 
-:- mode store_all_solutions_by_rules( +, + ).
+:- mode store_all_solutions_by_rules( +, +, + ).
 
-store_all_solutions_by_rules( Goal, Stack ) :-
+store_all_solutions_by_rules( Goal, Stack, Level ) :-
         copy_term( Goal, OriginalGoal ),
-        solve_by_rules( Goal, Stack ),
+        solve_by_rules( Goal, Stack, Level ),
         memo( OriginalGoal, Goal ),
         fail.
 
-store_all_solutions_by_rules( _, _ ).
+store_all_solutions_by_rules( _, _, _ ).
 
 
 
-%% solve_by_rules( + goal, + stack ):
+%% solve_by_rules( + goal, + stack, + level ):
 %% Solves the goal by using rules (i.e., clauses) only.
 
-:- mode solve_by_rules( +, + ).
+:- mode solve_by_rules( +, +, + ).
 
-solve_by_rules( Goal, Stack ) :-
+solve_by_rules( Goal, Stack, Level ) :-
         copy_term( Goal, OriginalGoal ),
+        NLevel is Level + 1,
         clause( Goal, Body )@interpreted,
-        solve( Body, [ OriginalGoal | Stack ] ).
+        solve( Body, [ OriginalGoal | Stack ], NLevel ).
 
 
 
 
-%% compute_fixed_point( + goal, + stack ):
+%% compute_fixed_point( + goal, + stack, + level ):
 %% Solve the goal by rules until no more answers are produced, then succeed
 %% _without_ instantiating the goal.
 
-:- mode compute_fixed_point( +, + ).
+:- mode compute_fixed_point( +, +, + ).
 
-compute_fixed_point( Goal, Stack ) :-
+compute_fixed_point( Goal, Stack, Level ) :-
+        optional_trace( 'Computing fixed point for ', Goal, Level ),
         getval( number_of_answers, NAns ),
-        compute_fixed_point_( Goal, Stack, NAns ).
+        compute_fixed_point_( Goal, Stack, Level, NAns ).
 
 %
-:- mode compute_fixed_point_( +, +, + ).
+:- mode compute_fixed_point_( +, +, +, + ).
 
-compute_fixed_point_( Goal, Stack, _ ) :-
-        store_all_solutions_by_rules( Goal, Stack ),            % all solutions
+compute_fixed_point_( Goal, Stack, Level, _ ) :-
+        store_all_solutions_by_rules( Goal, Stack, Level ),     % all solutions
         fail.
 
-compute_fixed_point_( _, _, NAns ) :-
+compute_fixed_point_( _, _, _, NAns ) :-
         getval( number_of_answers, NAns ),                      % no new answers
         !.
 
-compute_fixed_point_( Goal, Stack, NAns ) :-
+compute_fixed_point_( Goal, Stack, Level, NAns ) :-
         getval( number_of_answers, NA ),
         NA =\= NAns,                                            % new answers,
-        compute_fixed_point_( Goal, Stack, NA ).                %   so iterate
+        compute_fixed_point_( Goal, Stack, Level, NA ).         %   so iterate
 
 
 
@@ -660,6 +743,7 @@ rescind_pioneer_status( Goal ) :-
         is_a_variant_of_a_pioneer( Goal ),
         once( essence_hook( Goal, EssenceOfGoal ) ),
         !,
+        optional_trace( 'Removing pioneer: ', Goal, '?' ),
         remove_pioneer( EssenceOfGoal ),
         remove_loops( EssenceOfGoal ).
 
@@ -727,6 +811,7 @@ memo_( Goal, Fact ) :-
 
 memo_( Goal, Fact ) :-
         % No variant pair in "answer",
+        optional_trace( 'Storing answer: ', Fact, '?' ),
         assert( answer( Goal, Fact ) ),
         incval( number_of_answers ).
 
@@ -761,6 +846,7 @@ complete_goal( Goal ) :-
 
 complete_goal( Goal ) :-
         % \+ is_completed( Goal ),
+        optional_trace( 'Completing: ', Goal, '?' ),
         assert( completed( Goal ) ).
 
 
@@ -853,6 +939,24 @@ remove_loops( _ ).
 
 
 %%-----  Custom-tailored utilities  -----
+
+
+%% optional_trace( + label, + goal, + level ):
+%% If the goal matches one of the traced patterns, print out a trace line with
+%% this label:
+
+optional_trace( Label, Goal, Level ) :-
+        tracing( Goal ),
+        !,
+        write( user_output, '[' ),
+        write( user_output, Level ),
+        write( user_output, '] ' ),
+        write( user_output, Label ),
+        write( user_output, Goal ),
+        nl( user_output ).
+
+optional_trace( _, _, _ ).
+
 
 
 %% fatal_error( + message, + stack ):
