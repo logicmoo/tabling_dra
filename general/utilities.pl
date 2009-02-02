@@ -1,13 +1,13 @@
-%%%  Some generally-useful utilities.                                    %%%
-%%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
-%%%                                                                      %%%
-%%%  Last update: 30 January 2009.                                       %%%
-%%%                                                                      %%%
-%%%  Converted to Sicstus Prolog: 26 January 2009.                       %%%
-%%%                                                                      %%%
-%%%  NOTE: Some of the code may be Sicstus-specific (or even still       %%%
-%%%        Eclipse-specific) and may require some tweaking for other     %%%
-%%%        Prolog systems.                                               %%%
+%%%  Some generally-useful utilities.                                        %%%
+%%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
+%%%                                                                          %%%
+%%%  Last update: 2 February 2009.                                           %%%
+%%%                                                                          %%%
+%%%  Converted to Sicstus Prolog: 26 January 2009.                           %%%
+%%%                                                                          %%%
+%%%  NOTE: Some of the code may be Sicstus-specific (or even still           %%%
+%%%        Eclipse-specific) and may require some tweaking for other         %%%
+%%%        Prolog systems.                                                   %%%
 
 
 :- ensure_loaded( library( terms ) ). % A Sicstus library, needed for variant/2.
@@ -460,43 +460,49 @@ write_list( S, NotAList ) :-
 
 
 %%------------------------------------------------------------------------------
-%% getline( - list of character strings ) :
-%%    Reads characters from the current input stream upto (and including) the
-%%    nearest newline.  The newline is not included in the list of characters
-%%    that is returned.
+%% getline( + input stream, - list of character strings ) :
+%%    Reads characters from this input stream upto (and including) the nearest
+%%    newline.  The newline is not included in the list of characters that is
+%%    returned.
 
-:- mode getline( - ).
+:- mode getline( +, - ).
 
-getline( Line ) :-  get_char( C ),  getline_( C, Line ).
+getline( InputStream, Line ) :-  
+        get_char( InputStream, C ),  
+        getline_( InputStream, C, Line ).
 
 %
-:- mode getline_( +, - ).
+:- mode getline_( +, +, - ).
 
-getline_( '\n', []          ) :-  !.
+getline_( _InputStream, '\n', []          ) :-  !.
 
-getline_( C   , [ C | Cs ] ) :-
-        get_char( NC ),
-        getline_( NC, Cs ).
-
-
-%%------------------------------------------------------------------------------
-%% putline( + list of character strings ) :
-%%    Writes the characters to the current output stream and follows them with
-%%    a newline.
-
-:- mode putline( + ).
-
-putline( Cs ) :-  putchars( Cs ),  nl.
+getline_( InputStream, C   , [ C | Cs ] ) :-
+        get_char( InputStream, NC ),
+        getline_( InputStream, NC, Cs ).
 
 
 %%------------------------------------------------------------------------------
-%% putchars( + list of character strings ) :
+%% putline( + output stream, + list of character strings ) :
+%%    Writes the characters to this stream and follows them with a newline.
+
+:- mode putline( +, + ).
+
+putline( OutputStream, Cs ) :-  
+        putchars( OutputStream, Cs ),  
+        nl( OutputStream ).
+
+
+%%------------------------------------------------------------------------------
+%% putchars( + output stream, + list of character strings ) :
 %%    Writes the characters to the current output stream.
 
-:- mode putchars( + ).
+:- mode putchars( +, + ).
 
-putchars( []         ).
-putchars( [ C | Cs ] ) :-  put_char( C ),  putchars( Cs ).
+putchars( _OutputStream, []         ).
+
+putchars( OutputStream, [ C | Cs ] ) :-  
+        put_char( OutputStream, C ),  
+        putchars( OutputStream, Cs ).
 
 
 %%------------------------------------------------------------------------------

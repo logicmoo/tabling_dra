@@ -1,10 +1,10 @@
-%%%  Some generally-useful utilities.                                    %%%
-%%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
-%%%                                                                      %%%
-%%%  Last update: 30 January 2009.                                       %%%
-%%%                                                                      %%%
-%%%  NOTE: Some of the code may be Eclipse-specific and may require      %%%
-%%%        minor tweaking for other Prolog systems.                      %%%
+%%%  Some generally-useful utilities.                                        %%%
+%%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
+%%%                                                                          %%%
+%%%  Last update: 2 February 2009.                                           %%%
+%%%                                                                          %%%
+%%%  NOTE: Some of the code may be Eclipse-specific and may require          %%%
+%%%        minor tweaking for other Prolog systems.                          %%%
 
 
 
@@ -394,44 +394,49 @@ write_list( S, NotAList ) :-
 
 
 %%------------------------------------------------------------------------------
-%% getline( - list of character strings ) :
-%%    Reads characters from the current input stream upto (and including) the
-%%    nearest newline.  The newline is not included in the list of characters
-%%    that is returned.
+%% getline( + input stream, - list of character strings ) :
+%%    Reads characters from this input stream upto (and including) the nearest
+%%    newline.  The newline is not included in the list of characters that is
+%%    returned.
 
-:- mode getline( - ).
+:- mode getline( +, - ).
 
-getline( Line ) :-  get_char( C ),  getline_( C, Line ).
+getline( InputStream, Line ) :-
+        get_char( InputStream, C ),
+        getline_( InputStream, C, Line ).
 
 %
-:- mode getline_( +, - ).
+:- mode getline_( +, +, - ).
 
-getline_( "\n", []         ) :-  !.
+getline_( _InputStream, '\n', []          ) :-  !.
 
-getline_( C   , [ C | Cs ] ) :-
-        % C \= "\n",
-        get_char( NC ),
-        getline_( NC, Cs ).
+getline_( InputStream, C   , [ C | Cs ] ) :-
+        get_char( InputStream, NC ),
+        getline_( InputStream, NC, Cs ).
 
 
 %%------------------------------------------------------------------------------
-%% putline( + list of character strings ) :
-%%    Writes the characters to the current output stream and follows them with
-%%    a newline.
+%% putline( + output stream, + list of character strings ) :
+%%    Writes the characters to this stream and follows them with a newline.
 
 :- mode putline( + ).
 
-putline( Cs ) :-  putchars( Cs ),  nl.
+putline( OutputStream, Cs ) :-
+        putchars( OutputStream, Cs ),
+        nl( OutputStream ).
 
 
 %%------------------------------------------------------------------------------
-%% putchars( + list of character strings ) :
+%% putchars( + output stream, + list of character strings ) :
 %%    Writes the characters to the current output stream.
 
-:- mode putchars( + ).
+:- mode putchars( +, + ).
 
-putchars( []         ).
-putchars( [ C | Cs ] ) :-  put_char( C ),  putchars( Cs ).
+putchars( _OutputStream, []         ).
+
+putchars( OutputStream, [ C | Cs ] ) :-
+        put_char( OutputStream, C ),
+        putchars( OutputStream, Cs ).
 
 
 
