@@ -1,14 +1,14 @@
-%%%                                                                      %%%
-%%%  A meta-interpreter for co-logic programming.                        %%%
-%%%  Based on "colp.pro" by Luke Evans Simon.                            %%%
-%%%                                                                      %%%
-%%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
-%%%                                                                      %%%
-%%%  Last update: 2 February 2009.                                       %%%
-%%%                                                                      %%%
-%%%  NOTE: Some of the code may be Eclipse-specific and may require      %%%
-%%%        minor tweaking for other Prolog systems.                      %%%
-%%%                                                                      %%%
+%%%                                                                          %%%
+%%%  A meta-interpreter for co-logic programming.                            %%%
+%%%  Based on "colp.pro" by Luke Evans Simon.                                %%%
+%%%                                                                          %%%
+%%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
+%%%                                                                          %%%
+%%%  Last update: 2 February 2009.                                           %%%
+%%%                                                                          %%%
+%%%  NOTE: Some of the code may be Eclipse-specific and may require          %%%
+%%%        minor tweaking for other Prolog systems.                          %%%
+%%%                                                                          %%%
 
 %%% NOTE:
 %%%

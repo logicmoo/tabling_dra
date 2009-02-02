@@ -1,12 +1,12 @@
-%%%                                                                      %%%
-%%%  A simple (!) general top level for metainterpreters.                %%%
-%%%                                                                      %%%
-%%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
-%%%                                                                      %%%
-%%%  Last update: 2 February 2009.                                       %%%
-%%%                                                                      %%%
-%%%  Converted to Sicstus Prolog: 26 January 2009.                       %%%
-%%%                                                                      %%%
+%%%                                                                          %%%
+%%%  A simple (!) general top level for metainterpreters.                    %%%
+%%%                                                                          %%%
+%%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
+%%%                                                                          %%%
+%%%  Last update: 2 February 2009.                                           %%%
+%%%                                                                          %%%
+%%%  Converted to Sicstus Prolog: 26 January 2009.                           %%%
+%%%                                                                          %%%
 
 %%% NOTE:
 %%%

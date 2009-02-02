@@ -1,10 +1,10 @@
-%%%                                                                        %%%
-%%%  A meta-interpreter for tabled logic programming: see the description  %%%
-%%%  below for more information.                                           %%%
-%%%  Written by Feliks Kluzniak at UTD.                                    %%%
-%%%                                                                        %%%
-%%%  Last update: 30 January 2009.                                         %%%
-%%%                                                                        %%%
+%%%                                                                          %%%
+%%%  A meta-interpreter for tabled logic programming: see the description    %%%
+%%%  below for more information.                                             %%%
+%%%  Written by Feliks Kluzniak at UTD.                                      %%%
+%%%                                                                          %%%
+%%%  Last update: 30 January 2009.                                           %%%
+%%%                                                                          %%%
 
 %%% NOTE:
 %%%

@@ -1,13 +1,13 @@
-%%%                                                                      %%%
-%%%  A meta-interpreter for co-logic programming.                        %%%
-%%%  Based on "colp.pro" by Luke Evans Simon.                            %%%
-%%%                                                                      %%%
-%%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
-%%%                                                                      %%%
-%%%  Last update: 2 February 2009.                                       %%%
-%%%                                                                      %%%
-%%%  Converted to Sicstus Prolog: 26 January 2009.                       %%%
-%%%                                                                      %%%
+%%%                                                                          %%%
+%%%  A meta-interpreter for co-logic programming.                            %%%
+%%%  Based on "colp.pro" by Luke Evans Simon.                                %%%
+%%%                                                                          %%%
+%%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
+%%%                                                                          %%%
+%%%  Last update: 2 February 2009.                                           %%%
+%%%                                                                          %%%
+%%%  Converted to Sicstus Prolog: 26 January 2009.                           %%%
+%%%                                                                          %%%
 
 %%% NOTE:
 %%%
