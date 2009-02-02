@@ -102,25 +102,26 @@ verify_all( []                , _ ).
 verify_all( [ State | States ], A ) :-  verify( State, A ),
                                         verify_all( States, A ).
 
-:- tabled verify/2.
+verify( S, g A )   :-  once( coverify( S, g A   ) ).
+verify( S, A r b ) :-  once( coverify( S, A r B ) ).
+verify( S, A     ) :-  A \= g _,  a \= _ r _,  tverify( S, A ).
 
-verify( S, A     ) :-  proposition( A ), holds( S, A ).
 
-verify( S, ~ A   ) :-  proposition( A ), \+ holds( S, A ).
+:- tabled tverify/2.
 
-verify( S, A ^ B ) :-  verify( S, A ) , verify( S, B ).
+tverify( S, A     ) :-  proposition( A ),    holds( S, A ).
 
-verify( S, A v B ) :-  verify( S, A ) ; verify( S, B ).
+tverify( S, ~ A   ) :-  proposition( A ), \+ holds( S, A ).
 
-verify( S, x A   ) :-  trans_all( S, Set ), verify_all( Set, A ). 
+tverify( S, A ^ B ) :-  verify( S, A )  , verify( S, B ).
 
-verify( S, f A   ) :-  verify( S, A ) ; verify( S, x f A ).
+tverify( S, A v B ) :-  verify( S, A )  ; verify( S, B ).
 
-verify( S, g A   ) :-  once( coverify( S, g A ) ).
+tverify( S, f A   ) :-  verify( S, A )  ; verify( S, x f A ).
 
-verify( S, A u B ) :-  verify( S, B ) ; verify( S, A ^ x( A u B) ).
+tverify( S, A u B ) :-  verify( S, B )  ; verify( S, A ^ x( A u B) ).
 
-verify( S, A r B ) :-  once( coverify( S, A r B ) ).
+tverify( S, x A   ) :-  trans_all( S, Set ), verify_all( Set, A ). 
 
 
 :- coinductive coverify/2.
