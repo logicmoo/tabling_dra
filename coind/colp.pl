@@ -4,7 +4,7 @@
 %%%                                                                      %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
 %%%                                                                      %%%
-%%%  Last update: 22 January 2009.                                       %%%
+%%%  Last update: 2 February 2009.                                       %%%
 %%%                                                                      %%%
 %%%  Converted to Sicstus Prolog: 26 January 2009.                       %%%
 %%%                                                                      %%%
@@ -61,6 +61,9 @@ builtin( nl           ).
 
 
 %%%%%  Administration  %%%%%
+
+hook_predicate( '' ).              % No hooks used here
+
 
 :- dynamic coinductive/1 .         % e.g., coinductive( comember( _, _ ) ).
 

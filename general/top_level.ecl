@@ -115,10 +115,14 @@
 %%%           hook_predicate( essence_hook( _, _ ) ).
 %%%
 %%%       declares that "essence_hook/2" is a metainterpreter hook.  A hook
-%%%       predicate should be dynamic.  When the top level encounters a clause
-%%%       whose head matches a hook declaration, the clause is asserted at the
-%%%       front (!) of the predicate (in the module of the running program, not
-%%%       in "interpreted").
+%%%       predicate (essence_hook/2 in this case) should be dynamic.  When
+%%%       the top level encounters a clause whose head matches a hook predicate
+%%%       declaration, the clause is asserted at the front (!) of the predicate
+%%%       (in the module of the running program, not in "interpreted").
+%%%
+%%%       NOTE: If the interpreter does not use hook predicates, it must contain
+%%%             the definition
+%%%                 hook_predicate( '' ).
 
 
 :- ensure_loaded( utilities ).
