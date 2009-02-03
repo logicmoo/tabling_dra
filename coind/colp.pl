@@ -57,6 +57,7 @@ builtin( (_ , _)      ).   % special treatment in solve/2
 builtin( writeln( _ ) ).
 builtin( write( _ )   ).
 builtin( nl           ).
+builtin( set_print_depth( _, _ )   ).      % not a real built-in, see  top_level
 
 
 

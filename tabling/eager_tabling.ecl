@@ -350,6 +350,7 @@ builtin( nl               ).
 builtin( read( _ )        ).
 builtin( set_flag( _, _ ) ).
 builtin( member( _, _ )   ).
+builtin( set_print_depth( _, _ )   ).      % not a real built-in, see  top_level
 
 
 

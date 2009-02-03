@@ -56,8 +56,20 @@
 %%%
 %%%       (the former method appears not to work with tkeclipse).
 %%%
-%%%       NOTE: In the interactive mode one cannot input more than one term per
-%%%             line.
+%%%       NOTE: 1. In the interactive mode one cannot input more than one term
+%%%                per line.
+%%%             2. When a query succeeds, the bindings of variables should be
+%%%                printed upto a certain maximum depth.  The default value is
+%%%                given in print_depth/1 below.  The maximum depth can be
+%%%                changed from the interpreted program by invoking
+%%%
+%%%                   set_print_depth( N )
+%%%
+%%%                where N is a positive integer.
+%%%
+%%%                Please note that on some Prolog implementations (e.g.,
+%%%                Eclipse) this might not prevent a loop if the printed term
+%%%                is cyclic (as will often happen for coinductive programs).
 %%%
 %%%
 %%%    3. To include files (interactively or from other files) use
@@ -135,6 +147,27 @@
 % as known( p, k ).
 
 :- dynamic known/2 .
+
+
+%% Default print depth.  (May be changed by the metainterpreter by invoking
+%% set_print_depth( N ).)
+
+print_depth( 10 ).
+
+%
+set_print_depth( N ) :-
+        integer( N ),
+        N > 0,
+        !,
+        retract( print_depth( _ ) ),
+        assert(  print_depth( N ) ).
+
+set_print_depth( Strange ) :-
+        error( [ 'The argument of set_print_depth/1 is not a positive integer',
+                 Strange
+               ]
+             ).
+
 
 
 
@@ -405,7 +438,9 @@ show_bindings( Dict ) :-
         member( [ Name | Var ], Dict ),
         write(   output, Name ),
         write(   output, ' = ' ),
-        writeln( output, Var ),
+        print_depth( MaxDepth ),
+        write_term( user_output, Var, [ depth( MaxDepth ) ] ),
+        nl( user_output ),
         fail.
 
 show_bindings( _ ).

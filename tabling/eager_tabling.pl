@@ -20,7 +20,7 @@
 %%%
 %%%       To produce a wallpaper trace use the trace directive. For example,
 %%%           :- trace p/3, q/0, r/1.
-%%%       will trace predicates p/3, q/0 and r/1.  If you want to trace 
+%%%       will trace predicates p/3, q/0 and r/1.  If you want to trace
 %%%       everything, use
 %%%           :- trace all.
 %%%       These directives are cumulative.
@@ -35,7 +35,7 @@
 %%%
 %%%    4. The program may contain clauses that modify the definition of the
 %%%       interpreter's predicate "essence_hook/2" (the clauses will be asserted
-%%%       at the fron of the predicate, and will thus override the default 
+%%%       at the fron of the predicate, and will thus override the default
 %%%       definition for some cases).  The default definition is
 %%%
 %%%          essence_hook( T, T ).
@@ -56,11 +56,11 @@
 %%%
 %%%          essence_hook( p( A, B, _ ),  p( A, B ) ).
 %%%
-%%%       will result in "p( a, b, c )" and "p( a, b, d )" being treated as 
+%%%       will result in "p( a, b, c )" and "p( a, b, d )" being treated as
 %%%       identical, as each of them will be translated to "p( a, b )" before
 %%%       comparison.
 %%%
-%%%       NOTE: This facility should be used with the utmost caution, as it 
+%%%       NOTE: This facility should be used with the utmost caution, as it
 %%%             may drastically affect the semantics of the interpreted program
 %%%             in a fashion that would be hard to understand for someone who
 %%%             does not understand the details of the interpreter.
@@ -233,7 +233,7 @@ General description
            before succeeding: the property is the reason why followers can query
            only "answer", and do not use their clauses.
            Note that no two entries in "pioneer" are variants of each other.
-           NOTE: The goal is filtered through "essence_hook/2" before it is 
+           NOTE: The goal is filtered through "essence_hook/2" before it is
                  stored in the table.
            This table is cleared each time the evaluation of a query terminates.
 
@@ -350,6 +350,7 @@ builtin( nl               ).
 builtin( read( _ )        ).
 builtin( set_flag( _, _ ) ).
 builtin( member( _, _ )   ).
+builtin( set_print_depth( _, _ )   ).      % not a real built-in, see  top_level
 
 
 
