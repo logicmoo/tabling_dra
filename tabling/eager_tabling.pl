@@ -187,7 +187,7 @@ General description
 
                p( U, V )  would generate  p( U, U ), p( a, a ), p( a, b )
                p( W, W )  ..............  p( W, W ), p( a, a )
-               p( a, X )  ..............  p( a, a ) (twice!)
+               p( a, X )  ..............  p( a, a ), p( a, a ), p( a, b )
                p( Y, b )  ..............  p( b, b ), p( a, b ).
 
            In other words, the set of results depends not only on the predicate,
@@ -203,12 +203,13 @@ General description
                answer( p( W, W ), p( W, W ) ).
                answer( p( W, W ), p( a, a ) ).
                answer( p( a, X ), p( a, a ) ).
+               answer( p( a, X ), p( a, b ) ).
                answer( p( Y, b ), p( b, b ) ).
                answer( p( Y, b ), p( a, b ) ).
 
-           Please note that the repetition of p( a, a ) for the goal p( a, X )
-           will be avoided.  In general, entries in "answer" will not be
-           variants of each other.
+           Please note that the repetition of "p( a, a )" for the goal
+           "p( a, X )" will be avoided.  In general, entries in "answer" will
+           not be variants of each other.
 
    -- number_of_answers
 
@@ -654,8 +655,21 @@ store_all_solutions_by_rules( _, _, _ ).
 solve_by_rules( Goal, Stack, Level ) :-
         copy_term( Goal, OriginalGoal ),
         NLevel is Level + 1,
-        clause( interpreted : Goal, Body ),
+        use_clause( Goal, Body ),
         solve( Body, [ OriginalGoal | Stack ], NLevel ).
+
+%
+use_clause( Goal, Body ) :-
+        (
+            functor( Goal, P, K ),
+            current_predicate( (interpreted:P) / K ),
+        ->
+            clause( interpreted : Goal, Body )
+        ;
+            warning( [ "Calling an undefined predicate: ", Goal ] ),
+            fail
+        ).
+
 
 
 
