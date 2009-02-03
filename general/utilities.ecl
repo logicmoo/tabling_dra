@@ -408,7 +408,7 @@ getline( InputStream, Line ) :-
 %
 :- mode getline_( +, +, - ).
 
-getline_( _InputStream, '\n', []          ) :-  !.
+getline_( _InputStream, "\n", []          ) :-  !.
 
 getline_( InputStream, C   , [ C | Cs ] ) :-
         get_char( InputStream, NC ),
