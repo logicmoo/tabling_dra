@@ -25,11 +25,12 @@ example.clp:
 examples:
         Some examples of coinductive programs, all with the extension
         ".clp".
-        Files with translated programs will have the extension ".ecl".
+        Files with translated programs will have the extension ".ecl" or
+        ".pl", depending on whether the translation occurred wihin
+        Eclipse or Sicstus.
 
 original:
         A directory that contains a metainterpreter (and an example)
         almost exactly as they appeared in Luke Simon's Ph.D. thesis.
-
 
 --------------------------------------------------------------------------------
