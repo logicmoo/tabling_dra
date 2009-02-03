@@ -57,6 +57,7 @@
 %%%
 %%%       NOTE: 1. In the interactive mode one cannot input more than one term
 %%%                per line.
+%%%
 %%%             2. When a query succeeds, the bindings of variables should be
 %%%                printed upto a certain maximum depth.  The default value is
 %%%                given in print_depth/1 below.  The maximum depth can be
@@ -69,6 +70,13 @@
 %%%                Please note that on some Prolog implementations (e.g.,
 %%%                Eclipse) this might not prevent a loop if the printed term
 %%%                is cyclic (as will often happen for coinductive programs).
+%%%
+%%%                Note also that the foregoing does not apply to invocations of
+%%%                builtins in the interpreted program.  It is upto the user to
+%%%                apply the builtin appropriate for the host logic programming
+%%%                system.  For example, in the case of Sicstus, use
+%%%                "write_term( T, [ max_depth( 10 ) ] )" rather than just
+%%%                "write( T )", especially if you expect T to be a cyclic term.
 %%%
 %%%
 %%%    3. To include files (interactively or from other files) use

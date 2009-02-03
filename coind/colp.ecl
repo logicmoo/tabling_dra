@@ -45,19 +45,20 @@
 %%  NOTE: Just adding "!" won't do the trick, the main metainterpreter
 %%        would have to be modified.
 
-builtin( true         ).
-builtin( false        ).
-builtin( fail         ).
-builtin( _ = _        ).
-builtin( _ \= _       ).
-builtin( \+( _ )      ).
-builtin( once _       ).   % special treatment in solve/2
-builtin( (_ ->_ ; _)  ).   % special treatment in solve/2
-builtin( (_ ; _)      ).   % special treatment in solve/2
-builtin( (_ , _)      ).   % special treatment in solve/2
-builtin( writeln( _ ) ).
-builtin( write( _ )   ).
-builtin( nl           ).
+builtin( true               ).
+builtin( false              ).
+builtin( fail               ).
+builtin( _ = _              ).
+builtin( _ \= _             ).
+builtin( \+( _ )            ).
+builtin( once( _ )          ).   % special treatment in solve/2
+builtin( (_ ->_ ; _)        ).   % special treatment in solve/2
+builtin( (_ ; _)            ).   % special treatment in solve/2
+builtin( (_ , _)            ).   % special treatment in solve/2
+builtin( writeln( _ )       ).
+builtin( write( _ )         ).
+builtin( write_term( _, _ ) ).
+builtin( nl                 ).
 builtin( set_print_depth( _, _ )   ).      % not a real built-in, see  top_level
 
 

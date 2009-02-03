@@ -65,4 +65,5 @@ comember( X, L ) :-  drop( X, L, L1 ),  comember( X, L1 ).
 ?-  write( 'Query4'),  nl,
     X = [ 0, s( 0 ), s( s( 0 ) ) | X ],
     once( comember( s( 0 ), X ) ),
-    write( 'Yes4 !' ),  nl.
+    write( 'Yes4 !' ),  nl,
+    write_term( X, [ max_depth( 10 ) ] ),  nl.
