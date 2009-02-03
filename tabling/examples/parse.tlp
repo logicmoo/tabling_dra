@@ -1,4 +1,6 @@
-%% An example attributed to David S. Warren.
+%% An example attributed to David S. Warren, taken from from "Linear Tabling
+%% Strategies and Optimizations" by Neng-Fa Zhou, Taisuke Sato and
+%% Yi-Dong Shen.
 
 %% A string given as facts
 c( 0, a, 1 ).
