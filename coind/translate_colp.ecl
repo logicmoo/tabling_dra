@@ -74,9 +74,6 @@
 %%%
 %%% Queries will undergo the same transformation as clause bodies and be output
 %%% with the translated program.
--%%% Directives will be just copied to the translated program (i.e., without
--%%% transformation). However, the following directives will be interpreted
--%%% directly by the translator (and not copied):
 %%% In general, directives will be just copied to the translated program (i.e.,
 %%% without transformation. However, there are two kinds of exceptions.  The
 %%% first is ":- tabled ..." and ":- op( ... )", discussed above.  The second is
@@ -351,7 +348,6 @@ write_essence_hook( OutputStream ) :-
         Pattern =.. [ F | Args ],
         drop_last( Args, ArgsButLast ),
         PatternButLast =.. [ F | ArgsButLast ],
-        write_clause( (:- multifile essence_hook/2)          , OutputStream ),
         write_clause( (:- dynamic essence_hook/2)            , OutputStream ),
         write_clause( essence_hook( Pattern, PatternButLast ), OutputStream ),
         fail.
