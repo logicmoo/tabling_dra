@@ -1,0 +1,9 @@
+--------------------------------------------------------------------------------
+
+This directory includes the following files:
+
+LTL:
+        An extension of Gopal Gupta's elegant interpreter for Linear
+        Temporal Logic and a few example problems and queries.
+
+--------------------------------------------------------------------------------

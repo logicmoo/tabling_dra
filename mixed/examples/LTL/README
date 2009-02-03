@@ -1,0 +1,36 @@
+--------------------------------------------------------------------------------
+
+This directory includes the following files:
+
+interpreter.ctp:
+        A version of Gopal Gupta's elegant interpreter for Linear
+        Temporal Logic.
+
+        The program contains both tabled and coinductive predicates
+        (however, each predicate is either tabled or coinductive, not
+        both). It can be executedd by loading a concrete example that
+        includes it (via a ":-[interpreter]." directive) into the "dta"
+        interpreter and then issuing queries relevant to the example.
+
+        All these examples should also run with the "eager_tabling"
+        interpreter (see directory "../../tabling"): the only difficulty
+        is that one would have to specify the full file name, together
+        with the extension.
+
+normalize.pl:
+        Simple normalization of LTL expressions, used by
+        "interpreter.ctp".
+
+example.ctp:
+        The definition of a simple automaton and some convenient LTL
+        queries.  Just load the example into "dra" and then type "q1.",
+        "q2." etc. to that interpreter's top level.
+
+example2.ctp:
+        A somewhat more complex example similar to "example.ctp".
+
+microwave.ctp:
+        Another example in the same spirit.  This one is actually a
+        (somewhat simplified) model of a microwave oven.
+
+--------------------------------------------------------------------------------

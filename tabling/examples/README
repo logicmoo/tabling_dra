@@ -1,0 +1,56 @@
+--------------------------------------------------------------------------------
+
+This directory includes the following files:
+
+bad.tlp:
+bad2.tlp:
+        Examples that test some of the diagnostics of the tabling
+        interpreter.
+
+comment_example.tlp:
+        The example described in the head comment of
+        "../eager_tabling".
+
+conditional.clp:
+        A wholly uninteresting example, designed to test that
+        "../eager_tabling" handles conditionals correctly.
+
+graph:
+        A simple example that demonstrates a left-recursive program for
+        finding paths in a graph.
+
+guo_gupta_2_1.tlp:
+guo_gupta_3_1.tlp:
+guo_gupta_4_1.tlp:
+guo_gupta_4_2.tlp:
+guo_gupta_6_1.tlp:
+        Examples 2.1, 3.1 etc. from "Tabled Logic Programming with
+        Dynamic Reordering of Alternatives" by Hai-Feng Guo and Gopal
+        Gupta.
+
+module.tlp:
+        A wholly uninteresting example, designed to test that the
+        predicate names in the interpreted program cannot conflict with
+        the names of the predicates that implement "../eager_tabling".
+
+paper_example.tlp:
+        An example from "Linear Tabling Strategies and Optimizations" by
+        Neng-Fa Zhou, Taisuke Sato and Yi-Dong Shen.
+
+parse.tlp:
+        An example attributed to David S. Warren, taken from from
+        "Linear Tabling Strategies and Optimizations" by Neng-Fa Zhou,
+        Taisuke Sato and Yi-Dong Shen.
+
+trivial_not_tabled.tlp:
+        A trivial example in pure Prolog, a "smoke-test" for the interpreter.
+
+trivial_tabled.tlp:
+        A trivial example in Prolog with tabling, a "smoke-test" for the
+        interpreter.
+
+XSB:
+        Various examples borrowed from the distribution of XSB.
+        (http://www.cs.sunysb.edu/~sbprolog/download_src.html)
+
+--------------------------------------------------------------------------------

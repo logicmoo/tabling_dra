@@ -1,0 +1,29 @@
+--------------------------------------------------------------------------------
+
+This directory includes the following files:
+
+eager_tabling.ecl:
+        A metainterpreter for tabled logic programs that applies a
+        top-down, "eager tabling" strategy.  Neither the query nor the
+        tabled answers need be ground, but when a query is executed, the
+        interpreter tries to table as many solutions (both to the goal
+        and to its descendants) as it can before it succeeds with the
+        first solution.
+
+        Just load it into Eclipse!  The head comment explains how to use
+        it.
+
+        NOTE: Don't use this version if the tabled program is also
+              coinductive (and has been translated into Prolog by
+              ../coind/translate_colp)! Eclipse is currently not good at
+              handling cyclic terms, so use the Sicstus version instead.
+
+colp.pl:
+        Ditto converted to Sicstus.
+
+examples:
+        Some examples of tabled programs, all with the extension
+        ".tlp".
+        See also "../mixed/examples/LTL".
+
+--------------------------------------------------------------------------------
