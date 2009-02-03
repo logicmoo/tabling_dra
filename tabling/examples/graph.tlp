@@ -30,4 +30,6 @@ path( A, B ) :-  path( A, C ), path( C, B ).
 ?- path( a, a ).
 ?- path( a, d ).
 ?- path( c, c ).
+?- path( c, b ).
+?- path( c, e ).
 ?- path( X, Y ).
