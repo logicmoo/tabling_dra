@@ -661,8 +661,7 @@ solve_by_rules( Goal, Stack, Level ) :-
 %
 use_clause( Goal, Body ) :-
         (
-            functor( Goal, P, K ),
-            current_predicate( (interpreted:P) / K )
+            current_predicate( _, interpreted : Goal )
         ->
             clause( interpreted : Goal, Body )
         ;
