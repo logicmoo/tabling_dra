@@ -476,6 +476,7 @@ query( Goals ) :-
 % may become tabled.
 
 solve( \+ Goal, Stack, Level ) :-
+        !,
         NLevel is Level + 1,
         optional_trace( 'Entering normal: ', \+ Goal, Level ),
         (
