@@ -28,7 +28,7 @@ trans( X, Y ) :-  trans_all( X, Set ),  member( Y, Set ).
 
 check( State, Formula ) :-
         check_consistency,
-        normalize( Formula, NormalFormula ),
+        once( normalize( Formula, NormalFormula ) ),
         once( verify( State, Formula ) ).
 
 
