@@ -35,7 +35,9 @@
 %%%
 %%%    tc( filename ).
 %%%
-%%% (Notice that one does not write down the extension ".clp".)
+%%% (Notice that one does not write down the extension ".clp".  However, to
+%%% translate a file with a different extension one has to write the extension.)
+%%%
 %%% The translator will read the program and --- if there are no fatal
 %%% errors --- will write the transformed program on "filename.pl".
 %%%
@@ -224,6 +226,25 @@ open_streams( RootFileName, InputStream, OutputStream ) :-
         name( RootFileName, RootFileNameChars ),
         open_file( RootFileNameChars, ".clp", read , InputStream  ),
         open_file( RootFileNameChars, ".pl" , write, OutputStream ).
+
+open_streams( FileName, InputStream, OutputStream ) :-
+        ensure_filename_is_an_atom( FileName ),
+        name( FileName, FileNameChars ),
+        input_extension( FileNameChars, RootFileNameChars, InputExtension ),
+        open_file( RootFileNameString, InputExtension, read , InputStream  ),
+        open_file( RootFileNameString, ".ecl",         write, OutputStream ).
+
+%
+% If the extension is there, keep it.  Otherwise use ".clp".
+
+:- mode input_extension( +, -, - ).
+
+input_extension( FileNameChars, RootFileNameChars, [ Dot | Ext ] ) :-
+        Dot is ".",
+        append( RootFileNameChars, [ Dot | Ext ], FileNameChars ),
+        !.
+
+input_extension( FileNameString, FileNameString, ".clp" ).
 
 
 
