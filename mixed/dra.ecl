@@ -1,6 +1,6 @@
 %%%                                                                          %%%
-%%%  A meta-interpreter for tabled logic programming: see the description    %%%
-%%%  below for more information.                                             %%%
+%%%  A meta-interpreter for tabled logic programming with coinduction:
+%%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD.                                      %%%
 %%%                                                                          %%%
 %%%  Last update: 2 February 2009.                                           %%%

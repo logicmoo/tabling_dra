@@ -2,7 +2,7 @@
 %%%  A translator for co-logic programming.                              %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
 %%%                                                                      %%%
-%%%  Last update: 2 February 2009.                                       %%%
+%%%  Last update: 4 February 2009.                                       %%%
 %%%                                                                      %%%
 %%%  NOTE: Some of the code may be Eclipse-specific and may require      %%%
 %%%        minor tweaking for other Prolog systems.                      %%%
