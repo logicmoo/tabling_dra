@@ -333,7 +333,7 @@ ensure_filename_is_an_atom( FileName ) :-
 
 ensure_extension( FileNameChars, _, RootFileNameChars, FileNameChars ) :-
         Dot is ".",
-        append( RootFileNameChars, [ Dot | _ ], _ ),         % extension present
+        append( RootFileNameChars, [ Dot | _ ], FileNameChars ), % has extension
         !.
 
 ensure_extension( FileNameChars, ExtChars,
