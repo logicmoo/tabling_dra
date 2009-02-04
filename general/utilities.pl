@@ -317,20 +317,29 @@ ensure_filename_is_an_atom( FileName ) :-
              ).
 
 
+
 %%------------------------------------------------------------------------------
-%% open_file( + root filename chars,
-%%            + filename extension chars,
-%%            + mode,
-%%            - stream
-%%          ):
-%% Construct the file name, and open the file in this mode.
+%% ensure_extension( + file name chars,
+%%                   + extension chars,
+%%                   - the root file name,
+%%                   - file name, possibly extended
+%%                 ):
+%% If the file name has no extension, add the provided extension (which must
+%% include the period; it can also be empty) and return the file name as the
+%% root name; if the file name has an extension, don't change it, but extract
+%% the root name.
 
-:- mode open_file( +, +, +, - ).
+:- mode ensure_extension( +, +, -, - ).
 
-open_file( RootFileNameChars, ExtensionChars, Mode, Stream ) :-
-        once( append( RootFileNameChars, ExtensionChars, FileNameChars ) ),
-        name( FileName, FileNameChars ),
-        open( FileName, Mode, Stream ).
+ensure_extension( FileNameChars, _, RootFileNameChars, FileNameChars ) :-
+        Dot is ".",
+        append( RootFileNameChars, [ Dot | _ ], _ ),         % extension present
+        !.
+
+ensure_extension( FileNameChars, ExtChars,
+                  FileNameChars, FullFileNameChars
+                ) :-
+        append( FileNameChars, ExtChars, FullFileNameChars ).
 
 
 

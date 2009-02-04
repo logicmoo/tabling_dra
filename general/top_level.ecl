@@ -271,9 +271,18 @@ fill_interface_modules.
 
 process_file( FileName ) :-
         ensure_filename_is_an_atom( FileName ),
-        ensure_extension( FileName, FullFileName ),
-        open( FullFileName, read, ProgStream ),
+        atom_string( FileName, FileNameString ),
+        (
+            default_extension( ExtString ),       % provided by metainterpreter?
+            !
+        ;
+            ExtString = ""
+        ),
+        ensure_extension( FileNameString, ExtString, _, FullFileNameString ),
+        open( FullFileNameString, read, ProgStream ),
+
         process_input( ProgStream ),
+
         close( ProgStream ).
 
 
@@ -289,21 +298,6 @@ process_input( ProgStream ) :-
         process_term( Term, VarDict ),
         Term = end_of_file,
         !.
-
-
-%% ensure_extension( + file name, - ditto possibly extended ):
-%% If the file name has no extension, add the default extension, if any
-
-:- mode ensure_extension( +, - ).
-
-ensure_extension( FileName, FullFileName ) :-
-        atom_string( FileName, FileNameString ),
-        \+ substring( FileNameString, ".", _ ),   % no extension
-        default_extension( ExtString ),           % provided by metainterpreter
-        !,
-        concat_strings( FileNameString, ExtString, FullFileName ).
-
-ensure_extension( FileName, FileName ).       % extension present, or no default
 
 
 

@@ -222,9 +222,19 @@ create_modules.
 
 process_file( FileName ) :-
         ensure_filename_is_an_atom( FileName ),
-        ensure_extension( FileName, FullFileName ),
+        name( FileName, FileNameChars ),
+        (
+            default_extension( ExtChars ),        % provided by metainterpreter?
+            !
+        ;
+            ExtChars = ""
+        ),
+        ensure_extension( FileNameChars, ExtChars, _, FullFileNameChars ),
+        name( FullFileName, FullFileNameChars ),
         open( FullFileName, read, ProgStream ),
+
         process_input( ProgStream ),
+
         close( ProgStream ).
 
 
@@ -240,23 +250,6 @@ process_input( ProgStream ) :-
         process_term( Term, VarDict ),
         Term = end_of_file,
         !.
-
-
-%% ensure_extension( + file name, - ditto possibly extended ):
-%% If the file name has no extension, add the default extension, if any
-
-:- mode ensure_extension( +, - ).
-
-ensure_extension( FileName, FullFileName ) :-
-        name( FileName, FileNameChars ),
-        [ Dot | _ ] = ".",
-        \+ append( _, [ Dot | _ ], FileNameChars ),        % no "." in the name?
-        default_extension( ExtChars ),             % provided by metainterpreter
-        !,
-        once( append( FileNameChars, ExtChars, FullFileNameChars ) ),
-        name( FullFileName, FullFileNameChars ).
-
-ensure_extension( FileName, FileName ).       % extension present, or no default
 
 
 

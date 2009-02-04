@@ -35,8 +35,9 @@
 %%%
 %%%    tc( filename ).
 %%%
-%%% (Notice that one does not write down the extension ".clp".  However, to
-%%% translate a file with a different extension one has to write the extension.)
+%%% (Notice that one can, but need not write down the extension ".clp".
+%%%  However, to translate a file with a different extension one has to write
+%%%  the full file name, thus : 'Foo.ext' .)
 %%%
 %%% The translator will read the program and --- if there are no fatal
 %%% errors --- will write the transformed program on "filename.pl".
@@ -224,22 +225,12 @@ tc( FileName ) :-
 open_streams( FileName, InputStream, OutputStream ) :-
         ensure_filename_is_an_atom( FileName ),
         atom_string( FileName, FileNameString ),
-        input_extension( FileNameString, RootFileNameString, InputExtension ),
-        open_file( RootFileNameString, InputExtension, read , InputStream  ),
-        open_file( RootFileNameString, ".pl",          write, OutputStream ).
-
-%
-% If the extension is there, keep it.  Otherwise use ".clp".
-
-:- mode input_extension( +, -, - ).
-
-input_extension( FileNameString, RootFileNameString, Extension ) :-
-        split_string( FileNameString, ".", "", Parts ),      % extension present
-        !,
-        append( [ RootFileNameString ], [ Ext ], Parts ),    % i.e., split
-        concat_strings( ".", Ext, Extension ).
-
-input_extension( FileNameString, FileNameString, ".clp" ).
+        ensure_extension( FileNameString,     ".clp",
+                          RootFileNameString, InputFileNameString
+                        ),
+        concat_strings( RootFileNameString, ".pl", OutputFileNameString ),
+        open( InputFileNameString,  read , InputStream  ),
+        open( OutputFileNameString, write, OutputStream ).
 
 
 
