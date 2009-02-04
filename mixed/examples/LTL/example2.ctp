@@ -1,6 +1,6 @@
 %% Get the translated interpreter:
 
-:- [ 'ltl_interpreter.pl' ].
+:- [ 'interpreter.ecl' ].
 
 
 %--- An example: some states, some queries... Note the two loops.
@@ -45,15 +45,17 @@ holds( s2, s ).
 holds( s3, q ).
 
 
-q1  :-  check( s0, f p ).                        % YES !
+%                                         Expected   Prolog    Tabling
 
-q2  :-  check( s3, f p ).                        % YES !
+q1  :-  check( s0, f p ).              %  yes        yes
 
-q3  :-  check( s0, f( p ^ q ) ).                 % YES !
+q2  :-  check( s3, f p ).              %  yes        yes
 
-q4  :-  check( s3, f( p ^ q ) ).                 % YES !
+q3  :-  check( s0, f( p ^ q ) ).       %  yes        yes
 
-q5  :-  check( s0, g p ).                        % NO  !
+q4  :-  check( s3, f( p ^ q ) ).       %  yes        yes
 
-q6  :-  check( s0, g( p v q ) ).                 % YES !
+q5  :-  check( s0, g p ).              %  no         no
+
+q6  :-  check( s0, g( p v q ) ).       %  yes        yes
 

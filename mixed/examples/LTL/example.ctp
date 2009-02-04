@@ -1,6 +1,6 @@
 %% Get the translated interpreter:
 
-:- [ 'ltl_interpreter.pl' ].
+:- [ 'interpreter.pl' ].
 
 
 %--- An example: some states, some queries...
@@ -61,6 +61,7 @@ holds( s3, z ).
 
 holds( s4, p ).
 holds( s4, s ).
+
 
 %                                         Expected   Prolog    Tabling
 

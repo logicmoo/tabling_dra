@@ -1,4 +1,4 @@
-:- [ 'ltl_interpreter.pl' ].
+:- [ 'interpreter.pl' ].
 
 proposition( p ).
 
