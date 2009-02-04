@@ -35,7 +35,7 @@
 %%%
 %%%    4. The program may contain clauses that modify the definition of the
 %%%       interpreter's predicate "essence_hook/2" (the clauses will be asserted
-%%%       at the fron of the predicate, and will thus override the default
+%%%       at the front of the predicate, and will thus override the default
 %%%       definition for some cases).  The default definition is
 %%%
 %%%          essence_hook( T, T ).
