@@ -28,8 +28,8 @@ trans( X, Y ) :-  trans_all( X, Set ),  member( Y, Set ).
 
 check( State, Formula ) :-
         check_consistency,
-        once( normalize( Formula, NormalFormula ) ),
-        once( verify( State, Formula ) ).
+        once( normalize( Formula, NormalizedFormula ) ),
+        once( verify( State, NormalizedFormula ) ).
 
 
 % Check the consistency of the automaton's description.
