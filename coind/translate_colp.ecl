@@ -39,9 +39,9 @@
 %%% translate a file with a different extension one has to write the extension.)
 %%%
 %%% The translator will read the program and --- if there are no fatal
-%%% errors --- will write the transformed program on "filename.ecl".
+%%% errors --- will write the transformed program on "filename.pl".
 %%%
-%%% NOTE: If "filename.ecl" exists, it will be overwritten without warning.
+%%% NOTE: If "filename.pl" exists, it will be overwritten without warning.
 %%%
 %%% NOTE: A program that works in the coinductive interpreter should work almost
 %%%       in the same fashion after it is translated and loaded directly into
@@ -208,7 +208,7 @@
 
 %% tc( + filename ):
 %% Open "filename.clp". If successful, translate its contents, producing output
-%% on "filename.ecl".
+%% on "filename.pl".
 
 tc( FileName ) :-
         open_streams( FileName, InputStream, OutputStream ),
@@ -226,7 +226,7 @@ open_streams( FileName, InputStream, OutputStream ) :-
         atom_string( FileName, FileNameString ),
         input_extension( FileNameString, RootFileNameString, InputExtension ),
         open_file( RootFileNameString, InputExtension, read , InputStream  ),
-        open_file( RootFileNameString, ".ecl",         write, OutputStream ).
+        open_file( RootFileNameString, ".pl",          write, OutputStream ).
 
 %
 % If the extension is there, keep it.  Otherwise use ".clp".

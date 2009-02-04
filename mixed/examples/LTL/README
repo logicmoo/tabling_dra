@@ -4,16 +4,7 @@ NOTE:
       If you want to try the examples directly in your logic programming
       system (without a tabling interpreter), then you will have to
       comment out the directive ":- tabled tverify_ / 3." in
-      interpreter.ecl or interpreter.pl (depending on whether you are
-      using Eclipse or Prolog).
-
-      Each example begins with an include directive:
-
-          :- [ 'interpreter.pl' ].
-
-      If you are using Eclipse (and have compiled "interpreter.ctp" with
-      "translate_colp.ecl", then you will have to replace the ".pl" with
-      ".ecl".
+      interpreter.pl.
 
 ..........................................................................
 
