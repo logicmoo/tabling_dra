@@ -35,7 +35,9 @@
 %%%
 %%%    tc( filename ).
 %%%
-%%% (Notice that one does not write down the extension ".clp".)
+%%% (Notice that one does not write down the extension ".clp".  However, to
+%%% translate a file with a different extension one has to write the extension.)
+%%%
 %%% The translator will read the program and --- if there are no fatal
 %%% errors --- will write the transformed program on "filename.ecl".
 %%%
@@ -219,11 +221,25 @@ tc( FileName ) :-
 %
 :- mode open_streams( +, -, - ).
 
-open_streams( RootFileName, InputStream, OutputStream ) :-
-        ensure_filename_is_an_atom( RootFileName ),
-        atom_string( RootFileName, RootFileNameString ),
-        open_file( RootFileNameString, ".clp", read , InputStream  ),
-        open_file( RootFileNameString, ".ecl", write, OutputStream ).
+open_streams( FileName, InputStream, OutputStream ) :-
+        ensure_filename_is_an_atom( FileName ),
+        atom_string( FileName, FileNameString ),
+        input_extension( FileNameString, RootFileNameString, InputExtension ),
+        open_file( RootFileNameString, InputExtension, read , InputStream  ),
+        open_file( RootFileNameString, ".ecl",         write, OutputStream ).
+
+%
+% If the extension is there, keep it.  Otherwise use ".clp".
+
+:- mode input_extension( +, -, - ).
+
+input_extension( FileNameString, RootFileNameString, Extension ) :-
+        split_string( FileNameString, ".", "", Parts ),      % extension present
+        !,
+        append( [ RootFileNameString ], [ Ext ], Parts ),    % i.e., split
+        concat_strings( ".", Ext, Extension ).
+
+input_extension( FileNameString, FileNameString, ".clp" ).
 
 
 
@@ -348,8 +364,8 @@ write_essence_hook( OutputStream ) :-
         Pattern =.. [ F | Args ],
         drop_last( Args, ArgsButLast ),
         PatternButLast =.. [ F | ArgsButLast ],
-        write_clause( (:- dynamic essence_hook/2)            , OutputStream ),
-        write_clause( essence_hook( Pattern, PatternButLast ), OutputStream ),
+        writeclause( OutputStream, (:- dynamic essence_hook/2)             ),
+        writeclause( OutputStream, essence_hook( Pattern, PatternButLast ) ),
         fail.
 
 write_essence_hook( _ ).
