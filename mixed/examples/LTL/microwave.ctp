@@ -1,6 +1,6 @@
 %% Get the translated interpreter:
 
-:- [ 'interpreter.pl ].
+:- [ 'interpreter.pl' ].
 
 
 %--- An example: the microwave oven, from:
@@ -75,10 +75,10 @@ holds( s7, heat  ).
 
 %                                           Expected   Prolog    Tabling
 
-q1 :-  check( s1,   g(~ heat u close) ).   % yes       yes
+q1 :-  check( s1,   g(~ heat u close) ).   % yes       yes       yes
 
-q2 :-  check( s1, ~ g(~ heat u close) ).   % no        no
+q2 :-  check( s1, ~ g(~ heat u close) ).   % no        no        no
 
-q3 :-  check( s1, f( close ) ).            % yes       yes
+q3 :-  check( s1, f( close ) ).            % yes       yes       yes
 
-q4 :-  check( s1, f( error ) ).            % no        loops
+q4 :-  check( s1, f( error ) ).            % no        loops     no
