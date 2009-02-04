@@ -9,7 +9,7 @@
 :- op( 20, xfx , u   ).   % LTL: "until"
 :- op( 20, xfx , r   ).   % LTL: "release"
 
-:- [ 'ltl_normalize.pl' ].
+:- [ 'normalize.pl' ].
 
 
 :- top check/2.          % make check( S, F ) available in its original form
@@ -48,7 +48,7 @@ check_propositions :-
         write( user_error, '\"' ),
         write( user_error, P ),
         write( user_error, '\": ' ),
-        write( user_error, 
+        write( user_error,
           '\"v\", \"x\", \"f\", \"g\", \"u\" and \"r\" cannot be propositions!'
              ),
         nl( user_error ),
@@ -64,12 +64,12 @@ check_propositions :-
         write( user_error, 'a proposition must be an atom!' ),
         nl( user_error ),
         fail.
-       
+
 
 check_propositions.
 
 
-% Make sure that there is no state with no outgoing transitions, and that all 
+% Make sure that there is no state with no outgoing transitions, and that all
 % transitions are between states.
 
 check_transitions :-
@@ -92,7 +92,7 @@ check_transitions :-
         nl( user_error ),
         fail.
 
-check_transitions.    
+check_transitions.
 
 
 
@@ -121,7 +121,7 @@ tverify( S, f A   ) :-  verify( S, A )  ; verify( S, x f A ).
 
 tverify( S, A u B ) :-  verify( S, B )  ; verify( S, A ^ x( A u B) ).
 
-tverify( S, x A   ) :-  trans_all( S, Set ), verify_all( Set, A ). 
+tverify( S, x A   ) :-  trans_all( S, Set ), verify_all( Set, A ).
 
 
 :- coinductive coverify/2.
