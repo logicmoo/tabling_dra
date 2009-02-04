@@ -65,7 +65,6 @@ check_propositions :-
         nl( user_error ),
         fail.
 
-
 check_propositions.
 
 
