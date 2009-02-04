@@ -574,7 +574,7 @@ begin_warning :-
 %% End a warning printout.
 
 end_warning :-
-        writeln( user_output, " ---" ).
+        writeln( user_output, ' ---' ).
 
 
 

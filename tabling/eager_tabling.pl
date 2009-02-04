@@ -410,9 +410,9 @@ execute_directive( (tabled P / K) ) :-                % declaration of tabled
 execute_directive( (tabled P / K) ) :-                % declaration of tabled
         (\+ atom( P ) ; \+ integer( K ) ; K < 0),     %  obviously wrong
         !,
-        warning( [ "Erroneous directive: \"",
+        warning( [ 'Erroneous directive: \"',
                    (:- tabled P / K),
-                   "\" ignored! +++"
+                   '\" ignored! +++'
                  ]
                ).
 
@@ -665,7 +665,7 @@ use_clause( Goal, Body ) :-
         ->
             clause( interpreted : Goal, Body )
         ;
-            warning( [ "Calling an undefined predicate: ", Goal ] ),
+            warning( [ 'Calling an undefined predicate: ', Goal ] ),
             fail
         ).
 
