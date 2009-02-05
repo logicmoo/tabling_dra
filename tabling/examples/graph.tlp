@@ -13,7 +13,9 @@
 
 edge( a, b ).
 edge( a, c ).
+
 edge( b, c ).
+
 edge( c, a ).
 
 edge( d, e ).
