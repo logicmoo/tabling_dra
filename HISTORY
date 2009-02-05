@@ -1,0 +1,11 @@
+-------------------------------------------------------------------------------
+
+4 Feb 2009:  First "public" release.
+
+             Known problems:
+               - mixed/dra still not available;
+               - tabling/eager_tabling has some minor problems in comments as
+                 well as some unnecessary inefficiencies;
+               - a very limited set of examples.
+
+-------------------------------------------------------------------------------
