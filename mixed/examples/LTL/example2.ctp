@@ -7,7 +7,7 @@
 
 
 
-%   S3: q <--------- S2: p, r
+%   S3: q <--------- S2: p, s
 %     \             /  ^
 %      \           /   |
 %       \         /    |
@@ -29,10 +29,16 @@ state( s1 ).
 state( s2 ).
 state( s3 ).
 
-trans_all( s0, [ s1     ] ).
-trans_all( s1, [ s2     ] ).
-trans_all( s2, [ s0, s3 ] ).
-trans_all( s3, [ s0     ] ).
+
+trans( s0, s1 ).
+
+trans( s1, s2 ).
+
+trans( s2, s0 ).
+trans( s2, s3 ).
+
+trans( s3, s0 ).
+
 
 holds( s0, p ).
 
@@ -55,7 +61,7 @@ q3  :-  check( s0, f( p ^ q ) ).       %  yes        yes       yes
 
 q4  :-  check( s3, f( p ^ q ) ).       %  yes        yes       yes
 
-q5  :-  check( s0, g p ).              %  no         no        no
+q5  :-  check( s0, g p ).              %  no         loops     no
 
-q6  :-  check( s0, g( p v q ) ).       %  yes        yes       yes
+q6  :-  check( s0, g( p v q ) ).       %  yes        loops     yes
 

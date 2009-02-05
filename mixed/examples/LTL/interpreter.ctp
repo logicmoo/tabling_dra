@@ -18,18 +18,21 @@
 :- bottom holds/2, normalize/2, proposition/1, state/1, trans/2, trans_all/2.
 
 
-% A single transition:
-
-trans( X, Y ) :-  trans_all( X, Set ),  member( Y, Set ).
-
-
-
 %% Check whether the state satisfies the formula.
+%% This is done by checking that it does not satisfy the formula's negation.
+%% (We have to apply the conditional, because our tabling interpreter does not
+%%  support the cut.)
 
 check( State, Formula ) :-
         check_consistency,
-        once( normalize( Formula, NormalizedFormula ) ),
-        once( verify( State, NormalizedFormula ) ).
+        once( normalize( ~ Formula, NormalizedNegationOfFormula ) ),
+        (
+            once( verify( State, NormalizedNegationOfFormula ) )
+        ->
+            fail
+        ;
+            true
+        ).
 
 
 % Check the consistency of the automaton's description.
@@ -95,13 +98,9 @@ check_transitions.
 
 
 
-%--- The formula is normalized: the nots have been pushed down to propositions.
+%--- The formula is normalized: only propositions can be negated.
 
-verify_all( []                , _ ).
-verify_all( [ State | States ], A ) :-  verify( State, A ),
-                                        verify_all( States, A ).
-
-verify( S, g A )   :-  once( coverify( S, g A   ) ).
+verify( S, g A   ) :-  once( coverify( S, g A   ) ).
 verify( S, A r b ) :-  once( coverify( S, A r B ) ).
 verify( S, A     ) :-  A \= g _,  a \= _ r _,  tverify( S, A ).
 
@@ -120,7 +119,12 @@ tverify( S, f A   ) :-  verify( S, A )  ; verify( S, x f A ).
 
 tverify( S, A u B ) :-  verify( S, B )  ; verify( S, A ^ x( A u B) ).
 
-tverify( S, x A   ) :-  trans_all( S, Set ), verify_all( Set, A ).
+tverify( S, x A   ) :-  trans( S, S2 )  , verify( S2, A ).
+
+                          % The last clause is correct only because the query is
+                          % always negated, so for a successful query we will
+                          % try out all the relevant clauses of trans/2 through
+                          % failing.
 
 
 :- coinductive coverify/2.

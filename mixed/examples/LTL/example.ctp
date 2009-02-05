@@ -32,9 +32,9 @@
 
 proposition( p ).
 proposition( q ).
-proposition( z ).
 proposition( s ).
 proposition( t ).
+proposition( z ).
 
 
 state( s0 ).
@@ -43,13 +43,18 @@ state( s2 ).
 state( s3 ).
 state( s4 ).
 
-% Transitions are specified by a function, not by a relation
 
-trans_all( s0, [ s1, s2 ] ).
-trans_all( s1, [ s1     ] ).
-trans_all( s2, [ s3     ] ).
-trans_all( s3, [ s4     ] ).
-trans_all( s4, [ s2     ] ).
+trans( s0, s1 ).
+trans( s0, s2 ).
+
+trans( s1, s1 ).
+
+trans( s2, s3 ).
+
+trans( s3, s4 ).
+
+trans( s4, s2 ).
+
 
 holds( s1, t ).
 
@@ -67,25 +72,25 @@ holds( s4, s ).
 
 q1  :- check( s0, g p ).                  % no       no        no
 
-q2  :- check( s0, f p ).                  % no       loop      no
+q2  :- check( s0, f p ).                  % no       no        no
 
-q3  :- check( s0, f p v f t ).            % no       loop      no
+q3  :- check( s0, f p v f t ).            % no       no        no
 
 q4  :- check( s0, f (p v t) ).            % yes      yes       yes
 
 q5  :- check( s1, g p ).                  % no       no        no
 
-q6  :- check( s1, f p ).                  % no       loop      no
+q6  :- check( s1, f p ).                  % no       no        no
 
-q7  :- check( s0, f g p ).                % no       loop      no
+q7  :- check( s0, f g p ).                % no       no        no
 
-q8  :- check( s2, g p ).                  % yes      yes       yes
+q8  :- check( s2, g p ).                  % yes      loops     yes
 
-q9  :- check( s2, f g p ).                % yes      yes       yes
+q9  :- check( s2, f g p ).                % yes      loops     yes
 
-q10  :- check( s2, f( q ^ z ) ).          % no       loop      no
+q10  :- check( s2, f( q ^ z ) ).          % no       no        no
 
 q11 :- check( s2, f q ^ f z ).            % yes      yes       yes
 
-q12 :- check( s2, g f s ).                % yes      yes       yes
+q12 :- check( s2, g f s ).                % yes      loops     yes
 

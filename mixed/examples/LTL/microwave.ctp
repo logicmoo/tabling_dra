@@ -45,13 +45,25 @@ state( s5 ).
 state( s6 ).
 state( s7 ).
 
-trans_all( s1, [ s2, s3     ] ).    %  start oven    ,  close door
-trans_all( s2, [ s5         ] ).    %  close door
-trans_all( s3, [ s1, s6     ] ).    %  open door     ,  start oven
-trans_all( s4, [ s1, s3, s4 ] ).    %  open door     ,  done         ,  cook
-trans_all( s5, [ s2, s3     ] ).    %  open door     ,  reset
-trans_all( s6, [ s7         ] ).    %  warm up
-trans_all( s7, [ s4         ] ).    %  start cooking
+
+trans( s1, s2 ).    %  start oven
+trans( s1, s3 ).    %  close door
+
+trans( s2, s5 ).    %  close door
+trans( s3, s1 ).    %  open door
+trans( s3, s6 ).    %  start oven
+
+trans( s4, s1 ).    %  open door
+trans( s4, s3 ).    %  done
+trans( s4, s4 ).    %  cook
+
+trans( s5, s2 ).    %  open door
+trans( s5, s3 ).    %  reset
+
+trans( s6, s7 ).    %  warm up
+
+trans( s7, s4 ).    %  start cooking
+
 
 holds( s2, start ).
 holds( s2, error ).
@@ -75,10 +87,10 @@ holds( s7, heat  ).
 
 %                                           Expected   Prolog    Tabling
 
-q1 :-  check( s1,   g(~ heat u close) ).   % yes       yes       yes
+q1 :-  check( s1,   g(~ heat u close) ).   % yes       loops     yes
 
 q2 :-  check( s1, ~ g(~ heat u close) ).   % no        no        no
 
 q3 :-  check( s1, f( close ) ).            % yes       yes       yes
 
-q4 :-  check( s1, f( error ) ).            % no        loops     no
+q4 :-  check( s1, f( error ) ).            % no        no        no
