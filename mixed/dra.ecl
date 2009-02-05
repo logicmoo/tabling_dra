@@ -1,9 +1,9 @@
 %%%                                                                          %%%
-%%%  A meta-interpreter for tabled logic programming with coinduction:
+%%%  An interpreter for tabled logic programming with coinduction:           %%%
 %%%  see the description below for more information.                         %%%
-%%%  Written by Feliks Kluzniak at UTD.                                      %%%
+%%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 2 February 2009.                                           %%%
+%%%  Last update: 5 February 2009.                                           %%%
 %%%                                                                          %%%
 
 %%% NOTE:
@@ -11,16 +11,17 @@
 %%%    1. See ../general/top_level.ecl for a description of how to load
 %%%       and run programs.
 %%%
-%%%    2. A tabled predicate should be declared as such in the program
-%%%       file, e.g.,
-%%%           :- tabled ancestor/2 .
+%%%    2. Tabled and coinductive predicates should be declared as such in
+%%%       the program file, e.g.,
+%%%           :- tabled      ancestor/2 .
+%%%           :- coinductive comember/2 .
 %%%
 %%%       To include files use the usual Prolog syntax:
 %%%           :- [ file1, file2, ... ].
 %%%
 %%%       To produce a wallpaper trace use the trace directive. For example,
 %%%           :- trace p/3, q/0, r/1.
-%%%       will trace predicates p/3, q/0 and r/1.  If you want to trace
+%%%       will trace predicates "p/3", "q/0" and "r/1".  If you want to trace
 %%%       everything, use
 %%%           :- trace all.
 %%%       These directives are cumulative.
@@ -29,13 +30,13 @@
 %%%       contain queries, which will be executed immediately upon reading.
 %%%
 %%%    3. If the program invokes a built-in predicate, that predicate must
-%%%       be declared in the table builtin/1 below.  Every addition should
+%%%       be declared in the table "builtin/1" below.  Every addition should
 %%%       be considered carefully: some might require special treatment by
-%%%       the metainterpreter.
+%%%       the interpreter.
 %%%
 %%%    4. The program may contain clauses that modify the definition of the
 %%%       interpreter's predicate "essence_hook/2" (the clauses will be asserted
-%%%       at the fron of the predicate, and will thus override the default
+%%%       at the front of the predicate, and will thus override the default
 %%%       definition for some cases).  The default definition is
 %%%
 %%%          essence_hook( T, T ).
@@ -50,7 +51,9 @@
 %%%       administrative information and that may differ in two terms that are
 %%%       "semantically" equal or variants of each other. (Such, for example, is
 %%%       the argument that carries the set of coinductive hypotheses in a
-%%%       co-logic program translated into prolog).
+%%%       co-logic program translated into Prolog: see
+%%%       "../coind/translate_clp". Mind you, that translation need not be
+%%%       applied to programs executed by this interpreter).
 %%%
 %%%       For example, the presence of
 %%%
@@ -71,42 +74,37 @@
 
 /*******************************************************************************
 
-General description
+   General description
    -------------------
 
-   A simple (and very inefficient) metainterpreter that attempts to emulate
+   A simple (and very inefficient) interpreter that attempts to emulate
    "top-down tabled programming", as described in
 
      [1] Hai-Feng Guo, Gopal Gupta:
          Tabled Logic Programming with Dynamic Ordering of Alternatives
          (17th ICLP, 2001)
 
+   The terminology has been modified under the influence of
+
      [2] Neng-Fa Zhou, Taisuke Sato, Yi-Dong Shen:
          Linear Tabling Strategies and Optimizations
          (TPLP 2008 (?))
 
-   The interpreter follows -- somewhat loosely(*) -- the description in the
-   latter paper, using the "lazy strategy", but without "semi-naive
-   optimization".
-   Moreover, "clusters" are detected dynamically, to achieve greater precision
-   (a dependency graph among static calls can only be a rough approximation, a
-   dependency graph among predicates is rougher still).
+   More specifically, "masters" and "slaves" are called "pioneers" and
+   "followers", respectively (although in a sense somewhat different than in
+   [2]: we use "pioneer" for "topmost looping goal"), and "strongly
+   connected components" are called "clusters".
 
-   The "lazy strategy" consists in eagerly tabling answers to the subgoals
-   encountered during the evaluation of a query.
-
-   [(*) The main difference with respect to the paper is that pioneers that are
-        not topmost looping goals are not treated in a special manner, so more
-        re-evaluation may occur.  In this program, the term "pioneer" is
-        used to denote a "topmost looping pioneer".
-   ]
+   Note that "clusters" are detected dynamically, to achieve greater
+   precision (a dependency graph among static calls can only be a rough
+   approximation, a dependency graph among predicates is rougher still).
 
 
    Nomenclature
    ------------
 
    Some predicates are "tabled", because the user has declared them to be such
-   by using a directive.  E.g.,
+   by using an appropriate directive.  E.g.,
 
        :- tabled p/2 .
 
@@ -118,23 +116,43 @@ General description
    will call a sequence (i.e., conjunction) of goals just that (unless we can
    refer to it as a "query" or a "resolvent").
 
+   Similarly, the user can declare a predicate to be "coinductive", by using
+   another directive.  E.g.,
+
+       :- coinductive p/2 .
+
+   Calls and goals that refer to a coinductive predicate will also be called
+   "coinductive".
+
 
    Limitations
    -----------
 
-   The interpreted program must not contain cuts or "if-then"/"if-then-else"
-   constructs.  It also must not contain calls to built-in-predicates, except
-   for the handful of predicates listed in builtin/1 below.
+   The interpreted program must not contain cuts.  It also must not contain
+   calls to built-in-predicates, except for the handful of predicates listed
+   in builtin/1 below.  (This list can be easily extended as the need
+   arises.  Some built-in predicates, however, cannot be added without
+   modifying the interpreter, sometimes extensively: "!/0" is a good
+   example.)
 
 
    Data structures
    ---------------
 
-   The interpreter uses a number of tables that store information accumulated
-   during a computation.  A computation consists in reading a program and
-   executing a number of queries.  (A query is a sequence of goals.)
+   The interpreter uses a number of tables that store information
+   accumulated during a computation.  A computation consists in reading a
+   program and executing a number of queries.  A query is a sequence (i.e.,
+   conjunction) of goals.
 
    The tables (implemented as dynamic predicates of Prolog) are:
+
+   -- coinductive( generic head )
+
+           Contains an entry for each predicate that has been declared as
+           coinductive.  For instance, when the interpreter reads
+               :- coinductivve p/2 .
+           it stores the fact
+               coinductive( p( _, _ ) ).
 
    -- tabled( generic head )
 
@@ -146,139 +164,162 @@ General description
 
    -- answer( goal, fact )
 
-           Used to store results computed for tabled goals encountered during a
-           computation.  Once present, these results are also used during
-           further stages of the computation.
+           Used to store results computed for tabled goals encountered
+           during a computation.  Once present, these results are also used
+           during further stages of the computation.
 
            Note that the fact is an instantiation of the goal.  If a tabled
-           goal has no solutions, it will have no entry in "answer", even though
-           it may have an entry in "completed" (see below).
+           goal has no solutions, it will have no entry in "answer", even
+           though it may have an entry in "completed" (see below).
 
            NOTE: Both the goal and the fact are filtered through
                  "essence_hook/2" before they are stored in the table.
 
-           In general, a side-effect of each evaluation of a query will be the
-           generation -- for each tabled goal encounted during the evaluation
-           -- of a set of facts that form the goal's "least fixed point
-           interpretation".  (Of course, if this set is not sufficiently small,
-           the interpreter will not terminate successfully.)  The facts
-           (which need not be ground!) are all entered into the table
-           "answered", and the members of different sets are distinguished by
-           their association with the appropriate goal: a fact in "answered"
-           is a result that is valid only for a variant of the accompanying
-           goal.
+           In general, a side-effect of each evaluation of a query will be
+           the generation -- for each tabled goal encounted during the
+           evaluation -- of a set of facts that form the goal's "least fixed
+           point interpretation".  (Of course, if this set is not
+           sufficiently small, the interpreter will not terminate
+           successfully.)  The facts (which need not be ground!) are all
+           entered into the table "answered", and the members of different
+           sets are distinguished by their association with the appropriate
+           goal: a fact in "answered" is a result that is valid only for a
+           variant of the accompanying goal.
 
            The need for annotating a fact with information about the
-           corresponding goal might not be immediately obvious.  Consider the
-           following example (which is simplistic in that the computation itself
-           is trivial):
+           corresponding goal might not be immediately obvious.  Consider
+           the following example (which is simplistic in that the
+           computation itself is trivial):
 
-               program:  p( A, A ).
-                         p( a, a ).
+               program:  :- tabled p/2.
+                         p( A, A ).
                          p( a, b ).
 
                queries:  ?-  p( U, V ).
-                         ?-  p( W, W ).
-                         ?-  p( a, X ).
                          ?-  p( Y, b ).
 
-           During "normal" execution of this Prolog program each of the queries
-           would generate a different set of results; to wit:
+           During "normal" execution of this Prolog program each of the
+           queries would generate a different set of results; to wit:
 
-               p( U, V )  would generate  p( U, U ), p( a, a ), p( a, b )
-               p( W, W )  ..............  p( W, W ), p( a, a )
-               p( a, X )  ..............  p( a, a ), p( a, a ), p( a, b )
+               p( U, V )  would generate  p( U, U ), p( a, b );
                p( Y, b )  ..............  p( b, b ), p( a, b ).
 
-           In other words, the set of results depends not only on the predicate,
-           but also on the form of the goal. In particular, "p( b, b )" is a
-           valid answer only for goals whose second argument is "b".
+           In other words, the set of results depends not only on the
+           predicate, but also on the form of the goal.
 
-           If "p/2" is tabled, the proper contents of "answer" would be as
-           follows (not necessarily in this order):
+           If these results were tabled without the corresponding goals,
+           then the table would be:
+
+               answer( p( U, U ) ).
+               answer( p( a, b ) ).
+               answer( p( b, b ) ).
+
+           A subsequent invocation of p( U, V ) would then return all three
+           results, i.e., also "p( b, b )"!
+
+           The proper contents of "answer" would be as follows (though not
+           necessarily in this order):
 
                answer( p( U, V ), p( U, U ) ).
-               answer( p( U, V ), p( a, a ) ).
                answer( p( U, V ), p( a, b ) ).
-               answer( p( W, W ), p( W, W ) ).
-               answer( p( W, W ), p( a, a ) ).
-               answer( p( a, X ), p( a, a ) ).
-               answer( p( a, X ), p( a, b ) ).
                answer( p( Y, b ), p( b, b ) ).
                answer( p( Y, b ), p( a, b ) ).
 
-           Please note that the repetition of "p( a, a )" for the goal
-           "p( a, X )" will be avoided.  In general, entries in "answer" will
-           not be variants of each other.
+           Please note that entries in "answer" will not be variants of each
+           other.
 
    -- number_of_answers
 
-           This is a non-logical variable that  records the size of "answer".
-           It is used for determining whether new answers have been generated
-           during a phase of the computation.
+           This is a non-logical variable that records the size of "answer".
+           It is used for determining whether new answers have been
+           generated during a phase of the computation.
 
    -- pioneer( goal, index )
 
-           If the current goal is tabled, and its variants have not yet been
-           encountered during the evaluation of the current query, the goal
-           is called a "pioneer" and recorded in this table.  (An unique index
-           is also stored.)
-           If a variant goal is encountered subsequently, it will be treated
-           as a "follower".
-           The table is used to detect whether a tabled goal (when first
-           encountered) is a pioneer or a follower.
-           If a pioneer is determined not to be the "topmost looping goal" in a
-           "cluster" of interdependent goals (see ref. [2]), then it loses the
-           status of a pioneer.  This is because a pioneer is expected to
-           compute the fixpoint (by tabling answers) for itself and its cluster
-           before succeeding: the property is the reason why followers can query
-           only "answer", and do not use their clauses.
-           Note that no two entries in "pioneer" are variants of each other.
+           If the current goal is tabled, and it is not a variant of any of
+           its ancestors, then the goal is called a "pioneer" and recorded
+           in this table.  (An unique index is also stored, to facilitate
+           later removal of this entry and to tag other information related
+           to the pioneer---see below.)  If a variant goal is encountered
+           subsequently, it will be treated as a "follower".  The table is
+           used to detect whether a tabled goal (when first encountered) is
+           a pioneer or a follower.
+
+           If a pioneer is determined not to be the "topmost looping goal"
+           in a "cluster" of interdependent goals (see ref. [2]), then it
+           loses the status of a pioneer, and its role will be overtaken by
+           the topmost goal in the cluster.  The role of a pioneer is to
+           compute the fixpoint (by tabling answers) for itself and its
+           cluster before failing: this is why the results for followers can
+           be obtained by querying "answer", without using their clauses
+           (which prevents endless recursion).
+
+           No two entries in "pioneer" are variants of each other (even when
+           we disregard the index).
+
            NOTE: The goal is filtered through "essence_hook/2" before it is
                  stored in the table.
-           This table is cleared each time the evaluation of a query terminates.
+
+           This table is cleared before the evaluation of a new query and
+           when the pioneer finally becomes complete.
 
    -- pioneer_index
 
            This is a non-logical variable that holds the index to be used for
            the next entry in "pioneer".
 
-   -- loop( pioneer goal, list of goals, index )
+           The variable is cleared before the evaluation of a new query.
 
-           A loop is discovered when the current goal is a variant of its
-           ancestor.  If the ancestor is a pioneer, information about the
-           pioneer ancestor and the tabled goals between the pioneer and
-           the variant is stored in "loop".  (An unique index is also stored.)
-           A number of "loop" entries may exist for a given pioneer: together,
-           they describe a "cluster" (see ref. [2]).  Before returning any
-           answers, a pioneer will compute its own fixpoint as well as
-           the fixpoints of the goals in its cluster.
-           When a goal loses its pioneer status (because it is determined to
-           be a part of a larger loop), the associated entries in "loop" are
-           removed.
-           NOTE: The goal and goals are filtered through "essence_hook/2" before
-                 they are stored in the table.
-           This table is cleared each time the evaluation of a query terminates.
+   -- loop( index, list of goals )
 
-   -- loop_index
+           A loop is discovered when the current tabled goal is a variant of
+           one of its ancestors.  If the ancestor is a pioneer, the unique
+           index of the pioneer ancestor and a list of the tabled goals
+           between the pioneer and the variant are stored in "loop".
 
-           This is a non-logical variable that holds the index to be used for
-           the next entry in "loop".
+           A number of "loop" entries may exist for a given pioneer:
+           together, they describe a "cluster" (i.e., a "strongly connected
+           component", see ref. [1]).  Before finally failing upon
+           backtracking, a pioneer will compute its own fixpoint as well as
+           the fixpoints of the goals in its cluster.  When a goal loses its
+           pioneer status (because it is determined to be a part of a larger
+           loop), the associated entries in "loop" are removed.
+
+           NOTE: The goals are filtered through "essence_hook/2" before they
+                 are stored in the table.
+
+           This table is cleared before the evaluation of a new query and
+           when the pioneer finally becomes complete.
+
+   -- looping_alternative( index, clause )
+
+           When a goal is determined to be a follower of a pioneer, the
+           clause that is currently being used by the pioneer (i.e., the
+           clause that led to the follower) is stored in this table,
+           together with the unique index of the pioneer.  The clause will
+           be used again as backtracking brings the computation back to the
+           pioneer.
+
+           This table is cleared before the evaluation of a new query and
+           when the pioneer finally becomes complete.
 
    -- completed( goal )
 
-           Indicates that the fixpoint for this tabled goal has been computed,
-           and all the possible results for variants of the goal can be found
-           in table "answer".
+           Indicates that this tabled goal is complete, i.e., its fixpoint
+           has been computed, and all the possible results for variants of
+           the goal can be found in table "answer".
+
            NOTE: The goal is filtered through "essence_hook/2" before it is
                  stored in the table.
+
+           This table is cleared before the evaluation of a new query.
 
    -- tracing( goal )
 
            A goal that matches something in this table will show up on the
            wallpaper trace.  This table is empty by default, and filled only
-           upon encountering "trace" directives when the interpreted program is
-           being read.
+           upon encountering "trace" directives when the interpreted program
+           is being read.
 
 *******************************************************************************/
 
@@ -291,40 +332,41 @@ General description
 
 
 
-% If a file name has no extension, add ".tlp"
+% If a file name has no extension, add ".ctp"
 
-default_extension( ".tlp" ).
+default_extension( ".ctp" ).
 
 
 %% Initialization of tables:
 
+:- dynamic coinductive/1 .
 :- dynamic tabled/1 .
 :- dynamic answer/2 .
 :- dynamic pioneer/2 .
-:- dynamic loop/3 .
+:- dynamic loop/2 .
+:- dynamic looping_alternative/3 .
 :- dynamic completed/1 .
 :- dynamic tracing/1.
 
 :- setval( number_of_answers, 0 ).
 :- setval( pioneer_index,     0 ).
-:- setval( loop_index,        0 ).
 
 initialise :-
-        retractall( tabled( _ )     ),
-        retractall( answer( _, _ )  ),
-        retractall( pioneer( _, _ ) ),
-        retractall( loop( _, _, _ ) ),
-        retractall( completed( _ )  ),
-        retractall( tracing( _ )    ),
+        retractall( tabled( _ )                    ),
+        retractall( answer( _, _ )                 ),
+        retractall( pioneer( _, _ )                ),
+        retractall( loop( _, _ )                   ),
+        retractall( looping_alternative( _, _, _ ) ),
+        retractall( completed( _ )                 ),
+        retractall( tracing( _ )                   ),
         setval( number_of_answers, 0 ),
-        setval( pioneer_index,     0 ),
-        setval( loop_index,        0 ).
+        setval( pioneer_index,     0 ).
 
 
 
 %%%%%  Built-in predicates  %%%%
 %%
-%%  NOTE: Just adding "!" won't do the trick, the main metainterpreter would
+%%  NOTE: Just adding "!" won't do the trick, the main interpreter would
 %%        have to be modified substantially.
 %%        Certain other built-ins may also require special treatment.
 
@@ -441,7 +483,7 @@ will_trace( _ ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%  The meta-interpreter  %%%%%
+%%%%%  The interpreter  %%%%%
 
 
 %% Execute a query.
@@ -449,11 +491,12 @@ will_trace( _ ).
 :- mode query( + ).
 
 query( Goals ) :-
-        solve( Goals, [], 0 ),
-        retractall( pioneer( _, _ )  ),
-        retractall( loop( _, _ , _ ) ),
-        setval( pioneer_index, 0 ),
-        setval( loop_index,    0 ).
+        retractall( pioneer( _, _ )                ),
+        retractall( loop( _, _ )                   ),
+        retractall( looping_alternative( _, _, _ ) ),
+        retractall( completed( _ )                 ),
+
+        solve( Goals, [], 0 ).
 
 
 
@@ -595,23 +638,28 @@ solve( Goal, Stack, Level ) :-
 % "answer": after this is done, "answer" is used to pass on the results.
 %
 % Moreover, the goal's answer set is extended to the least fixed point and its
-% cluster is marked as complete.
+% cluster is marked as complete.  The auxiliary information about the pioneer
+% is removed.
 %
 % (Note that a pioneer but may cease to be one when some descendant goal finds
 %  a variant ancestor that is also an ancestor of the pioneer.
 %  See variant_of_ancestor/2.)
 
 solve( Goal, Stack, Level ) :-
-        \+ is_a_variant_of_a_pioneer( Goal ),
+        \+ is_a_variant_of_a_pioneer( Goal, _ ),
         !,
-        add_pioneer( Goal ),
+        add_pioneer( Goal, Index ),
         optional_trace( 'Added pioneer: ', Goal, Level ),
         store_all_solutions_by_rules( Goal, Stack, Level ),
         (
-            is_a_variant_of_a_pioneer( Goal )      % might have lost its status!
+            pioneer( _, Index )                    % might have lost its status!
         ->
             compute_fixed_point( Goal, Stack, Level ),
-            complete_cluster( Goal )
+            once( essence_hook( Goal, EssenceOfGoal ) ),
+            complete_goal( EssenceOfGoal ),
+            complete_cluster( Index ),
+            remove_pioneer( Index ),
+            remove_loops( Index )
         ;
             true
         ),
@@ -719,11 +767,17 @@ variant_of_ancestor( Goal, List ) :-
         are_variants( EssenceOfGoal, EssenceOfG ),
         !,
         keep_tabled_goals( Prefix, TabledPrefix ),
-        add_loop( G, TabledPrefix ),
         (
             member( M, TabledPrefix ),
             rescind_pioneer_status( M ),
             fail
+        ;
+            true
+        ),
+        (
+            is_a_variant_of_a_pioneer( G, Index )
+        ->
+            add_loop( Index, TabledPrefix )
         ;
             true
         ).
@@ -753,49 +807,29 @@ keep_tabled_goals( [ _G | Gs ], TGs ) :-
 :- mode rescind_pioneer_status( + ).
 
 rescind_pioneer_status( Goal ) :-
-        is_a_variant_of_a_pioneer( Goal ),
-        once( essence_hook( Goal, EssenceOfGoal ) ),
+        is_a_variant_of_a_pioneer( Goal, Index ),
         !,
         optional_trace( 'Removing pioneer: ', Goal, '?' ),
-        remove_pioneer( EssenceOfGoal ),
-        remove_loops( EssenceOfGoal ).
+        remove_pioneer( Index ),
+        remove_loops( Index ).
 
 rescind_pioneer_status( _ ).
 
 
-%% complete_cluster( + goal ):
+%% complete_cluster( + index of a pioneer goal ):
 %% If the goal has an associated cluster, make sure all the goals in the cluster
-%% are marked as complete.  If there is no associated cluster, just mark the
-%% goal as complete.
+%% are marked as complete.
 %% Recall that a cluster may consist of a number of "loops".
 
 :- mode complete_cluster( + ).
 
-complete_cluster( Goal ) :-
-        once( essence_hook( Goal, EssenceOfGoal ) ),
-        complete_goal( EssenceOfGoal ),
-        complete_cluster_if_any( EssenceOfGoal ).
-
-%
-:- mode complete_cluster_if_any( + ).
-
-complete_cluster_if_any( Goal ) :-
-        loop( G, Gs, _ ),
-        are_variants( G, Goal ),
-        complete_goals( Gs ),
-        fail.
-
-complete_cluster_if_any( _ ).
-
-%
-:- mode complete_goals( + ).
-
-complete_goals( Gs ) :-
-        member( G, Gs ),
+complete_cluster( Index ) :-
+        loop( Index, Gs ),                     % iterate over loops
+        member( G, Gs ),                       % iterate over members of a loop
         complete_goal( G ),
         fail.
 
-complete_goals( _ ).
+complete_cluster( _ ).
 
 
 
@@ -878,25 +912,25 @@ is_completed( Goal ) :-
 
 
 
-%% is_a_variant_of_a_pioneer( + goal ):
+%% is_a_variant_of_a_pioneer( + goal, -index ):
 %% Succeeds if the goal is a variant of another goal that is tabled in
-%% "pioneer".
+%% "pioneer"; returns the index of the relevant entry in table "pioneer".
 
-:- mode is_a_variant_of_a_pioneer( + ).
+:- mode is_a_variant_of_a_pioneer( +, - ).
 
-is_a_variant_of_a_pioneer( Goal ) :-
+is_a_variant_of_a_pioneer( Goal, Index ) :-
         essence_hook( Goal, EssenceOfGoal ),
-        pioneer( PG, _Index ),
+        pioneer( PG, Index ),
         are_variants( EssenceOfGoal, PG ).
 
 
 
-%% make_a_pioneer( + goal ):
-%% Add an entry for this goal to "pioneer".
+%% add_pioneer( + goal, - index ):
+%% Add an entry for this goal to "pioneer", return the unique index.
 
-:- mode add_pioneer( + ).
+:- mode add_pioneer( +, - ).
 
-add_pioneer( Goal ) :-
+add_pioneer( Goal, NewIndex ) :-
         once( essence_hook( Goal, EssenceOfGoal ) ),
         getval( pioneer_index, NewIndex ),
         incval( pioneer_index ),
@@ -904,49 +938,40 @@ add_pioneer( Goal ) :-
 
 
 
-%% remove_pioneer( + goal ):
-%% Remove the pioneer entry for this goal.
+%% remove_pioneer( + index ):
+%% Remove the pioneer entry with this index.
 %%
 %% NOTE: The assumption is that the goal has already been filtered through
 %%       "essence_hook/2".
 
 :- mode remove_pioneer( + ).
 
-remove_pioneer( Goal ) :-
-        pioneer( G, Index ),
-        are_variants( G, Goal ),
-        once retract( pioneer( _, Index ) ).
+remove_pioneer( Index ) :-
+        retract( pioneer( _, Index ) ).
 
 
 
-%% add_loop( + goal, + list of goals ):
+%% add_loop( + index, + list of goals ):
 %% Add an entry to "loop".
 
 :- mode add_loop( +, + ).
 
-add_loop( Goal, Goals ) :-
-        extract_essence( [ Goal | Goals ], [ EssenceOfGoal | EssenceOfGoals ] ),
-        getval( loop_index, NextIndex ),
-        incval( loop_index ),
-        assert( loop( EssenceOfGoal, EssenceOfGoals, NextIndex ) ).
+add_loop( _, [] ) :-                                % empty loops are not stored
+        !.
+
+add_loop( Index, Goals ) :-
+        extract_essence( Goals, EssenceOfGoals ),
+        assert( loop( Index, EssenceOfGoals ) ).
 
 
 
-%% remove_loops( + goal ):
-%% Remove all entries in "loop" that are associated with this goal.
-%%
-%% NOTE: The assumption is that the goal has already been filtered through
-%%       "essence_hook/2".
+%% remove_loops( + index ):
+%% Remove all the entries in "loop" that have this index.
 
 :- mode remove_loops( + ).
 
-remove_loops( Goal ) :-
-        loop( G,_, Indx ),
-        are_variants( G, Goal ),
-        once retract( loop( _, _, Indx ) ),
-        fail.
-
-remove_loops( _ ).
+remove_loops( Index ) :-
+        retractall( loop( Index, _ ) ).
 
 
 
