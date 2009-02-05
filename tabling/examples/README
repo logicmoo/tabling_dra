@@ -11,6 +11,10 @@ comment_example.tlp:
         The example described in the head comment of
         "../eager_tabling".
 
+small_comment_example.tlp:
+        A minimal example that demonstrates why tabled results must be annotated
+        with the corresponding goals.
+
 conditional.clp:
         A wholly uninteresting example, designed to test that
         "../eager_tabling" handles conditionals correctly.
