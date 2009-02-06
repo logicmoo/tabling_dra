@@ -444,7 +444,7 @@ execute_directive( (multifile _) ).   % ignore
 will_trace( Patterns ) :-
         member( Pattern, Patterns ),
         assert( tracing( Pattern ) ),
-        once essence_hook( Pattern, EssenceOfPattern ),
+        once( essence_hook( Pattern, EssenceOfPattern ) ),
         assert( tracing( EssenceOfPattern ) ),
         fail.
 
@@ -575,7 +575,7 @@ solve( retractall( FactPattern ), _, _ ) :-
         ;
             true
         ),
-        retractall( interpreted:FactPatern ).
+        retractall( interpreted:FactPattern ).
 
 
 % Some other supported built-in.
