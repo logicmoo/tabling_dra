@@ -349,26 +349,22 @@ ensure_extension( FileNameChars, ExtChars,
 %%
 %% NOTE: Operator declarations are interpreted on the fly, but not deleted from
 %%       output.
-%%
-%% The algorithm uses a d-list.
 
 :- mode read_terms( +, - ).
 
 read_terms( InputStream, Terms ) :-
-        read_terms_( InputStream, Terms-Terms ).
+        read( InputStream, Term ),
+        read_terms_( InputStream, Term, Terms ).
 
 %
-read_terms_( InputStream, Terms-End ) :-
-        read( InputStream, Term ),
-        (
-            Term == end_of_file
-        ->
-            End = []
-        ;
-            process_if_op_directive( Term ),
-            End = [ Term | NewEnd ],
-            read_terms_( InputStream, Terms - NewEnd )
-        ).
+read_terms_( _, end_of_file, [] ) :-
+        !.
+
+read_terms_( InputStream, Term, [ Term | Terms ] ) :-
+        % term \= end_of_file,
+        process_if_op_directive( Term ),
+        read( InputStream, NextTerm ),
+        read_terms_( InputStream, NextTerm, Terms ).
 
 %
 process_if_op_directive( (:- op( P, F, Ops)) ) :-
