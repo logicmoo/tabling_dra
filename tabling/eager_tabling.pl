@@ -725,11 +725,17 @@ variant_of_ancestor( Goal, List ) :-
         are_variants( EssenceOfGoal, EssenceOfG ),
         !,
         keep_tabled_goals( Prefix, TabledPrefix ),
-        add_loop( G, TabledPrefix ),
         (
             member( M, TabledPrefix ),
             rescind_pioneer_status( M ),
             fail
+        ;
+            true
+        ),
+        (
+            is_a_variant_of_a_pioneer( G )
+        ->
+            add_loop( G, TabledPrefix )
         ;
             true
         ).

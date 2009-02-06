@@ -721,11 +721,17 @@ variant_of_ancestor( Goal, List ) :-
         are_variants( EssenceOfGoal, EssenceOfG ),
         !,
         keep_tabled_goals( Prefix, TabledPrefix ),
-        add_loop( G, TabledPrefix ),
         (
             member( M, TabledPrefix ),
             rescind_pioneer_status( M ),
             fail
+        ;
+            true
+        ),
+        (
+            is_a_variant_of_a_pioneer( G )
+        ->
+            add_loop( G, TabledPrefix )
         ;
             true
         ).
@@ -964,12 +970,12 @@ remove_loops( _ ).
 optional_trace( Label, Goal, Level ) :-
         tracing( Goal ),
         !,
-        write( user_output, '[' ),
-        write( user_output, Level ),
-        write( user_output, '] ' ),
-        write( user_output, Label ),
-        write( user_output, Goal ),
-        nl( user_output ).
+        write( output, '[' ),
+        write( output, Level ),
+        write( output, '] ' ),
+        write( output, Label ),
+        write( output, Goal ),
+        nl( output ).
 
 optional_trace( _, _, _ ).
 
