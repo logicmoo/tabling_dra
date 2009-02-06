@@ -12,14 +12,14 @@ comment_example.tlp:
         "../eager_tabling".
 
 small_comment_example.tlp:
-        A minimal example that demonstrates why tabled results must be annotated
-        with the corresponding goals.
+        A minimal example that demonstrates why tabled results must be
+        annotated with the corresponding goals.
 
-conditional.clp:
+conditional.tlp:
         A wholly uninteresting example, designed to test that
         "../eager_tabling" handles conditionals correctly.
 
-graph:
+graph.tlp:
         A simple example that demonstrates a left-recursive program for
         finding paths in a graph.
 
@@ -47,7 +47,8 @@ parse.tlp:
         Taisuke Sato and Yi-Dong Shen.
 
 trivial_not_tabled.tlp:
-        A trivial example in pure Prolog, a "smoke-test" for the interpreter.
+        A trivial example in pure Prolog, a "smoke-test" for the
+        interpreter.
 
 trivial_tabled.tlp:
         A trivial example in Prolog with tabling, a "smoke-test" for the
