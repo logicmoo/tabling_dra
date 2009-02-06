@@ -8,11 +8,4 @@
                  well as some unnecessary inefficiencies;
                - a very limited set of examples.
 
-5 Feb 2009:  Second "public" release:
-
-               Fixed:
-                 - trace did not work in the Eclipse version of "eager_tabling";
-                 - removed one source of inefficiency (and disparity between the
-                   code and the associated comment) in "eager_tabling".
-
 -------------------------------------------------------------------------------

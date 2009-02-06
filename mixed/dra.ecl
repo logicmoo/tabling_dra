@@ -162,9 +162,6 @@
            it stores the fact
                tabled( p( _, _ ) ).
 
-           NOTE: The pattern is filtered through "essence_hook/2" before it is
-                 stored in the table.
-
    -- answer( goal, fact )
 
            Used to store results computed for tabled goals encountered
@@ -324,11 +321,6 @@
            upon encountering "trace" directives when the interpreted program
            is being read.
 
-           NOTE: The version of the goal that is filtered through
-                 "essence_hook/2" is also stored in the table, so that both
-                 versions are traced.
-
-
 *******************************************************************************/
 
 
@@ -420,6 +412,17 @@ hook_predicate( essence_hook( _, _ ) ).
 essence_hook( T, T ).
 
 
+%% extract_essence( + list of terms, - list of their essences):
+%% Apply "essence_hook/2" to all the terms.
+
+:- mode extract_essence( +, - ).
+
+extract_essence(         [],         [] ).
+extract_essence( [ T | Ts ], [ E | Es ] ) :-
+        once( essence_hook( T, E ) ),
+        extract_essence( Ts, Es ).
+
+
 
 
 %%%%%  Administration  %%%%%
@@ -442,8 +445,7 @@ execute_directive( tabled P / K ) :-                  % declaration of tabled
         (atom( P ), integer( K ), K >= 0),            %  seems OK
         !,
         mk_pattern( P, K, Pattern ),                  % Pattern = P( _, _, ... )
-        once essence_hook( Pattern, EssenceOfPattern ),
-        assert( tabled( EssenceOfPattern ) ).
+        assert( tabled( Pattern ) ).
 
 execute_directive( tabled P / K ) :-                  % declaration of tabled
         (\+ atom( P ) ; \+ integer( K ) ; K < 0),     %  obviously wrong
@@ -471,8 +473,6 @@ execute_directive( (dynamic _) ).     % ignore
 will_trace( Patterns ) :-
         member( Pattern, Patterns ),
         assert( tracing( Pattern ) ),
-        once essence_hook( Pattern, EssenceOfPattern ),
-        assert( tracing( EssenceOfPattern ) ),
         fail.
 
 will_trace( _ ).
@@ -505,6 +505,12 @@ query( Goals ) :-
 %% Solve the sequence of goals, maintaining information about the current chain
 %% of ancestors (stack).  The level is the level of recursion, and is used only
 %% for tracing.
+%%
+%% Please note that the following invariant must be maintained:
+%%    A pioneer is
+%%    (a) either an active goal (i.e., the current goal, or present in the
+%%        chain of ancestors);
+%%    (b) or marked as completed.
 
 :- mode solve( +, +, + ).
 
@@ -582,8 +588,7 @@ solve( BuiltIn, _, _ ) :-
 % A "normal" (i.e., not tabled) goal.
 
 solve( Goal, Stack, Level ) :-
-        once essence_hook( Goal, EssenceOfGoal ),
-        \+ tabled( EssenceOfGoal ),
+        \+ tabled( Goal ),
         !,
         optional_trace( 'Entering normal: ', Goal, Level ),
         (
@@ -595,16 +600,14 @@ solve( Goal, Stack, Level ) :-
         ).
 
 
-
 % A tabled goal that has been completed: all the results are in "answer".
 
 solve( Goal, _, Level ) :-
-        once essence_hook( Goal, EssenceOfGoal ),
-        is_completed( EssenceOfGoal ),
+        is_completed( Goal ),
         !,
         optional_trace( 'Entering completed: ', Goal, Level ),
         (
-            get_answer( EssenceOfGoal ),
+            get_answer( Goal ),
             optional_trace( 'Success completed: ', Goal, Level )
         ;
             optional_trace( 'Failure completed: ', Goal, Level ),
@@ -619,12 +622,11 @@ solve( Goal, _, Level ) :-
 % returned before failure.
 
 solve( Goal, Stack, Level ) :-
-        once essence_hook( Goal, EssenceOfGoal ),
-        variant_of_ancestor( EssenceOfGoal, Stack ),
+        variant_of_ancestor( Goal, Stack ),
         !,
         optional_trace( 'Entering variant: ', Goal, Level ),
         (
-            get_answer( EssenceOfGoal ),
+            get_answer( Goal ),
             optional_trace( 'Success variant: ', Goal, Level )
         ;
             optional_trace( 'Failure variant: ', Goal, Level ),
@@ -644,16 +646,16 @@ solve( Goal, Stack, Level ) :-
 %  See variant_of_ancestor/2.)
 
 solve( Goal, Stack, Level ) :-
-        once essence_hook( Goal, EssenceOfGoal ),
-        \+ is_a_variant_of_a_pioneer( EssenceOfGoal, _ ),
+        \+ is_a_variant_of_a_pioneer( Goal, _ ),
         !,
-        add_pioneer( EssenceOfGoal, Index ),
+        add_pioneer( Goal, Index ),
         optional_trace( 'Added pioneer: ', Goal, Level ),
         store_all_solutions_by_rules( Goal, Stack, Level ),
         (
             pioneer( _, Index )                    % might have lost its status!
         ->
             compute_fixed_point( Goal, Stack, Level ),
+            once( essence_hook( Goal, EssenceOfGoal ) ),
             complete_goal( EssenceOfGoal ),
             complete_cluster( Index ),
             remove_pioneer( Index ),
@@ -668,7 +670,7 @@ solve( Goal, Stack, Level ) :-
 % variant among its ancestors.  Something is wrong!
 
 solve( Goal, Stack, _ ) :-
-        fatal_error( "IMPOSSIBLE!", [ Goal | Stack ] ).
+        fatal_error( "IMPOSSIBLE!", [ Goal| Stack ] ).
 
 
 
@@ -696,10 +698,9 @@ store_all_solutions_by_rules( _, _, _ ).
 
 solve_by_rules( Goal, Stack, Level ) :-
         copy_term( Goal, OriginalGoal ),
-        once essence_hook( OriginalGoal, OriginalGoalEssence ),
         NLevel is Level + 1,
         use_clause( Goal, Body ),
-        solve( Body, [ OriginalGoalEssence | Stack ], NLevel ).
+        solve( Body, [ OriginalGoal | Stack ], NLevel ).
 
 %
 use_clause( Goal, Body ) :-
@@ -756,15 +757,14 @@ compute_fixed_point_( Goal, Stack, Level, NAns ) :-
 %%              ancestor will be added to the cluster of that ancestor (by
 %%              storing it in "loop"), after filtering out goals that are not
 %%              tabled.
-%%
-%% NOTE: The assumption is that the goal has already been filtered through
-%%       "essence_hook/2".
 
 :- mode variant_of_ancestor( +, + ).
 
 variant_of_ancestor( Goal, List ) :-
+        once( essence_hook( Goal, EssenceOfGoal ) ),
         append( Prefix, [ G | _ ], List ),                % i.e., split the list
-        are_variants( Goal, G ),
+        once( essence_hook( G, EssenceOfG ) ),
+        are_variants( EssenceOfGoal, EssenceOfG ),
         !,
         keep_tabled_goals( Prefix, TabledPrefix ),
         (
@@ -803,9 +803,6 @@ keep_tabled_goals( [ _G | Gs ], TGs ) :-
 %% rescind_pioneer_status( + goal ):
 %% If the goal is tabled in "pioneer", remove the entry and the associated
 %% cluster (i.e., entries in "loop").
-%%
-%% NOTE: The assumption is that the goal has already been filtered through
-%%       "essence_hook/2".
 
 :- mode rescind_pioneer_status( + ).
 
@@ -871,17 +868,15 @@ memo_( Goal, Fact ) :-
 %% get_answer( +- goal ):
 %% Get an instantiation (if any) tabled in "answer" for variants of this goal.
 %% Sequence through all such instantiations on backtracking.
-%%
-%% NOTE: The assumption is that the goal has already been filtered through
-%%       "essence_hook/2".
 
 :- mode get_answer( ? ).
 
 get_answer( Goal ) :-
+        once( essence_hook( Goal, EssenceOfGoal ) ),
         answer( G, Ans ),
-        are_variants( Goal, G ),
-        Goal = G,                  % make sure that variables are the right ones
-        Goal = Ans .               % instantiate
+        are_variants( EssenceOfGoal, G ),
+        EssenceOfGoal = G,         % make sure that variables are the right ones
+        EssenceOfGoal = Ans .      % instantiate
 
 
 
@@ -907,45 +902,39 @@ complete_goal( Goal ) :-
 %% is_completed( + goal ):
 %% Succeeds iff the goal is a variant of a goal that has been stored in
 %% the table "completed".
-%%
-%% NOTE: The assumption is that the goal has already been filtered through
-%%       "essence_hook/2".
 
 :- mode is_completed( + ).
 
 is_completed( Goal ) :-
+        once( essence_hook( Goal, EssenceOfGoal ) ),
         completed( G ),
-        are_variants( Goal, G ).
+        are_variants( EssenceOfGoal, G ).
 
 
 
 %% is_a_variant_of_a_pioneer( + goal, -index ):
 %% Succeeds if the goal is a variant of another goal that is tabled in
 %% "pioneer"; returns the index of the relevant entry in table "pioneer".
-%%
-%% NOTE: The assumption is that the goal has already been filtered through
-%%       "essence_hook/2".
 
 :- mode is_a_variant_of_a_pioneer( +, - ).
 
 is_a_variant_of_a_pioneer( Goal, Index ) :-
+        essence_hook( Goal, EssenceOfGoal ),
         pioneer( PG, Index ),
-        are_variants( Goal, PG ).
+        are_variants( EssenceOfGoal, PG ).
 
 
 
 %% add_pioneer( + goal, - index ):
 %% Add an entry for this goal to "pioneer", return the unique index.
-%%
-%% NOTE: The assumption is that the goal has already been filtered through
-%%       "essence_hook/2".
 
 :- mode add_pioneer( +, - ).
 
 add_pioneer( Goal, NewIndex ) :-
+        once( essence_hook( Goal, EssenceOfGoal ) ),
         getval( pioneer_index, NewIndex ),
         incval( pioneer_index ),
-        assert( pioneer( Goal, NewIndex ) ).
+        assert( pioneer( EssenceOfGoal, NewIndex ) ).
 
 
 
@@ -964,9 +953,6 @@ remove_pioneer( Index ) :-
 
 %% add_loop( + index, + list of goals ):
 %% Add an entry to "loop".
-%%
-%% NOTE: The assumption is that the goals have already been filtered through
-%%       "essence_hook/2".
 
 :- mode add_loop( +, + ).
 
@@ -974,7 +960,8 @@ add_loop( _, [] ) :-                                % empty loops are not stored
         !.
 
 add_loop( Index, Goals ) :-
-        assert( loop( Index, Goals ) ).
+        extract_essence( Goals, EssenceOfGoals ),
+        assert( loop( Index, EssenceOfGoals ) ).
 
 
 
@@ -1000,12 +987,12 @@ remove_loops( Index ) :-
 optional_trace( Label, Goal, Level ) :-
         tracing( Goal ),
         !,
-        write( output, '[' ),
-        write( output, Level ),
-        write( output, '] ' ),
-        write( output, Label ),
-        write( output, Goal ),
-        nl( output ).
+        write( user_output, '[' ),
+        write( user_output, Level ),
+        write( user_output, '] ' ),
+        write( user_output, Label ),
+        write( user_output, Goal ),
+        nl( user_output ).
 
 optional_trace( _, _, _ ).
 
