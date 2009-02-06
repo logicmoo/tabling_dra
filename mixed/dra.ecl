@@ -689,6 +689,8 @@ store_all_solutions_by_rules( _, _, _ ).
 
 %% solve_by_rules( + goal, + stack, + level ):
 %% Solves the goal by using rules (i.e., clauses) only.
+%% The clause is stacked together with the goal: this provides easy access when
+%% the clause has to be classified as a looping alternative.
 
 :- mode solve_by_rules( +, +, + ).
 
@@ -696,7 +698,7 @@ solve_by_rules( Goal, Stack, Level ) :-
         copy_term( Goal, OriginalGoal ),
         NLevel is Level + 1,
         use_clause( Goal, Body ),
-        solve( Body, [ OriginalGoal | Stack ], NLevel ).
+        solve( Body, [ pair( OriginalGoal, (Goal :- Body) ) | Stack ], NLevel ).
 
 %
 use_clause( Goal, Body ) :-
@@ -743,8 +745,8 @@ compute_fixed_point_( Goal, Stack, Level, NAns ) :-
 
 
 
-%% variant_of_ancestor( + goal, + list of goals ):
-%% Succeeds if the goal is a variant of some member of the list.
+%% variant_of_ancestor( + goal, + list of pairs of goals and clauses ):
+%% Succeeds if the goal is a variant of the goal in some member of the list.
 %%
 %% SIDE EFFECT: If successful, then intermediate pioneer goals will lose their
 %%              status as pioneers, and the associated entries in "loop" will
@@ -757,7 +759,7 @@ compute_fixed_point_( Goal, Stack, Level, NAns ) :-
 :- mode variant_of_ancestor( +, + ).
 
 variant_of_ancestor( Goal, List ) :-
-        append( Prefix, [ G | _ ], List ),                % i.e., split the list
+        append( Prefix, [ pair( G, _ ) | _ ], List ),     % i.e., split the list
         are_essences_variants( Goal, G ),
         !,
         keep_tabled_goals( Prefix, TabledPrefix ),
