@@ -37,35 +37,51 @@ check( State, Formula ) :-
 
 % Check the consistency of the automaton's description.
 
+:- dynamic automaton_error/0.
+:- bottom  automaton_error/0.
+
 check_consistency :-
+        retractall( automaton_error ),
         check_propositions,
-        check_transitions.
+        check_transitions,
+        (
+            automaton_error
+        ->
+            fail
+        ;
+            true
+        ).
 
 
 % Make sure propositions don't clash with operators.
 
 check_propositions :-
         proposition( P ),
-        member( P, [ 'v', 'x', 'f', 'g', 'u', 'r' ] ),
-        !,
-        write( user_error, '\"' ),
-        write( user_error, P ),
-        write( user_error, '\": ' ),
-        write( user_error,
-          '\"v\", \"x\", \"f\", \"g\", \"u\" and \"r\" cannot be propositions!'
-             ),
-        nl( user_error ),
-        fail.
-
-check_propositions :-
-        proposition( P ),
-        \+ atom( P ),
-        !,
-        write( user_error, '\"' ),
-        write( user_error, P ),
-        write( user_error, '\": ' ),
-        write( user_error, 'a proposition must be an atom!' ),
-        nl( user_error ),
+        (
+            \+ atom( P )
+        ->
+            write( 'A proposition must be an atom: ' ),
+            write( '\"' ),
+            write( P ),
+            write( '\": ' ),
+            nl,
+            assert( automaton_error )
+        ;
+            true
+        ),
+        (
+            member( P, [ 'v', 'x', 'f', 'g', 'u', 'r' ] )
+        ->
+            write( '\"v\", \"x\", \"f\", \"g\", \"u\" and \"r\" ' ),
+            write( 'cannot be propositions: ' ),
+            write( '\"' ),
+            write( P ),
+            write( '\": ' ),
+            nl,
+            assert( automaton_error )
+        ;
+            true
+        ),
         fail.
 
 check_propositions.
@@ -76,22 +92,32 @@ check_propositions.
 
 check_transitions :-
         trans( S1, S2 ),
-        (var( S1 ) ;  var( S2 ) ; \+ state( S1 ) ; \+ state( S2 )),
-        !,
-        write( user_error, 'Transitions can only occur between states: ' ),
-        write( user_error, S1 ),
-        write( user_error, ' ---> ' ),
-        write( user_error, S2 ),
-        nl( user_error),
+        (
+            (var( S1 ) ;  var( S2 ) ; \+ state( S1 ) ; \+ state( S2 ))
+        ->
+            write( 'Transitions can only occur between states: ' ),
+            write( S1 ),
+            write( ' ---> ' ),
+            write( S2 ),
+            nl,
+            assert( automaton_error )
+        ;
+            true
+        ),
         fail.
 
 check_transitions :-
         state( S ),
-        (\+ trans( S, Set ) ; trans( S, [] )),
-        !,
-        write( user_error, 'No transition out of state ' ),
-        write( user_error, S ),
-        nl( user_error ),
+        (
+            (\+ trans( S, Set ) ; trans( S, [] ))
+        ->
+            write( 'No transition out of state ' ),
+            write( S ),
+            nl,
+            assert( automaton_error )
+        ;
+            true
+        ),
         fail.
 
 check_transitions.
