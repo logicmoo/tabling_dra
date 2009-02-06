@@ -359,6 +359,8 @@ builtin( nl                 ).
 builtin( read( _ )          ).
 builtin( set_flag( _, _ )   ).
 builtin( member( _, _ )     ).
+builtin( assert( _ )        ).  % special treatment in solve/3 (only facts!)
+builtin( retractall( _ )    ).  % special treatment in solve/3 (only facts!)
 builtin( set_print_depth( _, _ )   ).      % not a real built-in, see  top_level
 
 
@@ -545,6 +547,35 @@ solve( (Goals1 , Goals2), Stack, Level ) :-
         !,
         solve( Goals1, Stack, Level ),
         solve( Goals2, Stack, Level ).
+
+
+% assert
+% NOTE: This is good only for asserting facts!
+
+solve( assert( Fact ), _, _ ) :-
+        !,
+        (
+            \+ is_good_clause_head( Fact )
+        ->
+            error( [ "Bad fact: ", assert( Fact ) ] )
+        ;
+            true
+        ),
+        assert( interpreted:Fact ).
+
+
+% retractall
+
+solve( retractall( FactPattern ), _, _ ) :-
+        !,
+        (
+            \+ is_good_clause_head( FactPattern )
+        ->
+            error( [ "Bad fact: ", retractall( FactPattern ) ] )
+        ;
+            true
+        ),
+        retractall( interpreted:FactPatern ).
 
 
 % Some other supported built-in.

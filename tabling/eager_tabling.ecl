@@ -358,6 +358,8 @@ builtin( nl                 ).
 builtin( read( _ )          ).
 builtin( set_flag( _, _ )   ).
 builtin( member( _, _ )     ).
+builtin( assert( _ )        ).
+builtin( retractall( _ )    ).
 builtin( set_print_depth( _, _ )   ).      % not a real built-in, see  top_level
 
 
@@ -428,7 +430,8 @@ execute_directive( (trace PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         will_trace( Patterns ).
 
-execute_directive( (dynamic _) ).     % ignore
+execute_directive( (dynamic PredSpecs) ) :-
+        (dynamic PredSpecs)@interpreted.
 
 
 %% will_trace( + list of patterns ):
@@ -540,6 +543,27 @@ solve( (Goals1 , Goals2), Stack, Level ) :-
         !,
         solve( Goals1, Stack, Level ),
         solve( Goals2, Stack, Level ).
+
+
+% assert
+
+solve( assert( Clause ), _, _ ) :-
+        !,
+        (
+            \+ is_good_clause( Clause )
+        ->
+            error( [ "Bad clause argument: ", assert( Clause ) ] )
+        ;
+            true
+        ),
+        assert( Clause )@interpreted.
+
+
+% retractall
+
+solve( retractall( C ), _, _ ) :-
+        !,
+        retractall( C )@interpreted.
 
 
 % Some other supported built-in.
