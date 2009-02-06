@@ -395,6 +395,7 @@ transform( [ (:- tabled PredSpecs) | Terms ],
            _, 
            [(:- tabled NewPredSpecs) | NewTerms ]
          ) :-
+        !,
         transform_pred_specs( PredSpecs, NewPredSpecs ),
         store_info_about_tabled( NewPredSpecs ),
         transform( Terms, '', NewTerms ).
