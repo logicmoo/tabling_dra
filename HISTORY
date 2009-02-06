@@ -27,5 +27,6 @@
                  - "translate_colp" had a spurious choice point which caused
                    a false error message if the user asked for more
                    solutions.
+                 - Wrong permissions on many files.
 
 -------------------------------------------------------------------------------
