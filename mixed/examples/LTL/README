@@ -37,6 +37,10 @@ example.ctp:
 example2.ctp:
         A somewhat more complex example similar to "example.ctp".
 
+example3.ctp:
+        A smaller example, good for tracing while troubleshooting the
+        tabling interpreter.
+
 microwave.ctp:
         Another example in the same spirit.  This one is actually a
         (somewhat simplified) model of a microwave oven.
