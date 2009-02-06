@@ -283,6 +283,10 @@ General description
            upon encountering "trace" directives when the interpreted program is
            being read.
 
+           NOTE: The version of the goal that is filtered through
+                 "essence_hook/2" is also stored in the table, so that both
+                 versions are traced.
+
 *******************************************************************************/
 
 
@@ -438,6 +442,8 @@ execute_directive( (multifile _) ).   % ignore
 will_trace( Patterns ) :-
         member( Pattern, Patterns ),
         assert( tracing( Pattern ) ),
+        once essence_hook( Pattern, EssenceOfPattern ),
+        assert( tracing( EssenceOfPattern ) ),
         fail.
 
 will_trace( _ ).
