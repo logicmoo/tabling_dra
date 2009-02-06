@@ -4,15 +4,28 @@
 
              Known problems:
                - mixed/dra still not available;
-               - tabling/eager_tabling has some minor problems in comments as
-                 well as some unnecessary inefficiencies;
+               - tabling/eager_tabling has some minor problems in comments
+                 as well as some unnecessary inefficiencies;
                - a very limited set of examples.
 
 5 Feb 2009:  Second "public" release:
 
                Fixed:
-                 - trace did not work in the Eclipse version of "eager_tabling";
-                 - removed one source of inefficiency (and disparity between the
-                   code and the associated comment) in "eager_tabling".
+                 - trace did not work in the Eclipse version of
+                   "eager_tabling";
+                 - removed one source of inefficiency (and disparity between
+                   the code and the associated comment) in "eager_tabling".
+
+6 Feb 2009:  Third release:
+
+               Fixed:
+                 - In "eager_tabling" trace also internal events (e.g.,
+                   adding a pioneer).
+                 - The sanity-checking functions of the LTL interpreter
+                   were unable to report an error when run in the tabling
+                   interpreter.
+                 - "translate_colp" had a spurious choice point which caused
+                   a false error message if the user asked for more
+                   solutions.
 
 -------------------------------------------------------------------------------
