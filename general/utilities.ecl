@@ -319,7 +319,7 @@ read_terms( InputStream, Terms ) :-
         read_terms_( InputStream, Term, Terms ).
 
 %
-read_terms_( InputStream, end_of_file, [] ) :-
+read_terms_( _, end_of_file, [] ) :-
         !.
 
 read_terms_( InputStream, Term, [ Term | Terms ] ) :-
