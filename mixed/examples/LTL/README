@@ -29,6 +29,10 @@ normalize.pl:
         Simple normalization of LTL expressions, used by
         "interpreter.ctp".
 
+errors.ctp:
+        A version of "example3.ctp" into which a number of errors have been
+        introduced to test the diagnostics of "interpreter.ctp".
+
 example.ctp:
         The definition of a simple automaton and some convenient LTL
         queries.  Just load the example into "dra" and then type "q1.",
