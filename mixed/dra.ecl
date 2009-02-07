@@ -332,7 +332,7 @@ default_extension( ".ctp" ).
 :- dynamic answer/2 .
 :- dynamic pioneer/2 .
 :- dynamic loop/2 .
-:- dynamic looping_alternative/3 .
+:- dynamic looping_alternative/2 .
 :- dynamic completed/1 .
 :- dynamic tracing/1.
 
@@ -490,8 +490,7 @@ query( Goals ) :-
 :- mode solve( +, +, + ).
 
 
-% Note that even during the computation of \+/1 a whole set of answers
-% may become tabled.
+% A negation.
 
 solve( \+ Goal, Stack, Level ) :-
         !,
@@ -506,8 +505,7 @@ solve( \+ Goal, Stack, Level ) :-
         ).
 
 
-% Note that even during the computation of once/1 a whole set of answers
-% may become tabled.
+% One solution.
 
 solve( once( Goal ), Stack, Level ) :-
         !,
@@ -649,13 +647,12 @@ solve( Goal, Stack, Level ) :-
         optional_trace( 'Added pioneer: ', Goal, Level ),
         store_all_solutions_by_rules( Goal, Stack, Level ),
         (
-            pioneer( _, Index )                    % might have lost its status!
+            pioneer( G, Index )                    % might have lost its status!
         ->
             compute_fixed_point( Goal, Stack, Level ),
             complete_goal( Goal ),
             complete_cluster( Index ),
-            remove_pioneer( Index ),
-            remove_loops( Index )
+            rescind_pioneer_status( G, Index )
         ;
             true
         ),
@@ -749,23 +746,28 @@ compute_fixed_point_( Goal, Stack, Level, NAns ) :-
 %% Succeeds if the goal is a variant of the goal in some member of the list.
 %%
 %% SIDE EFFECT: If successful, then intermediate pioneer goals will lose their
-%%              status as pioneers, and the associated entries in "loop" will
-%%              be removed.  Moreover, if the variant ancestor is a pioneer,
-%%              the entire prefix of the list upto (and including) the variant
-%%              ancestor will be added to the cluster of that ancestor (by
-%%              storing it in "loop"), after filtering out goals that are not
-%%              tabled.
+%%              status as pioneers, and the associated entries in "loop" and
+%%              "looping_alternative" will be removed.  Moreover, if the variant
+%%              ancestor is a pioneer, then:
+%%                - the entire prefix of the list upto (but not including) the
+%%                  variant ancestor will be added to the cluster of that
+%%                  ancestor (by storing it in "loop"), after filtering out
+%%                  goals that are not tabled;
+%%                - the current clause invoked by the ancestor (which can be
+%%                  found together with the ancestor on the stack) is added to
+%%                  "looping_alternative" entries for that ancestor.
 
 :- mode variant_of_ancestor( +, + ).
 
 variant_of_ancestor( Goal, List ) :-
-        append( Prefix, [ pair( G, _ ) | _ ], List ),     % i.e., split the list
+        append( Prefix, [ pair( G, C ) | _ ], List ),     % i.e., split the list
         are_essences_variants( Goal, G ),
         !,
         keep_tabled_goals( Prefix, TabledPrefix ),
         (
-            member( M, TabledPrefix ),
-            rescind_pioneer_status( M ),
+            member( pair( M, _ ), TabledPrefix ),
+            is_a_variant_of_a_pioneer( M, Index ),
+            rescind_pioneer_status( Goal, Index ),
             fail
         ;
             true
@@ -773,7 +775,8 @@ variant_of_ancestor( Goal, List ) :-
         (
             is_a_variant_of_a_pioneer( G, Index )
         ->
-            add_loop( Index, TabledPrefix )
+            add_loop( Index, TabledPrefix ),
+            assert( looping_alternative( Index, C ) )
         ;
             true
         ).
@@ -796,20 +799,18 @@ keep_tabled_goals( [ _G | Gs ], TGs ) :-
         keep_tabled_goals( Gs, TGs ).
 
 
-%% rescind_pioneer_status( + goal ):
-%% If the goal is tabled in "pioneer", remove the entry and the associated
-%% cluster (i.e., entries in "loop").
+%% rescind_pioneer_status( + goal, + index ):
+%% Remove auxiliary table entries for the pioneer with this index.
+%% Specifically, clean up "pioneer", "loop" and "looping_alternative".
+%% NOTE: The goal form of the pioneer is provided only for tracing.
 
-:- mode rescind_pioneer_status( + ).
+:- mode rescind_pioneer_status( +, + ).
 
-rescind_pioneer_status( Goal ) :-
-        is_a_variant_of_a_pioneer( Goal, Index ),
-        !,
+rescind_pioneer_status( Goal, Index ) :-
         optional_trace( 'Removing pioneer: ', Goal, '?' ),
         remove_pioneer( Index ),
-        remove_loops( Index ).
-
-rescind_pioneer_status( _ ).
+        retractall( loop( Index, _ ) ),
+        retractall( looping_alternative( Index, _ ) ).
 
 
 %% complete_cluster( + index of a pioneer goal ):
@@ -944,17 +945,6 @@ add_loop( _, [] ) :-                                % empty loops are not stored
 
 add_loop( Index, Goals ) :-
         assert( loop( Index, Goals ) ).
-
-
-
-%% remove_loops( + index ):
-%% Remove all the entries in "loop" that have this index.
-
-:- mode remove_loops( + ).
-
-remove_loops( Index ) :-
-        retractall( loop( Index, _ ) ).
-
 
 
 
