@@ -3,6 +3,6 @@
 p( A, A ).
 p( a, b ).
 
-?-  p( U, V ).       % expecting p( U, U ), p( a, b )
-?-  p( Y, b ).       % expecting p( b, b ), p( a, b )
-?-  p( U, V ).       % expecting p( U, U ), p( a, b ) (and not p( b, b )!)
+?-  p( U, V ).       % expected:  p( U, U ), p( a, b )
+?-  p( Y, b ).       % expected:  p( b, b ), p( a, b )
+?-  p( U, V ).       % expected:  p( U, U ), p( a, b ) (and not p( b, b )!)

@@ -29,9 +29,9 @@ path( A, B ) :-  edge( A, B ).
 
 path( A, B ) :-  path( A, C ), path( C, B ).
 
-?- path( a, a ).
-?- path( a, d ).
-?- path( c, c ).
-?- path( c, b ).
-?- path( c, e ).
-?- path( X, Y ).
+?- path( a, a ).      % expected:  yes
+?- path( a, d ).      % expected:  no
+?- path( c, c ).      % expected:  yes
+?- path( c, b ).      % expected:  yes
+?- path( c, e ).      % expected:  no
+?- path( X, Y ).      % expected:  see the picture
