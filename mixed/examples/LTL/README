@@ -10,7 +10,7 @@ NOTE:
 
 This directory includes the following files:
 
-interpreter.ctp:
+interpreter.tlp:
         A version of Gopal Gupta's elegant interpreter for Linear
         Temporal Logic.
 
@@ -27,25 +27,25 @@ interpreter.ctp:
 
 normalize.pl:
         Simple normalization of LTL expressions, used by
-        "interpreter.ctp".
+        "interpreter.tlp".
 
-errors.ctp:
-        A version of "example3.ctp" into which a number of errors have been
-        introduced to test the diagnostics of "interpreter.ctp".
+errors.tlp:
+        A version of "example3.tlp" into which a number of errors have been
+        introduced to test the diagnostics of "interpreter.tlp".
 
-example.ctp:
+example.tlp:
         The definition of a simple automaton and some convenient LTL
         queries.  Just load the example into "dra" and then type "q1.",
         "q2." etc. to that interpreter's top level.
 
-example2.ctp:
-        A somewhat more complex example similar to "example.ctp".
+example2.tlp:
+        A somewhat more complex example similar to "example.tlp".
 
-example3.ctp:
+example3.tlp:
         A smaller example, good for tracing while troubleshooting the
         tabling interpreter.
 
-microwave.ctp:
+microwave.tlp:
         Another example in the same spirit.  This one is actually a
         (somewhat simplified) model of a microwave oven.
 
