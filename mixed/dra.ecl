@@ -1152,7 +1152,7 @@ write_level( Level ) :-
 
 write_label_and_goal( Label, Goal ) :-
         write( output, Label ),
-        write( output, ' : ' ),
+        write( output, ': ' ),
         write( output, Goal ).
 
 
