@@ -644,7 +644,7 @@ solve( Goal, Stack, Level ) :-
         \+ is_a_variant_of_a_pioneer( Goal ),
         !,
         add_pioneer( Goal ),
-        optional_trace( 'Added pioneer: ', Goal, Level ),
+        optional_trace( 'Adding pioneer: ', Goal, Level ),
         store_all_solutions_by_rules( Goal, Stack, Level ),
         (
             is_a_variant_of_a_pioneer( Goal )      % might have lost its status!
