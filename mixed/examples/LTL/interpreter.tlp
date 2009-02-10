@@ -63,7 +63,7 @@ check_propositions :-
             write( 'A proposition must be an atom: ' ),
             write( '\"' ),
             write( P ),
-            write( '\": ' ),
+            write( '\"' ),
             nl,
             assert( automaton_error )
         ;
@@ -76,7 +76,7 @@ check_propositions :-
             write( 'cannot be propositions: ' ),
             write( '\"' ),
             write( P ),
-            write( '\": ' ),
+            write( '\"' ),
             nl,
             assert( automaton_error )
         ;
