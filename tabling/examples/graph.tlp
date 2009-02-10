@@ -1,9 +1,9 @@
 
 %%
-%%              A-----> B
+%%              A <---> B
 %%             ^ ^     /
 %%            /   \   /
-%%           /     \ v
+%%           /     v v
 %%          D       C
 %%          |
 %%          |
@@ -14,6 +14,7 @@
 edge( a, b ).
 edge( a, c ).
 
+edge( b, a ).
 edge( b, c ).
 
 edge( c, a ).
@@ -27,7 +28,6 @@ edge( d, a ).
 path( A, B ) :-  edge( A, B ).
 
 path( A, B ) :-  path( A, C ), path( C, B ).
-
 
 ?- path( a, a ).
 ?- path( a, d ).
