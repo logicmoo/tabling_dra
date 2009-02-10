@@ -486,20 +486,15 @@ legal_directive( (dynamic _) ).
 
 %% Check and process the legal directives
 
-execute_directive( tabled P / K ) :-                  % declaration of tabled
-        (atom( P ), integer( K ), K >= 0),            %  seems OK
-        !,
-        mk_pattern( P, K, Pattern ),                  % Pattern = P( _, _, ... )
-        assert( tabled( Pattern ) ).
-
-execute_directive( tabled P / K ) :-                  % declaration of tabled
-        (\+ atom( P ) ; \+ integer( K ) ; K < 0),     %  obviously wrong
-        !,
-        warning( [ "Erroneous directive: \"",
-                   (:- tabled P / K),
-                   "\" ignored! +++"
-                 ]
-               ).
+execute_directive( tabled PredSpecs ) :-
+        predspecs_to_patterns( PredSpecs, Patterns ),
+        (
+            member( Pattern, Patterns ),
+            assert( tabled( Pattern ) ),
+            fail
+        ;
+            true
+        ).
 
 execute_directive( (trace all) ) :-
         !,
@@ -1102,7 +1097,8 @@ trace_entry( Label, Goal, Level ) :-
         !,
         write_level( Level ),
         write( output, 'Entering ' ),
-        write_label_and_goal( Label, Goal ).
+        write_label_and_goal( Label, Goal ),
+        nl( output ).
 
 trace_entry( _, _, _ ).
 
@@ -1119,11 +1115,13 @@ trace_success( Label, Goal, Level ) :-
         (
             write_level( Level ),
             write( output, 'Success ' ),
-            write_label_and_goal( Label, Goal )
+            write_label_and_goal( Label, Goal ),
+            nl( output )
         ;
             write_level( Level ),
             write( output, 'Retrying ' ),
-            write_label_and_goal( Label, Goal )
+            write_label_and_goal( Label, Goal ),
+            nl( output )
         ).
 
 trace_success( _, _, _ ).
@@ -1138,7 +1136,8 @@ trace_failure( Label, Goal, Level ) :-
         !,
         write_level( Level ),
         write( output, 'Failing ' ),
-        write_label_and_goal( Label, Goal ).
+        write_label_and_goal( Label, Goal ),
+        nl( output ).
 
 trace_failure( _, _, _ ).
 
