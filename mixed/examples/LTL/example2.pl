@@ -1,6 +1,6 @@
 %% Get the translated interpreter:
 
-:- [ 'verifier.tlp' ].
+:- [ 'verifier.pl' ].
 
 
 %--- An example: some states, some queries... Note the two loops.
