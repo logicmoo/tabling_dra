@@ -172,6 +172,15 @@
            goal has no solutions, it will have no entry in "answer", even
            though it may have an entry in "completed" (see below).
 
+           (NOTE: In the actual implementation each fact in "answer" has the
+                  form
+                     answer( cgoal, goal, fact )
+                  where "cgoal" is a copy of "goal" (no shared variables).
+                  This is done to facilitate more effective filtering (via
+                  unification) before a check is made for whether "goal" is a
+                  variant of the goal for which we are seeking a tabled answer.
+           )
+
            In general, a side-effect of each evaluation of a query will be
            the generation -- for each tabled goal encounted during the
            evaluation -- of a set of facts that form the goal's "least fixed
@@ -257,6 +266,17 @@
            This table is cleared before the evaluation of a new query and
            when the pioneer finally becomes complete.
 
+           (NOTE: In the actual implementation each fact in "pioneer" has the
+                  form
+                     pioneer( cgoal, goal, index )
+                  where "cgoal" is a copy of "goal" (no shared variables).
+                  This is done to facilitate more effective filtering (via
+                  unification) before a check is made for whether "goal" is a
+                  variant of the goal for which we are checking whether it is a
+                  pioneer.
+           )
+
+
    -- pioneer_index
 
            This is a non-logical variable that holds the index to be used for
@@ -300,7 +320,15 @@
            has been computed, and all the possible results for variants of
            the goal can be found in table "answer".
 
-           This table is cleared before the evaluation of a new query.
+           (NOTE: In the actual implementation each fact in "completed" has the
+                  form
+                     completed( cgoal, goal )
+                  where "cgoal" is a copy of "goal" (no shared variables).
+                  This is done to facilitate more effective filtering (via
+                  unification) before a check is made for whether "goal" is a
+                  variant of the goal for which we are checking whether it is
+                  completed.
+           )
 
    -- tracing( goal )
 
@@ -329,24 +357,24 @@ default_extension( ".ctp" ).
 
 :- dynamic coinductive/1 .
 :- dynamic tabled/1 .
-:- dynamic answer/2 .
-:- dynamic pioneer/2 .
+:- dynamic answer/3 .
+:- dynamic pioneer/3 .
 :- dynamic loop/2 .
 :- dynamic looping_alternative/2 .
-:- dynamic completed/1 .
+:- dynamic completed/2 .
 :- dynamic tracing/1.
 
 :- setval( number_of_answers, 0 ).
 :- setval( pioneer_index,     0 ).
 
 initialise :-
-        retractall( tabled( _ )                    ),
-        retractall( answer( _, _ )                 ),
-        retractall( pioneer( _, _ )                ),
-        retractall( loop( _, _ )                   ),
-        retractall( looping_alternative( _, _, _ ) ),
-        retractall( completed( _ )                 ),
-        retractall( tracing( _ )                   ),
+        retractall( tabled( _ )                 ),
+        retractall( answer( _, _, _ )           ),
+        retractall( pioneer( _, _, _ )          ),
+        retractall( loop( _, _ )                ),
+        retractall( looping_alternative( _, _ ) ),
+        retractall( completed( _, _ )           ),
+        retractall( tracing( _ )                ),
         setval( number_of_answers, 0 ),
         setval( pioneer_index,     0 ).
 
@@ -472,10 +500,9 @@ will_trace( _ ).
 :- mode query( + ).
 
 query( Goals ) :-
-        retractall( pioneer( _, _ )                ),
-        retractall( loop( _, _ )                   ),
-        retractall( looping_alternative( _, _, _ ) ),
-        retractall( completed( _ )                 ),
+        retractall( pioneer( _, _, _ )          ),
+        retractall( loop( _, _ )                ),
+        retractall( looping_alternative( _, _ ) ),
 
         solve( Goals, [], 0 ).
 
@@ -617,7 +644,7 @@ solve( Goal, _, Level ) :-
 % returned before failure.
 
 solve( Goal, Stack, Level ) :-
-        variant_of_ancestor( Goal, Stack ),
+        variant_of_ancestor( Goal, Stack, Level ),
         !,
         optional_trace( 'Entering variant: ', Goal, Level ),
         (
@@ -630,57 +657,59 @@ solve( Goal, Stack, Level ) :-
 
 
 % A pioneer goal is solved by rules, producing results that are stored in
-% "answer": after this is done, "answer" is used to pass on the results.
+% "answer".
+% The goal succeeds as each answer is produced, and tries to come up with more
+% after backtracking.
+% When the usual clauses are exhausted, clauses stored in the associated entries
+% of "looping_alternative" will be used to produce more answers, until a fixed
+% point is reached.  The pioneer (and all the goals in its cluster) will then be
+% marked as complete, and will cease to be a pioneer.
 %
-% Moreover, the goal's answer set is extended to the least fixed point and its
-% cluster is marked as complete.  The auxiliary information about the pioneer
-% is removed.
-%
-% (Note that a pioneer but may cease to be one when some descendant goal finds
-%  a variant ancestor that is also an ancestor of the pioneer.
-%  See variant_of_ancestor/2.)
+% (Note that a pioneer but may also lose its status when some descendant goal
+%  finds a variant ancestor that is also an ancestor of the pioneer.  See
+%  variant_of_ancestor/3.)
 
 solve( Goal, Stack, Level ) :-
         \+ is_a_variant_of_a_pioneer( Goal, _ ),
         !,
+        optional_trace( 'Adding pioneer: ', Goal, Level ),
         add_pioneer( Goal, Index ),
-        optional_trace( 'Added pioneer: ', Goal, Level ),
-        store_all_solutions_by_rules( Goal, Stack, Level ),
+        copy_term( Goal, OriginalGoal ),
         (
-            pioneer( G, Index )                    % might have lost its status!
-        ->
-            compute_fixed_point( Goal, Stack, Level ),
-            complete_goal( Goal ),
-            complete_cluster( Index ),
-            rescind_pioneer_status( G, Index )
+            solve_by_rules( Goal, Stack, Level ),
+            \+ is_answer_known( OriginalGoal, Goal ),
+            memo( OriginalGoal, Goal, Level ),
+            optional_trace( 'Success pioneer: ', Goal, Level )
         ;
-            true
-        ),
-        get_answer( Goal ).
+            is_a_variant_of_a_pioneer( OriginalGoal, Index )  % lost its status?
+        ->
+            (
+                optional_trace( 'Computing fixed point for ',
+                                OriginalGoal, Level
+                              ),
+                compute_fixed_point( OriginalGoal, Index, Stack, Level ),
+                optional_trace( 'Success pioneer: ', OriginalGoal, Level )
+            ;
+                optional_trace( 'Fixed point computed: ', OriginalGoal, Level ),
+                complete_goal( OriginalGoal, Level ),
+                complete_cluster( Index, Level ),
+                optional_trace( 'Removing pioneer: ', OriginalGoal, Level ),
+                rescind_pioneer_status( Index ),
+                fail
+            )
+        ;
+            optional_trace( 'Failure (no longer pioneer): ', Goal, Level ),
+            fail
+        ).
 
 
 % A tabled goal that is not completed, not a pioneer on entry, and has no
-% variant among its ancestors.  Something is wrong!
+% variant among its ancestors.  Just return the available answers.
 
-solve( Goal, Stack, _ ) :-
-        fatal_error( "IMPOSSIBLE!", [ Goal | Stack ] ).
-
-
-
-
-%% store_all_solutions_by_rules( + goal, + stack, + level ):
-%% Invoke solve_by_rules/2 until there are no solutions left, storing
-%% the results in "answer".
-
-:- mode store_all_solutions_by_rules( +, +, + ).
-
-store_all_solutions_by_rules( Goal, Stack, Level ) :-
-        copy_term( Goal, OriginalGoal ),
-        solve_by_rules( Goal, Stack, Level ),
-        memo( OriginalGoal, Goal ),
-        fail.
-
-store_all_solutions_by_rules( _, _, _ ).
+solve( Goal, _, Level ) :-
+        optional_trace( 'Getting answer for: ', Goal, Level ),
+        get_answer( Goal ),
+        optional_trace( 'Got answer: ', Goal, Level ).
 
 
 
@@ -695,7 +724,8 @@ solve_by_rules( Goal, Stack, Level ) :-
         copy_term( Goal, OriginalGoal ),
         NLevel is Level + 1,
         use_clause( Goal, Body ),
-        solve( Body, [ pair( OriginalGoal, (Goal :- Body) ) | Stack ], NLevel ).
+        copy_term( (Goal :- Body), ClauseCopy ),
+        solve( Body, [ pair( OriginalGoal, ClauseCopy ) | Stack ], NLevel ).
 
 %
 use_clause( Goal, Body ) :-
@@ -711,38 +741,40 @@ use_clause( Goal, Body ) :-
 
 
 
+%% compute_fixed_point( + pioneer goal, + its index, + stack, + level ):
+%% Solve the goal by associated rules from "looping_alternative", succeeding
+%% with each new answer (and tabling it).  Fail when all the possible results
+%% are exhausted.
 
+:- mode compute_fixed_point( +, +, +, + ).
 
-%% compute_fixed_point( + goal, + stack, + level ):
-%% Solve the goal by rules until no more answers are produced, then succeed
-%% _without_ instantiating the goal.
-
-:- mode compute_fixed_point( +, +, + ).
-
-compute_fixed_point( Goal, Stack, Level ) :-
-        optional_trace( 'Computing fixed point for ', Goal, Level ),
+compute_fixed_point( Goal, Index, Stack, Level ) :-
         getval( number_of_answers, NAns ),
-        compute_fixed_point_( Goal, Stack, Level, NAns ).
+        compute_fixed_point_( Goal, Index, Stack, Level, NAns ).
 
 %
-:- mode compute_fixed_point_( +, +, +, + ).
+:- mode compute_fixed_point( +, +, +, +, + ).
 
-compute_fixed_point_( Goal, Stack, Level, _ ) :-
-        store_all_solutions_by_rules( Goal, Stack, Level ),     % all solutions
-        fail.
+compute_fixed_point_( Goal, Index, Stack, Level, _ ) :-
+        NLevel is Level + 1,
+        copy_term( Goal, OriginalGoal ),
+        looping_alternative( Index, (Goal :- Body) ),      % i.e., iterate
+        Pair = pair( OriginalGoal, (Goal :- Body) ),
+        solve( Body, [ Pair | Stack ], NLevel ),
+        \+ is_answer_known( OriginalGoal, Goal ),
+        memo( OriginalGoal, Goal, Level ).
 
-compute_fixed_point_( _, _, _, NAns ) :-
-        getval( number_of_answers, NAns ),                      % no new answers
-        !.
-
-compute_fixed_point_( Goal, Stack, Level, NAns ) :-
-        getval( number_of_answers, NA ),
-        NA =\= NAns,                                            % new answers,
-        compute_fixed_point_( Goal, Stack, Level, NA ).         %   so iterate
+compute_fixed_point_( Goal, Index, Stack, Level, NAns ) :-
+        getval( number_of_answers, NAnsNow ),
+        NAnsNow \= NAns,                 %i.e., fail if there are no new answers
+        compute_fixed_point_( Goal, Index, Stack, Level, NAnsNow ).    % iterate
 
 
 
-%% variant_of_ancestor( + goal, + list of pairs of goals and clauses ):
+%% variant_of_ancestor( + goal,
+%%                      + list of pairs of goals and clauses,
+%%                      + level for tracing
+%%                    ):
 %% Succeeds if the goal is a variant of the goal in some member of the list.
 %%
 %% SIDE EFFECT: If successful, then intermediate pioneer goals will lose their
@@ -757,17 +789,18 @@ compute_fixed_point_( Goal, Stack, Level, NAns ) :-
 %%                  found together with the ancestor on the stack) is added to
 %%                  "looping_alternative" entries for that ancestor.
 
-:- mode variant_of_ancestor( +, + ).
+:- mode variant_of_ancestor( +, +, + ).
 
-variant_of_ancestor( Goal, List ) :-
+variant_of_ancestor( Goal, List, Level ) :-
         append( Prefix, [ pair( G, C ) | _ ], List ),     % i.e., split the list
         are_essences_variants( Goal, G ),
         !,
         keep_tabled_goals( Prefix, TabledPrefix ),
         (
-            member( pair( M, _ ), TabledPrefix ),
+            member( M, TabledPrefix ),
             is_a_variant_of_a_pioneer( M, Index ),
-            rescind_pioneer_status( Goal, Index ),
+            optional_trace( 'Removing pioneer: ', M, Level ),
+            rescind_pioneer_status( Index ),
             fail
         ;
             true
@@ -776,54 +809,53 @@ variant_of_ancestor( Goal, List ) :-
             is_a_variant_of_a_pioneer( G, Index )
         ->
             add_loop( Index, TabledPrefix ),
-            assert( looping_alternative( Index, C ) )
+            add_looping_alternative( Index, C )
         ;
             true
         ).
 
 
-%% keep_tabled_goals( + list of goals, - list of goals ):
-%% Filter away goals that are not tabled.
+%% keep_tabled_goals( + list of pairs of goals and clauses, - list of goals ):
+%% Filter away pairs with goals that are not tabled, return list of goals only.
 
 :- mode keep_tabled_goals( +, - ).
 
 keep_tabled_goals( [], [] ).
 
-keep_tabled_goals( [ G | Gs ], [ G | TGs ] ) :-
+keep_tabled_goals( [ P | Ps ], [ G | TGs ] ) :-
+        P = pair( G, _ ),
         tabled( G ),
         !,
-        keep_tabled_goals( Gs, TGs ).
+        keep_tabled_goals( Ps, TGs ).
 
-keep_tabled_goals( [ _G | Gs ], TGs ) :-
-        % \+ tabled( G ),
-        keep_tabled_goals( Gs, TGs ).
+keep_tabled_goals( [ _P | Ps ], TGs ) :-
+        % \+ (P = pair( G, _ ), tabled( G )),
+        keep_tabled_goals( Ps, TGs ).
 
 
-%% rescind_pioneer_status( + goal, + index ):
+%% rescind_pioneer_status( + index ):
 %% Remove auxiliary table entries for the pioneer with this index.
 %% Specifically, clean up "pioneer", "loop" and "looping_alternative".
-%% NOTE: The goal form of the pioneer is provided only for tracing.
 
-:- mode rescind_pioneer_status( +, + ).
+:- mode rescind_pioneer_status( + ).
 
-rescind_pioneer_status( Goal, Index ) :-
-        optional_trace( 'Removing pioneer: ', Goal, '?' ),
-        remove_pioneer( Index ),
+rescind_pioneer_status( Index ) :-
+        retract( pioneer( _, _, Index ) ),
         retractall( loop( Index, _ ) ),
         retractall( looping_alternative( Index, _ ) ).
 
 
-%% complete_cluster( + index of a pioneer goal ):
+%% complete_cluster( + index of a pioneer goal, + level for tracing ):
 %% If the goal has an associated cluster, make sure all the goals in the cluster
 %% are marked as complete.
 %% Recall that a cluster may consist of a number of "loops".
 
-:- mode complete_cluster( + ).
+:- mode complete_cluster( +, + ).
 
-complete_cluster( Index ) :-
+complete_cluster( Index, Level ) :-
         loop( Index, Gs ),                     % iterate over loops
         member( G, Gs ),                       % iterate over members of a loop
-        complete_goal( G ),
+        complete_goal( G, Level ),
         fail.
 
 complete_cluster( _ ).
@@ -835,23 +867,37 @@ complete_cluster( _ ).
 %%-----  The tables: access and modification  -----
 
 
-%% memo( + goal, + fact ):
+%% is_answer_known( + goal, + fact ):
+%% Does the table "answer" contain a variant of this fact paired with a variant
+%% of this goal?
+
+:- mode is_answer_known( +, + ).
+
+is_answer_known( Goal, Fact ) :-
+        copy_term( Goal, Copy ),
+        answer( Copy, G, F ),
+        are_essences_variants( G, Goal ),
+        are_essences_variants( F, Fact ),
+        !.
+
+
+
+%% memo( + goal, + fact, + level for tracing ):
 %% If the table "answer" does not contain a variant of this fact paired with
 %% a variant of this goal, then add the pair to the table, increasing
 %% "number_of_answers".
 
-:- mode memo( +, + ).
+:- mode memo( +, +, + ).
 
-memo( Goal, Fact ) :-
-        answer( G, F ),
-        are_essences_variants( F, Fact ),
-        are_essences_variants( G, Goal ),
+memo( Goal, Fact, _ ) :-
+        is_answer_known( Goal, Fact ),
         !.
 
-memo( Goal, Fact ) :-
-        % No variant pair in "answer",
-        optional_trace( 'Storing answer: ', Fact, '?' ),
-        assert( answer( Goal, Fact ) ),
+memo( Goal, Fact, Level ) :-
+        % \+ is_answer_known( Goal, Fact ),
+        optional_trace2( 'Storing answer: ', Goal, Fact, Level ),
+        copy_term( Goal, Copy ),
+        assert( answer( Copy, Goal, Fact ) ),
         incval( number_of_answers ).
 
 
@@ -863,29 +909,31 @@ memo( Goal, Fact ) :-
 :- mode get_answer( ? ).
 
 get_answer( Goal ) :-
-        answer( G, Ans ),
         once essence_hook( Goal, EssenceOfGoal ),
-        once essence_hook( G,    EssenceOfG    ),
+        copy_term( Goal, Copy ),
+        answer( Copy, G, Ans ),
+        once essence_hook( G, EssenceOfG ),
         are_variants( EssenceOfGoal, EssenceOfG ),
-        EssenceOfGoal = EssenceOfG,    % make sure variables are the right ones
+        EssenceOfGoal = EssenceOfG,     % make sure variables are the right ones
         once essence_hook( Ans, EssenceOfAns ),
-        EssenceOfGoal = EssenceOfAns . % instantiate
+        EssenceOfGoal = EssenceOfAns .  % instantiate
 
 
 
-%% complete_goal( + goal ):
+%% complete_goal( + goal, + index for tracing ):
 %% Make sure the goal is marked as completed.
 
-:- mode complete_goal( + ).
+:- mode complete_goal( +, + ).
 
-complete_goal( Goal ) :-
+complete_goal( Goal, _ ) :-
         is_completed( Goal ),
         !.
 
-complete_goal( Goal ) :-
+complete_goal( Goal, Level ) :-
         % \+ is_completed( Goal ),
-        optional_trace( 'Completing: ', Goal, '?' ),
-        assert( completed( Goal ) ).
+        copy_term( Goal, Copy ),
+        optional_trace( 'Completing: ', Goal, Level ),
+        assert( completed( Copy, Goal ) ).
 
 
 
@@ -896,7 +944,8 @@ complete_goal( Goal ) :-
 :- mode is_completed( + ).
 
 is_completed( Goal ) :-
-        completed( G ),
+        copy_term( Goal, Copy ),
+        completed( Copy, G ),
         are_essences_variants( Goal, G ).
 
 
@@ -908,8 +957,10 @@ is_completed( Goal ) :-
 :- mode is_a_variant_of_a_pioneer( +, - ).
 
 is_a_variant_of_a_pioneer( Goal, Index ) :-
-        pioneer( PG, Index ),
-        are_essences_variants( Goal, PG ).
+        copy_term( Goal, Copy ),
+        pioneer( Copy, G, Index ),
+        are_essences_variants( Goal, G ),
+        !.
 
 
 
@@ -921,17 +972,8 @@ is_a_variant_of_a_pioneer( Goal, Index ) :-
 add_pioneer( Goal, NewIndex ) :-
         getval( pioneer_index, NewIndex ),
         incval( pioneer_index ),
-        assert( pioneer( Goal, NewIndex ) ).
-
-
-
-%% remove_pioneer( + index ):
-%% Remove the pioneer entry with this index.
-
-:- mode remove_pioneer( + ).
-
-remove_pioneer( Index ) :-
-        retract( pioneer( _, Index ) ).
+        copy_term( Goal, Copy ),
+        assert( pioneer( Copy, Goal, NewIndex ) ).
 
 
 
@@ -943,8 +985,26 @@ remove_pioneer( Index ) :-
 add_loop( _, [] ) :-                                % empty loops are not stored
         !.
 
+add_loop( Index, Goals ) :-                         % neither are duplicates
+        loop( Index, Gs ),
+        are_variants( Goals, Gs ),
+        !.
+
 add_loop( Index, Goals ) :-
         assert( loop( Index, Goals ) ).
+
+
+%% add_looping_alternative( + index, + Clause ):
+%% Add and entry to "looping_alternative".
+
+add_looping_alternative( Index, Clause ) :-          % duplicates are not stored
+        looping_alternative( Index, C ),
+        are_variants( Clause, C ),
+        !.
+
+add_looping_alternative( Index, Clause ) :-
+        assert( looping_alternative( Index, Clause ) ).
+
 
 
 
@@ -964,19 +1024,41 @@ are_essences_variants( T1, T2 ) :-
 
 %% optional_trace( + label, + goal, + level ):
 %% If the goal matches one of the traced patterns, print out a trace line with
-%% this label:
+%% this label.
 
 optional_trace( Label, Goal, Level ) :-
         tracing( Goal ),
         !,
-        write( output, '[' ),
-        write( output, Level ),
-        write( output, '] ' ),
+        write_level( Level ),
         write( output, Label ),
         write( output, Goal ),
         nl( output ).
 
 optional_trace( _, _, _ ).
+
+%
+write_level( Level ) :-
+        write( output, '[' ),
+        write( output, Level ),
+        write( output, '] ' ).
+
+
+
+%% optional_trace2( + label, + goal, + term, + level ):
+%% If the goal matches one of the traced patterns, print out a trace line with
+%% this label, the goal and the term.
+
+optional_trace2( Label, Goal, Term, Level ) :-
+        tracing( Goal ),
+        !,
+        write_level( Level ),
+        write( output, Label ),
+        write( output, Goal ),
+        write( output, ' : ' ),
+        write( output, Term ),
+        nl( output ).
+
+optional_trace2( _, _, _, _ ).
 
 
 
