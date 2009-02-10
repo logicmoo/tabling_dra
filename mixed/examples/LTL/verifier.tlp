@@ -150,7 +150,7 @@ tverify( S, x A   ) :-  trans( S, S2 )  , verify( S2, A ).
                           % The last clause is correct only because the query is
                           % always negated, so for a successful query we will
                           % try out all the relevant clauses of trans/2 through
-                          % failing.
+                          % backtracking.
 
 
 :- coinductive coverify/2.
