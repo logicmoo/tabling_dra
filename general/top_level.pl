@@ -3,19 +3,11 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 2 February 2009.                                           %%%
+%%%  Last update: 11 February 2009.                                          %%%
 %%%                                                                          %%%
-%%%  Converted to Sicstus Prolog: 26 January 2009.                           %%%
 %%%                                                                          %%%
 
-%%% NOTE:
-%%%
-%%%    0. The clauses read in by the top level are loaded into the module
-%%%       "interpreted".  This is done to avoid conflicts with predicates
-%%%       used in the metainterpreter (and the top level).  The metainterpreter
-%%%       must access them by using
-%%%          clause( interpreted : Goal, Body ).
-%%%
+%%% NOTES FOR USERS:
 %%%
 %%%    1. To use this top level, just include it in your the file that
 %%%       contains the code for your metainterpreter:
@@ -90,8 +82,22 @@
 %%%       initialise/0  below); if the latter is used, the file is just loaded.
 %%%
 %%%
-%%%    4. The metainterpreter should provide the following predicates
-%%%       ("hooks" that will be called by the top level:
+%%%    4. The program that is read in must not contain variable literals.  It
+%%%       may, however, contain invocations of call/1.
+
+
+
+%%% NOTES FOR AUTHORS OF INTERPRETERS:
+%%%
+%%%    5. The clauses read in by the top level are loaded into the module
+%%%       "interpreted".  This is done to avoid conflicts with predicates
+%%%       used in the metainterpreter (and the top level).  The metainterpreter
+%%%       must access them by using
+%%%          clause( ... ) @ interpreted.
+%%%
+%%%
+%%%    6. The metainterpreter should provide the following predicates
+%%%       ("hooks") that will be called by the top level:
 %%%
 %%%          - default_extension/1:
 %%%                 This predicate is optional.  If present, its argument
@@ -130,7 +136,7 @@
 %%%                 case it will also backtrack to obtain more solutions.
 %%%
 %%%
-%%%    5. The metainterpreter can also define hooks of its own.  A hook
+%%%    7. The metainterpreter can also define hooks of its own.  A hook
 %%%       predicate should be declared in a fact of "hook_predicate/1".
 %%%       For example,
 %%%
