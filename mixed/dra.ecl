@@ -19,6 +19,9 @@
 %%%       To include files use the usual Prolog syntax:
 %%%           :- [ file1, file2, ... ].
 %%%
+%%%       To declare predicates used in an interpreted program as dynamic, use
+%%%           :- dynamic p/k.
+%%%
 %%%       To produce a wallpaper trace use the trace directive. For example,
 %%%           :- trace p/3, q/0, r/1.
 %%%       will trace predicates "p/3", "q/0" and "r/1".  If you want to trace
@@ -492,8 +495,8 @@ essence_hook( T, T ).    % default, may be overridden by the interpreted program
 
 %% The legal directives (check external form only).  (Used by the top level.)
 
-legal_directive( tabled _ ).
-legal_directive( (trace _) ).
+legal_directive( (tabled _)  ).
+legal_directive( (trace _)   ).
 legal_directive( (dynamic _) ).
 
 
@@ -526,7 +529,6 @@ execute_directive( (dynamic PredSpecs) ) :-
 
 will_trace( Patterns ) :-
         member( Pattern, Patterns ),
-        assert( tracing( Pattern ) ),
         assert( tracing( Pattern ) ),
         fail.
 
@@ -826,7 +828,7 @@ compute_fixed_point_( Goal, Index, Stack, Level, _ ) :-
 
 compute_fixed_point_( Goal, Index, Stack, Level, NAns ) :-
         getval( number_of_answers, NAnsNow ),
-        NAnsNow \= NAns,                 %i.e., fail if there are no new answers
+        NAnsNow \= NAns,                % i.e., fail if there are no new answers
         compute_fixed_point_( Goal, Index, Stack, Level, NAnsNow ).    % iterate
 
 
@@ -1134,7 +1136,8 @@ trace_success( Label, Goal, Level ) :-
             write_level( Level ),
             write( output, 'Retrying ' ),
             write_label_and_goal( Label, Goal ),
-            nl( output )
+            nl( output ),
+            fail
         ).
 
 trace_success( _, _, _ ).
