@@ -1,7 +1,7 @@
 %%%  Some generally-useful utilities.                                        %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 2 February 2009.                                           %%%
+%%%  Last update: 11 February 2009.                                          %%%
 %%%                                                                          %%%
 %%%  Converted to Sicstus Prolog: 26 January 2009.                           %%%
 %%%                                                                          %%%
@@ -10,12 +10,13 @@
 %%%        Prolog systems.                                                   %%%
 
 
+:- ensure_loaded( sets ).
 :- ensure_loaded( library( terms ) ). % A Sicstus library, needed for variant/2.
 
 
 %%------------------------------------------------------------------------------
 %% setval( + name, + value ):
-%% A naive implementation of setval/2 (available in Eclipse): 
+%% A naive implementation of setval/2 (available in Eclipse):
 %% set this counter to this value.
 
 setval( Name, Value ) :-
@@ -66,6 +67,7 @@ check( Goal ) :-  \+ \+ Goal .
 %%    (Note: This is mainly for "safety". If the strange names of the constants
 %%           are not needed, consider using:
 %%              mk_ground( T ) :- numbervars( T, 0, _ ).
+%%           on Prolog systems that support numbervars/3.
 %%    )
 
 :- mode mk_ground( ? ).
@@ -99,6 +101,60 @@ mk_ground_auxs( []        , N, N  ).
 mk_ground_auxs( [ T | Ts ], N, N2 ) :-
         mk_ground_aux( T, N, N1 ),
         mk_ground_auxs( Ts, N1, N2 ).
+
+
+%%------------------------------------------------------------------------------
+%% is_ground_var( + term ):
+%% Is this term a variable that was ground by mk_ground/1?
+
+is_ground_var( T ) :-
+        atom( T ),
+        atom_string( T, S ),
+        substring( S, " V", 1 ).
+
+
+%%------------------------------------------------------------------------------
+%% ground_term_variables( + term, - set of variables ):
+%% Given a term grounded by mk_ground/1, produce the set of the grounded form of
+%% variables occurring in the term.
+%% (Note that the term may be a subset of a larger term grounded by mk_ground/1,
+%%  so the variable numbers need not be contiguous.)
+
+:- mode ground_term_variables( +, - ).
+
+ground_term_variables( T, S ) :-
+        empty_set( S0 ),
+        gtv_( T, S0, S ),
+        !.
+
+ground_term_variables( T, _ ) :-
+        error( [ "Bad call to ground_term_variables (term not ground): ", T ] ).
+
+%
+:- mode gtv_( +, +, - ).
+
+gtv_( V, S, NS ) :-
+        var( V ),
+        !,
+        fail.
+
+gtv_( T, S, NS ) :-
+        is_ground_var( T ),
+        !,
+        add_to_set( T, S, NS ).
+
+gtv_( T, S, S ) :-
+        atom( T ),
+        !.
+
+gtv_( [ H | T ], S, NS ) :-
+        !,
+        gtv_( H,  S, S2 ),
+        gtv_( T, S2, NS ).
+
+gtv_( T, S, NS ) :-
+        T =.. [ _ | Args ],
+        gtv_( Args, S, NS ).
 
 
 
@@ -227,7 +283,8 @@ check_predspec( PredSpec ) :-
 is_good_clause( T ) :-
         nonvar( T ),
         get_clause_head( T, H ),
-        is_good_clause_head( H ).
+        is_good_clause_head( H ),
+        has_good_clause_body( T ).
 
 
 %%------------------------------------------------------------------------------
@@ -256,6 +313,95 @@ is_good_clause_head( Hd ) :-
 is_good_clause_head( Hd ) :-
         compound( Hd ),
         Hd \= [ _ | _ ].
+
+
+%%------------------------------------------------------------------------------
+%% has_good_clause_body( + term ):
+%% Treat this non-variable term as a clause, check it for elementary sanity.
+%% Assume that the head is not a variable.
+%%
+%% NOTE: The check is mainly to ensure that there are no variable literals.
+%%       Invocations of call/1 are allowed, but an error will be raised if
+%%       the argument is a variable that had no earlier occurrences.
+
+:-mode has_good_clause_body( + ).
+
+has_good_clause_body( Clause ) :-
+        Clause = (_ :- Body),
+        !,
+        copy_term( Clause, Clause2 ),
+        mk_ground( Clause2 ),
+        Clause2 = (Head2 :- Body2),
+        ground_term_variables( Head2, HeadVars ),
+        check_body_( Body2, Body, HeadVars, Clause ).
+
+has_good_clause_body( _Fact ).
+
+%
+% Arg1: the body with variables ground by numbervars
+% Arg2: the body in its original form
+% Arg3: the ground variables seen so far
+% Arg4: the clause (just for better diagnostics)
+%
+check_body_( _, V, _, Clause ) :-
+        var( V ),
+        !,
+        error( [ "A variable literal (\"", V, "\") in \"", Clause, "\"" ] ).
+
+check_body_( (GA -> GB ; GC), (A -> B ; C), Vars, Clause ) :-
+        !,
+        check_body_( GA, A, Vars, Clause ),
+        ground_term_variables( GA, AVars ),
+        set_union( AVars, Vars, NVars ),
+        check_body_( GB, B, NVars, Clause ),
+        check_body_( GC, C,  Vars, Clause ).
+
+check_body_( ( GA ; GB ), ( A ; B ), Vars, Clause ) :-
+        !,
+        check_body_( GA, A, Vars, Clause ),
+        check_body_( GB, B, Vars, Clause ).
+
+check_body_( ( GA , GB ), ( A , B ), Vars, Clause ) :-
+        !,
+        check_body_( GA, A, Vars, Clause ),
+        ground_term_variables( GA, AVars ),
+        set_union( AVars, Vars, NVars ),
+        check_body_( GB, B, NVars, Clause ).
+
+check_body_( \+ GA, \+ A, Vars, Clause ) :-
+        !,
+        check_body_( GA, A, Vars, Clause ).
+
+check_body_( once GA, once A, Vars, Clause ) :-
+        !,
+        check_body_( GA, A, Vars, Clause ).
+
+check_body_( call( GA ), call( A ), Vars, Clause ) :-
+        !,
+        (
+            nonvar( A )
+        ->
+            check_body_( GA, A, Vars, Clause )
+        ;
+            (
+                is_set_member( GA, Vars )
+            ->
+                true
+            ;
+                error( [ "The variable argument of \"", call( A ),
+                         "\" does not have previous occurrences in \"",
+                         Clause, ".\""
+                       ]
+                     )
+            )
+        ).
+
+check_body_( _, T, _, Clause ) :-
+        \+ callable( T ),
+        !,
+        error( "Incorrect literal (\"", T, "\") in \"", Clause, ".\"" ).
+
+check_body_( _, _, _, _ ).
 
 
 
@@ -424,7 +570,7 @@ write_clause( (?- Query), OutputStream ) :-
         nl( OutputStream ).
 
 write_clause( Clause, OutputStream ) :-
-        write_term( OutputStream, Clause, [ indented( true ), quoted( true ) ] 
+        write_term( OutputStream, Clause, [ indented( true ), quoted( true ) ]
                   ),
         write( OutputStream, '.' ),
         nl( OutputStream ).
@@ -472,8 +618,8 @@ write_list( S, NotAList ) :-
 
 :- mode getline( +, - ).
 
-getline( InputStream, Line ) :-  
-        get_char( InputStream, C ),  
+getline( InputStream, Line ) :-
+        get_char( InputStream, C ),
         getline_( InputStream, C, Line ).
 
 %
@@ -492,8 +638,8 @@ getline_( InputStream, C   , [ C | Cs ] ) :-
 
 :- mode putline( +, + ).
 
-putline( OutputStream, Cs ) :-  
-        putchars( OutputStream, Cs ),  
+putline( OutputStream, Cs ) :-
+        putchars( OutputStream, Cs ),
         nl( OutputStream ).
 
 
@@ -505,8 +651,8 @@ putline( OutputStream, Cs ) :-
 
 putchars( _OutputStream, []         ).
 
-putchars( OutputStream, [ C | Cs ] ) :-  
-        put_char( OutputStream, C ),  
+putchars( OutputStream, [ C | Cs ] ) :-
+        put_char( OutputStream, C ),
         putchars( OutputStream, Cs ).
 
 
