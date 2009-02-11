@@ -51,9 +51,9 @@
 %%%       administrative information and that may differ in two terms that are
 %%%       "semantically" equal or variants of each other. (Such, for example, is
 %%%       the argument that carries the set of coinductive hypotheses in a
-%%%       co-logic program translated into Prolog: see
-%%%       "../coind/translate_clp". Mind you, that translation need not be
-%%%       applied to programs executed by this interpreter).
+%%%       co-logic program translated into Prolog: see "../coind/translate_clp".
+%%%       Mind you, that translation need not be applied to programs executed by
+%%%       this interpreter).
 %%%
 %%%       For example, the presence of
 %%%
@@ -104,7 +104,7 @@
    ------------
 
    Some predicates are "tabled", because the user has declared them to be such
-   by using an appropriate directive.  E.g.,
+   by using an appropriate directive, e.g.,
 
        :- tabled p/2 .
 
@@ -117,7 +117,7 @@
    refer to it as a "query" or a "resolvent").
 
    Similarly, the user can declare a predicate to be "coinductive", by using
-   another directive.  E.g.,
+   another kind of directive, e.g.,
 
        :- coinductive p/2 .
 
@@ -184,17 +184,26 @@
 
            Detailed comments:
            ..................
-           In general, a side-effect of each evaluation of a query will be the
-           generation -- for each tabled goal encounted during the evaluation --
-           of a set of facts that form the goal's "least fixed point
-           interpretation".  (Of course, if this set is not sufficiently small,
-           the interpreter will not terminate successfully.)  The facts (which
-           need not be ground!) are all entered into the table "answered", and
-           the members of different sets are distinguished by their association
-           with the appropriate goal: a fact in "answered" is a result that is
-           valid only for a variant of the accompanying goal.
 
-           The need for annotating a fact with information about the
+           In general, for each success of a tabled goal encountered during the
+           evaluation of a query, the interpreter will make certain that the
+           result, i.e., the successful instantiation of that goal (which need
+           not be ground!) is stored in the table "answer", accompanied by a
+           variant of the original version of the goal (i.e., as it appeared
+           when it was first encountered).
+
+           Before a query finally fails (after exhausting all the answers),
+           tabled goals encountered during its evaluation will have computed
+           their least fixed points, i.e., all the possible results for those
+           goals will be stored in "answer".  (Of course, if this set of all
+           answers is not sufficiently small, the interpreter will not terminate
+           successfully.)
+
+           Results stored in "answer" can be picked up during later evaluation
+           but each of them is valid only for a variant of the accompanying
+           goal.
+
+           The need for associating a fact with information about the
            corresponding goal might not be immediately obvious.  Consider the
            following example (which is simplistic in that the computation itself
            is trivial):
@@ -225,7 +234,7 @@
            A subsequent invocation of p( U, V ) would then return all three
            results, i.e., also "p( b, b )"!
 
-           The proper contents of "answer" would be as follows (though not
+           The proper contents of "answer" should be as follows (though not
            necessarily in this order):
 
                answer( p( U, V ), p( U, U ) ).
@@ -233,22 +242,22 @@
                answer( p( Y, b ), p( b, b ) ).
                answer( p( Y, b ), p( a, b ) ).
 
-           Please note that entries in "answer" will not be variants of each
-           other.
+           Please note that two different entries in "answer" will not be
+           variants of each other.
 
    -- number_of_answers
 
-           This is a non-logical variable that records the size of "answer".
-           It is used for determining whether new answers have been
-           generated during a phase of the computation.
+           This is a non-logical variable that records the size of "answer".  It
+           is useful for determining whether new answers have been generated
+           during a phase of the computation.
 
            This variable is not cleared before the evaluation of a new query.
 
    -- pioneer( goal, index )
 
-           If the current goal is tabled, and it is not a variant of any of
-           its ancestors, then the goal is called a "pioneer" and obtains an
-           "index" (i.e., an unique identifier). Both the goal and its index
+           If the current goal is tabled, and it is not a variant of any of its
+           ancestors, then the goal is called a "pioneer" and obtains an "index"
+           (i.e., an unique identifier). Both the goal and its index are
            recorded in this table.
 
            The role of a pioneer is to compute the fixpoint (by tabling answers)
@@ -257,18 +266,20 @@
            "answer", without using their clauses (which prevents endless
            recursion).
 
-           If a pioneer is determined not to be the "topmost looping goal" in a
-           "cluster" of interdependent goals (see ref. [2]), then it loses the
-           status of a pioneer, and its role will be overtaken by the topmost
-           goal in the cluster.
+           If a pioneer is later determined not to be the "topmost looping goal"
+           in a "cluster" of interdependent goals (see ref. [2]), then it loses
+           the status of a pioneer, and its role will be overtaken by the
+           topmost goal in the cluster.  (This can happen if one of the
+           descendants of a pioneer turns out to be a variant of one of its
+           ancestors.)
 
            A pioneer also loses its status if its fixpoint has been computed: it
            then becomes a "completed" goal (and all its variants become
            completed).
 
-           A pioneer "G" may also lose its status because a variant goal "G'"
-           that is encountered after "G" succeeds (with a partial result) has
-           become completed by computing its fixpoint: "G" then becomes
+           A pioneer "G" may also lose its status because another goal "G'",
+           encountered after "G" succeeds without yet becoming completed, has
+           become completed: if "G'" is a variant of "G", thne "G" becomes
            completed as well.
 
            When a pioneer loses its status, the associated entries in "pioneer",
@@ -289,7 +300,6 @@
                   (still) a pioneer.
            )
 
-
    -- pioneer_index
 
            This is a non-logical variable that holds the index to be used for
@@ -304,7 +314,8 @@
            table records the instantiations of "G" that were returned as "G"
            succeeded.  By using the table, the interpreter prevents "G" from
            returning the same answer over and over again: in general, each
-           tabled will not produce two results that are variants of each other.
+           tabled goal will not produce two results that are variants of each
+           other.
 
            When a goal loses its pioneer status (because it is determined to be
            a part of a larger loop, or because it has become completed), the
@@ -338,8 +349,10 @@
            pioneer, the clause that is currently being used by the pioneer
            (i.e., the clause that led to "G") is stored in this table, together
            with the unique index of the pioneer.  "G" will then succeed only
-           with tabled answers, but the clause will be used again as
-           backtracking brings the computation back to the pioneer.
+           with answers that have been tabled so far, but the clause will be
+           used again as backtracking brings the computation back to the
+           pioneer.  (This is the essence of the "dynamic reordering of
+           alternatives".)
 
            When a goal loses its pioneer status (because it is determined to be
            a part of a larger loop, or because it has become completed), the
@@ -370,8 +383,8 @@
 
            A goal that matches something in this table will show up on the
            wallpaper trace.  This table is empty by default, and filled only
-           upon encountering "trace" directives when the interpreted program
-           is being read.
+           by invocations of "trace" (most often in "trace" directives
+           encountered when the interpreted program is being read).
 
 *******************************************************************************/
 
@@ -424,32 +437,32 @@ initialise :-
 %%        have to be modified substantially.
 %%        Certain other built-ins may also require special treatment.
 
-builtin( true               ).
-builtin( false              ).
-builtin( fail               ).
-builtin( \+( _ )            ).  % special treatment in solve/3
-builtin( once( _ )          ).  % special treatment in solve/3
+builtin( (_ , _)            ).  % special treatment in solve/3
 builtin( (_ -> _ ; _)       ).  % special treatment in solve/3
 builtin( (_ ; _)            ).  % special treatment in solve/3
-builtin( (_ , _)            ).  % special treatment in solve/3
+builtin( \+( _ )            ).  % special treatment in solve/3
+builtin( _ < _              ).
 builtin( _ = _              ).
-builtin( _ \= _             ).
+builtin( _ =< _             ).
 builtin( _ > _              ).
 builtin( _ >= _             ).
-builtin( _ =< _             ).
-builtin( _ < _              ).
+builtin( _ \= _             ).
 builtin( _ is _             ).
+builtin( assert( _ )        ).
 builtin( atom( _ )          ).
+builtin( fail               ).
+builtin( false              ).
+builtin( member( _, _ )     ).
+builtin( nl                 ).
+builtin( once( _ )          ).  % special treatment in solve/3
+builtin( read( _ )          ).
+builtin( retractall( _ )    ).
+builtin( set_flag( _, _ )   ).
+builtin( true               ).
 builtin( var( _ )           ).
 builtin( write( _ )         ).
-builtin( writeln( _ )       ).
 builtin( write_term( _, _ ) ).
-builtin( nl                 ).
-builtin( read( _ )          ).
-builtin( set_flag( _, _ )   ).
-builtin( member( _, _ )     ).
-builtin( assert( _ )        ).
-builtin( retractall( _ )    ).
+builtin( writeln( _ )       ).
 builtin( set_print_depth( _, _ )   ).      % not a real built-in, see  top_level
 
 
@@ -463,7 +476,7 @@ hook_predicate( essence_hook( _, _ ) ).
 
 %% The default essence_hook:
 
-:- dynamic   essence_hook/2.
+:- dynamic essence_hook/2.
 
 essence_hook( T, T ).    % default, may be overridden by the interpreted program
 
