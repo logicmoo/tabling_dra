@@ -3,7 +3,7 @@
 %%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 10 February 2009.                                          %%%
+%%%  Last update: 11 February 2009.                                          %%%
 %%%                                                                          %%%
 
 %%% NOTE:
@@ -453,6 +453,7 @@ builtin( _ \= _             ).
 builtin( _ is _             ).
 builtin( assert( _ )        ).
 builtin( atom( _ )          ).
+builtin( call( _ )          ).
 builtin( fail               ).
 builtin( false              ).
 builtin( member( _, _ )     ).
@@ -638,7 +639,19 @@ solve( (Goals1 , Goals2), Stack, Level ) :-
         solve( Goals2, Stack, Level ).
 
 
-% assert
+% call/1
+
+solve( call( Goal ), Stack, Level ) :-
+        (
+            var( Goal )
+        ->
+            error( [ "A variable meta-call:", call( Goal ) ] )
+        ;
+            solve( Goal, Stack, Level )
+        ).
+
+
+% assert/1
 
 solve( assert( Clause ), _, _ ) :-
         !,
@@ -652,7 +665,7 @@ solve( assert( Clause ), _, _ ) :-
         assert( Clause )@interpreted.
 
 
-% retractall
+% retractall/1
 
 solve( retractall( C ), _, _ ) :-
         !,
