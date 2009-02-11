@@ -133,7 +133,7 @@ ground_term_variables( T, _ ) :-
 %
 :- mode gtv_( +, +, - ).
 
-gtv_( V, S, NS ) :-
+gtv_( V, _, _ ) :-
         var( V ),
         !,
         fail.
