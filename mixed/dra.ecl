@@ -761,9 +761,21 @@ solve( Goal, Stack, Level ) :-
             memo( OriginalGoal, Goal, Level ),
             trace_success( pioneer, Goal, Level )
         ;
-            % All the clauses have been exhausted,
-            % except possibly for looping alternatives.
+            % All the clauses have been exhausted, except possibly for looping
+            % alternatives. However, the pionerr goal may have become completed
+            % (by a later variant), or it might have lost its pioneer status
+            % (because it belongs to a larger loop).
 
+            is_completed( Goal )                      % a variant has completed?
+        ->
+            optional_trace( 'Removing completed pioneer: ',
+                            Goal, Index, Level
+                          ),
+            rescind_pioneer_status( Index ),
+            get_answer( Goal ),
+            new_result_or_fail( Index, Goal ),
+            trace_success( 'completed now', Goal, Level )
+        ;
             is_a_variant_of_a_pioneer( Goal, Index )  % not lost pioneer status?
         ->
             (
@@ -782,17 +794,9 @@ solve( Goal, Stack, Level ) :-
                 fail
             )
         ;
-            % No longer a pioneer!
-            (
-                is_completed( Goal ),
-                get_answer( Goal ),
-                new_result_or_fail( Index, Goal ),
-                trace_success( 'completed now', Goal, Level )
-            ;
-                trace_failure( 'no longer a pioneer', Goal, Level ),
-                retractall( result( Index, _ ) ),
-                fail
-            )
+            trace_failure( 'no longer a pioneer', Goal, Level ),
+            retractall( result( Index, _ ) ),
+            fail
         ).
 
 
