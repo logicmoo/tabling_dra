@@ -138,6 +138,7 @@
    interpreter, sometimes extensively: "!/0" is a good example.)
 
 
+
    Data structures
    ---------------
 
@@ -147,6 +148,7 @@
    goals.
 
    The tables (implemented as dynamic predicates of Prolog) are:
+
 
    -- coinductive( generic head )
 
@@ -163,6 +165,7 @@
                :- tabled p/2 .
            it stores the fact
                tabled( p( _, _ ) ).
+
 
    -- answer( goal, fact )
 
@@ -256,6 +259,7 @@
 
            This variable is not cleared before the evaluation of a new query.
 
+
    -- pioneer( goal, index )
 
            If the current goal is tabled, and it is not a variant of any of its
@@ -264,7 +268,7 @@
            recorded in this table.
 
            The role of a pioneer is to compute the fixpoint (by tabling answers)
-           for itself and its cluster before failing: this is why the results
+            for itself and its cluster before failing: this is why the results
            for its variant descendants can be obtained simply by querying
            "answer", without using their clauses (which prevents endless
            recursion).
@@ -310,6 +314,7 @@
 
            The variable is cleared before the evaluation of a new query.
 
+
    -- result( index, fact )
 
            A tabled goal "G" that "started out" as a pioneer may have associated
@@ -326,6 +331,7 @@
            only when the goal finally fails.
 
            This table is cleared before the evaluation of a new query.
+
 
    -- loop( index, list of goals )
 
@@ -346,6 +352,7 @@
 
            This table is cleared before the evaluation of a new query.
 
+
    -- looping_alternative( index, clause )
 
            When a goal "G" is determined to be a variant descendant of a
@@ -362,6 +369,7 @@
            associated entries in "looping_alternative" are removed.
 
            This table is cleared before the evaluation of a new query.
+
 
    -- completed( goal )
 
@@ -382,6 +390,7 @@
                   completed.
            )
 
+
    -- tracing( goal )
 
            A goal that matches something in this table will show up on the
@@ -392,11 +401,11 @@
 *******************************************************************************/
 
 
+
 :- ensure_loaded( [ '../general/top_level',
                     '../general/utilities'
                   ]
                 ).
-
 
 
 
@@ -732,8 +741,8 @@ solve( Goal, Stack, Level ) :-
         ).
 
 
-% A pioneer goal is solved by rules, producing results that are stored in
-% "answer".
+% A pioneer goal is solved by program clauses, producing results that are stored
+% in "answer".
 % The goal succeeds as each answer is produced, and tries to come up with more
 % after backtracking.
 % When the usual clauses are exhausted, clauses stored in the associated entries
@@ -741,9 +750,9 @@ solve( Goal, Stack, Level ) :-
 % point is reached.  The pioneer (and all the goals in its cluster) will then be
 % marked as complete, and will cease to be a pioneer.
 %
-% (Note that a pioneer but may also lose its status when some descendant goal
-%  finds a variant ancestor that is also an ancestor of the pioneer.  See
-%  variant_of_ancestor/3.)
+% (Note that a pioneer but also lose its status when some descendant goal finds
+%  a variant ancestor that is also an ancestor of the pioneer.  See
+%  variant_of_ancestor.)
 
 solve( Goal, Stack, Level ) :-
         copy_term( Goal, OriginalGoal ),
@@ -761,10 +770,11 @@ solve( Goal, Stack, Level ) :-
             memo( OriginalGoal, Goal, Level ),
             trace_success( pioneer, Goal, Level )
         ;
-            % All the clauses have been exhausted, except possibly for looping
-            % alternatives. However, the pionerr goal may have become completed
-            % (by a later variant), or it might have lost its pioneer status
-            % (because it belongs to a larger loop).
+
+            % All the clauses have been exhausted, for looping alternatives (if
+            % any).  However, the goal may have become completed (by a later
+            % variant), or it might have lost its pioneer status (because it
+            % belongs to a larger loop).
 
             is_completed( Goal )                      % a variant has completed?
         ->
@@ -856,17 +866,17 @@ compute_fixed_point_( Goal, Index, Stack, Level, NAns ) :-
 %%                    ):
 %% Succeeds if the goal is a variant of the goal in some member of the list.
 %%
+
 %% SIDE EFFECT: If successful, then intermediate pioneer goals will lose their
-%%              status as pioneers, and the associated entries in "loop" and
-%%              "looping_alternative" will be removed.  Moreover, if the variant
-%%              ancestor is a pioneer, then:
-%%                - the entire prefix of the list upto (but not including) the
-%%                  variant ancestor will be added to the cluster of that
-%%                  ancestor (by storing it in "loop"), after filtering out
-%%                  goals that are not tabled;
-%%                - the current clause invoked by the ancestor (which can be
-%%                  found together with the ancestor on the stack) is added to
-%%                  "looping_alternative" entries for that ancestor.
+%%              status as pioneers (and the associated entries in "loop" and
+%%              "looping_alternative" will be removed).  Moreover, if the
+%%              variant ancestor is a pioneer, then:
+%%                - the entire prefix of the list of goals upto (but not
+%%                  including) the variant ancestor will be added to the cluster
+%%                  of that ancestor (by storing it in "loop");
+%%                - a copy of the current clause invoked by the ancestor (which
+%%                  can be found together with the ancestor on the stack) is
+%%                  added to "looping_alternative" entries for that ancestor.
 
 :- mode variant_of_ancestor( +, +, + ).
 
@@ -955,7 +965,6 @@ is_answer_known( Goal, Fact ) :-
         !.
 
 
-
 %% memo( + goal, + fact, + level for tracing ):
 %% If the table "answer" does not contain a variant of this fact paired with
 %% a variant of this goal, then add the pair to the table, increasing
@@ -973,7 +982,6 @@ memo( Goal, Fact, Level ) :-
         copy_term( Goal, Copy ),
         assert( answer( Copy, Goal, Fact ) ),
         incval( number_of_answers ).
-
 
 
 %% get_answer( +- goal ):
@@ -994,6 +1002,18 @@ get_answer( Goal ) :-
 
 
 
+%% is_completed( + goal ):
+%% Succeeds iff the goal is a variant of a goal that has been stored in
+%% the table "completed".
+
+:- mode is_completed( + ).
+
+is_completed( Goal ) :-
+        copy_term( Goal, Copy ),
+        completed( Copy, G ),
+        are_essences_variants( Goal, G ).
+
+
 %% complete_goal( + goal, + index for tracing ):
 %% Make sure the goal is marked as completed.
 
@@ -1011,19 +1031,6 @@ complete_goal( Goal, Level ) :-
 
 
 
-%% is_completed( + goal ):
-%% Succeeds iff the goal is a variant of a goal that has been stored in
-%% the table "completed".
-
-:- mode is_completed( + ).
-
-is_completed( Goal ) :-
-        copy_term( Goal, Copy ),
-        completed( Copy, G ),
-        are_essences_variants( Goal, G ).
-
-
-
 %% is_a_variant_of_a_pioneer( + goal, -index ):
 %% Succeeds if the goal is a variant of a goal that is tabled in "pioneer";
 %% returns the index of the relevant entry in table "pioneer".
@@ -1035,7 +1042,6 @@ is_a_variant_of_a_pioneer( Goal, Index ) :-
         pioneer( Copy, G, Index ),
         are_essences_variants( Goal, G ),
         !.
-
 
 
 %% add_pioneer( + goal, - index ):
@@ -1067,7 +1073,7 @@ is_result_known( Index, Fact ) :-
 %% If the table "result" already contains a variant of this fact associated with
 %% this index, then fail.  Otherwise record the fact in the table and succeed.
 
-:- mode  new_result_or_fail( +, + ).
+:- mode new_result_or_fail( +, + ).
 
 new_result_or_fail( Index, Fact ) :-
         \+ is_result_known( Index, Fact ),
@@ -1092,8 +1098,11 @@ add_loop( Index, Goals ) :-
         assert( loop( Index, Goals ) ).
 
 
+
 %% add_looping_alternative( + index, + Clause ):
 %% Add and entry to "looping_alternative".
+
+:- mode add_looping_alternative( +, + ).
 
 add_looping_alternative( Index, Clause ) :-          % duplicates are not stored
         looping_alternative( Index, C ),
@@ -1114,10 +1123,13 @@ add_looping_alternative( Index, Clause ) :-
 %% Are both the terms variants of each other after filtering through
 %% essence_hook?
 
+:- mode are_essences_variants( +, + ).
+
 are_essences_variants( T1, T2 ) :-
         once essence_hook( T1, ET1 ),
         once essence_hook( T2, ET2 ),
         are_variants( ET1, ET2 ).
+
 
 
 %% trace_entry( + label, + goal, + level ):
@@ -1175,7 +1187,6 @@ trace_failure( Label, Goal, Level ) :-
 trace_failure( _, _, _ ).
 
 
-
 %% Auxiliaries for tracing:
 
 write_level( Level ) :-
@@ -1187,7 +1198,6 @@ write_label_and_goal( Label, Goal ) :-
         write( output, Label ),
         write( output, ': ' ),
         write( output, Goal ).
-
 
 
 
