@@ -70,9 +70,10 @@
 %%%             may drastically affect the semantics of the interpreted program
 %%%             in a fashion that would be hard to understand for someone who
 %%%             does not understand the details of the interpreter.
-
+%%%
 %%% LIMITATIONS: - The interpreted program should not contain cuts.
 %%%              - Error detection is quite rudimentary.
+
 
 
 
@@ -190,7 +191,6 @@
 
            Detailed comments:
            ..................
-
            In general, for each success of a tabled goal encountered during the
            evaluation of a query, the interpreter will make certain that the
            result, i.e., the successful instantiation of that goal (which need
@@ -399,6 +399,7 @@
            encountered when the interpreted program is being read).
 
 *******************************************************************************/
+
 
 
 
@@ -786,6 +787,7 @@ solve( Goal, Stack, Level ) :-
             new_result_or_fail( Index, Goal ),
             trace_success( 'completed now', Goal, Level )
         ;
+
             is_a_variant_of_a_pioneer( Goal, Index )  % not lost pioneer status?
         ->
             (
@@ -804,6 +806,7 @@ solve( Goal, Stack, Level ) :-
                 fail
             )
         ;
+
             trace_failure( 'no longer a pioneer', Goal, Level ),
             retractall( result( Index, _ ) ),
             fail
