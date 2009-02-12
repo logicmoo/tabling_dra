@@ -13,6 +13,24 @@
 
 
 %%------------------------------------------------------------------------------
+%% make_set( + list, - set ):
+%% Create a set that contains all the elements in the list.
+
+:- mode make_set( +, - ).
+
+make_set( L, S ) :-
+        make_empty_set( S0 ),
+        make_set_( L, S0, S ).
+
+%
+make_set_( [], S, S ).
+
+make_set_( [ H | T ], S, NS ) :-
+        add_to_set( H, S, S2 ),
+        make_set_( T, S2, NS ).
+
+
+%%------------------------------------------------------------------------------
 %% is_empty_set( - set ) :
 %% Is this an empty set?
 
@@ -22,12 +40,12 @@ is_empty_set( [] ).
 
 
 %%------------------------------------------------------------------------------
-%% empty_set( - set ) :
+%% make_empty_set( - set ) :
 %% Create an empty set.
 
-:- mode empty_set( - ).
+:- mode make_empty_set( - ).
 
-empty_set( [] ).
+make_empty_set( [] ).
 
 
 %%------------------------------------------------------------------------------
