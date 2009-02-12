@@ -4,20 +4,23 @@ This directory includes the following files:
 
 bad.tlp:
 bad2.tlp:
+bad3.tlp:
+bad4.tlp:
         Examples that test some of the diagnostics of the tabling
         interpreter.
 
 comment_example.tlp:
-        The example described in the head comment of
-        "../eager_tabling".
+
+        An example that demonstrates why tabled results must be annotated
+        with the corresponding goals.
 
 small_comment_example.tlp:
         A minimal example that demonstrates why tabled results must be
         annotated with the corresponding goals.
 
 conditional.tlp:
-        A wholly uninteresting example, designed to test that
-        "../eager_tabling" handles conditionals correctly.
+        A wholly uninteresting example, designed to test that the
+        interpreter handles conditionals correctly.
 
 graph.tlp:
         A simple example that demonstrates a left-recursive program for
@@ -35,7 +38,7 @@ guo_gupta_6_1.tlp:
 module.tlp:
         A wholly uninteresting example, designed to test that the
         predicate names in the interpreted program cannot conflict with
-        the names of the predicates that implement "../eager_tabling".
+        the names of the predicates that implement the interpreter.
 
 paper_example.tlp:
         An example from "Linear Tabling Strategies and Optimizations" by
