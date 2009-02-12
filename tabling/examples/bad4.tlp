@@ -1,0 +1,10 @@
+head( Whatever ) :-
+      (
+          p( X, Y )
+      ->
+          call( X )
+      ;
+          q( Z ),
+          call( Z ),
+          call( Y )
+      ).

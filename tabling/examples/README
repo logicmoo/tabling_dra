@@ -53,6 +53,10 @@ parse.tlp:
         "Linear Tabling Strategies and Optimizations" by Neng-Fa Zhou,
         Taisuke Sato and Yi-Dong Shen.
 
+simple1.tlp:
+simple2.tlp:
+        Two artificial examples to exercise tabling interpreters.
+
 trivial_not_tabled.tlp:
         A trivial example in pure Prolog, a "smoke-test" for the
         interpreter.
