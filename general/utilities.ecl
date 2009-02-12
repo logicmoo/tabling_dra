@@ -90,7 +90,7 @@ ground_term_variables( T, S ) :-
         !.
 
 ground_term_variables( T, _ ) :-
-        error( [ "Bad call to ground_term_variables (term not ground): ", T ] ).
+        error( [ 'Bad call to ground_term_variables (term not ground): ', T ] ).
 
 %
 :- mode gtv_( +, +, - ).
@@ -186,9 +186,9 @@ most_general_instance( Term, Pattern ) :-
 predspecs_to_patterns( Var, _ ) :-
         var( Var ),
         !,
-        error( [ "A variable instead of predicate specifications: \", ",
+        error( [ 'A variable instead of predicate specifications: \"',
                  Var,
-                 "\""
+                 '\"'
                ]
              ).
 
@@ -222,9 +222,9 @@ predspec_to_pattern( PredSpec, Pattern ) :-
 check_predspec( Var ) :-
         var( Var ),
         !,
-        error( [ "A variable instead of a predicate specification: \", ",
+        error( [ 'A variable instead of a predicate specification: \"',
                  Var,
-                 "\""
+                 '\"'
                ]
              ).
 
@@ -235,7 +235,7 @@ check_predspec( P / K ) :-
         !.
 
 check_predspec( PredSpec ) :-
-        error( [ "An incorrect predicate specification: \"", PredSpec, "\"" ] ).
+        error( [ 'An incorrect predicate specification: \"', PredSpec, '\"' ] ).
 
 
 
@@ -305,7 +305,7 @@ has_good_clause_body( _Fact ).
 check_body_( V, _, Clause ) :-
         var( V ),
         !,
-        error( [ "A variable literal (\"", V, "\") in \"", Clause, "\"" ] ).
+        error( [ 'A variable literal (\"', V, '\") in \"', Clause, '\"' ] ).
 
 check_body_( (A -> B ; C), Vars, Clause ) :-
         !,
@@ -333,7 +333,7 @@ check_body_( \+ A, Vars, Clause ) :-
         !,
         check_body_( A, Vars, Clause ).
 
-check_body_( once A, Vars, Clause ) :-
+check_body_( once( A ), Vars, Clause ) :-
         !,
         check_body_( A, Vars, Clause ).
 
@@ -349,9 +349,9 @@ check_body_( call( A ), Vars, Clause ) :-
             ->
                 true
             ;
-                error( [ "The variable argument of \"", call( A ),
-                         "\" does not have previous occurrences in \"",
-                         Clause, ".\""
+                error( [ 'The variable argument of \"', call( A ),
+                         '\" does not have previous occurrences in \"',
+                         Clause, '.\"'
                        ]
                      )
             )
@@ -360,7 +360,7 @@ check_body_( call( A ), Vars, Clause ) :-
 check_body_( T, _, Clause ) :-
         \+ callable( T ),
         !,
-        error( "Incorrect literal (\"", T, "\") in \"", Clause, ".\"" ).
+        error( 'Incorrect literal (\"', T, '\") in \"', Clause, '.\"' ).
 
 check_body_( _, _, _ ).
 
@@ -389,22 +389,22 @@ verify_program( _ ).
 verify_program_item( Var ) :-
         var( Var ),
         !,
-        error( [ "A variable clause: \"", Var, "\"" ] ).
+        error( [ 'A variable clause: \"', Var, '\"' ] ).
 
 verify_program_item( (:- Var) ) :-
         var( Var ),
         !,
-        error( [ "A variable directive: \"", (:- Var), "\"" ] ).
+        error( [ 'A variable directive: \"', (:- Var), '\"' ] ).
 
 verify_program_item( (?- Var) ) :-
         var( Var ),
         !,
-        error( [ "A variable query: \"", (?- Var), "\"" ] ).
+        error( [ 'A variable query: \"', (?- Var), '\"' ] ).
 
 verify_program_item( Clause ) :-
         \+ is_good_clause( Clause ),
         !,
-        error( [ "Incorrect clause: \"", Clause, ".\"" ] ).
+        error( [ 'Incorrect clause: \"', Clause, '.\"' ] ).
 
 verify_program_item( _ ).
 
@@ -420,7 +420,7 @@ ensure_filename_is_an_atom( FileName ) :-
 
 ensure_filename_is_an_atom( FileName ) :-
         % \+ atom( FileName ),
-        error( [ "*** Illegal file name \"", FileName, "\" (not an atom). ***" ]
+        error( [ '*** Illegal file name \"', FileName, '\" (not an atom). ***' ]
              ).
 
 
@@ -442,7 +442,7 @@ ensure_extension( FileNameString, _, RootFileNameString, FileNameString ) :-
         split_string( FileNameString, ".", "", Parts ),
         \+ length( Parts, 1 ),                               % extension present
         !,
-        once append( [ RootFileNameString ], [ _ ], Parts ).       % i.e., split
+        once( append( [ RootFileNameString ], [ _ ], Parts ) ).    % i.e., split
 
 ensure_extension( FileNameString, ExtString,
                   FileNameString, FullFileNameString
@@ -522,9 +522,9 @@ write_clauses( _, _ ).
 write_list( S, V ) :-
         var( V ),
         !,
-        warning( [ "Incorrect invocation of write_list/1: \"",
+        warning( [ 'Incorrect invocation of write_list/1: \"',
                    write_list( S, V ),
-                   "\""
+                   '\"'
                  ]
                ).
 
@@ -538,9 +538,9 @@ write_list( S, [ H | T ] ) :-
 
 write_list( S, NotAList ) :-
         !,
-        warning( [ "Incorrect invocation of write_list/1: \"",
+        warning( [ 'Incorrect invocation of write_list/1: \"',
                    write_list( S, NotAList ),
-                   "\""
+                   '\"'
                  ]
                ).
 
@@ -561,7 +561,7 @@ getline( InputStream, Line ) :-
 %
 :- mode getline_( +, +, - ).
 
-getline_( _InputStream, "\n", []          ) :-  !.
+getline_( _InputStream, '\n', []          ) :-  !.
 
 getline_( InputStream, C   , [ C | Cs ] ) :-
         get_char( InputStream, NC ),
@@ -603,9 +603,9 @@ putchars( OutputStream, [ C | Cs ] ) :-
 warning( V ) :-
         var( V ),
         !,
-        warning( [ "Incorrect invocation of warning/1: \"",
+        warning( [ 'Incorrect invocation of warning/1: \"',
                    warning( V ),
-                   "\""
+                   '\"'
                  ]
                ).
 
@@ -631,7 +631,7 @@ warning( NotAList ) :-
 %% Begin a warning printout.
 
 begin_warning :-
-        write( warning_output, "--- WARNING: " ).
+        write( warning_output, '--- WARNING: ' ).
 
 
 %%------------------------------------------------------------------------------
@@ -639,7 +639,7 @@ begin_warning :-
 %% End a warning printout.
 
 end_warning :-
-        writeln( warning_output, " ---" ).
+        writeln( warning_output, ' ---' ).
 
 
 
@@ -653,9 +653,9 @@ end_warning :-
 error( V ) :-
         var( V ),
         !,
-        warning( [ "Incorrect invocation of error/1: \"",
+        warning( [ 'Incorrect invocation of error/1: \"',
                    error( V ),
-                   "\""
+                   '\"'
                  ]
                ).
 
@@ -683,7 +683,7 @@ error( NotAList ) :-
 %% Begin an error printout.
 
 begin_error :-
-        write( error, "*** ERROR: " ).
+        write( error, '*** ERROR: ' ).
 
 
 %%------------------------------------------------------------------------------
@@ -691,7 +691,7 @@ begin_error :-
 %% End an error printout.
 
 end_error :-
-        writeln( error, "***" ),
+        writeln( error, '***' ),
         abort.
 
 %%------------------------------------------------------------------------------

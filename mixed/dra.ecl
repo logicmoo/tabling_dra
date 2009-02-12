@@ -655,7 +655,7 @@ solve( call( Goal ), Stack, Level ) :-
         (
             var( Goal )
         ->
-            error( [ "A variable meta-call:", call( Goal ) ] )
+            error( [ 'A variable meta-call:', call( Goal ) ] )
         ;
             solve( Goal, Stack, Level )
         ).
@@ -668,7 +668,7 @@ solve( assert( Clause ), _, _ ) :-
         (
             \+ is_good_clause( Clause )
         ->
-            error( [ "Bad clause argument: ", assert( Clause ) ] )
+            error( [ 'Bad clause argument: ', assert( Clause ) ] )
         ;
             true
         ),
@@ -827,7 +827,7 @@ use_clause( Goal, Body ) :-
         ->
             clause( Goal, Body )@interpreted
         ;
-            warning( [ "Calling an undefined predicate: \"", Goal, "\"" ] ),
+            warning( [ 'Calling an undefined predicate: \"', Goal, '\"' ] ),
             fail
         ).
 
@@ -994,13 +994,13 @@ memo( Goal, Fact, Level ) :-
 :- mode get_answer( ? ).
 
 get_answer( Goal ) :-
-        once essence_hook( Goal, EssenceOfGoal ),
+        once( essence_hook( Goal, EssenceOfGoal ) ),
         copy_term( Goal, Copy ),
         answer( Copy, G, Ans ),
-        once essence_hook( G, EssenceOfG ),
+        once( essence_hook( G, EssenceOfG ) ),
         are_variants( EssenceOfGoal, EssenceOfG ),
         EssenceOfGoal = EssenceOfG,     % make sure variables are the right ones
-        once essence_hook( Ans, EssenceOfAns ),
+        once( essence_hook( Ans, EssenceOfAns ) ),
         EssenceOfGoal = EssenceOfAns .  % instantiate
 
 
@@ -1129,8 +1129,8 @@ add_looping_alternative( Index, Clause ) :-
 :- mode are_essences_variants( +, + ).
 
 are_essences_variants( T1, T2 ) :-
-        once essence_hook( T1, ET1 ),
-        once essence_hook( T2, ET2 ),
+        once( essence_hook( T1, ET1 ) ),
+        once( essence_hook( T2, ET2 ) ),
         are_variants( ET1, ET2 ).
 
 
@@ -1230,8 +1230,8 @@ optional_trace( _, _, _, _ ).
 fatal_error( Message, Stack ) :-
         begin_error,
         writeln(    error, Message ),
-        writeln(    error, "" ),
-        writeln(    error, "*** The current stack:" ),
+        writeln(    error, '' ),
+        writeln(    error, '*** The current stack:' ),
         show_stack( error, Stack ),
         end_error.
 
