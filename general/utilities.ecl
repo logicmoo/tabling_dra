@@ -289,62 +289,60 @@ is_good_clause_head( Hd ) :-
 
 :-mode has_good_clause_body( + ).
 
-has_good_clause_body( Clause ) :-
-        Clause = (_ :- Body),
+has_good_clause_body( Clause) :-
+        Clause = (Head :- Body),
         !,
-        copy_term( Clause, Clause2 ),
-        mk_ground( Clause2 ),
-        Clause2 = (Head2 :- Body2),
-        ground_term_variables( Head2, HeadVars ),
-        check_body_( Body2, Body, HeadVars, Clause ).
+        term_variables( Head, HeadVars ),
+        check_body_( Body, HeadVars, Clause ).
 
 has_good_clause_body( _Fact ).
 
 %
-% Arg1: the body with variables ground by numbervars
-% Arg2: the body in its original form
-% Arg3: the ground variables seen so far
-% Arg4: the clause (just for better diagnostics)
+% Arg1: the body
+% Arg2: the ground variables seen so far
+% Arg3: the clause (just for better diagnostics)
 %
-check_body_( _, V, _, Clause ) :-
+check_body_( V, _, Clause ) :-
         var( V ),
         !,
         error( [ "A variable literal (\"", V, "\") in \"", Clause, "\"" ] ).
 
-check_body_( (GA -> GB ; GC), (A -> B ; C), Vars, Clause ) :-
+check_body_( (A -> B ; C), Vars, Clause ) :-
         !,
-        check_body_( GA, A, Vars, Clause ),
-        ground_term_variables( GA, AVars ),
+        check_body_( A, Vars, Clause ),
+        term_variables( GA, AVs ),
+        make_set( AVs, AVars ),
         set_union( AVars, Vars, NVars ),
-        check_body_( GB, B, NVars, Clause ),
-        check_body_( GC, C,  Vars, Clause ).
+        check_body_( B, NVars, Clause ),
+        check_body_( C,  Vars, Clause ).
 
-check_body_( ( GA ; GB ), ( A ; B ), Vars, Clause ) :-
+check_body_( ( A ; B ), Vars, Clause ) :-
         !,
-        check_body_( GA, A, Vars, Clause ),
-        check_body_( GB, B, Vars, Clause ).
+        check_body_( A, Vars, Clause ),
+        check_body_( B, Vars, Clause ).
 
-check_body_( ( GA , GB ), ( A , B ), Vars, Clause ) :-
+check_body_( ( A , B ), Vars, Clause ) :-
         !,
-        check_body_( GA, A, Vars, Clause ),
-        ground_term_variables( GA, AVars ),
+        check_body_( A, Vars, Clause ),
+        term_variables( GA, AVs ),
+        make_set( AVs, AVars ),
         set_union( AVars, Vars, NVars ),
-        check_body_( GB, B, NVars, Clause ).
+        check_body_( B, NVars, Clause ).
 
-check_body_( \+ GA, \+ A, Vars, Clause ) :-
+check_body_( \+ A, Vars, Clause ) :-
         !,
-        check_body_( GA, A, Vars, Clause ).
+        check_body_( A, Vars, Clause ).
 
-check_body_( once GA, once A, Vars, Clause ) :-
+check_body_( once A, Vars, Clause ) :-
         !,
-        check_body_( GA, A, Vars, Clause ).
+        check_body_( A, Vars, Clause ).
 
-check_body_( call( GA ), call( A ), Vars, Clause ) :-
+check_body_( call( A ), Vars, Clause ) :-
         !,
         (
             nonvar( A )
         ->
-            check_body_( GA, A, Vars, Clause )
+            check_body_( A, Vars, Clause )
         ;
             (
                 is_set_member( GA, Vars )
@@ -359,14 +357,12 @@ check_body_( call( GA ), call( A ), Vars, Clause ) :-
             )
         ).
 
-check_body_( _, T, _, Clause ) :-
+check_body_( T, _, Clause ) :-
         \+ callable( T ),
         !,
         error( "Incorrect literal (\"", T, "\") in \"", Clause, ".\"" ).
 
-check_body_( _, _, _, _ ).
-
-
+check_body_( _, _, _ ).
 
 
 
