@@ -35,6 +35,10 @@ guo_gupta_6_1.tlp:
         Dynamic Reordering of Alternatives" by Hai-Feng Guo and Gopal
         Gupta.
 
+LTL:
+        A subdirectory with a version of Gopal Gupta's elegant interpreter
+        for Linear Temporal Logic and a few example problems and queries.
+
 module.tlp:
         A wholly uninteresting example, designed to test that the
         predicate names in the interpreted program cannot conflict with
@@ -58,7 +62,7 @@ trivial_tabled.tlp:
         interpreter.
 
 XSB:
-        Various examples borrowed from the distribution of XSB.
-        (http://www.cs.sunysb.edu/~sbprolog/download_src.html)
+        A subdirectory with various examples borrowed from the distribution
+        of XSB.  (http://www.cs.sunysb.edu/~sbprolog/download_src.html)
 
 --------------------------------------------------------------------------------
