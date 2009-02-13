@@ -747,7 +747,7 @@ solve( Goal, Stack, Hyp, Level ) :-
             solve( Body, Stack, [ Goal | Hyp ], NLevel ),
             trace_success( 'coinductive (clause)', Goal, Level )
         ;
-            trace_failure( normal, Goal, Level ),
+            trace_failure( coinductive, Goal, Level ),
             fail
         ).
 
@@ -868,6 +868,13 @@ solve( Goal, Stack, Hyp, Level ) :-
 %  of "variant of ancestor" above.)
 
 solve( Goal, Stack, Hyp, Level ) :-
+        (
+            coinductive( Goal )
+        ->
+            NHyp = [ Goal | Hyp ]  % add this goal to the coinductive hypotheses
+        ;
+            NHyp = Hyp
+        ),
         copy_term( Goal, OriginalGoal ),
         add_pioneer( Goal, Index ),
         optional_trace( 'Entering pioneer: ', Goal, Index, Level ),
@@ -877,7 +884,7 @@ solve( Goal, Stack, Hyp, Level ) :-
             copy_term( (Goal :- Body), ClauseCopy ),
             solve( Body,
                    [ triple( OriginalGoal, Index, ClauseCopy ) | Stack ],
-                   Hyp,
+                   NHyp,
                    NLevel
                  ),
             new_result_or_fail( Index, Goal ),
@@ -961,10 +968,18 @@ compute_fixed_point( Goal, Index, Stack, Hyp, Level ) :-
 
 compute_fixed_point_( Goal, Index, Stack, Hyp, Level, _ ) :-
         NLevel is Level + 1,
+        (
+            coinductive( Goal )
+        ->
+            NHyp = [ Goal | Hyp ]  % add this goal to the coinductive hypotheses
+        ;
+            NHyp = Hyp
+        ),
         copy_term( Goal, OriginalGoal ),
+
         looping_alternative( Index, (Goal :- Body) ),      % i.e., iterate
         Triple = triple( OriginalGoal, Index, (Goal :- Body) ),
-        solve( Body, [ Triple | Stack ], Hyp, NLevel ),
+        solve( Body, [ Triple | Stack ], NHyp, NLevel ),
         new_result_or_fail( Index, Goal ),
         memo( OriginalGoal, Goal, Level ).
 
