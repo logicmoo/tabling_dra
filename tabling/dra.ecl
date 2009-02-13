@@ -466,7 +466,7 @@ builtin( _ > _              ).
 builtin( _ >= _             ).
 builtin( _ \= _             ).
 builtin( _ is _             ).
-builtin( assert( _ )        ).
+builtin( assert( _ )        ).  % special treatment in solve/3
 builtin( atom( _ )          ).
 builtin( call( _ )          ).
 builtin( fail               ).
@@ -475,7 +475,7 @@ builtin( member( _, _ )     ).
 builtin( nl                 ).
 builtin( once( _ )          ).  % special treatment in solve/3
 builtin( read( _ )          ).
-builtin( retractall( _ )    ).
+builtin( retractall( _ )    ).  % special treatment in solve/3
 builtin( set_flag( _, _ )   ).
 builtin( true               ).
 builtin( var( _ )           ).
