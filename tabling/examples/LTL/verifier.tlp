@@ -38,7 +38,7 @@ check( State, Formula ) :-
 % Check the consistency of the automaton's description.
 
 :- dynamic automaton_error/0.
-:- bottom  automaton_error/0.
+:- bottom automaton_error/0.
 
 check_consistency :-
         retractall( automaton_error ),
