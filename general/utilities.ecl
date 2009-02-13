@@ -310,7 +310,7 @@ check_body_( V, _, Clause ) :-
 check_body_( (A -> B ; C), Vars, Clause ) :-
         !,
         check_body_( A, Vars, Clause ),
-        term_variables( GA, AVs ),
+        term_variables( A, AVs ),
         make_set( AVs, AVars ),
         set_union( AVars, Vars, NVars ),
         check_body_( B, NVars, Clause ),
@@ -324,7 +324,7 @@ check_body_( ( A ; B ), Vars, Clause ) :-
 check_body_( ( A , B ), Vars, Clause ) :-
         !,
         check_body_( A, Vars, Clause ),
-        term_variables( GA, AVs ),
+        term_variables( A, AVs ),
         make_set( AVs, AVars ),
         set_union( AVars, Vars, NVars ),
         check_body_( B, NVars, Clause ).
@@ -344,8 +344,9 @@ check_body_( call( A ), Vars, Clause ) :-
         ->
             check_body_( A, Vars, Clause )
         ;
+            % var( A ),
             (
-                is_set_member( GA, Vars )
+                is_set_member( A, Vars )
             ->
                 true
             ;
