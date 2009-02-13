@@ -717,7 +717,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 
 % A tabled goal that has been completed: all the results are in "answer".
 
-solve( Goal, _, Hyp, Level ) :-
+solve( Goal, _, _, Level ) :-
         is_completed( Goal ),
         !,
         trace_entry( completed, Goal, Level ),
@@ -731,16 +731,51 @@ solve( Goal, _, Hyp, Level ) :-
 
 
 % A tabled goal that has a variant among its ancestors.
-% See the comment to variant_of_ancestor for a more detailed description of
-% the actions taken.
 % Only the existing (most likely incomplete) results from "answer" are
 % returned before failure.
 
-solve( Goal, Stack, Hyp, Level ) :-
-        variant_of_ancestor( Goal, Stack, Level ),
+% NOTE: 1. There can be only one variant ancestor, so the question of which one
+%          to use does not arise.
+%
+%       2. Ancestor pioneer goals between this goal and its variant ancestor
+%          will lose their status as pioneers (and the associated entries in
+%          "loop" and "looping_alternative" will be removed).
+%
+%       3. If the variant ancestor is a pioneer, then:
+%             - the entire prefix of the list of goals upto (but not including)
+%               the variant ancestor will be added to the cluster of that
+%               ancestor (by storing it in "loop");
+%             - a copy of the current clause invoked by the ancestor (which can
+%               be found together with the ancestor on the stack) is added to
+%               "looping_alternative" entries for that ancestor.
+
+
+solve( Goal, Stack, _, Level ) :-
+        is_variant_of_ancestor( Goal, Stack, AncestorTriple, InterveningGoals ),
         !,
         trace_entry( variant, Goal, Level ),
         (
+            % Rescind the status of intervening pioneers:
+            member( M, InterveningGoals ),
+            is_a_variant_of_a_pioneer( M, Index ),
+            optional_trace( 'Removing pioneer: ', M, Index, Level ),
+            rescind_pioneer_status( Index ),
+            fail
+        ;
+            true
+        ),
+        (
+            % Create looping alternative if the variant ancestor is a pioneer:
+            AncestorTriple = triple( G, I, C ),
+            is_a_variant_of_a_pioneer( G, I )
+        ->
+            add_loop( I, InterveningGoals ),
+            add_looping_alternative( I, C )
+        ;
+            true
+        ),
+        (
+            % Sequence through tabled answers:
             get_answer( Goal ),
             trace_success( variant, Goal, Level )
         ;
@@ -759,8 +794,8 @@ solve( Goal, Stack, Hyp, Level ) :-
 % marked as complete, and will cease to be a pioneer.
 %
 % (Note that a pioneer but also lose its status when some descendant goal finds
-%  a variant ancestor that is also an ancestor of the pioneer.  See
-%  variant_of_ancestor.)
+%  a variant ancestor that is also an ancestor of the pioneer.  See the case
+%  of "variant of ancestor" above.)
 
 solve( Goal, Stack, Hyp, Level ) :-
         copy_term( Goal, OriginalGoal ),
@@ -822,7 +857,6 @@ solve( Goal, Stack, Hyp, Level ) :-
 
 
 
-
 %% use_clause( + goal, - body ):
 %% Warn and fail if the goal invokes a non-existing predicate.  Otherwise
 %% nondeterministically return the appropriately instantiated body of each
@@ -871,48 +905,24 @@ compute_fixed_point_( Goal, Index, Stack, Hyp, Level, NAns ) :-
 
 
 
-%% variant_of_ancestor( + goal,
-%%                      + list of triples of goals, indices and clauses,
-%%                      + level for tracing
-%%                    ):
+%% is_variant_of_ancestor( + goal,
+%%                         + list of triples of goals, indices and clauses,
+%%                         - the triple with the variant ancestor,
+%%                         - list of goals between this and variant ancestor,
+%%                       )
 %% Succeeds if the goal is a variant of the goal in some member of the list.
-%%
+%% If successful, returns the first such member and the list of intervening
+%% goals.
 
-%% SIDE EFFECT: If successful, then intermediate pioneer goals will lose their
-%%              status as pioneers (and the associated entries in "loop" and
-%%              "looping_alternative" will be removed).  Moreover, if the
-%%              variant ancestor is a pioneer, then:
-%%                - the entire prefix of the list of goals upto (but not
-%%                  including) the variant ancestor will be added to the cluster
-%%                  of that ancestor (by storing it in "loop");
-%%                - a copy of the current clause invoked by the ancestor (which
-%%                  can be found together with the ancestor on the stack) is
-%%                  added to "looping_alternative" entries for that ancestor.
 
-:- mode variant_of_ancestor( +, +, + ).
+:- mode is_variant_of_ancestor( +, +, - ).
 
-variant_of_ancestor( Goal, List, Level ) :-
-        append( Prefix, [ triple( G, I, C ) | _ ], List ),      % split the list
+is_variant_of_ancestor( Goal, Stack, AncestorTriple, InterveningGoals ) :-
+        append( Prefix, [ AncestorTriple | _ ], Stack ),        % split the list
+        AncestorTriple = triple( G, _, _ ),
         are_essences_variants( Goal, G ),
         !,
-        extract_goals( Prefix, StrippedPrefix ),
-        (
-            member( M, StrippedPrefix ),
-            is_a_variant_of_a_pioneer( M, Index ),
-            optional_trace( 'Removing pioneer: ', M, Index, Level ),
-            rescind_pioneer_status( Index ),
-            fail
-        ;
-            true
-        ),
-        (
-            is_a_variant_of_a_pioneer( G, I )
-        ->
-            add_loop( I, StrippedPrefix ),
-            add_looping_alternative( I, C )
-        ;
-            true
-        ).
+        extract_goals( Prefix, InterveningGoals ).
 
 
 %% extract_goals( + list of triples of goals, indices and clauses,
