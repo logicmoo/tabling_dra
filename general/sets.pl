@@ -1,16 +1,33 @@
 %%%  Simple, but useful operations on sets.                                  %%%
 %%%  Written by Feliks Kluzniak at UTD (February 2009).                      %%%
 %%%                                                                          %%%
-%%%  Last update: 11 February 2009.                                          %%%
+%%%  Last update: 12 February 2009.                                          %%%
 %%%                                                                          %%%
 %%%  NOTE: Some of the code may be Eclipse-specific and may require          %%%
 %%%        minor tweaking for other Prolog systems.                          %%%
-
-%%%  NOTE: These simple operations cannot handle set elements that are Prolog
-%%%        variables.
+%%%                                                                          %%%
+%%%  NOTE: Different Prolog variables are treated as different items!        %%%
 
 
 %%% In this version sets are represented just by lists.
+
+
+%%------------------------------------------------------------------------------
+%% make_set( + list, - set ):
+%% Create a set that contains all the elements in the list.
+
+:- mode make_set( +, - ).
+
+make_set( L, S ) :-
+        make_empty_set( S0 ),
+        make_set_( L, S0, S ).
+
+%
+make_set_( [], S, S ).
+
+make_set_( [ H | T ], S, NS ) :-
+        add_to_set( H, S, S2 ),
+        make_set_( T, S2, NS ).
 
 
 %%------------------------------------------------------------------------------
@@ -23,12 +40,12 @@ is_empty_set( [] ).
 
 
 %%------------------------------------------------------------------------------
-%% empty_set( - set ) :
+%% make_empty_set( - set ) :
 %% Create an empty set.
 
-:- mode empty_set( - ).
+:- mode make_empty_set( - ).
 
-empty_set( [] ).
+make_empty_set( [] ).
 
 
 %%------------------------------------------------------------------------------
@@ -37,8 +54,12 @@ empty_set( [] ).
 
 :- mode is_set_member( +, + ).
 
-is_set_member( Item, Set ) :-
-        once member( Item, Set ).
+is_set_member( Item, [ H | _ ] ) :-
+        Item == H,
+        !.
+
+is_set_member( Item, [ _ | T ] ) :-
+        is_set_member( Item, T ).
 
 
 %%------------------------------------------------------------------------------
@@ -140,6 +161,8 @@ symmetric_set_difference( S1, S2, NS ) :-
         set_union( S1, S2, Union ),
         set_intersection( S1, S2, Intersection ),
         set_difference( Union, Intersection, NS ).
+
+%%------------------------------------------------------------------------------
 
 
 
