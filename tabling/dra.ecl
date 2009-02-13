@@ -431,6 +431,7 @@ default_extension( ".tlp" ).
 :- setval( pioneer_index,     0 ).
 
 initialise :-
+        retractall( coinductive( _ )            ),
         retractall( tabled( _ )                 ),
         retractall( answer( _, _, _ )           ),
         retractall( pioneer( _, _, _ )          ),
@@ -499,8 +500,9 @@ essence_hook( T, T ).    % default, may be overridden by the interpreted program
 
 %%%%%  Administration  %%%%%
 
-:- op( 1000, fy, tabled ).    % allow  ":- tabled p/k ."
-:- op( 1000, fy, trace  ).    % allow  ":- trace  p/k ."
+:- op( 1000, fy, coinductive ).    % allow  ":- coinductive p/k ."
+:- op( 1000, fy, tabled      ).    % allow  ":- tabled p/k ."
+:- op( 1000, fy, trace       ).    % allow  ":- trace  p/k ."
 
 
 
@@ -566,15 +568,20 @@ query( Goals ) :-
 
         setval( pioneer_index, 0 ),
 
-        solve( Goals, [], 0 ).
+        solve( Goals, [], [], 0 ).
 
 
 
 
-%% solve( + sequence of goals, + stack, + level ):
+%% solve( + sequence of goals,
+%%        + stack,
+%%        + coinductive hypotheses,
+%%        + level
+%%      ):
 %% Solve the sequence of goals, maintaining information about the current chain
-%% of tabled ancestors (stack).  The level is the level of recursion, and is
-%% used only for tracing.
+%% of tabled ancestors (stack) and the chain of coinductive ancestors
+%% (coinductive hypotheses).  The level is the level of recursion, and is used
+%% only for tracing.
 %%
 %% Each link in the chain of tabled ancestors is of the form
 %%    triple( goal, index, clause )
@@ -591,12 +598,12 @@ query( Goals ) :-
 
 % A negation.
 
-solve( \+ Goal, Stack, Level ) :-
+solve( \+ Goal, Stack, Hyp, Level ) :-
         !,
         NLevel is Level + 1,
         trace_entry( normal, \+ Goal, Level ),
         (
-            \+ solve( Goal, Stack, NLevel ),
+            \+ solve( Goal, Stack, Hyp, NLevel ),
             trace_success( normal, \+ Goal, Level )
         ;
             trace_failure( normal, \+ Goal, Level ),
@@ -606,12 +613,12 @@ solve( \+ Goal, Stack, Level ) :-
 
 % One solution.
 
-solve( once( Goal ), Stack, Level ) :-
+solve( once( Goal ), Stack, Hyp, Level ) :-
         !,
         NLevel is Level + 1,
         trace_entry( normal, once( Goal ), Level ),
         (
-            once( solve( Goal, Stack, NLevel ) ),
+            once( solve( Goal, Stack, Hyp, NLevel ) ),
             trace_success( normal, once( Goal ), Level )
         ;
             trace_failure( normal, once( Goal ), Level ),
@@ -621,49 +628,49 @@ solve( once( Goal ), Stack, Level ) :-
 
 % A conditional.
 
-solve( (Cond -> Then ; _Else), Stack, Level ) :-
-        solve( Cond, Stack, Level ),
+solve( (Cond -> Then ; _Else), Stack, Hyp, Level ) :-
+        solve( Cond, Stack, Hyp, Level ),
         !,
-        solve( Then, Stack, Level ).
+        solve( Then, Stack, Hyp, Level ).
 
-solve( (_Cond -> _Then ; Else), Stack, Level ) :-
+solve( (_Cond -> _Then ; Else), Stack, Hyp, Level ) :-
         !,
-        solve( Else, Stack, Level ).
+        solve( Else, Stack, Hyp, Level ).
 
 
 % A disjunction without a conditional.
 
-solve( (Goals ; _), Stack, Level ) :-
-        solve( Goals, Stack, Level ).
+solve( (Goals ; _), Stack, Hyp, Level ) :-
+        solve( Goals, Stack, Hyp, Level ).
 
-solve( (_ ; Goals), Stack, Level ) :-
+solve( (_ ; Goals), Stack, Hyp, Level ) :-
         !,
-        solve( Goals, Stack, Level ).
+        solve( Goals, Stack, Hyp, Level ).
 
 
 % A conjunction.
 
-solve( (Goals1 , Goals2), Stack, Level ) :-
+solve( (Goals1 , Goals2), Stack, Hyp, Level ) :-
         !,
-        solve( Goals1, Stack, Level ),
-        solve( Goals2, Stack, Level ).
+        solve( Goals1, Stack, Hyp, Level ),
+        solve( Goals2, Stack, Hyp, Level ).
 
 
 % call/1
 
-solve( call( Goal ), Stack, Level ) :-
+solve( call( Goal ), Stack, Hyp, Level ) :-
         (
             var( Goal )
         ->
             error( [ 'A variable meta-call:', call( Goal ) ] )
         ;
-            solve( Goal, Stack, Level )
+            solve( Goal, Stack, Hyp, Level )
         ).
 
 
 % assert/1
 
-solve( assert( Clause ), _, _ ) :-
+solve( assert( Clause ), _, _, _ ) :-
         !,
         (
             \+ is_good_clause( Clause )
@@ -677,14 +684,14 @@ solve( assert( Clause ), _, _ ) :-
 
 % retractall/1
 
-solve( retractall( C ), _, _ ) :-
+solve( retractall( C ), _, _, _ ) :-
         !,
         retractall( C )@interpreted.
 
 
 % Some other supported built-in.
 
-solve( BuiltIn, _, _ ) :-
+solve( BuiltIn, _, _, _ ) :-
         builtin( BuiltIn ),
         !,
         call( BuiltIn ).
@@ -692,14 +699,14 @@ solve( BuiltIn, _, _ ) :-
 
 % A "normal" (i.e., not tabled) goal.
 
-solve( Goal, Stack, Level ) :-
+solve( Goal, Stack, Hyp, Level ) :-
         \+ tabled( Goal ),
         !,
         trace_entry( normal, Goal, Level ),
         (
             NLevel is Level + 1,
             use_clause( Goal, Body ),
-            solve( Body, Stack, NLevel ),
+            solve( Body, Stack, Hyp, NLevel ),
             trace_success( normal, Goal, Level )
         ;
             trace_failure( normal, Goal, Level ),
@@ -710,7 +717,7 @@ solve( Goal, Stack, Level ) :-
 
 % A tabled goal that has been completed: all the results are in "answer".
 
-solve( Goal, _, Level ) :-
+solve( Goal, _, Hyp, Level ) :-
         is_completed( Goal ),
         !,
         trace_entry( completed, Goal, Level ),
@@ -729,7 +736,7 @@ solve( Goal, _, Level ) :-
 % Only the existing (most likely incomplete) results from "answer" are
 % returned before failure.
 
-solve( Goal, Stack, Level ) :-
+solve( Goal, Stack, Hyp, Level ) :-
         variant_of_ancestor( Goal, Stack, Level ),
         !,
         trace_entry( variant, Goal, Level ),
@@ -755,7 +762,7 @@ solve( Goal, Stack, Level ) :-
 %  a variant ancestor that is also an ancestor of the pioneer.  See
 %  variant_of_ancestor.)
 
-solve( Goal, Stack, Level ) :-
+solve( Goal, Stack, Hyp, Level ) :-
         copy_term( Goal, OriginalGoal ),
         add_pioneer( Goal, Index ),
         optional_trace( 'Entering pioneer: ', Goal, Index, Level ),
@@ -765,6 +772,7 @@ solve( Goal, Stack, Level ) :-
             copy_term( (Goal :- Body), ClauseCopy ),
             solve( Body,
                    [ triple( OriginalGoal, Index, ClauseCopy ) | Stack ],
+                   Hyp,
                    NLevel
                  ),
             new_result_or_fail( Index, Goal ),
@@ -794,7 +802,7 @@ solve( Goal, Stack, Level ) :-
                 optional_trace( 'Computing fixed point for ',
                                 Goal, Index, Level
                               ),
-                compute_fixed_point( Goal, Index, Stack, Level ),
+                compute_fixed_point( Goal, Index, Stack, Hyp, Level ),
                 trace_success( pioneer, Goal, Level )
             ;
                 optional_trace( 'Fixed point computed: ', Goal, Index, Level ),
@@ -840,26 +848,26 @@ use_clause( Goal, Body ) :-
 
 :- mode compute_fixed_point( +, +, +, + ).
 
-compute_fixed_point( Goal, Index, Stack, Level ) :-
+compute_fixed_point( Goal, Index, Stack, Hyp, Level ) :-
         getval( number_of_answers, NAns ),
-        compute_fixed_point_( Goal, Index, Stack, Level, NAns ).
+        compute_fixed_point_( Goal, Index, Stack, Hyp, Level, NAns ).
 
 %
 :- mode compute_fixed_point( +, +, +, +, + ).
 
-compute_fixed_point_( Goal, Index, Stack, Level, _ ) :-
+compute_fixed_point_( Goal, Index, Stack, Hyp, Level, _ ) :-
         NLevel is Level + 1,
         copy_term( Goal, OriginalGoal ),
         looping_alternative( Index, (Goal :- Body) ),      % i.e., iterate
         Triple = triple( OriginalGoal, Index, (Goal :- Body) ),
-        solve( Body, [ Triple | Stack ], NLevel ),
+        solve( Body, [ Triple | Stack ], Hyp, NLevel ),
         new_result_or_fail( Index, Goal ),
         memo( OriginalGoal, Goal, Level ).
 
-compute_fixed_point_( Goal, Index, Stack, Level, NAns ) :-
+compute_fixed_point_( Goal, Index, Stack, Hyp, Level, NAns ) :-
         getval( number_of_answers, NAnsNow ),
         NAnsNow \= NAns,                % i.e., fail if there are no new answers
-        compute_fixed_point_( Goal, Index, Stack, Level, NAnsNow ).    % iterate
+        compute_fixed_point_( Goal, Index, Stack, Hyp, Level, NAnsNow ).
 
 
 
