@@ -813,7 +813,7 @@ solve( Goal, Stack, Hyp, Level ) :-
             AncestorTriple = triple( G, Index, Clause ),
             is_a_variant_of_a_pioneer( G, Index )
         ->
-            add_loop( Indes, InterveningGoals ),
+            add_loop( Index, InterveningGoals ),
             add_looping_alternative( Index, Clause )
         ;
             true
@@ -1140,7 +1140,7 @@ is_a_variant_of_a_pioneer( Goal, Index ) :-
 
 :- mode add_pioneer( +, - ).
 
-add_pioneer( Goal, NewIndex ) :-
+add_pioneer( Goal, Index ) :-
         copy_term( Goal, Copy ),
         get_unique_index( Index ),
         assert( pioneer( Copy, Goal, Index ) ).
@@ -1153,7 +1153,7 @@ add_pioneer( Goal, NewIndex ) :-
 :- mode get_unique_index( - ).
 
 get_unique_index( Index ) :-
-        getval( unique_index, NewIndex ),
+        getval( unique_index, Index ),
         incval( unique_index ).
 
 
