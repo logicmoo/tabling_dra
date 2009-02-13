@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 
-4 Feb 2009:  First "public" release.
+4 Feb 2009:  First "internal public" release.
 
              Known problems:
                - mixed/dra still not available;
@@ -8,7 +8,7 @@
                  as well as some unnecessary inefficiencies;
                - a very limited set of examples.
 
-5 Feb 2009:  Second "public" release:
+5 Feb 2009:  Second "internal public" release:
 
                Fixed:
                  - trace did not work in the Eclipse version of
@@ -16,7 +16,7 @@
                  - removed one source of inefficiency (and disparity between
                    the code and the associated comment) in "eager_tabling".
 
-6 Feb 2009:  Third release:
+6 Feb 2009:  Third "internal public" release:
 
                Fixed:
                  - In "eager_tabling" trace also internal events (e.g.,
@@ -28,5 +28,12 @@
                    a false error message if the user asked for more
                    solutions.
                  - Wrong permissions on many files.
+
+Fourth "internal public" release:
+
+                 - Added "dra".
+                 - Deleted "eager_tabling", as superseded.
+                 - Deleted "mixed", everything is now in "tabling".
+                 - More small examples.
 
 -------------------------------------------------------------------------------

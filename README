@@ -51,11 +51,15 @@ head.
 NOTE: At the time of this writing Eclipse tends to behave quite
       unreasonably when presented with cyclic terms.  It is therefore
       advisable to use the Sicstus version for coinductive programs,
-      especially when they are coupled with tabling.
+      especially when they are coupled with tabling.  Predicates that
+      are both coinductive and tabled cannot be run at all.
 
 
 
-Here is a short description of the directories:
+..................
+
+
+Here is a short description of the sub-directories:
 
 coind
 -----
