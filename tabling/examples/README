@@ -18,6 +18,10 @@ small_comment_example.tlp:
         A minimal example that demonstrates why tabled results must be
         annotated with the corresponding goals.
 
+co_t.tlp:
+        A very simple example of a predicate that is both tabled and
+        coinductive.
+
 conditional.tlp:
         A wholly uninteresting example, designed to test that the
         interpreter handles conditionals correctly.

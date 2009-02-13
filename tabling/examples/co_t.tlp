@@ -1,0 +1,29 @@
+%% A simple example of a predicate that is both coinductive and tabled.
+%% It verifies that property "always p" holds in all the states of a cyclic
+%% automaton.  Without tabling, this program produces an endless stream of
+%% successes.
+
+:- coinductive verify/2.
+:- tabled      verify/2.
+
+
+state( s0 ).
+state( s1 ).
+
+trans( s0, s1 ).
+trans( s1, s0 ).
+
+holds( s0, p ).
+holds( s1, p ).
+
+
+verify( S, p      ) :-  holds( S, p ).
+
+verify( S, g( A ) ) :-  verify( S, A ),  trans( S, S1 ),  verify( S1, g( A ) ).
+
+
+q :-  verify( s0, g( p ) ),  verify( s1, g( p ) ).
+
+
+
+
