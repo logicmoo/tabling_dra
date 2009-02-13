@@ -688,7 +688,7 @@ solve( call( Goal ), Stack, Hyp, Level ) :-
 % NOTE: This is good only for asserting facts!
 
 
-solve( assert( Fact ), _, _ ) :-
+solve( assert( Fact ), _, _, _ ) :-
         !,
         (
             \+ is_good_clause_head( Fact )
@@ -702,7 +702,7 @@ solve( assert( Fact ), _, _ ) :-
 
 % retractall/1
 
-solve( retractall( FactPattern ), _, _ ) :-
+solve( retractall( FactPattern ), _, _, _ ) :-
         !,
         (
             \+ is_good_clause_head( FactPattern )
