@@ -13,4 +13,4 @@ r( X ) :-  q( X ), r( X ).
 r( X ) :-  q( X ).
 
 
-?- p( X, Y ).
+?- p( X, Y ).  % expected:  p( b, b ),  p( b, a ),  p( a, a ),  p( a, b )
