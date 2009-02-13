@@ -421,7 +421,7 @@ ensure_filename_is_an_atom( FileName ) :-
 
 ensure_filename_is_an_atom( FileName ) :-
         % \+ atom( FileName ),
-        error( [ '*** Illegal file name \"', FileName, '\" (not an atom). ***' ]
+        error( [ 'Illegal file name \"', FileName, '\" (not an atom).' ]
              ).
 
 

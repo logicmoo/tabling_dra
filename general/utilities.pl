@@ -128,7 +128,7 @@ ground_term_variables( T, S ) :-
         !.
 
 ground_term_variables( T, _ ) :-
-        error( [ "Bad call to ground_term_variables (term not ground): ", T ] ).
+        error( [ 'Bad call to ground_term_variables (term not ground): ', T ] ).
 
 %
 :- mode gtv_( +, +, - ).
@@ -342,7 +342,7 @@ has_good_clause_body( _Fact ).
 check_body_( V, _, Clause ) :-
         var( V ),
         !,
-        error( [ "A variable literal (\"", V, "\") in \"", Clause, "\"" ] ).
+        error( [ 'A variable literal (\"', V, '\") in \"', Clause, '\"' ] ).
 
 check_body_( (A -> B ; C), Vars, Clause ) :-
         !,
@@ -387,9 +387,9 @@ check_body_( call( A ), Vars, Clause ) :-
             ->
                 true
             ;
-                error( [ "The variable argument of \"", call( A ),
-                         "\" does not have previous occurrences in \"",
-                         Clause, ".\""
+                error( [ 'The variable argument of \"', call( A ),
+                         '\" does not have previous occurrences in \"',
+                         Clause, '.\"'
                        ]
                      )
             )
@@ -398,7 +398,7 @@ check_body_( call( A ), Vars, Clause ) :-
 check_body_( T, _, Clause ) :-
         \+ callable( T ),
         !,
-        error( "Incorrect literal (\"", T, "\") in \"", Clause, ".\"" ).
+        error( 'Incorrect literal (\"', T, '\") in \"', Clause, '.\"' ).
 
 check_body_( _, _, _ ).
 
@@ -458,7 +458,7 @@ ensure_filename_is_an_atom( FileName ) :-
 
 ensure_filename_is_an_atom( FileName ) :-
         % \+ atom( FileName ),
-        error( [ '*** Illegal file name \"', FileName, '\" (not an atom). ***' ]
+        error( [ 'Illegal file name \"', FileName, '\" (not an atom).' ]
              ).
 
 

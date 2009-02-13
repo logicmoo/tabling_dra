@@ -419,7 +419,7 @@ process_directive( Directive ) :-
 process_directive( Directive ) :-                % unsupported directive
         % \+ legal_directive( Directive ),
         !,
-        error( [ "*** Unknown directive: \"", (:- Directive), ".\" ***" ] ).
+        error( [ 'Unknown directive: \"", (:- Directive), ".\"' ] ).
 
 
 
@@ -504,9 +504,9 @@ check_not_builtin( Clause ) :-
         get_clause_head( Clause, Head ),
         builtin( Head ),
         !,
-        error( [ "An attempt to redefine a built-in predicate:\n  ",
+        error( [ 'An attempt to redefine a built-in predicate:\n',
                  Clause,
-                 ".\n"
+                 '.\n'
                ]
              ).
 
@@ -523,7 +523,7 @@ check_not_builtin( _ ).
 
 top :-
         repeat,
-        write( output, ": " ),                            % a prompt
+        write( output, ': ' ),                            % a prompt
         readvar( input, Term, VarDict ),
         verify_program_item( Term ),
         interactive_term( Term, VarDict ),
