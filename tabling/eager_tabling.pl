@@ -122,12 +122,11 @@ General description
    Limitations
    -----------
 
-   The interpreted program must not contain cuts or "if-then"/"if-then-else"
-   constructs.  It also must not contain calls to built-in-predicates, except
-   for the handful of predicates listed in builtin/1 below.  (This list can be
-   easily extended as the need arises.  Some built-in predicates, however,
-   cannot be added without modifying the interpreter, sometimes extensively:
-   "!/0" is a good example.)
+   The interpreted program must not contain cuts.  It also must not contain
+   calls to built-in-predicates, except for the handful of predicates listed in
+   builtin/1 below.  (This list can be easily extended as the need arises.  Some
+   built-in predicates, however, cannot be added without modifying the
+   interpreter, sometimes extensively: "!/0" is a good example.)
 
 
    Data structures
@@ -162,8 +161,8 @@ General description
 
            In general, a side-effect of each evaluation of a query will be the
            generation -- for each tabled goal encounted during the evaluation
-           -- of a set of facts that form the"least fixed point interpretation"
-           of the goal.  (Of course, if this set is not sufficiently small,
+           -- of a set of facts that form the goal's "least fixed point
+           interpretation".  (Of course, if this set is not sufficiently small,
            the interpreter will not terminate successfully.)  The facts
            (which need not be ground!) are all entered into the table
            "answered", and the members of different sets are distinguished by
@@ -402,9 +401,9 @@ extract_essence( [ T | Ts ], [ E | Es ] ) :-
 
 %% The legal directives (check external form only).  (Used by the top level.)
 
-legal_directive( (tabled _) ).
-legal_directive( (trace _) ).
-legal_directive( (dynamic _) ).
+legal_directive( (tabled _)    ).
+legal_directive( (trace _)     ).
+legal_directive( (dynamic _)   ).
 legal_directive( (multifile _) ).
 
 

@@ -330,7 +330,7 @@ initialise :-
 
 %%%%%  Built-in predicates  %%%%
 %%
-%%  NOTE: Just adding "!" won't do the trick, the main metainterpreter would
+%%  NOTE: Just adding "!" will not do the trick, the main metainterpreter would
 %%        have to be modified substantially.
 %%        Certain other built-ins may also require special treatment.
 
@@ -358,8 +358,8 @@ builtin( nl                 ).
 builtin( read( _ )          ).
 builtin( set_flag( _, _ )   ).
 builtin( member( _, _ )     ).
-builtin( assert( _ )        ).
-builtin( retractall( _ )    ).
+builtin( assert( _ )        ).  % special treatment in solve/3 (only facts!)
+builtin( retractall( _ )    ).  % special treatment in solve/3 (only facts!)
 builtin( set_print_depth( _, _ )   ).      % not a real built-in, see  top_level
 
 
@@ -400,8 +400,8 @@ extract_essence( [ T | Ts ], [ E | Es ] ) :-
 
 %% The legal directives (check external form only).  (Used by the top level.)
 
-legal_directive( tabled _ ).
-legal_directive( (trace _) ).
+legal_directive( (tabled _)  ).
+legal_directive( (trace _)   ).
 legal_directive( (dynamic _) ).
 
 
@@ -435,7 +435,7 @@ execute_directive( (dynamic PredSpecs) ) :-
 will_trace( Patterns ) :-
         member( Pattern, Patterns ),
         assert( tracing( Pattern ) ),
-        once essence_hook( Pattern, EssenceOfPattern ),
+        once( essence_hook( Pattern, EssenceOfPattern ) ),
         assert( tracing( EssenceOfPattern ) ),
         fail.
 
@@ -621,8 +621,8 @@ solve( Goal, Stack, Level ) :-
 % A pioneer goal is solved by rules, producing results that are stored in
 % "answer": after this is done, "answer" is used to pass on the results.
 %
-% Moreover, the goal's answer set is extended to the least fixed point and its
-% cluster is marked as complete.
+% Moreover, the answer set asociated with the goal is extended to the least
+%  fixed point and its cluster is marked as complete.
 %
 % (Note that a pioneer but may cease to be one when some descendant goal finds
 %  a variant ancestor that is also an ancestor of the pioneer.
@@ -649,7 +649,7 @@ solve( Goal, Stack, Level ) :-
 % variant among its ancestors.  Something is wrong!
 
 solve( Goal, Stack, _ ) :-
-        fatal_error( "IMPOSSIBLE!", [ Goal| Stack ] ).
+        fatal_error( 'IMPOSSIBLE!', [ Goal| Stack ] ).
 
 
 
@@ -689,7 +689,7 @@ use_clause( Goal, Body ) :-
         ->
             clause( Goal, Body )@interpreted
         ;
-            warning( [ "Calling an undefined predicate: ", Goal ] ),
+            warning( [ 'Calling an undefined predicate: ', Goal ] ),
             fail
         ).
 
@@ -948,7 +948,7 @@ add_pioneer( Goal ) :-
 remove_pioneer( Goal ) :-
         pioneer( G, Index ),
         are_variants( G, Goal ),
-        once retract( pioneer( _, Index ) ).
+        once( retract( pioneer( _, Index ) ) ).
 
 
 
@@ -976,7 +976,7 @@ add_loop( Goal, Goals ) :-
 remove_loops( Goal ) :-
         loop( G,_, Indx ),
         are_variants( G, Goal ),
-        once retract( loop( _, _, Indx ) ),
+        once( retract( loop( _, _, Indx ) ) ),
         fail.
 
 remove_loops( _ ).
@@ -1014,8 +1014,8 @@ optional_trace( _, _, _ ).
 fatal_error( Message, Stack ) :-
         begin_error,
         writeln(    error, Message ),
-        writeln(    error, "" ),
-        writeln(    error, "*** The current stack:" ),
+        writeln(    error, '' ),
+        writeln(    error, '*** The current stack:' ),
         show_stack( error, Stack ),
         end_error.
 
