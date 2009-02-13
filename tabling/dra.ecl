@@ -307,10 +307,12 @@
                   (still) a pioneer.
            )
 
-   -- pioneer_index
+   -- unique_index
 
            This is a non-logical variable that holds the index to be used for
-           the next entry in "pioneer".
+           the next entry in "pioneer".  It is also used to generate unique
+           indices for coinductive goals, which might need them to hold their
+           own results in "result".
 
            The variable is cleared before the evaluation of a new query.
 
@@ -329,6 +331,8 @@
            a part of a larger loop, or because it has become completed), the
            associated entries in "result" are not removed.  They are removed
            only when the goal finally fails.
+
+           The table is also used by coinductive goals that are not pioneers.
 
            This table is cleared before the evaluation of a new query.
 
@@ -428,7 +432,7 @@ default_extension( ".tlp" ).
 :- dynamic tracing/1.
 
 :- setval( number_of_answers, 0 ).
-:- setval( pioneer_index,     0 ).
+:- setval( unique_index,      0 ).
 
 initialise :-
         retractall( coinductive( _ )            ),
@@ -441,7 +445,7 @@ initialise :-
         retractall( completed( _, _ )           ),
         retractall( tracing( _ )                ),
         setval( number_of_answers, 0 ),
-        setval( pioneer_index,     0 ).
+        setval( unique_index,      0 ).
 
 
 
@@ -577,7 +581,7 @@ query( Goals ) :-
         retractall( loop( _, _ )                ),
         retractall( looping_alternative( _, _ ) ),
 
-        setval( pioneer_index, 0 ),
+        setval( unique_index, 0 ),
 
         solve( Goals, [], [], 0 ).
 
@@ -765,8 +769,10 @@ solve( Goal, _, _, Level ) :-
 
 
 % A tabled goal that has a variant among its ancestors.
-% Only the existing (most likely incomplete) results from "answer" are
-% returned before failure.
+% If the goal is not coinductive, only the existing (most likely incomplete)
+% results from "answer" are  returned before failure.
+% If the goal is also coinductive, return the results that arise from
+% coinductive hypotheses, then the remaining results from "answer".
 
 % NOTE: 1. There can be only one variant ancestor, so the question of which one
 %          to use does not arise.
@@ -782,9 +788,12 @@ solve( Goal, _, _, Level ) :-
 %             - a copy of the current clause invoked by the ancestor (which can
 %               be found together with the ancestor on the stack) is added to
 %               "looping_alternative" entries for that ancestor.
+%
+%       4. If this goal is coinductive, then we use "result" to avoid
+%           duplicating results.
 
 
-solve( Goal, Stack, _, Level ) :-
+solve( Goal, Stack, Hyp, Level ) :-
         is_variant_of_ancestor( Goal, Stack, AncestorTriple, InterveningGoals ),
         !,
         trace_entry( variant, Goal, Level ),
@@ -798,23 +807,50 @@ solve( Goal, Stack, _, Level ) :-
         ;
             true
         ),
+
         (
             % Create looping alternative if the variant ancestor is a pioneer:
-            AncestorTriple = triple( G, I, C ),
-            is_a_variant_of_a_pioneer( G, I )
+            AncestorTriple = triple( G, Index, Clause ),
+            is_a_variant_of_a_pioneer( G, Index )
         ->
-            add_loop( I, InterveningGoals ),
-            add_looping_alternative( I, C )
+            add_loop( Indes, InterveningGoals ),
+            add_looping_alternative( Index, Clause )
         ;
             true
         ),
+
         (
-            % Sequence through tabled answers:
-            get_answer( Goal ),
-            trace_success( variant, Goal, Level )
+            coinductive( Goal )
+        ->
+            copy_term( Goal, OriginalGoal ),
+            get_unique_index( Index ),
+            (
+                % results from coinductive hypotheses:
+                member( Goal, Hyp ),
+                trace_success( 'variant (coinductive)', Goal, Level ),
+                new_result_or_fail( Index, Goal ),
+                memo( OriginalGoal, Goal )
+            ;
+                % other tabled results
+                get_answer( Goal ),
+                new_result_or_fail( Index, Goal ),
+                trace_success( variant, Goal, Level )
+            ;
+                % wrap it up
+                trace_failure( variant, Goal, Level ),
+                retractall( result( Index ) ),
+                fail
+            )
         ;
-            trace_failure( variant, Goal, Level ),
-            fail
+
+            % Not coinductive, just sequence through tabled answers:
+            (
+                get_answer( Goal ),
+                trace_success( variant, Goal, Level )
+            ;
+                trace_failure( variant, Goal, Level ),
+                fail
+            )
         ).
 
 
@@ -1105,10 +1141,20 @@ is_a_variant_of_a_pioneer( Goal, Index ) :-
 :- mode add_pioneer( +, - ).
 
 add_pioneer( Goal, NewIndex ) :-
-        getval( pioneer_index, NewIndex ),
-        incval( pioneer_index ),
         copy_term( Goal, Copy ),
-        assert( pioneer( Copy, Goal, NewIndex ) ).
+        get_unique_index( Index ),
+        assert( pioneer( Copy, Goal, Index ) ).
+
+
+
+%% get_unique_index( - ):
+%% Produce a new unique index.
+
+:- mode get_unique_index( - ).
+
+get_unique_index( Index ) :-
+        getval( unique_index, NewIndex ),
+        incval( unique_index ).
 
 
 
