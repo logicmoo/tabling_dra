@@ -1,29 +1,39 @@
 %% A simple example of a predicate that is both coinductive and tabled.
-%% It verifies that property "always p" holds in all the states of a cyclic
-%% automaton.  Without tabling, this program produces an endless stream of
-%% successes.
 
-:- coinductive verify/2.
-:- tabled      verify/2.
+:- bottom num/1, drop/3 .
 
-
-state( s0 ).
-state( s1 ).
-
-trans( s0, s1 ).
-trans( s1, s0 ).
-
-holds( s0, p ).
-holds( s1, p ).
+% A number.
+num( 0 ).
+num( s( N ) ) :-  num( N ).
 
 
-verify( S, p      ) :-  holds( S, p ).
+% A stream of numbers.
+:- coinductive stream/1 .
 
-verify( S, g( A ) ) :-  verify( S, A ),  trans( S, S1 ),  verify( S1, g( A ) ).
-
-
-q :-  verify( s0, g( p ) ),  verify( s1, g( p ) ).
+stream( [ H | T ] ) :-  num( H ),  stream( T ).
 
 
+% Drop some "occurrence" of arg1 from arg2, yielding arg3.
+% ("Occurrence" of X = something unifiable with X.)
+drop( H, [ H | T ] , T  ).
+drop( H, [ _ | T ] , T1 ) :-  drop( H, T, T1 ).
 
 
+% Are there infinitely many "occurrences" of arg1 in arg2?
+% We table this in order to avoid generating an infinite number of semantically
+% equivalent results on failure.
+
+:- coinductive comember/2 .
+:- tabled      comember/2 .
+
+comember( X, L ) :-  drop( X, L, L1 ),  comember( X, L1 ).
+
+
+
+
+
+q1:-   X = [ 0, s( 0 ), s( s( 0 ) ) ],      comember( s( 0 ), X ).         % no
+
+q2 :-  X = [ 0, s( 0 ), s( s( 0 ) ) | X ],  comember( s( 0 ), X ).         % yes
+
+q3 :-  \+ q2.                                                              % no
