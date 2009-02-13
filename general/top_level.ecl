@@ -86,19 +86,52 @@
 %%%
 %%%    4. The program that is read in must not contain variable literals.  It
 %%%       may, however, contain invocations of call/1.
-
-
-
-%%% NOTES FOR AUTHORS OF INTERPRETERS:
 %%%
-%%%    5. The clauses read in by the top level are loaded into the module
+%%%
+%%%    5. The interpreted program may contain declarations of "top" and "bottom"
+%%%       predicates, in the form of directives:
+%%%
+%%%           :- top p/1, q/2.
+%%%           :- bottom check_consistency/1.
+%%%
+%%%       The "top" declaration is just ignored: it is useful only when
+%%%       translating coinductive programs into Prolog (see
+%%%       ../coind/translate_colp).
+%%%
+%%%       The "bottom" declaration means that the metainterpreter should treat
+%%%       this predicate as a built-in, i.e., just let Prolog execute it.  This
+%%%       can be useful for increasing the efficiency of interpreted programs
+%%%       that make use of support routines that are written in "straight"
+%%%       Prolog.
+
+
+
+%%% NOTES FOR AUTHORS OF METAINTERPRETERS:
+%%%
+%%%    6. The clauses read in by the top level are loaded into the module
 %%%       "interpreted".  This is done to avoid conflicts with predicates
 %%%       used in the metainterpreter (and the top level).  The metainterpreter
 %%%       must access them by using
 %%%          clause( ... ) @ interpreted.
 %%%
 %%%
-%%%    6. The metainterpreter should provide the following predicates
+%%%    7. The top level notes "bottom" declarations in the table "bottom".  For
+%%%       example,
+%%%
+%%%           :- bottom p/1, q/2.
+%%%
+%%%       will be stored as
+%%%
+%%%           bottom( p( _ ) ).
+%%%           bottom( q( _, _ ) ).
+%%%
+%%%       The intended meaning is that "bottom" predicates do not make use
+%%%       (directly or indirectly) of the special features provided by the
+%%%       metainterpreter, so their invocations can be handled just by handing
+%%%       them over to Prolog (which would presumably speed up the computation).
+%%%
+%%%
+%%%    8. The metainterpreter should provide the following predicates
 %%%       ("hooks") that will be called by the top level:
 %%%
 %%%          - default_extension/1:
@@ -138,7 +171,7 @@
 %%%                 case it will also backtrack to obtain more solutions.
 %%%
 %%%
-%%%    7. The metainterpreter can also define hooks of its own.  A hook
+%%%    9. The metainterpreter can also define hooks of its own.  A hook
 %%%       predicate should be declared in a fact of "hook_predicate/1".
 %%%       For example,
 %%%
@@ -156,6 +189,10 @@
 
 
 :- ensure_loaded( utilities ).
+
+:- op( 1000, fy, bottom ).    % allow  ":- bottom p/k ."
+:- op( 1000, fy, top    ).    % allow  ":- top p/k ."
+
 
 
 % If p/k has already been seen (and declared as dynamic), the fact is recorded
@@ -369,6 +406,10 @@ include_files( _ ).
 %% Process a directive.
 
 :- mode process_directive( + ).
+
+process_directive( (top _) ) :-  !.              % just ignore this
+
+process_directive( (bottom _) ) :- !.            %  ignore for now <<<<<<<<<<
 
 process_directive( Directive ) :-
         legal_directive( Directive ),            % provided by a metainterpreter
