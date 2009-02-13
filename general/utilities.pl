@@ -1,7 +1,7 @@
 %%%  Some generally-useful utilities.                                        %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 11 February 2009.                                          %%%
+%%%  Last update: 13 February 2009.                                          %%%
 %%%                                                                          %%%
 %%%  Converted to Sicstus Prolog: 26 January 2009.                           %%%
 %%%                                                                          %%%

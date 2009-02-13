@@ -1,11 +1,11 @@
-%%%                                                                      %%%
-%%%  A translator for co-logic programming.                              %%%
-%%%  Written by Feliks Kluzniak at UTD (January 2009).                   %%%
-%%%                                                                      %%%
-%%%  Last update: 4 February 2009.                                       %%%
-%%%                                                                      %%%
-%%%  NOTE: Some of the code may be Eclipse-specific and may require      %%%
-%%%        minor tweaking for other Prolog systems.                      %%%
+%%%                                                                          %%%
+%%%  A translator for co-logic programming.                                  %%%
+%%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
+%%%                                                                          %%%
+%%%  Last update: 6 February 2009.                                           %%%
+%%%                                                                          %%%
+%%%  NOTE: Some of the code may be Eclipse-specific and may require          %%%
+%%%        minor tweaking for other Prolog systems.                          %%%
 
 
 %%% General description
@@ -21,7 +21,7 @@
 %%%
 %%% NOTE: A transformed program cannot contain variable literals or invocations
 %%%       of "call/1".
-%%%       A transformed program cannot contain negative literals, unless they 
+%%%       A transformed program cannot contain negative literals, unless they
 %%%       are invocations of simple builtins or of predicates that were declared
 %%%       as "bottom".
 %%%       (Full negation will be provided in a forthcoming version.)
@@ -35,7 +35,7 @@
 %%%
 %%%    tc( filename ).
 %%%
-%%% (Notice that one can, but need not write down the extension ".clp".  
+%%% (Notice that one can, but need not write down the extension ".clp".
 %%%  However, to translate a file with a different extension one has to write
 %%%  the full file name, thus : 'Foo.ext' .)
 %%%
@@ -58,16 +58,16 @@
 %%%       (because the default extension will be different when loaded into
 %%%       Eclipse).
 %%%       There are, however, two directives that must be recognized. The first
-%%%       is the operator declaration (i.e., ":- op( ... )") (and this is 
+%%%       is the operator declaration (i.e., ":- op( ... )") (and this is
 %%        dealt with by "read_terms/2" in "utilities".  The second is
 %%%       ":- tabled ...", which we must allow in order to process programs
-%%%       that take advantage of both coinduction and tabling.  The translator 
-%%%       automatically transforms the predicate specifications in 
+%%%       that take advantage of both coinduction and tabling.  The translator
+%%%       automatically transforms the predicate specifications in
 %%%       ":- tabled ..." (unless they refer to predicates declared as
-%%%       "bottom").  
+%%%       "bottom").
 %%%       Moreover, the translator issues appropriate "essence_hook" clauses
 %%%       that allow the implementation of tabling to strip the additional
-%%%       "administrative" argument from instances of tabled predicates.  In 
+%%%       "administrative" argument from instances of tabled predicates.  In
 %%%       order to do that, it stores information about these predicates in an
 %%%       internal table called "tabled".
 
@@ -225,7 +225,7 @@ tc( FileName ) :-
 open_streams( FileName, InputStream, OutputStream ) :-
         ensure_filename_is_an_atom( FileName ),
         name( FileName, FileNameChars ),
-        ensure_extension( FileNameChars,     ".clp", 
+        ensure_extension( FileNameChars,     ".clp",
                           RootFileNameChars, InputFileNameChars
                         ),
         append( RootFileNameChars, ".pl", OutputFileNameChars ),
@@ -391,8 +391,8 @@ drop_last( List, ListWithoutLast ) :-
 transform( [], _, [] ) :-
         !.
 
-transform( [ (:- tabled PredSpecs) | Terms ], 
-           _, 
+transform( [ (:- tabled PredSpecs) | Terms ],
+           _,
            [(:- tabled NewPredSpecs) | NewTerms ]
          ) :-
         !,
@@ -458,7 +458,7 @@ store_info_about_tabled( PredSpecs ) :-
         assert( tabled( Pattern ) ),
         fail.
 
-store_info_about_tabled( _ ). 
+store_info_about_tabled( _ ).
 
 
 %% starting_new_predicate( + most general instance of a predicate ):
