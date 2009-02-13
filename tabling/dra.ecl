@@ -520,7 +520,7 @@ legal_directive( (dynamic _)     ).
 
 %% Check and process the legal directives
 
-execute_directive( tabled PredSpecs ) :-
+execute_directive( (tabled PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
             member( Pattern, Patterns ),
@@ -530,7 +530,7 @@ execute_directive( tabled PredSpecs ) :-
             true
         ).
 
-execute_directive( coinductive PredSpecs ) :-
+execute_directive( (coinductive PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
             member( Pattern, Patterns ),

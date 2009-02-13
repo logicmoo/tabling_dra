@@ -370,7 +370,7 @@ check_body_( \+ A, Vars, Clause ) :-
         !,
         check_body_( A, Vars, Clause ).
 
-check_body_( once A, Vars, Clause ) :-
+check_body_( once( A ), Vars, Clause ) :-
         !,
         check_body_( A, Vars, Clause ).
 
