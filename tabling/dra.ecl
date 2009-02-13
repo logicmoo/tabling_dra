@@ -508,9 +508,10 @@ essence_hook( T, T ).    % default, may be overridden by the interpreted program
 
 %% The legal directives (check external form only).  (Used by the top level.)
 
-legal_directive( (tabled _)  ).
-legal_directive( (trace _)   ).
-legal_directive( (dynamic _) ).
+legal_directive( (coinductive _) ).
+legal_directive( (tabled _)      ).
+legal_directive( (trace _)       ).
+legal_directive( (dynamic _)     ).
 
 
 %% Check and process the legal directives
@@ -520,6 +521,16 @@ execute_directive( tabled PredSpecs ) :-
         (
             member( Pattern, Patterns ),
             assert( tabled( Pattern ) ),
+            fail
+        ;
+            true
+        ).
+
+execute_directive( coinductive PredSpecs ) :-
+        predspecs_to_patterns( PredSpecs, Patterns ),
+        (
+            member( Pattern, Patterns ),
+            assert( coinductive( Pattern ) ),
             fail
         ;
             true
@@ -697,10 +708,11 @@ solve( BuiltIn, _, _, _ ) :-
         call( BuiltIn ).
 
 
-% A "normal" (i.e., not tabled) goal.
+% A "normal" goal (i.e., not tabled, not coinductive).
 
 solve( Goal, Stack, Hyp, Level ) :-
         \+ tabled( Goal ),
+        \+ coinductive( Goal ),
         !,
         trace_entry( normal, Goal, Level ),
         (
@@ -708,6 +720,28 @@ solve( Goal, Stack, Hyp, Level ) :-
             use_clause( Goal, Body ),
             solve( Body, Stack, Hyp, NLevel ),
             trace_success( normal, Goal, Level )
+        ;
+            trace_failure( normal, Goal, Level ),
+            fail
+        ).
+
+
+% A goal that is coinductive, but not tabled.
+% Apply the coinductive hypotheses first, then the clauses.
+
+solve( Goal, Stack, Hyp, Level ) :-
+        \+ tabled( Goal ),
+        coinductive( Goal ),
+        !,
+        trace_entry( coinductive, Goal, Level ),
+        (
+            member( Goal, Hyp ),
+            trace_success( 'coinductive (hypothesis)', Goal, Level )
+        ;
+            NLevel is Level + 1,
+            use_clause( Goal, Body ),
+            solve( Body, Stack, [ Goal | Hyp ], NLevel ),
+            trace_success( 'coinductive (clause)', Goal, Level )
         ;
             trace_failure( normal, Goal, Level ),
             fail
