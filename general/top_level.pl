@@ -435,7 +435,7 @@ check_not_builtin( Clause ) :-
         get_clause_head( Clause, Head ),
         predicate_property( Head, built_in ),
         !,
-        error( [ 'An attempt to redefine a built-in predicate:\n  ',
+        error( [ 'An attempt to redefine a built-in predicate:\n***        ',
                  Clause,
                  '.\n'
                ]

@@ -823,22 +823,22 @@ solve( Goal, Stack, Hyp, Level ) :-
             coinductive( Goal )
         ->
             copy_term( Goal, OriginalGoal ),
-            get_unique_index( Index ),
+            get_unique_index( I ),
             (
                 % results from coinductive hypotheses:
                 member( Goal, Hyp ),
                 trace_success( 'variant (coinductive)', Goal, Level ),
-                new_result_or_fail( Index, Goal ),
-                memo( OriginalGoal, Goal )
+                new_result_or_fail( I, Goal ),
+                memo( OriginalGoal, Goal, Level )
             ;
                 % other tabled results
                 get_answer( Goal ),
-                new_result_or_fail( Index, Goal ),
+                new_result_or_fail( I, Goal ),
                 trace_success( variant, Goal, Level )
             ;
                 % wrap it up
                 trace_failure( variant, Goal, Level ),
-                retractall( result( Index ) ),
+                retractall( result( I ) ),
                 fail
             )
         ;
@@ -1311,9 +1311,10 @@ write_level( Level ) :-
         write( output, '] ' ).
 
 write_label_and_goal( Label, Goal ) :-
-        write( output, Label ),
-        write( output, ': ' ),
-        write( output, Goal ).
+        print_depth( N ),
+        write(      output, Label ),
+        write(      output, ': ' ),
+        write_term( output, Goal, [ depth( N ) ] ).
 
 
 
@@ -1324,12 +1325,13 @@ write_label_and_goal( Label, Goal ) :-
 optional_trace( Label, Goal, Term, Level ) :-
         tracing( Goal ),
         !,
+        print_depth( N ),
         write_level( Level ),
-        write( output, Label ),
-        write( output, Goal ),
-        write( output, ' : ' ),
-        write( output, Term ),
-        nl( output ).
+        write(      output, Label ),
+        write_term( output, Goal, [ depth( N ) ] ).
+        write(      output, ' : ' ),
+        write_term( output, Term, [ depth( N ) ] ).
+        nl(         output ).
 
 optional_trace( _, _, _, _ ).
 
