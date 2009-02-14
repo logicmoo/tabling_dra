@@ -837,9 +837,9 @@ solve( Goal, Stack, Hyp, Level ) :-
             (
                 % results from coinductive hypotheses:
                 member( Goal, Hyp ),
-                trace_success( 'variant (coinductive)', Goal, Level ),
                 new_result_or_fail( I, Goal ),
-                memo( OriginalGoal, Goal, Level )
+                memo( OriginalGoal, Goal, Level ),
+                trace_success( 'variant (coinductive)', Goal, Level )
             ;
                 % other tabled results
                 get_answer( Goal ),

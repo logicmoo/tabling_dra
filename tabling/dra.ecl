@@ -827,9 +827,9 @@ solve( Goal, Stack, Hyp, Level ) :-
             (
                 % results from coinductive hypotheses:
                 member( Goal, Hyp ),
-                trace_success( 'variant (coinductive)', Goal, Level ),
                 new_result_or_fail( I, Goal ),
-                memo( OriginalGoal, Goal, Level )
+                memo( OriginalGoal, Goal, Level ),
+                trace_success( 'variant (coinductive)', Goal, Level )
             ;
                 % other tabled results
                 get_answer( Goal ),
@@ -1328,9 +1328,9 @@ optional_trace( Label, Goal, Term, Level ) :-
         print_depth( N ),
         write_level( Level ),
         write(      output, Label ),
-        write_term( output, Goal, [ depth( N ) ] ).
+        write_term( output, Goal, [ depth( N ) ] ),
         write(      output, ' : ' ),
-        write_term( output, Term, [ depth( N ) ] ).
+        write_term( output, Term, [ depth( N ) ] ),
         nl(         output ).
 
 optional_trace( _, _, _, _ ).
