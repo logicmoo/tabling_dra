@@ -15,6 +15,9 @@ stream( [ H | T ] ) :-  num( H ),  stream( T ).
 
 % Drop some "occurrence" of arg1 from arg2, yielding arg3.
 % ("Occurrence" of X = something unifiable with X.)
+
+:- tabled drop/3.
+
 drop( H, [ H | T ] , T  ).
 drop( H, [ _ | T ] , T1 ) :-  drop( H, T, T1 ).
 
@@ -29,8 +32,7 @@ drop( H, [ _ | T ] , T1 ) :-  drop( H, T, T1 ).
 comember( X, L ) :-  drop( X, L, L1 ),  comember( X, L1 ).
 
 
-
-
+% Queries:
 
 q1:-   X = [ 0, s( 0 ), s( s( 0 ) ) ],      comember( s( 0 ), X ).         % no
 
