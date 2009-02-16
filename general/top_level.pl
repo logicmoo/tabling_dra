@@ -3,7 +3,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 13 February 2009.                                          %%%
+%%%  Last update: 16 February 2009.                                          %%%
 %%%                                                                          %%%
 %%%                                                                          %%%
 
@@ -146,6 +146,12 @@
 %%%                 giving the metainterpreter an opportunity to
 %%%                 (re)initialise its data structures.
 %%%
+%%%          - program_loaded/0:
+%%%                 This will be called after a program has been read in from
+%%%                 its file and stored in memory.  The interpreter can use
+%%%                 the opportunity to check the program's consistency, to
+%%%                 transform the program, etc.
+%%%
 %%%          - legal_directive/1:
 %%%                 Whenever the top level encounters a directive
 %%%                 (of the form ":- D."), it will call "legal_directive( D )".
@@ -224,6 +230,7 @@ prog( FileName ) :-
         create_modules,
         initialise,                              % provided by a metainterpreter
         process_file( FileName ),
+        program_loaded,                          % provided by a metainterpreter
         top.
 
 

@@ -3,7 +3,7 @@
 %%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 13 February 2009.                                          %%%
+%%%  Last update: 16 February 2009.                                          %%%
 %%%                                                                          %%%
 
 %%% NOTE:
@@ -416,7 +416,7 @@
 
 % If a file name has no extension, add ".tlp"
 
-default_extension( ".tlp" ).
+default_extension( ".tlp" ).                              % invoked by top_level
 
 
 %% Initialization of tables:
@@ -434,7 +434,7 @@ default_extension( ".tlp" ).
 :- setval( number_of_answers, 0 ).
 :- setval( unique_index,      0 ).
 
-initialise :-
+initialise :-                                             % invoked by top_level
         retractall( coinductive( _ )            ),
         retractall( tabled( _ )                 ),
         retractall( answer( _, _, _ )           ),
@@ -446,6 +446,32 @@ initialise :-
         retractall( tracing( _ )                ),
         setval( number_of_answers, 0 ),
         setval( unique_index,      0 ).
+
+
+%% Checking consistency:
+
+program_loaded :-                                         % invoked by top_level
+        check_consistency.
+
+
+%% check_consistency:
+%% Produce a warning if predicates were declared but not defined (this may well
+%% be due to a "tabled" directive giving the wrong arity).
+
+check_consistency :-
+        tabled( Head ),
+        functor( Head, P, K ),
+        \+ current_predicate( (interpreted:P) / K ),
+        warning( [ P/K, " declared as tabled, but not defined" ] ),
+        fail.
+
+check_consistency :-
+        coinductive( Head ),
+        functor( Head, P, K ),
+        \+ current_predicate( (interpreted:P) / K ),
+        warning( [ P/K, " declared as coinductive, but not defined" ] ),
+        fail.
+check_consistency.
 
 
 
@@ -519,7 +545,7 @@ legal_directive( (dynamic _)     ).
 legal_directive( (multifile _)   ).
 
 
-%% Check and process the legal directives
+%% Check and process the legal directives (invoked by top_level)
 
 execute_directive( (tabled PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
@@ -567,6 +593,7 @@ will_trace( _ ).
 
 
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%  The interpreter  %%%%%
@@ -576,12 +603,11 @@ will_trace( _ ).
 
 :- mode query( + ).
 
-query( Goals ) :-
+query( Goals ) :-                                         % invoked by top_level
         retractall( pioneer( _, _, _ )          ),
         retractall( result( _, _ )              ),
         retractall( loop( _, _ )                ),
         retractall( looping_alternative( _, _ ) ),
-
         setval( unique_index, 0 ),
 
         solve( Goals, [], [], 0 ).

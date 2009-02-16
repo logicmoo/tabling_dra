@@ -3,7 +3,7 @@
 %%%  below for more information.                                             %%%
 %%%  Written by Feliks Kluzniak at UTD.                                      %%%
 %%%                                                                          %%%
-%%%  Last update: 13 February 2009.                                          %%%
+%%%  Last update: 16 February 2009.                                          %%%
 %%%                                                                          %%%
 
 %%% NOTE:
@@ -299,7 +299,7 @@ General description
 
 % If a file name has no extension, add ".tlp"
 
-default_extension( ".tlp" ).
+default_extension( ".tlp" ).                              % invoked by top_level
 
 
 %% Initialization of tables:
@@ -315,7 +315,7 @@ default_extension( ".tlp" ).
 :- setval( pioneer_index,     0 ).
 :- setval( loop_index,        0 ).
 
-initialise :-
+initialise :-                                             % invoked by top_level
         retractall( tabled( _ )     ),
         retractall( answer( _, _ )  ),
         retractall( pioneer( _, _ ) ),
@@ -325,6 +325,10 @@ initialise :-
         setval( number_of_answers, 0 ),
         setval( pioneer_index,     0 ),
         setval( loop_index,        0 ).
+
+
+program_loaded.                                           % invoked by top_level
+
 
 
 
@@ -405,7 +409,7 @@ legal_directive( (trace _)   ).
 legal_directive( (dynamic _) ).
 
 
-%% Check and process the legal directives
+%% Check and process the legal directives (invoked by top_level)
 
 execute_directive( tabled PredSpecs ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
@@ -454,7 +458,7 @@ will_trace( _ ).
 
 :- mode query( + ).
 
-query( Goals ) :-
+query( Goals ) :-                                         % invoked by top_level
         solve( Goals, [], 0 ),
         retractall( pioneer( _, _ )  ),
         retractall( loop( _, _ , _ ) ),
