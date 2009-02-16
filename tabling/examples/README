@@ -7,6 +7,7 @@ bad2.tlp:
 bad3.tlp:
 bad4.tlp:
 bad5.tlp:
+bad6.tlp:
         Examples that test some of the diagnostics of the tabling
         interpreter.
 
