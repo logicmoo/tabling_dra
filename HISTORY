@@ -38,8 +38,9 @@
 
 16 Feb 2009:   Fourth "internal public" release:
 
-                 - Really deleted "eager_tabling" ;-)
-                 - "dra" checks consistency of declarations with definitions
+                 - Really deleted "eager_tabling" ;-).
+                 - Found a couple of errors in "dra".
+                 - "dra" checks consistency of declarations with definitions.
                  - "dra" gives priority to new answers (this can be changed by
                     using ":- priority ...").
 

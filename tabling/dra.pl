@@ -866,15 +866,17 @@ solve( Goal, _, _, Level ) :-
 
 
 solve( Goal, Stack, Hyp, Level ) :-
-        is_variant_of_ancestor( Goal, Stack, AncestorTriple, InterveningGoals ),
+        is_variant_of_ancestor( Goal, Stack,
+                                AncestorTriple, InterveningTriples
+                              ),
         !,
         trace_entry( variant, Goal, Level ),
         (
             % Rescind the status of intervening pioneers:
-            member( M, InterveningGoals ),
-            is_a_variant_of_a_pioneer( M, Index ),
-            optional_trace( 'Removing pioneer: ', M, Index, Level ),
-            rescind_pioneer_status( Index ),
+            member( triple( M, MI, _ ), InterveningTriples ),
+            is_a_variant_of_a_pioneer( M, MI ),
+            optional_trace( 'Removing pioneer: ', M, MI, Level ),
+            rescind_pioneer_status( MI ),
             fail
         ;
             true
@@ -891,11 +893,11 @@ solve( Goal, Stack, Hyp, Level ) :-
             true
         ),
 
+        get_unique_index( I ),
         (
             coinductive( Goal )
         ->
             copy_term( Goal, OriginalGoal ),
-            get_unique_index( I ),
             (
                 % results from coinductive hypotheses:
                 member( Goal, Hyp ),
@@ -919,6 +921,7 @@ solve( Goal, Stack, Hyp, Level ) :-
             % Not coinductive, just sequence through tabled answers:
             (
                 get_answer( Goal ),
+                \+ is_result_known( I, Goal ),
                 trace_success( variant, Goal, Level )
             ;
                 trace_failure( variant, Goal, Level ),
@@ -1068,34 +1071,19 @@ compute_fixed_point_( Goal, Index, Stack, Hyp, Level, NAns ) :-
 %% is_variant_of_ancestor( + goal,
 %%                         + list of triples of goals, indices and clauses,
 %%                         - the triple with the variant ancestor,
-%%                         - list of goals between this and variant ancestor,
+%%                         - prefix of the list (before the variant ancestor)
 %%                       )
 %% Succeeds if the goal is a variant of the goal in some member of the list.
 %% If successful, returns the first such member and the list of intervening
-%% goals.
-
+%% triples.
 
 :- mode is_variant_of_ancestor( +, +, - ).
 
-is_variant_of_ancestor( Goal, Stack, AncestorTriple, InterveningGoals ) :-
+is_variant_of_ancestor( Goal, Stack, AncestorTriple, Prefix ) :-
         append( Prefix, [ AncestorTriple | _ ], Stack ),        % split the list
         AncestorTriple = triple( G, _, _ ),
         are_essences_variants( Goal, G ),
-        !,
-        extract_goals( Prefix, InterveningGoals ).
-
-
-%% extract_goals( + list of triples of goals, indices and clauses,
-%%                - list of goals
-%%              ):
-%% Filter away the other info in each triple, return list of goals only.
-
-:- mode extract_goals( +, - ).
-
-extract_goals( [], [] ).
-
-extract_goals( [ triple( G, _, _ ) | Ts ], [ G | Gs ] ) :-
-        extract_goals( Ts, Gs ).
+        !.
 
 
 %% rescind_pioneer_status( + index ):
@@ -1123,7 +1111,7 @@ complete_cluster( Index, Level ) :-
         complete_goal( G, Level ),
         fail.
 
-complete_cluster( _ ).
+complete_cluster( _, _ ).
 
 
 
