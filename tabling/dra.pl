@@ -13,14 +13,21 @@
 %%%
 %%%    2. Tabled and coinductive predicates should be declared as such in
 %%%       the program file, e.g.,
-%%%           :- tabled      ancestor/2 .
-%%%           :- coinductive comember/2 .
+%%%           :- tabled      ancestor/2.
+%%%           :- coinductive comember/2.
 %%%
 %%%       To include files use the usual Prolog syntax:
 %%%           :- [ file1, file2, ... ].
 %%%
 %%%       To declare predicates used in an interpreted program as dynamic, use
 %%%           :- dynamic p/k.
+%%%
+%%%       By default, a goal produces new (i.e., heretofore unknown) answers
+%%%       before producing old ones.  To reverse this behaviour, use
+%%%
+%%%           :- old_first p/k.
+%%%       or
+%%%           :- old_first all.
 %%%
 %%%       To produce a wallpaper trace use the trace directive. For example,
 %%%           :- trace p/3, q/0, r/1.
@@ -82,12 +89,32 @@
    General description
    -------------------
 
-   A simple (and very inefficient) interpreter that attempts to emulate
-   "top-down tabled programming", as described in
+   A simple (and very inefficient) interpreter that emulates "top-down tabled
+   programming", as described in
 
      [1] Hai-Feng Guo, Gopal Gupta:
          Tabled Logic Programming with Dynamic Ordering of Alternatives
          (17th ICLP, 2001)
+
+   There are two significant changes with respect to the description in the
+   paper:
+
+       - A tabled goal will never produce the same answer twice.
+
+         More specifically: two answers will never be variants of each other.
+         Please note that "goal" means a goal instance.
+
+       - By default, new answers for a tabled goal will be produced before
+         old answers.  The user can reverse the order by means of an "old_first"
+         directive.
+
+         Here, "new answer for a tabled goal" means an answer that has not yet
+         been seen (and tabled) for a variant of the goal.
+
+         The default behaviour is intended to help computations converge more
+         quickly.  The user is given an option to change it, because some
+         predicates may produce a very large (even infinite) set of answers on
+         backtracking, and the application does not require those answers.
 
    The terminology has been modified under the influence of
 
@@ -152,20 +179,15 @@
 
 
    -- coinductive( generic head )
+   -- tabled( generic head )
+   -- old_first( generic head )
 
-           Contains an entry for each predicate that has been declared as
-           coinductive.  For instance, when the interpreter reads
+           Each of these tables contains an entry for each predicate that has
+           been declared as having the corresponding property (i.e., as
+           coinductive, tabled etc.).  For instance, when the interpreter reads
                :- coinductive p/2 .
            it stores the fact
                coinductive( p( _, _ ) ).
-
-   -- tabled( generic head )
-
-           Contains an entry for each predicate that has been declared as
-           tabled.  For instance, when the interpreter reads
-               :- tabled p/2 .
-           it stores the fact
-               tabled( p( _, _ ) ).
 
 
    -- answer( goal, fact )
@@ -423,6 +445,7 @@ default_extension( ".tlp" ).                              % invoked by top_level
 
 :- dynamic coinductive/1 .
 :- dynamic tabled/1 .
+:- dynamic old_first/1 .
 :- dynamic answer/3 .
 :- dynamic pioneer/3 .
 :- dynamic result/2 .
@@ -437,6 +460,7 @@ default_extension( ".tlp" ).                              % invoked by top_level
 initialise :-                                             % invoked by top_level
         retractall( coinductive( _ )            ),
         retractall( tabled( _ )                 ),
+        retractall( old_first( _ )              ),
         retractall( answer( _, _, _ )           ),
         retractall( pioneer( _, _, _ )          ),
         retractall( result( _, _ )              ),
@@ -532,6 +556,7 @@ essence_hook( T, T ).    % default, may be overridden by the interpreted program
 
 :- op( 1000, fy, coinductive ).    % allow  ":- coinductive p/k ."
 :- op( 1000, fy, tabled      ).    % allow  ":- tabled p/k ."
+:- op( 1000, fy, old_first   ).    % allow  ":- old_first p/k ."
 :- op( 1000, fy, trace       ).    % allow  ":- trace  p/k ."
 
 
@@ -542,6 +567,7 @@ legal_directive( (coinductive _) ).
 legal_directive( (tabled _)      ).
 legal_directive( (trace _)       ).
 legal_directive( (dynamic _)     ).
+legal_directive( (old_first _)   ).
 legal_directive( (multifile _)   ).
 
 
@@ -562,6 +588,16 @@ execute_directive( (coinductive PredSpecs) ) :-
         (
             member( Pattern, Patterns ),
             assert( coinductive( Pattern ) ),
+            fail
+        ;
+            true
+        ).
+
+execute_directive( (old_first PredSpecs) ) :-
+        predspecs_to_patterns( PredSpecs, Patterns ),
+        (
+            member( Pattern, Patterns ),
+            assert( old_first( Pattern ) ),
             fail
         ;
             true
@@ -826,7 +862,7 @@ solve( Goal, _, _, Level ) :-
 %               "looping_alternative" entries for that ancestor.
 %
 %       4. If this goal is coinductive, then we use "result" to avoid
-%           duplicating results.
+%          duplicating results.
 
 
 solve( Goal, Stack, Hyp, Level ) :-
@@ -863,13 +899,14 @@ solve( Goal, Stack, Hyp, Level ) :-
             (
                 % results from coinductive hypotheses:
                 member( Goal, Hyp ),
-                new_result_or_fail( I, Goal ),
+                \+ is_answer_known( OriginalGoal, Goal ),    % postpone "old"
                 memo( OriginalGoal, Goal, Level ),
+                new_result_or_fail( I, Goal ),               % i.e., note answer
                 trace_success( 'variant (coinductive)', Goal, Level )
             ;
                 % other tabled results
                 get_answer( Goal ),
-                new_result_or_fail( I, Goal ),
+                \+ is_result_known( I, Goal ),
                 trace_success( variant, Goal, Level )
             ;
                 % wrap it up
@@ -892,12 +929,13 @@ solve( Goal, Stack, Hyp, Level ) :-
 
 % A pioneer goal is solved by program clauses, producing results that are stored
 % in "answer".
-% The goal succeeds as each answer is produced, and tries to come up with more
-% after backtracking.
+% The goal succeeds as each new answer (i.e., an answer heretofore unknown for
+% this goal) is produced, and tries to come up with more after backtracking.
 % When the usual clauses are exhausted, clauses stored in the associated entries
-% of "looping_alternative" will be used to produce more answers, until a fixed
-% point is reached.  The pioneer (and all the goals in its cluster) will then be
-% marked as complete, and will cease to be a pioneer.
+% of "looping_alternative" will be used to produce more answers (but only those
+% that have not yet been produced by the goal), until a fixed point is reached.
+% The pioneer (and all the goals in its cluster) will then be marked as
+% complete, and will cease to be a pioneer.
 %
 % (Note that a pioneer but also lose its status when some descendant goal finds
 %  a variant ancestor that is also an ancestor of the pioneer.  See the case
@@ -923,8 +961,9 @@ solve( Goal, Stack, Hyp, Level ) :-
                    NHyp,
                    NLevel
                  ),
-            new_result_or_fail( Index, Goal ),
+            \+ is_answer_known( OriginalGoal, Goal ),   % postpone "old" answers
             memo( OriginalGoal, Goal, Level ),
+            new_result_or_fail( Index, Goal ),          % i.e., note the answer
             trace_success( pioneer, Goal, Level )
         ;
 
@@ -940,7 +979,7 @@ solve( Goal, Stack, Hyp, Level ) :-
                           ),
             rescind_pioneer_status( Index ),
             get_answer( Goal ),
-            new_result_or_fail( Index, Goal ),
+            \+ is_result_known( Index, Goal ),
             trace_success( 'completed now', Goal, Level )
         ;
 
@@ -951,6 +990,7 @@ solve( Goal, Stack, Hyp, Level ) :-
                                 Goal, Index, Level
                               ),
                 compute_fixed_point( Goal, Index, Stack, Hyp, Level ),
+                \+ is_result_known( Index, Goal ),
                 trace_success( pioneer, Goal, Level )
             ;
                 optional_trace( 'Fixed point computed: ', Goal, Index, Level ),
