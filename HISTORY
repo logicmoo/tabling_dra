@@ -36,4 +36,11 @@
                  - Deleted "mixed", everything is now in "tabling".
                  - More small examples.
 
+16 Feb 2009:   Fourth "internal public" release:
+
+                 - Really deleted "eager_tabling" ;-)
+                 - "dra" checks consistency of declarations with definitions
+                 - "dra" gives priority to new answers (this can be changed by
+                    using ":- priority ...").
+
 -------------------------------------------------------------------------------
