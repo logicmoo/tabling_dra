@@ -426,7 +426,7 @@ process_directive( Directive ) :-
 process_directive( Directive ) :-                % unsupported directive
         % \+ legal_directive( Directive ),
         !,
-        error( [ 'Unknown directive: \"", (:- Directive), ".\"' ] ).
+        error( [ 'Unknown directive: \"', (:- Directive), '.\"' ] ).
 
 
 
