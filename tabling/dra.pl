@@ -485,15 +485,15 @@ program_loaded :-                                         % invoked by top_level
 check_consistency :-
         tabled( Head ),
         functor( Head, P, K ),
-        \+ current_predicate( (interpreted:P) / K ),
-        warning( [ P/K, " declared as tabled, but not defined" ] ),
+        \+ current_predicate( interpreted : P / K ),
+        warning( [ P/K, ' declared as tabled, but not defined' ] ),
         fail.
 
 check_consistency :-
         coinductive( Head ),
         functor( Head, P, K ),
-        \+ current_predicate( (interpreted:P) / K ),
-        warning( [ P/K, " declared as coinductive, but not defined" ] ),
+        \+ current_predicate( interpreted : P / K ),
+        warning( [ P/K, ' declared as coinductive, but not defined' ] ),
         fail.
 check_consistency.
 

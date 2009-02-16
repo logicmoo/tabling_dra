@@ -488,14 +488,14 @@ check_consistency :-
         tabled( Head ),
         functor( Head, P, K ),
         \+ current_predicate( P / K )@interpreted,
-        warning( [ P/K, " declared as tabled, but not defined" ] ),
+        warning( [ P/K, ' declared as tabled, but not defined' ] ),
         fail.
 
 check_consistency :-
         coinductive( Head ),
         functor( Head, P, K ),
         \+ current_predicate( P / K )@interpreted,
-        warning( [ P/K, " declared as coinductive, but not defined" ] ),
+        warning( [ P/K, ' declared as coinductive, but not defined' ] ),
         fail.
 check_consistency.
 
