@@ -679,12 +679,12 @@ query( Goals ) :-                                         % invoked by top_level
 solve( \+ Goal, Stack, Hyp, Level ) :-
         !,
         NLevel is Level + 1,
-        trace_entry( normal, \+ Goal, Level ),
+        trace_entry( normal, \+ Goal, '?', Level ),
         (
             \+ solve( Goal, Stack, Hyp, NLevel ),
-            trace_success( normal, \+ Goal, Level )
+            trace_success( normal, \+ Goal, '?', Level )
         ;
-            trace_failure( normal, \+ Goal, Level ),
+            trace_failure( normal, \+ Goal, '?', Level ),
             fail
         ).
 
@@ -694,12 +694,12 @@ solve( \+ Goal, Stack, Hyp, Level ) :-
 solve( once( Goal ), Stack, Hyp, Level ) :-
         !,
         NLevel is Level + 1,
-        trace_entry( normal, once( Goal ), Level ),
+        trace_entry( normal, once( Goal ), '?', Level ),
         (
             once( solve( Goal, Stack, Hyp, NLevel ) ),
-            trace_success( normal, once( Goal ), Level )
+            trace_success( normal, once( Goal ), '?', Level )
         ;
-            trace_failure( normal, once( Goal ), Level ),
+            trace_failure( normal, once( Goal ), '?', Level ),
             fail
         ).
 
@@ -790,14 +790,14 @@ solve( Goal, Stack, Hyp, Level ) :-
         \+ tabled( Goal ),
         \+ coinductive( Goal ),
         !,
-        trace_entry( normal, Goal, Level ),
+        trace_entry( normal, Goal, '?', Level ),
         (
             NLevel is Level + 1,
             use_clause( Goal, Body ),
             solve( Body, Stack, Hyp, NLevel ),
-            trace_success( normal, Goal, Level )
+            trace_success( normal, Goal, '?', Level )
         ;
-            trace_failure( normal, Goal, Level ),
+            trace_failure( normal, Goal, '?', Level ),
             fail
         ).
 
@@ -809,17 +809,17 @@ solve( Goal, Stack, Hyp, Level ) :-
         \+ tabled( Goal ),
         coinductive( Goal ),
         !,
-        trace_entry( coinductive, Goal, Level ),
+        trace_entry( coinductive, Goal, '?', Level ),
         (
             member( Goal, Hyp ),
-            trace_success( 'coinductive (hypothesis)', Goal, Level )
+            trace_success( 'coinductive (hypothesis)', Goal, '?', Level )
         ;
             NLevel is Level + 1,
             use_clause( Goal, Body ),
             solve( Body, Stack, [ Goal | Hyp ], NLevel ),
-            trace_success( 'coinductive (clause)', Goal, Level )
+            trace_success( 'coinductive (clause)', Goal, '?', Level )
         ;
-            trace_failure( coinductive, Goal, Level ),
+            trace_failure( coinductive, Goal, '?', Level ),
             fail
         ).
 
@@ -830,12 +830,12 @@ solve( Goal, Stack, Hyp, Level ) :-
 solve( Goal, _, _, Level ) :-
         is_completed( Goal ),
         !,
-        trace_entry( completed, Goal, Level ),
+        trace_entry( completed, Goal, '?', Level ),
         (
             get_answer( Goal ),
-            trace_success( completed, Goal, Level )
+            trace_success( completed, Goal, '?', Level )
         ;
-            trace_failure( completed, Goal, Level ),
+            trace_failure( completed, Goal, '?', Level ),
             fail
         ).
 
@@ -867,15 +867,16 @@ solve( Goal, _, _, Level ) :-
 
 solve( Goal, Stack, Hyp, Level ) :-
         is_variant_of_ancestor( Goal, Stack,
-                                AncestorTriple, InterveningTriples
+                                triple( G, I, C ), InterveningTriples
                               ),
         !,
-        trace_entry( variant, Goal, Level ),
+        get_unique_index( Index ),
+        trace_entry( variant, Goal, Index, Level ),
         (
             % Rescind the status of intervening pioneers:
             member( triple( M, MI, _ ), InterveningTriples ),
             is_a_variant_of_a_pioneer( M, MI ),
-            optional_trace( 'Removing pioneer: ', M, MI, Level ),
+            trace_other( 'Removing pioneer', M, MI, Level ),
             rescind_pioneer_status( MI ),
             fail
         ;
@@ -884,16 +885,15 @@ solve( Goal, Stack, Hyp, Level ) :-
 
         (
             % Create looping alternative if the variant ancestor is a pioneer:
-            AncestorTriple = triple( G, Index, Clause ),
             is_a_variant_of_a_pioneer( G, Index )
         ->
-            add_loop( Index, InterveningGoals ),
-            add_looping_alternative( Index, Clause )
+            extract_goals( InterveningTriples, InterveningGoals ),
+            add_loop( I, InterveningGoals ),
+            add_looping_alternative( I, C )
         ;
             true
         ),
 
-        get_unique_index( I ),
         (
             coinductive( Goal )
         ->
@@ -903,17 +903,17 @@ solve( Goal, Stack, Hyp, Level ) :-
                 member( Goal, Hyp ),
                 \+ is_answer_known( OriginalGoal, Goal ),    % postpone "old"
                 memo( OriginalGoal, Goal, Level ),
-                new_result_or_fail( I, Goal ),               % i.e., note answer
-                trace_success( 'variant (coinductive)', Goal, Level )
+                new_result_or_fail( Index, Goal ),           % i.e., note answer
+                trace_success( 'variant (coinductive)', Goal, Index, Level )
             ;
                 % other tabled results
                 get_answer( Goal ),
-                \+ is_result_known( I, Goal ),
-                trace_success( variant, Goal, Level )
+                \+ is_result_known( Index, Goal ),
+                trace_success( variant, Goal, Index, Level )
             ;
                 % wrap it up
-                trace_failure( variant, Goal, Level ),
-                retractall( result( I ) ),
+                trace_failure( variant, Goal, Index, Level ),
+                retractall( result( Index, _ ) ),
                 fail
             )
         ;
@@ -921,10 +921,11 @@ solve( Goal, Stack, Hyp, Level ) :-
             % Not coinductive, just sequence through tabled answers:
             (
                 get_answer( Goal ),
-                \+ is_result_known( I, Goal ),
-                trace_success( variant, Goal, Level )
+                \+ is_result_known( Index, Goal ),
+                trace_success( variant, Goal, Index, Level )
             ;
-                trace_failure( variant, Goal, Level ),
+                trace_failure( variant, Goal, Index, Level ),
+                retractall( result( Index, _ ) ),
                 fail
             )
         ).
@@ -954,7 +955,7 @@ solve( Goal, Stack, Hyp, Level ) :-
         ),
         copy_term( Goal, OriginalGoal ),
         add_pioneer( Goal, Index ),
-        optional_trace( 'Entering pioneer: ', Goal, Index, Level ),
+        trace_entry( pioneer, Goal, Index, Level ),
         (
             NLevel is Level + 1,
             use_clause( Goal, Body ),
@@ -967,7 +968,7 @@ solve( Goal, Stack, Hyp, Level ) :-
             \+ is_answer_known( OriginalGoal, Goal ),   % postpone "old" answers
             memo( OriginalGoal, Goal, Level ),
             new_result_or_fail( Index, Goal ),          % i.e., note the answer
-            trace_success( pioneer, Goal, Level )
+            trace_success( pioneer, Goal, Index, Level )
         ;
 
             % All the clauses have been exhausted, for looping alternatives (if
@@ -977,38 +978,46 @@ solve( Goal, Stack, Hyp, Level ) :-
 
             is_completed( Goal )                      % a variant has completed?
         ->
-            optional_trace( 'Removing completed pioneer: ',
-                            Goal, Index, Level
-                          ),
+            trace_other( 'Removing completed pioneer', Goal, Index, Level ),
             rescind_pioneer_status( Index ),
             get_answer( Goal ),
             \+ is_result_known( Index, Goal ),
-            trace_success( 'completed now', Goal, Level )
+            trace_success( 'completed now', Goal, Index, Level )
         ;
 
             is_a_variant_of_a_pioneer( Goal, Index )  % not lost pioneer status?
         ->
             (
-                optional_trace( 'Computing fixed point for ',
-                                Goal, Index, Level
-                              ),
+                trace_other( 'Computing fixed point for', Goal, Index, Level ),
                 compute_fixed_point( Goal, Index, Stack, Hyp, Level ),
                 \+ is_result_known( Index, Goal ),
-                trace_success( pioneer, Goal, Level )
+                trace_success( pioneer, Goal, Index, Level )
             ;
-                optional_trace( 'Fixed point computed: ', Goal, Index, Level ),
+                trace_other( 'Fixed point computed', Goal, Index, Level ),
                 complete_goal( Goal, Level ),
                 complete_cluster( Index, Level ),
-                optional_trace( 'Removing pioneer: ', Goal, Index, Level ),
+                trace_other( 'Removing pioneer', Goal, Index, Level ),
                 rescind_pioneer_status( Index ),
+                get_answer( Goal ),
+                \+ is_result_known( Index, Goal ),
+                trace_success( 'completed now', Goal, Index, Level )
+            ;
                 retractall( result( Index, _ ) ),
                 fail
             )
         ;
 
-            trace_failure( 'no longer a pioneer', Goal, Level ),
-            retractall( result( Index, _ ) ),
-            fail
+            (
+                % No longer a pioneer and not completed, so just sequence
+                % through the remaining available tabled answers.
+                get_answer( Goal ),
+                \+ is_result_known( Index, Goal ),
+                trace_success( '(no longer a pioneer)', Goal, Index, Level )
+            ;
+                trace_failure( '(no longer a pioneer)', Goal, Index, Level ),
+                retractall( result( Index, _ ) ),
+                fail
+            )
         ).
 
 
@@ -1115,6 +1124,20 @@ complete_cluster( _, _ ).
 
 
 
+%% extract_goals( + list of triples of goals, indices and clauses,
+%%                - list of goals
+%%              ):
+%% Filter away the other info in each triple, return list of goals only.
+
+:- mode extract_goals( +, - ).
+
+extract_goals( [], [] ).
+
+extract_goals( [ triple( G, _, _ ) | Ts ], [ G | Gs ] ) :-
+        extract_goals( Ts, Gs ).
+
+
+
 
 
 %%-----  The tables: access and modification  -----
@@ -1195,7 +1218,7 @@ complete_goal( Goal, _ ) :-
 complete_goal( Goal, Level ) :-
         % \+ is_completed( Goal ),
         copy_term( Goal, Copy ),
-        optional_trace( 'Completing: ', Goal, '', Level ),
+        trace_other( 'Completing', Goal, '?', Level ),
         assert( completed( Copy, Goal ) ).
 
 
@@ -1311,59 +1334,77 @@ are_essences_variants( T1, T2 ) :-
 
 
 
-%% trace_entry( + label, + goal, + level ):
+%% trace_entry( + label, + goal + goal number, + level ):
 %% If the goal matches one of the traced patterns, print out a trace line about
 %% entering the goal (at this level, with this label).
+%% (The goal number is not always relevant: "?" is used for those cases.)
 
-trace_entry( Label, Goal, Level ) :-
+trace_entry( Label, Goal, GoalNumber, Level ) :-
         tracing( Goal ),
         !,
         write_level( Level ),
         write( user_output, 'Entering ' ),
-        write_label_and_goal( Label, Goal ),
+        write_label_and_goal( Label, Goal, GoalNumber ),
         nl( user_output ).
 
-trace_entry( _, _, _ ).
+trace_entry( _, _, _, _ ).
 
 
-%% trace_success( + label, + goal, + level ):
+%% trace_success( + label, + goal + goal number, + level ):
 %% If the goal matches one of the traced patterns, print out a trace line about
 %% success of the goal (at this level, with this label).  Moreover, just before
 %% backtracking gets back to the goal, print out a trace line about retrying the
 %% goal.
+%% (The goal number is not always relevant: "?" is used for those cases.)
 
-trace_success( Label, Goal, Level ) :-
+trace_success( Label, Goal, GoalNumber, Level ) :-
         tracing( Goal ),
         !,
         (
             write_level( Level ),
             write( user_output, 'Success ' ),
-            write_label_and_goal( Label, Goal ),
+            write_label_and_goal( Label, Goal, GoalNumber ),
             nl( user_output )
         ;
             write_level( Level ),
             write( user_output, 'Retrying ' ),
-            write_label_and_goal( Label, Goal ),
+            write_label_and_goal( Label, Goal, GoalNumber ),
             nl( user_output ),
             fail
         ).
 
-trace_success( _, _, _ ).
+trace_success( _, _, _, _ ).
 
 
-%% trace_failure( + label, + goal, + level ):
+%% trace_failure( + label, + goal + goal number, + level ):
 %% If the goal matches one of the traced patterns, print out a trace line about
 %% failure of the goal (at this level, with this label).
+%% (The goal number is not always relevant: "?" is used for those cases.)
 
-trace_failure( Label, Goal, Level ) :-
+trace_failure( Label, Goal, GoalNumber, Level ) :-
         tracing( Goal ),
         !,
         write_level( Level ),
         write( user_output, 'Failing ' ),
-        write_label_and_goal( Label, Goal ),
+        write_label_and_goal( Label, Goal, GoalNumber ),
         nl( user_output ).
 
-trace_failure( _, _, _ ).
+trace_failure( _, _, _, _ ).
+
+
+%% trace_other( + label, + goal, + goal number, + level ):
+%% If the goal matches one of the traced patterns, print out a trace line about
+%% this goal (at this level, with this label).
+%% (The goal number is not always relevant: "?" is used for those cases.)
+
+trace_other( Label, Goal, GoalNumber, Level ) :-
+        tracing( Goal ),
+        !,
+        write_level( Level ),
+        write_label_and_goal( Label, Goal, GoalNumber ),
+        nl( user_output ).
+
+trace_other( _, _, _, _ ).
 
 
 %% Auxiliaries for tracing:
@@ -1373,11 +1414,21 @@ write_level( Level ) :-
         write( user_output, Level ),
         write( user_output, '] ' ).
 
-write_label_and_goal( Label, Goal ) :-
+write_label_and_goal( Label, Goal, GoalNumber ) :-
         print_depth( N ),
-        write(      user_output, Label ),
-        write(      user_output, ': ' ),
+        write( user_output, Label ),
+        write( user_output, ': ' ),
+        write_goal_number( GoalNumber ),
         write_term( user_output, Goal, [ max_depth( N ) ] ).
+
+
+write_goal_number( '?' ) :-
+        !.
+
+write_goal_number( GoalNumber ) :-
+        write( user_output, '<' ),
+        write( user_output, GoalNumber ),
+        write( user_output, '> ' ).
 
 
 

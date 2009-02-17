@@ -43,5 +43,6 @@
                  - "dra" checks consistency of declarations with definitions.
                  - "dra" gives priority to new answers (this can be changed by
                     using ":- priority ...").
+                 - The wallpaper trace is more informative.
 
 -------------------------------------------------------------------------------
