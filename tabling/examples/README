@@ -63,6 +63,14 @@ simple1.tlp:
 simple2.tlp:
         Two artificial examples to exercise tabling interpreters.
 
+simple1_old_first.tlp:
+        This is simple1.tlp with an additional directive:
+           :- old_first all.
+        to show that there is a difference in the order in which the solutions
+        are produced.  In this example the discipline of producing old goals
+        first results in a shorter computation.
+
+
 trivial_not_tabled.tlp:
         A trivial example in pure Prolog, a "smoke-test" for the
         interpreter.
