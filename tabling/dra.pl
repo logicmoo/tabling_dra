@@ -594,6 +594,7 @@ execute_directive( (coinductive PredSpecs) ) :-
         ).
 
 execute_directive( (old_first all) ) :-
+        !,
         asserta( old_first( _ ) ).
 
 execute_directive( (old_first PredSpecs) ) :-
