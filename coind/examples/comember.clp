@@ -34,7 +34,8 @@ member2( X, [ X | _ ] ).
 member2( X, [ _ | T ] ) :-  member2( X, T ).
 
 
-% Drop some "occurrence" of arg1 from arg2, yielding arg3.
+% Drop some prefix of arg2 upto an "occurrence" of arg1 from arg2,
+% yielding arg3.
 % ("Occurrence" of X = something unifiable with X.)
 drop( H, [ H | T ] , T  ).
 drop( H, [ _ | T ] , T1 ) :-  drop( H, T, T1 ).
