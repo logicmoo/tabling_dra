@@ -42,7 +42,7 @@
                  - Found a couple of errors in "dra".
                  - "dra" checks consistency of declarations with definitions.
                  - "dra" gives priority to new answers (this can be changed by
-                    using ":- priority ...").
+                    using ":- old_first ...").
                  - The wallpaper trace is more informative.
 
 -------------------------------------------------------------------------------
