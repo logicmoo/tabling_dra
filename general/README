@@ -2,15 +2,18 @@
 
 This directory includes the following files:
 
-olist.pl:
-        Basic operations on "difference lists".
+dlist.pl:
+        Basic operations on difference lists.
+
+otree.pl:
+        Basic operations on open trees.
 
 higher_order.pl:
-        A few predicates for "higher order" operations (simulating some basic
+        A few predicates for higher order operations (simulating some basic
         operations known from functional programming).
 
 olist.pl:
-        Basic operations on "open lists".
+        Basic operations on open lists.
 
 sets.ecl:
         Simple operations on sets, used by utilities.ecl.
