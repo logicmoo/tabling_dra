@@ -36,9 +36,9 @@ olist_member( M, OL ) :-
 %% olist_add( + open list, + item ):
 %% Add this item at the end of the open list.
 
-olist_add( OL, M ) :-
+olist_add( OL, Item ) :-
         olist_end( OL, End ),
-        End = [ M | _ ].
+        End = [ Item | _ ].
 
 %
 % Get the end of an open list.
@@ -55,13 +55,13 @@ olist_end( [ _ | T ], End ) :-
 %% olist_conc( + open list, + open list ):
 %% The first open list becomes the concatenation of the two.
 
-olist_conc( L1, L2 ) :-
-        olist_end( L1, End ),
-        olist_conc_( End, L2 ).
+olist_conc( OL1, OL2 ) :-
+        olist_end( OL1, End ),
+        olist_conc_( End, OL2 ).
 
 %
 olist_conc_( _, End ) :-
-        var( End )
+        var( End ),
         !.
 
 olist_conc_( End, [ H | T ] ) :-
@@ -75,19 +75,18 @@ olist_conc_( End, [ H | T ] ) :-
 %% Splits a list into two parts that, when concatenated, would yield the
 %% original list.
 
-olist_split( A, B, C ) :-
-        var( A ),
-        var( B ),
-        var( C ).
+olist_split( OL1, OL2, OL3 ) :-
+        empty_olist( OL1 ),
+        empty_olist( OL2 ),
+        empty_olist( OL3 ).
 
-olist_split( L, L1, L2 ) :-
-        nonvar( L ),
+olist_split( OL, OL1, OL2 ) :-
+        \+ empty_olist( OL ),
         (
-            var( L1 ),
-            L2 = L
+            empty_olist( OL1 ),
+            OL2 = OL
         ;
-            L  = [ H | T ],
-            L1 = [ H | T1 ],
-            olist_split( T, T1, L2 )
+            OL  = [ H | T  ],
+            OL1 = [ H | T1 ],
+            olist_split( T, T1, OL2 )
         ).
-
