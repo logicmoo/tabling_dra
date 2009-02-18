@@ -2,6 +2,10 @@
 
 This directory includes the following files:
 
+higher_order.pl:
+        A few predicates for "higher order" operations (simulating some basic
+        operations known from functional programming).
+
 sets.ecl:
         Simple operations on sets, used by utilities.ecl.
 
@@ -9,9 +13,9 @@ sets.pl:
         Ditto, converted to Sicstus Prolog.
 
 top_level.ecl:
-        A simple top level (i.e., code that reads and stores programs, executes
-        queries etc.).  It is loaded automatically by those metainterpreters
-        that need it.  Eclipse-specific code.
+        A simple top level (i.e., code that reads and stores programs,
+        executes queries etc.).  It is loaded automatically by those
+        metainterpreters that need it.  Eclipse-specific code.
 
 top_level.pl:
         Ditto, converted to Sicstus Prolog.
