@@ -2,15 +2,15 @@
 
 This directory includes the following files:
 
+olist.pl:
+        Basic operations on "difference lists".
+
 higher_order.pl:
         A few predicates for "higher order" operations (simulating some basic
         operations known from functional programming).
 
 olist.pl:
-        Basic operations on "open lists".  (An open list is one whose final
-        element is a variable. One can add new elements at the end without
-        copying the list: the downside is that it is a destructive operation,
-        i.e., the old list "disappears".)
+        Basic operations on "open lists".
 
 sets.ecl:
         Simple operations on sets, used by utilities.ecl.
