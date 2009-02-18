@@ -1,4 +1,4 @@
-%%%  Operations on an "open" list.                                           %%%
+%%%  Operations on "open" lists.                                             %%%
 %%%                                                                          %%%
 %%%  An open list is one whose final element is a variable. One can add      %%%
 %%%  new elements at the end without copying the list: the downside is that  %%%
