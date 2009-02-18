@@ -2,7 +2,7 @@
 %%%                                                                          %%%
 %%%  An open list is one whose final element is a variable. One can add      %%%
 %%%  new elements at the end without copying the list: the downside is that  %%%
-%%%  it is a destructive operation, i.e., the old list "disappears".         %%%
+%%%  it is a destructive operation, i.e., the old list is modified.          %%%
 %%%                                                                          %%%
 %%%  This particular version                                                 %%%
 %%%   written by Feliks Kluzniak at UTD (February 2009).                     %%%
