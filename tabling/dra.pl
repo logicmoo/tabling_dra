@@ -189,6 +189,8 @@
            it stores the fact
                coinductive( p( _, _ ) ).
 
+           These tables are cleared only before reading in a new program.
+
 
    -- answer( goal, fact )
 
@@ -888,7 +890,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 
         (
             % Create looping alternative if the variant ancestor is a pioneer:
-            is_a_variant_of_a_pioneer( G, Index )
+            is_a_variant_of_a_pioneer( G, I )
         ->
             extract_goals( InterveningTriples, InterveningGoals ),
             add_loop( I, InterveningGoals ),
