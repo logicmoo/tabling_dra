@@ -60,7 +60,7 @@ olist_conc( OL1, OL2 ) :-
         olist_conc_( End, OL2 ).
 
 %
-olist_conc_( _, End ) :-
+olist_conc_( End, End ) :-
         var( End ),
         !.
 
