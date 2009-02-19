@@ -66,10 +66,15 @@ simple2.tlp:
 simple1_old_first.tlp:
         This is simple1.tlp with an additional directive:
            :- old_first all.
-        to show that there is a difference in the order in which the solutions
-        are produced.  In this example the discipline of producing old goals
-        first results in a shorter computation.
+        to show that there is a difference in the order in which the
+        solutions are produced.  In this example the discipline of producing
+        old goals first results in a shorter computation.
 
+support.pl:
+supported.tlp:
+        A pair of files to test the "support" feature.  "supported.tlp" is
+        the example (cloned from graph.tlp), while "support.pl" is the
+        "supporting software" in pure Prolog.
 
 trivial_not_tabled.tlp:
         A trivial example in pure Prolog, a "smoke-test" for the

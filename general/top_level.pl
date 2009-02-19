@@ -86,21 +86,23 @@
 %%%       may, however, contain invocations of call/1.
 %%%
 %%%
-%%%    5. The interpreted program may contain declarations of "top" and "bottom"
-%%%       predicates, in the form of directives:
+%%%    5. The interpreted program may contain declarations of "top" and
+%%%       "support" predicates, in the form of directives:
 %%%
 %%%           :- top p/1, q/2.
-%%%           :- bottom check_consistency/1.
+%%%           :- support check_consistency/1.
 %%%
 %%%       The "top" declaration is just ignored: it is useful only when
 %%%       translating coinductive programs into Prolog (see
 %%%       ../coind/translate_colp).
 %%%
-%%%       The "bottom" declaration means that the metainterpreter should treat
+%%%       The "support" declaration means that the metainterpreter should treat
 %%%       this predicate as a built-in, i.e., just let Prolog execute it.  This
 %%%       can be useful for increasing the efficiency of interpreted programs
 %%%       that make use of support routines that are written in "straight"
-%%%       Prolog.
+%%%       Prolog.  (Please note also that support predicates can use the full
+%%%       range of built-in predicates available in the host logic programming
+%%%       system.)
 
 
 
@@ -113,20 +115,25 @@
 %%%          clause( ... ) @ interpreted.
 %%%
 %%%
-%%%    7. The top level notes "bottom" declarations in the table "bottom".  For
-%%%       example,
+%%%    7. The top level notes "support" declarations in the table "support".
+%%%       For example,
 %%%
-%%%           :- bottom p/1, q/2.
+%%%           :- support p/1, q/2.
 %%%
 %%%       will be stored as
 %%%
-%%%           bottom( p( _ ) ).
-%%%           bottom( q( _, _ ) ).
+%%%           support( p( _ ) ).
+%%%           support( q( _, _ ) ).
 %%%
-%%%       The intended meaning is that "bottom" predicates do not make use
+%%%       The intended meaning is that "support" predicates do not make use
 %%%       (directly or indirectly) of the special features provided by the
 %%%       metainterpreter, so their invocations can be handled just by handing
 %%%       them over to Prolog (which would presumably speed up the computation).
+%%%
+%%%       Please note that the support predicates (which should be defined in
+%%%       files mentioned in ":- load_support( filename )." directives) are
+%%%       compiled into the module "support" (unless they are defined within
+%%%       other modules).
 %%%
 %%%
 %%%    8. The metainterpreter should provide the following predicates
@@ -194,8 +201,11 @@
 
 :- ensure_loaded( utilities ).
 
-:- op( 1000, fy, bottom ).    % allow  ":- bottom p/k ."
-:- op( 1000, fy, top    ).    % allow  ":- top p/k ."
+:- op( 1000, fy, top          ).     % allow  ":- top p/k ."
+:- op( 1000, fy, support      ).     % allow  ":- support p/k ."
+:- op( 1000, fy, load_support ).     % allow  ":- load_support filename ."
+
+:- dynamic support/1.
 
 
 %% Default print depth.  (May be changed by the metainterpreter by invoking
@@ -249,6 +259,11 @@ prog( FileName ) :-
 erase_modules :-
         current_predicate( interpreted : PredSpec ),
         abolish( interpreted : PredSpec ),
+        fail.
+
+erase_modules :-
+        current_predicate( support : PredSpec ),
+        abolish( support : PredSpec ),
         fail.
 
 erase_modules.
@@ -365,7 +380,20 @@ include_files( _ ).
 
 process_directive( (top _) ) :-  !.              % just ignore this
 
-process_directive( (bottom _) ) :- !.            %  ignore for now <<<<<<<<<<
+process_directive( (support PredSpecs) ) :-      % store in "support" table
+        !,
+        predspecs_to_patterns( PredSpecs, Patterns ),
+        (
+            member( Pattern, Patterns ),
+            assert( support( Pattern ) ),
+            fail
+        ;
+            true
+        ).
+
+process_directive( (load_support FileName) ) :-  % compile into module "support"
+        !,
+        compile( support : FileName ).
 
 process_directive( Directive ) :-
         legal_directive( Directive ),            % provided by a metainterpreter

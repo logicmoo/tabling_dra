@@ -491,7 +491,8 @@ program_loaded :-                                         % invoked by top_level
 
 %% check_consistency:
 %% Produce a warning if predicates were declared but not defined (this may well
-%% be due to a "tabled" directive giving the wrong arity).
+%% be due to a "tabled" directive giving the wrong arity), or if tabled/
+%% coinductive predicates have been declared as "suppport".
 
 check_consistency :-
         tabled( Head ),
@@ -506,6 +507,21 @@ check_consistency :-
         \+ current_predicate( P / K )@interpreted,
         warning( [ P/K, ' declared as coinductive, but not defined' ] ),
         fail.
+
+check_consistency :-
+        tabled( Head ),
+        support( Head ),
+        functor( Head, P, K ),
+        warning( [ P/K, ' declared as both tabled and \"support\"' ] ),
+        fail.
+
+check_consistency :-
+        coinductive( Head ),
+        support( Head ),
+        functor( Head, P, K ),
+        warning( [ P/K, ' declared as both coinductive and \"support\"' ] ),
+        fail.
+
 check_consistency.
 
 
@@ -787,6 +803,14 @@ solve( BuiltIn, _, _, _ ) :-
         builtin( BuiltIn ),
         !,
         call( BuiltIn ).
+
+
+% A "support" predicate
+
+solve( Goal, _, _, _ ) :-
+        support( Goal ),
+        !,
+        call( Goal )@support.
 
 
 % A "normal" goal (i.e., not tabled, not coinductive).

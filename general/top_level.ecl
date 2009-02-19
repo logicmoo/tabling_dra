@@ -102,7 +102,9 @@
 %%%       this predicate as a built-in, i.e., just let Prolog execute it.  This
 %%%       can be useful for increasing the efficiency of interpreted programs
 %%%       that make use of support routines that are written in "straight"
-%%%       Prolog.
+%%%       Prolog.  (Please note also that support predicates can use the full
+%%%       range of built-in predicates available in the host logic programming
+%%%       system.)
 %%%
 %%%       Predicates that are declared as "support" must be defined in other
 %%%       files.  To compile and load such files, use
@@ -134,6 +136,11 @@
 %%%       (directly or indirectly) of the special features provided by the
 %%%       metainterpreter, so their invocations can be handled just by handing
 %%%       them over to Prolog (which would presumably speed up the computation).
+%%%
+%%%       Please note that the support predicates (which should be defined in
+%%%       files mentioned in ":- load_support( filename )." directives) are
+%%%       compiled into the module "support" (unless they are defined within
+%%%       other modules).
 %%%
 %%%
 %%%    8. The metainterpreter should provide the following predicates
@@ -201,9 +208,11 @@
 
 :- ensure_loaded( utilities ).
 
-:- op( 1000, fy, support ).    % allow  ":- support p/k ."
-:- op( 1000, fy, top    ).     % allow  ":- top p/k ."
+:- op( 1000, fy, top          ).     % allow  ":- top p/k ."
+:- op( 1000, fy, support      ).     % allow  ":- support p/k ."
+:- op( 1000, fy, load_support ).     % allow  ":- load_support filename ."
 
+:- dynamic support/1.
 
 
 % If p/k has already been seen (and declared as dynamic), the fact is recorded
@@ -288,6 +297,7 @@ prog( FileName ) :-
 %% program.
 
 erase_modules :-
+        erase_module( support ),
         erase_module( interpreted ),
         erase_module( interface ),
         erase_module( interface_aux ).
@@ -299,6 +309,7 @@ create_modules :-
         create_module( interface_aux ),
         create_module( interface  , [], [ interface_aux ] ),
         create_module( interpreted, [], [ interface     ] ),
+        create_module( support ),
         fill_interface_modules.
 
 %
@@ -421,7 +432,20 @@ include_files( _ ).
 
 process_directive( (top _) ) :-  !.              % just ignore this
 
-process_directive( (support _) ) :- !.           %  ignore for now <<<<<<<<<<
+process_directive( (support PredSpecs) ) :-      % store in "support" table
+        !,
+        predspecs_to_patterns( PredSpecs, Patterns ),
+        (
+            member( Pattern, Patterns ),
+            assert( support( Pattern ) ),
+            fail
+        ;
+            true
+        ).
+
+process_directive( (load_support FileName) ) :-  % compile into module "support"
+        !,
+        compile( FileName ) @ support.
 
 process_directive( Directive ) :-
         legal_directive( Directive ),            % provided by a metainterpreter
