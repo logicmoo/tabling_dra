@@ -15,7 +15,7 @@
 :- top check/2.          % make check( S, F ) available in its original form
 
 % Don't transform these:
-:- bottom holds/2, normalize/2, proposition/1, state/1, trans/2, trans_all/2.
+:- support holds/2, normalize/2, proposition/1, state/1, trans/2, trans_all/2.
 
 
 %% Check whether the state satisfies the formula.
@@ -38,7 +38,7 @@ check( State, Formula ) :-
 % Check the consistency of the automaton's description.
 
 :- dynamic automaton_error/0.
-:- bottom automaton_error/0.
+:- support automaton_error/0.
 
 check_consistency :-
         retractall( automaton_error ),

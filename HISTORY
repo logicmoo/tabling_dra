@@ -45,4 +45,11 @@
                     using ":- old_first ...").
                  - The wallpaper trace is more informative.
 
+               Fifth "internal public" release:
+
+                 - "dra" is in its own module.
+                 - "bottom" renamed to "support" in "translate_colp".
+                 - "support" and "load_support" implemented in "top_level".
+                 - "dra" can now handle "support".
+
 -------------------------------------------------------------------------------

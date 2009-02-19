@@ -2,7 +2,7 @@
 %%%  A translator for co-logic programming.                                  %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 6 February 2009.                                           %%%
+%%%  Last update: 19 February 2009.                                          %%%
 %%%                                                                          %%%
 %%%  NOTE: Some of the code may be Eclipse-specific and may require          %%%
 %%%        minor tweaking for other Prolog systems.                          %%%
@@ -23,7 +23,7 @@
 %%%       of "call/1".
 %%%       A transformed program cannot contain negative literals, unless they
 %%%       are invocations of simple builtins or of predicates that were declared
-%%%       as "bottom".
+%%%       as "support".
 %%%       (Full negation will be provided in a forthcoming version.)
 %%%
 
@@ -64,7 +64,7 @@
 %%%       that take advantage of both coinduction and tabling.  The translator
 %%%       automatically transforms the predicate specifications in
 %%%       ":- tabled ..." (unless they refer to predicates declared as
-%%%       "bottom").
+%%%       "support").
 %%%       Moreover, the translator issues appropriate "essence_hook" clauses
 %%%       that allow the implementation of tabling to strip the additional
 %%%       "administrative" argument from instances of tabled predicates.  In
@@ -103,16 +103,16 @@
 %%%  below).
 %%%
 %%% 3.
-%%%     :- bottom PredSpec.
+%%%     :- support PredSpec.
 %%%
 %%%  These are treated as declarations of predicates that should be treated as
 %%%  "normal" logic programming predicates, and should, therefore, not be
 %%%  subjected to transformation.  A declaration of this sort constitutes a
-%%%  claim by the programmer that the "bottom" predicate will not invoke ---
+%%%  claim by the programmer that the "support" predicate will not invoke ---
 %%%  directly or indirectly --- any coinductive predicates.
 %%%
 %%%  NOTE: 1. It is an error for a coinductive predicate to be declared as
-%%%           "bottom".
+%%%           "support".
 %%%        2. It is not necessary to declare built-in predicates in this
 %%%           fashion.
 %%%
@@ -125,7 +125,7 @@
 %%% ------------------
 %%%
 %%% A. Every "normal" predicate (i.e., one that has not been declared as
-%%%    "coinductive" or "bottom") will:
+%%%    "coinductive" or "support") will:
 %%%
 %%%      1. have its name extended with an underscore;
 %%%
@@ -162,7 +162,7 @@
 %%%         additional "convenience predicate".
 %%%
 %%%
-%%% C. If a predicate has been declared as "bottom", none of its occurrences is
+%%% C. If a predicate has been declared as "support", none of its occurrences is
 %%%    transformed.  (This applies also to built-in predicates, with the obvious
 %%%    exception of "meta-predicates" such as ",/2", "once/1" etc., some of
 %%%    whose arguments are interpreted as predicates and must undergo the
@@ -263,7 +263,7 @@ translate( InputStream, OutputStream ) :-
 
 
 :- op( 1000, fy, coinductive ).    % allow  ":- coinductive p/k ."
-:- op( 1000, fy, bottom ).         % allow  ":- bottom p/k ."
+:- op( 1000, fy, support ).        % allow  ":- support p/k ."
 :- op( 1000, fy, top ).            % allow  ":- top p/k ."
 
 :- op( 1000, fy, tabled ).         % allow also  ":- tabled p/k ."
@@ -278,7 +278,7 @@ translate( InputStream, OutputStream ) :-
 %% processing of whose definition has been started (and possibly finished).
 
 :- dynamic coinductive/1.
-:- dynamic bottom/1.
+:- dynamic support/1.
 :- dynamic top/1.
 :- dynamic tabled/1.
 :- dynamic defined/1.
@@ -290,7 +290,7 @@ translate( InputStream, OutputStream ) :-
 
 initialise_tables :-
         retractall( coinductive( _ ) ),
-        retractall( bottom( _ )      ),
+        retractall( support( _ )     ),
         retractall( top( _ )         ),
         retractall( tabled( _ )      ),
         retractall( defined( _ )     ).
@@ -298,7 +298,7 @@ initialise_tables :-
 
 
 %% Write_declarations_as_comments( + output stream ):
-%% Output comments that list the declarations of coinductive and bottom
+%% Output comments that list the declarations of coinductive and support
 %% predicates.
 
 :- mode write_declarations_as_comments( + ).
@@ -310,8 +310,8 @@ write_declarations_as_comments( OutputStream ) :-
         fail.
 
 write_declarations_as_comments( OutputStream ) :-
-        writeln( OutputStream, '%% \"BOTTOM\" PREDICATES:' ),
-        bottom( Pattern ),                        % i.e., sequence through these
+        writeln( OutputStream, '%% \"SUPPORT\" PREDICATES:' ),
+        support( Pattern ),                       % i.e., sequence through these
         write_pred_spec_comment( Pattern, OutputStream ),
         fail.
 
@@ -348,12 +348,12 @@ write_top_predicates( OutputStream ) :-
 
 
 %% write_essence_hook( + output stream ):
-%% Output "essence_hook/2" clauses for those tabled predicates that have not
-%% been declared as bottom.
+%% Output "essence_hook/2" clauses for those tabled predicates that have not%
+% been declared as support.
 
 write_essence_hook( OutputStream ) :-
         tabled( Pattern ),                       % i.e., sequence through tabled
-        \+ bottom( Pattern ),
+        \+ support( Pattern ),
         Pattern =.. [ F | Args ],
         drop_last( Args, ArgsButLast ),
         PatternButLast =.. [ F | ArgsButLast ],
@@ -490,7 +490,7 @@ check_contiguity( _ ).
 
 
 %% transform_pred_specs( + predicate specifications, - ditto transformed ):
-%% Transform each p/k into p_/(k+1), unless p/k is declared as "bottom".
+%% Transform each p/k into p_/(k+1), unless p/k is declared as "support".
 
 transform_pred_specs( (PredSpec , PredSpecs), (NewPredSpec , NewPredSpecs) ) :-
         !,
@@ -503,7 +503,7 @@ transform_pred_specs( PredSpec, NewPredSpec ) :-
 %
 transform_pred_spec( PredSpec, PredSpec ) :-
         predspec_to_pattern( PredSpec, Pattern ),      % also checks correctness
-        bottom( Pattern ),
+        support( Pattern ),
         !.
 
 transform_pred_spec( P / K, NP / K1 ) :-
@@ -582,7 +582,7 @@ transform_body( Call, HypVar, NewCall ) :-
 :- mode transform_logical_atom( +, ?, - ).
 
 transform_logical_atom( \+ C, _, \+ C ) :-
-        bottom( C ),
+        support( C ),
         !.
 
 transform_logical_atom( \+ C, _, \+ C ) :-
@@ -604,11 +604,11 @@ transform_logical_atom( once( Calls ), Hyp, once( NewCalls ) ) :-
         transform_body( Calls, Hyp, NewCalls ).
 
 transform_logical_atom( Pred, _, Pred ) :-
-        (bottom( Pred ) ; is_builtin( Pred )),
+        (support( Pred ) ; is_builtin( Pred )),
         !.
 
 transform_logical_atom( Pred, HypVar, NewPred ) :-
-        % \+ (bottom( Pred ) ; is_built_in( Pred )),
+        % \+ (support( Pred ) ; is_built_in( Pred )),
         Pred =.. [ Name | Args ],
         transform_predicate_name( Name, NewName ),
         once( append( Args, [ HypVar ], NewArgs ) ),
@@ -642,7 +642,7 @@ transform_predicate_name( Name, NewName ) :-
 :- mode is_a_translator_directive( + ).
 
 is_a_translator_directive( (coinductive _) ).
-is_a_translator_directive( (bottom      _) ).
+is_a_translator_directive( (support     _) ).
 is_a_translator_directive( (top         _) ).
 
 
@@ -656,9 +656,9 @@ process_translator_directive( (coinductive PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         declare_coinductive( Patterns ).
 
-process_translator_directive( (bottom PredSpecs) ) :-
+process_translator_directive( (support PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
-        declare_bottom( Patterns ).
+        declare_support( Patterns ).
 
 process_translator_directive( (top PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
@@ -668,13 +668,13 @@ process_translator_directive( (top PredSpecs) ) :-
 
 %% declare_coinductive( + list of general instances ):
 %% Store the general instances in "coinductive", warning about duplications.
-%% An overlap with "bottom" is a fatal error.
+%% An overlap with "support" is a fatal error.
 
 declare_coinductive( Patterns ) :-
         member( Pattern, Patterns ),              % i.e., sequence through these
         check_declaration_order( Pattern, 'coinductive' ),
         (
-            bottom( Pattern )
+            support( Pattern )
         ->
             overlap_error( Pattern )
         ;
@@ -692,13 +692,13 @@ declare_coinductive( Patterns ) :-
 declare_coinductive( _ ).
 
 
-%% declare_bottom( + list of general instances ):
-%% Store the general instances in "bottom", warning about duplications.
+%% declare_support( + list of general instances ):
+%% Store the general instances in "support", warning about duplications.
 %% An overlap with "coinductive" is a fatal error.
 
-declare_bottom( Patterns ) :-
+declare_support( Patterns ) :-
         member( Pattern, Patterns ),              % i.e., sequence through these
-        check_declaration_order( Pattern, 'bottom' ),
+        check_declaration_order( Pattern, 'support' ),
         (
             coinductive( Pattern )
         ->
@@ -707,15 +707,15 @@ declare_bottom( Patterns ) :-
             true
         ),
         (
-            bottom( Pattern )
+            support( Pattern )
         ->
-            duplicate_warning( Pattern, 'bottom' )
+            duplicate_warning( Pattern, 'support' )
         ;
-            assert( bottom( Pattern ) )
+            assert( support( Pattern ) )
         ),
         fail.
 
-declare_bottom( _ ).
+declare_support( _ ).
 
 
 %% declare_top( + list of general instances ):
@@ -752,14 +752,14 @@ duplicate_warning( Pattern, Kind ) :-
 
 
 %% overlap_error( + most general instance of a predicate ):
-%% The predicate has been declared as both "coinductive" and "bottom":
+%% The predicate has been declared as both "coinductive" and "support":
 %% raise a fatal error.
 
 :- mode overlap_error( + ).
 
 overlap_error( Pattern ) :-
             functor( Pattern, P, K ),
-            error( [ P/K, ' declared both as \"coinductive\" and as \"bottom\"'
+            error( [ P/K, ' declared both as \"coinductive\" and as \"support\"'
                    ]
                  ).
 
