@@ -813,7 +813,7 @@ solve( BuiltIn, _, _, _ ) :-
 solve( Goal, _, _, _ ) :-
         support( Goal ),
         !,
-        call( Goal )@support.
+        call( support : Goal ).
 
 
 % A "normal" goal (i.e., not tabled, not coinductive).
