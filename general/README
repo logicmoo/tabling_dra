@@ -5,6 +5,13 @@ This directory includes the following files:
 dlist.pl:
         Basic operations on difference lists.
 
+goal_table_in_tree.pl:
+        A data structure for keeping Prolog goals, implemented as an open
+        tree of open lists.
+
+goal_table_simple.pl:
+        A data structure for keeping Prolog goals, implemented as an open list.
+
 otree.pl:
         Basic operations on open trees.
 
