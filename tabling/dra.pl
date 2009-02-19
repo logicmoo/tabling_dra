@@ -431,6 +431,8 @@
 
 
 
+:- module( dra, [ prog/1 ] ).
+
 :- ensure_loaded( [ '../general/top_level',
                     '../general/utilities'
                   ]
@@ -677,7 +679,7 @@ query( Goals ) :-                                         % invoked by top_level
 %%               instantiated by matching with the goal in its original form,
 %%               but does not share variables with the goal).
 
-:- mode solve( +, +, + ).
+:- mode solve( +, +, +, + ).
 
 
 % A negation.
@@ -1134,7 +1136,7 @@ compute_fixed_point_( Goal, Index, Stack, Hyp, Level, NAns ) :-
 %% If successful, returns the first such member and the list of intervening
 %% triples.
 
-:- mode is_variant_of_ancestor( +, +, - ).
+:- mode is_variant_of_ancestor( +, +, -, - ).
 
 is_variant_of_ancestor( Goal, Stack, AncestorTriple, Prefix ) :-
         append( Prefix, [ AncestorTriple | _ ], Stack ),        % split the list

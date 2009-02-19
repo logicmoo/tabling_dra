@@ -9,7 +9,12 @@
 %%% NOTE:
 %%%
 %%%    1. See ../general/top_level.ecl for a description of how to load
-%%%       and run programs.
+%%%       and run programs.  Please note that after loading this interpreter
+%%%       you have to issue
+%%%            :- import dra.
+%%%       if you don't want to keep writing
+%%%            dra:prog( filename )
+%%%       every time.
 %%%
 %%%    2. Tabled and coinductive predicates should be declared as such in
 %%%       the program file, e.g.,
@@ -431,6 +436,10 @@
 
 
 
+:- module( dra ).
+
+:- export prog/1.
+
 :- ensure_loaded( [ '../general/top_level',
                     '../general/utilities'
                   ]
@@ -676,7 +685,7 @@ query( Goals ) :-                                         % invoked by top_level
 %%               instantiated by matching with the goal in its original form,
 %%               but does not share variables with the goal).
 
-:- mode solve( +, +, + ).
+:- mode solve( +, +, +, + ).
 
 
 % A negation.
@@ -1083,7 +1092,7 @@ use_clause( Goal, Body ) :-
 %% with each new answer (and tabling it).  Fail when all the possible results
 %% are exhausted.
 
-:- mode compute_fixed_point( +, +, +, + ).
+:- mode compute_fixed_point( +, +, +, +, + ).
 
 compute_fixed_point( Goal, Index, Stack, Hyp, Level ) :-
         getval( number_of_answers, NAns ),
@@ -1125,7 +1134,7 @@ compute_fixed_point_( Goal, Index, Stack, Hyp, Level, NAns ) :-
 %% If successful, returns the first such member and the list of intervening
 %% triples.
 
-:- mode is_variant_of_ancestor( +, +, - ).
+:- mode is_variant_of_ancestor( +, +, -, - ).
 
 is_variant_of_ancestor( Goal, Stack, AncestorTriple, Prefix ) :-
         append( Prefix, [ AncestorTriple | _ ], Stack ),        % split the list
