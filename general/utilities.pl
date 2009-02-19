@@ -204,7 +204,7 @@ mk_pattern( P, K, Pattern ) :-
 %%                      ):
 %% E.g., p( a, q( X, Y ) )  is transformed to  p( _, _ ).
 
-:- mode most_general_instance( +, + ).
+:- mode most_general_instance( +, - ).
 
 most_general_instance( Term, Pattern ) :-
         functor( Term, P, K ),
@@ -224,7 +224,7 @@ most_general_instance( Term, Pattern ) :-
 predspecs_to_patterns( Var, _ ) :-
         var( Var ),
         !,
-        error( [ 'A variable instead of predicate specifications: \", ',
+        error( [ 'A variable instead of predicate specifications: \"',
                  Var,
                  '\"'
                ]
@@ -259,7 +259,7 @@ predspec_to_pattern( PredSpec, Pattern ) :-
 check_predspec( Var ) :-
         var( Var ),
         !,
-        error( [ 'A variable instead of a predicate specification: \", ',
+        error( [ 'A variable instead of a predicate specification: \"',
                  Var,
                  '\"'
                ]
@@ -311,7 +311,6 @@ is_good_clause_head( Hd ) :-
         !.
 
 is_good_clause_head( Hd ) :-
-        compound( Hd ),
         Hd \= [ _ | _ ].
 
 
@@ -381,7 +380,7 @@ check_body_( call( A ), Vars, Clause ) :-
         ->
             check_body_( A, Vars, Clause )
         ;
-            % var( A )
+            % var( A ),
             (
                 is_set_member( A, Vars )
             ->
@@ -603,7 +602,7 @@ write_list( S, NotAList ) :-
         !,
         warning( [ 'Incorrect invocation of write_list/1: \"',
                    write_list( S, NotAList ),
-                   "\""
+                   '\"'
                  ]
                ).
 

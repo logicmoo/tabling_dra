@@ -274,8 +274,7 @@ is_good_clause_head( Hd ) :-
         !.
 
 is_good_clause_head( Hd ) :-
-        compound( Hd ),
-        \+ is_list( Hd ).
+        Hd \= [ _ | _ ].
 
 
 %%------------------------------------------------------------------------------
@@ -361,7 +360,7 @@ check_body_( call( A ), Vars, Clause ) :-
 check_body_( T, _, Clause ) :-
         \+ callable( T ),
         !,
-        error( [ 'Incorrect literal (\"', T, '\") in \"', Clause, '.\"'  ] ).
+        error( [ 'Incorrect literal (\"', T, '\") in \"', Clause, '.\"' ] ).
 
 check_body_( _, _, _ ).
 

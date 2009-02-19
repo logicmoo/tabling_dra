@@ -45,7 +45,7 @@
                     using ":- old_first ...").
                  - The wallpaper trace is more informative.
 
-               Fifth "internal public" release:
+19 Feb 2009:   Fifth "internal public" release:
 
                  - "dra" is in its own module.
                  - "bottom" renamed to "support" in "translate_colp".
