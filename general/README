@@ -22,11 +22,8 @@ higher_order.pl:
 olist.pl:
         Basic operations on open lists.
 
-sets.ecl:
-        Simple operations on sets, used by utilities.ecl.
-
 sets.pl:
-        Ditto, converted to Sicstus Prolog.
+        Simple operations on sets, used by utilities.
 
 top_level.ecl:
         A simple top level (i.e., code that reads and stores programs,
