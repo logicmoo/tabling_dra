@@ -1,13 +1,13 @@
 %%%  Some generally-useful utilities.                                        %%%
+%%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 13 February 2009.                                          %%%
+%%%  Last update: 19 February 2009.                                          %%%
 %%%                                                                          %%%
-%%%  NOTE: Some of the code may be Eclipse-specific and may require          %%%
-%%%        minor tweaking for other Prolog systems.                          %%%
 
 
 :- ensure_loaded( sets ).
+:- ensure_loaded( compatibility_utilities ).
 
 
 
@@ -42,10 +42,11 @@ mk_ground( T ) :-  mk_ground_aux( T, 0, _ ).
 mk_ground_aux( V, N, N1 ) :-
         var( V ),
         !,
-        number_string( N, CharsOfN ),
+        name_chars( N, CharsOfN ),
         N1 is N + 1,
-        append_strings( " V", CharsOfN, CharsOfVN ),
-        atom_string( V, CharsOfVN ).
+        name_chars( ' V', CharsOfV ),
+        append( CharsOfV, CharsOfN, CharsOfVN ),
+        name_chars( V, CharsOfVN ).
 
 mk_ground_aux( T, N, N ) :-
         atomic( T ),
@@ -426,8 +427,8 @@ ensure_filename_is_an_atom( FileName ) :-
 
 
 %%------------------------------------------------------------------------------
-%% ensure_extension( + file name string,
-%%                   + extension string,
+%% ensure_extension( + file name chars,
+%%                   + extension chars,
 %%                   - the root file name,
 %%                   - file name, possibly extended
 %%                 ):
@@ -438,16 +439,15 @@ ensure_filename_is_an_atom( FileName ) :-
 
 :- mode ensure_extension( +, +, -, - ).
 
-ensure_extension( FileNameString, _, RootFileNameString, FileNameString ) :-
-        split_string( FileNameString, ".", "", Parts ),
-        \+ length( Parts, 1 ),                               % extension present
-        !,
-        once( append( [ RootFileNameString ], [ _ ], Parts ) ).    % i.e., split
+ensure_extension( FileNameChars, _, RootFileNameChars, FileNameChars ) :-
+        name_chars( '.', Dot ),
+        append( RootFileNameChars, [ Dot | _ ], FileNameChars ), % has extension
+        !.
 
-ensure_extension( FileNameString, ExtString,
-                  FileNameString, FullFileNameString
+ensure_extension( FileNameChars, ExtChars,
+                  FileNameChars, FullFileNameChars
                 ) :-
-        concat_strings( FileNameString, ExtString, FullFileNameString ).
+        append( FileNameChars, ExtChars, FullFileNameChars ).
 
 
 
@@ -555,16 +555,16 @@ write_list( S, NotAList ) :-
 :- mode getline( +, - ).
 
 getline( InputStream, Line ) :-
-        get_char( InputStream, C ),
+        getchar( InputStream, C ),
         getline_( InputStream, C, Line ).
 
 %
 :- mode getline_( +, +, - ).
 
-getline_( _InputStream, "\n", []          ) :-  !.
+getline_( _InputStream, '\n', []        ) :-  !.
 
 getline_( InputStream, C   , [ C | Cs ] ) :-
-        get_char( InputStream, NC ),
+        getchar( InputStream, NC ),
         getline_( InputStream, NC, Cs ).
 
 
@@ -616,13 +616,15 @@ warning( [] ) :-
 
 warning( [ A | B ] ) :-
         !,
+        std_warning_stream( WS ),
         begin_warning,
-        write_list( warning_output, [ A | B ] ),
+        write_list( WS, [ A | B ] ),
         end_warning.
 
 warning( NotAList ) :-
         begin_warning,
-        write( warning_output, NotAList ),
+        std_warning_stream( WS ),
+        write( WS, NotAList ),
         end_warning.
 
 
@@ -631,7 +633,8 @@ warning( NotAList ) :-
 %% Begin a warning printout.
 
 begin_warning :-
-        write( warning_output, '--- WARNING: ' ).
+        std_warning_stream( WS ),
+        write( WS, '--- WARNING: ' ).
 
 
 %%------------------------------------------------------------------------------
@@ -639,7 +642,8 @@ begin_warning :-
 %% End a warning printout.
 
 end_warning :-
-        writeln( warning_output, ' ---' ).
+        std_warning_stream( WS ),
+        writeln( WS, ' ---' ).
 
 
 
@@ -667,14 +671,16 @@ error( [] ) :-
 error( [ A | B ] ) :-
         !,
         begin_error,
-        write_list( error, [ A | B ] ),
-        write( error, ' ' ),
+        std_error_stream( ES ),
+        write_list( ES, [ A | B ] ),
+        write( ES, ' ' ),
         end_error.
 
 error( NotAList ) :-
         begin_error,
-        write( error, NotAList ),
-        write( error, ' ' ),
+        std_error_stream( ES ),
+        write( ES, NotAList ),
+        write( ES, ' ' ),
         end_error.
 
 
@@ -683,7 +689,8 @@ error( NotAList ) :-
 %% Begin an error printout.
 
 begin_error :-
-        write( error, '*** ERROR: ' ).
+        std_error_stream( ES ),
+        write( ES, '*** ERROR: ' ).
 
 
 %%------------------------------------------------------------------------------
@@ -691,7 +698,8 @@ begin_error :-
 %% End an error printout.
 
 end_error :-
-        writeln( error, '***' ),
+        std_error_stream( ES ),
+        writeln( ES, '***' ),
         abort.
 
 %%------------------------------------------------------------------------------

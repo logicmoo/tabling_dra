@@ -2,6 +2,11 @@
 
 This directory includes the following files:
 
+compatibility_utilities.ecl:
+compatibility_utilities.pl:
+        Predicates that hide some incompatibilities between Eclipse and
+        Sicstus.
+
 dlist.pl:
         Basic operations on difference lists.
 

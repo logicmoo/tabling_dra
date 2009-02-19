@@ -338,15 +338,17 @@ fill_interface_modules.
 
 process_file( FileName ) :-
         ensure_filename_is_an_atom( FileName ),
-        atom_string( FileName, FileNameString ),
+        name_chars( FileName, FileNameChars ),
         (
-            default_extension( ExtString ),       % provided by metainterpreter?
+            default_extension( Ext ),             % provided by metainterpreter?
+            name_chars( Ext, ExtChars ),
             !
         ;
-            ExtString = ""
+           ExtChars = []
         ),
-        ensure_extension( FileNameString, ExtString, _, FullFileNameString ),
-        open( FullFileNameString, read, ProgStream ),
+        ensure_extension( FileNameChars, ExtChars, _, FullFileNameChars ),
+        name_chars( FullFileName, FullFileNameChars ),
+        open( FullFileName, read, ProgStream ),
 
         process_input( ProgStream ),
 

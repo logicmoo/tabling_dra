@@ -286,15 +286,16 @@ create_modules.
 
 process_file( FileName ) :-
         ensure_filename_is_an_atom( FileName ),
-        name( FileName, FileNameChars ),
+        name_chars( FileName, FileNameChars ),
         (
-            default_extension( ExtChars ),        % provided by metainterpreter?
+            default_extension( Ext ),             % provided by metainterpreter?
+            name_chars( Ext, ExtChars ),
             !
         ;
-            ExtChars = ""
+            ExtChars = []
         ),
         ensure_extension( FileNameChars, ExtChars, _, FullFileNameChars ),
-        name( FullFileName, FullFileNameChars ),
+        name_chars( FullFileName, FullFileNameChars ),
         open( FullFileName, read, ProgStream ),
 
         process_input( ProgStream ),

@@ -442,7 +442,7 @@
 
 % If a file name has no extension, add ".tlp"
 
-default_extension( ".tlp" ).                              % invoked by top_level
+default_extension( '.tlp' ).                              % invoked by top_level
 
 
 %% Initialization of tables:

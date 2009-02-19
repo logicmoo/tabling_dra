@@ -1,51 +1,13 @@
 %%%  Some generally-useful utilities.                                        %%%
+%%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 13 February 2009.                                          %%%
+%%%  Last update: 19 February 2009.                                          %%%
 %%%                                                                          %%%
-%%%  Converted to Sicstus Prolog: 26 January 2009.                           %%%
-%%%                                                                          %%%
-%%%  NOTE: Some of the code may be Sicstus-specific (or even still           %%%
-%%%        Eclipse-specific) and may require some tweaking for other         %%%
-%%%        Prolog systems.                                                   %%%
 
 
 :- ensure_loaded( sets ).
-:- ensure_loaded( library( terms ) ). % A Sicstus library, needed for variant/2.
-
-
-%%------------------------------------------------------------------------------
-%% setval( + name, + value ):
-%% A naive implementation of setval/2 (available in Eclipse):
-%% set this counter to this value.
-
-setval( Name, Value ) :-
-        Pattern =.. [ Name, _ ],
-        retractall( Pattern ),
-        Fact =.. [ Name, Value ],
-        assert( Fact ).
-
-
-%%------------------------------------------------------------------------------
-%% getval( + name, - value ):
-%% A naive implementation of getval/2 (available in Eclipse):
-%% get the value associated with this counter.
-
-getval( Name, Value ) :-
-        Fact =.. [ Name, Value ],
-        Fact.
-
-
-%%------------------------------------------------------------------------------
-%% incval( + name ):
-%% A naive implementation of incval/2 (available in Eclipse):
-%% increment this counter by 1.
-
-incval( Name ) :-
-        getval( Name, Value ),
-        NewValue is Value + 1,
-        setval( Name, NewValue ).
-
+:- ensure_loaded( compatibility_utilities ).
 
 
 
@@ -80,10 +42,11 @@ mk_ground( T ) :-  mk_ground_aux( T, 0, _ ).
 mk_ground_aux( V, N, N1 ) :-
         var( V ),
         !,
-        name( N, CharsOfN ),
+        name_chars( N, CharsOfN ),
         N1 is N + 1,
-        append( " V", CharsOfN, CharsOfVN ),
-        name( V, CharsOfVN ).
+        name_chars( ' V', CharsOfV ),
+        append( CharsOfV, CharsOfN, CharsOfVN ),
+        name_chars( V, CharsOfVN ).
 
 mk_ground_aux( T, N, N ) :-
         atomic( T ),
@@ -476,7 +439,7 @@ ensure_filename_is_an_atom( FileName ) :-
 :- mode ensure_extension( +, +, -, - ).
 
 ensure_extension( FileNameChars, _, RootFileNameChars, FileNameChars ) :-
-        Dot is ".",
+        name_chars( '.', Dot ),
         append( RootFileNameChars, [ Dot | _ ], FileNameChars ), % has extension
         !.
 
@@ -543,35 +506,10 @@ write_terms( _, _ ).
 
 write_clauses( Clauses, OutputStream ) :-
         member( Clause, Clauses ),
-        write_clause( Clause, OutputStream ),
+        writeclause( OutputStream, Clause ),
         fail.
 
 write_clauses( _, _ ).
-
-
-%%------------------------------------------------------------------------------
-%% write_clause( + clauses, + output stream ):
-%% Given an open output stream, write the clause onto it.
-
-write_clause( (:- Directive), OutputStream ) :-
-        !,
-        write( OutputStream, ':- ' ),
-        write_term( OutputStream, Directive, [ quoted( true ) ] ),
-        write( OutputStream, '.' ),
-        nl( OutputStream ).
-
-write_clause( (?- Query), OutputStream ) :-
-        !,
-        write( OutputStream, '?- ' ),
-        write_term( OutputStream, Query, [ quoted( true ) ] ),
-        write( OutputStream, '.' ),
-        nl( OutputStream ).
-
-write_clause( Clause, OutputStream ) :-
-        write_term( OutputStream, Clause, [ indented( true ), quoted( true ) ]
-                  ),
-        write( OutputStream, '.' ),
-        nl( OutputStream ).
 
 
 
@@ -617,16 +555,16 @@ write_list( S, NotAList ) :-
 :- mode getline( +, - ).
 
 getline( InputStream, Line ) :-
-        get_char( InputStream, C ),
+        getchar( InputStream, C ),
         getline_( InputStream, C, Line ).
 
 %
 :- mode getline_( +, +, - ).
 
-getline_( _InputStream, '\n', []          ) :-  !.
+getline_( _InputStream, '\n', []        ) :-  !.
 
 getline_( InputStream, C   , [ C | Cs ] ) :-
-        get_char( InputStream, NC ),
+        getchar( InputStream, NC ),
         getline_( InputStream, NC, Cs ).
 
 
@@ -654,19 +592,6 @@ putchars( OutputStream, [ C | Cs ] ) :-
         putchars( OutputStream, Cs ).
 
 
-%%------------------------------------------------------------------------------
-%% writeln( + stream, + term ):
-%% Write the term onto the stream, follow with a newline.
-
-writeln( S, T ) :-  write( S, T ),  nl( S ).
-
-
-%%------------------------------------------------------------------------------
-%% writeln( + term ):
-%% Write the term onto standard output, follow with a newline.
-
-writeln( T ) :-  writeln( user_output, T ).
-
 
 %%------------------------------------------------------------------------------
 %% warning( + term ):
@@ -691,13 +616,15 @@ warning( [] ) :-
 
 warning( [ A | B ] ) :-
         !,
+        std_warning_stream( WS ),
         begin_warning,
-        write_list( user_output, [ A | B ] ),
+        write_list( WS, [ A | B ] ),
         end_warning.
 
 warning( NotAList ) :-
         begin_warning,
-        write( user_output, NotAList ),
+        std_warning_stream( WS ),
+        write( WS, NotAList ),
         end_warning.
 
 
@@ -706,7 +633,8 @@ warning( NotAList ) :-
 %% Begin a warning printout.
 
 begin_warning :-
-        write( user_output, '--- WARNING: ' ).
+        std_warning_stream( WS ),
+        write( WS, '--- WARNING: ' ).
 
 
 %%------------------------------------------------------------------------------
@@ -714,7 +642,8 @@ begin_warning :-
 %% End a warning printout.
 
 end_warning :-
-        writeln( user_output, ' ---' ).
+        std_warning_stream( WS ),
+        writeln( WS, ' ---' ).
 
 
 
@@ -742,14 +671,16 @@ error( [] ) :-
 error( [ A | B ] ) :-
         !,
         begin_error,
-        write_list( user_error, [ A | B ] ),
-        write( user_error, ' ' ),
+        std_error_stream( ES ),
+        write_list( ES, [ A | B ] ),
+        write( ES, ' ' ),
         end_error.
 
 error( NotAList ) :-
         begin_error,
-        write( user_error, NotAList ),
-        write( user_error, ' ' ),
+        std_error_stream( ES ),
+        write( ES, NotAList ),
+        write( ES, ' ' ),
         end_error.
 
 
@@ -758,7 +689,8 @@ error( NotAList ) :-
 %% Begin an error printout.
 
 begin_error :-
-        write( user_error, '*** ERROR: ' ).
+        std_error_stream( ES ),
+        write( ES, '*** ERROR: ' ).
 
 
 %%------------------------------------------------------------------------------
@@ -766,7 +698,8 @@ begin_error :-
 %% End an error printout.
 
 end_error :-
-        writeln( user_error, '***' ),
+        std_error_stream( ES ),
+        writeln( ES, '***' ),
         abort.
 
 %%------------------------------------------------------------------------------
