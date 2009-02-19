@@ -166,7 +166,7 @@ mk_pattern( P, K, Pattern ) :-
 %%                      ):
 %% E.g., p( a, q( X, Y ) )  is transformed to  p( _, _ ).
 
-:- mode most_general_instance( + ).
+:- mode most_general_instance( +, - ).
 
 most_general_instance( Term, Pattern ) :-
         functor( Term, P, K ),
@@ -361,7 +361,7 @@ check_body_( call( A ), Vars, Clause ) :-
 check_body_( T, _, Clause ) :-
         \+ callable( T ),
         !,
-        error( 'Incorrect literal (\"', T, '\") in \"', Clause, '.\"' ).
+        error( [ 'Incorrect literal (\"', T, '\") in \"', Clause, '.\"'  ] ).
 
 check_body_( _, _, _ ).
 
@@ -573,7 +573,7 @@ getline_( InputStream, C   , [ C | Cs ] ) :-
 %% putline( + output stream, + list of character strings ) :
 %%    Writes the characters to this stream and follows them with a newline.
 
-:- mode putline( + ).
+:- mode putline( +, + ).
 
 putline( OutputStream, Cs ) :-
         putchars( OutputStream, Cs ),

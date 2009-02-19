@@ -574,7 +574,7 @@ interactive_term( Other, VarDict ) :-                  % other: treat as a query
 %% satisfied_with_query( + answer ):
 %% Give the user a chance to type ";" if the answer is "yes".
 
-:- mode continue_query( + ).
+:- mode satisfied_with_query( + ).
 
 satisfied_with_query( yes ) :-
         flush( output ),
