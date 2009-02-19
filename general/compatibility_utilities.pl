@@ -67,7 +67,7 @@ incval( Name ) :-
 
 
 %%------------------------------------------------------------------------------
-%% writeclause( + output stream, + clause,  ):
+%% writeclause( + output stream, + clause ):
 %% Given an open output stream, write the clause onto it.
 
 writeclause( OutputStream, (:- Directive) ) :-
@@ -89,5 +89,14 @@ writeclause( OutputStream, Clause ) :-
                   ),
         write( OutputStream, '.' ),
         nl( OutputStream ).
+
+
+%%------------------------------------------------------------------------------
+%% writeln( + output stream, + term ):
+%% Write the term, followed by a newline.
+
+writeln( OutputStream, Term ) :-
+        write( OutputStream, Term ),
+        nl(    OutputStream ).
 
 %%------------------------------------------------------------------------------
