@@ -19,7 +19,7 @@
 :- mode make_set( +, - ).
 
 make_set( L, S ) :-
-        make_empty_set( S0 ),
+        empty_set( S0 ),
         make_set_( L, S0, S ).
 
 %
@@ -31,21 +31,10 @@ make_set_( [ H | T ], S, NS ) :-
 
 
 %%------------------------------------------------------------------------------
-%% is_empty_set( - set ) :
-%% Is this an empty set?
+%% empty_set( +- set ) :
+%% Create an empty set, or check that the given set is empty.
 
-:- mode is_empty_set( + ).
-
-is_empty_set( [] ).
-
-
-%%------------------------------------------------------------------------------
-%% make_empty_set( - set ) :
-%% Create an empty set.
-
-:- mode make_empty_set( - ).
-
-make_empty_set( [] ).
+empty_set( [] ).
 
 
 %%------------------------------------------------------------------------------
