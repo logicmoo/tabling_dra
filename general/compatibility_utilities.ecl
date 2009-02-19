@@ -40,4 +40,12 @@ name_chars( Atom, NameChars ) :-
             string_list( NameString, NameChars )
         ).
 
+
+%%------------------------------------------------------------------------------
+%% flush_output( + output stream ):
+%% Flush out the buffer of the stream.
+
+flush_output( OutputStream ) :-
+        flush( OutputStream ).
+
 %%------------------------------------------------------------------------------

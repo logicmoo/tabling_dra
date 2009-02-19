@@ -344,7 +344,7 @@ process_file( FileName ) :-
             name_chars( Ext, ExtChars ),
             !
         ;
-           ExtChars = []
+            ExtChars = []
         ),
         ensure_extension( FileNameChars, ExtChars, _, FullFileNameChars ),
         name_chars( FullFileName, FullFileNameChars ),
@@ -511,11 +511,13 @@ execute_query( _, no ).
 
 show_result( yes, VarDict ) :-
         !,
+        std_output_stream( Output ),
         show_bindings( VarDict ),
-        write( output, 'Yes' ).
+        write( Output, 'Yes' ).
 
 show_result( no, _ ) :-
-        write( output, 'No' ).
+        std_output_stream( Output ),
+        write( Output, 'No' ).
 
 
 %% show_bindings( + variable dictionary ):
@@ -524,12 +526,13 @@ show_result( no, _ ) :-
 :- mode show_bindings( + ).
 
 show_bindings( Dict ) :-
-        member( [ Name | Var ], Dict ),
-        write(   output, Name ),
-        write(   output, ' = ' ),
+        std_output_stream( Output ),
         print_depth( MaxDepth ),
-        write_term( output, Var, [ depth( MaxDepth ) ] ),
-        nl( output ),
+        member( [ Name | Var ], Dict ),
+        write( Output, Name ),
+        write( Output, ' = ' ),
+        write_term( Output, Var, [ depth( MaxDepth ) ] ),
+        nl( Output ),
         fail.
 
 show_bindings( _ ).
@@ -612,14 +615,14 @@ interactive_term( Other, VarDict ) :-                  % other: treat as a query
 
 satisfied_with_query( yes ) :-
         std_output_stream( Output ),
-        flush( Output ),
+        flush_output( Output ),
         user_accepts,
         !.
 
 satisfied_with_query( no ) :-
         std_output_stream( Output ),
         nl( Output ),
-        flush( Output ).
+        flush_output( Output ).
 
 
 %% user_accepts:
@@ -630,7 +633,7 @@ user_accepts :-
         std_input_stream( Input ),
         std_output_stream( Output ),
         write( Output, '  (more?) ' ),
-        flush( Output ),
+        flush_output( Output ),
         getline( Input, Line ),
         Line \= [ ';' | _ ].             % i.e., fail if 1st char is a semicolon
 

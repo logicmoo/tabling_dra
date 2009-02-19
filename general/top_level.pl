@@ -440,11 +440,13 @@ execute_query( _, no ).
 
 show_result( yes, VarDict ) :-
         !,
+        std_output_stream( Output ),
         show_bindings( VarDict ),
-        write( user_output, 'Yes' ).
+        write( Output, 'Yes' ).
 
 show_result( no, _ ) :-
-        write( user_output, 'No' ).
+        std_output_stream( Output ),
+        write( Output, 'No' ).
 
 
 %% show_bindings( + variable dictionary ):
@@ -453,12 +455,13 @@ show_result( no, _ ) :-
 :- mode show_bindings( + ).
 
 show_bindings( Dict ) :-
-        member( (Name = Var), Dict ),
-        write(   user_output, Name ),
-        write(   user_output, ' = ' ),
+        std_output_stream( Output ),
         print_depth( MaxDepth ),
-        write_term( user_output, Var, [ max_depth( MaxDepth ) ] ),
-        nl( user_output ),
+        member( (Name = Var), Dict ),
+        write( Output, Name ),
+        write( Output, ' = ' ),
+        write_term( Output, Var, [ max_depth( MaxDepth ) ] ),
+        nl( Output ),
         fail.
 
 show_bindings( _ ).
@@ -527,7 +530,7 @@ interactive_term( (?- Query), VarDict ) :-             % query
 
 interactive_term( Other, VarDict ) :-                  % other: treat as a query
         % Other \= end_of_file,
-        % Other \= quit.
+        % Other \= quit,
         % Other \= (:- _),
         % Other \= (?- _),
         interactive_term( (?- Other), VarDict ).
