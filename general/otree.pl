@@ -51,11 +51,11 @@ is_in_otree( Key, LessPred, Node, Info ) :-
 
 
 %%------------------------------------------------------------------------------
-%% otree_add( + key,
+%% otree_add( + open tree,
+%%            + key,
 %%            + information,
 %%            + comparison predicate,
-%%            + modification predicate,
-%%            + open tree
+%%            + modification predicate
 %%          ):
 %% Make sure that the key is associated with this information in the open tree.
 %% If the entry for this key is already present, modify the existing
@@ -63,8 +63,8 @@ is_in_otree( Key, LessPred, Node, Info ) :-
 %% "less predicate" is a binary predicate that succeeds if the first argument is
 %% smaller than the second argument.
 %% "modification predicate" is a binary predicate that will add information from
-%% its first argument to its second argument (if this is not to be an empty
-%% operation, the second argument must be modifiable, e.g., it could be an empty
+%% its second argument to its first argument (if this is not to be an empty
+%% operation, the first argument must be modifiable, e.g., it could be an empty
 %% list).
 %% NOTE: If the format of the information is such that it cannot be modified,
 %%       then always check that the key is not in the tree before invoking this
@@ -80,7 +80,7 @@ otree_add( Node, Key, Info, LessPred, ModifyPred ) :-
             (
                 Key = K
             ->
-                apply( ModifyPred, [ Info, I ] )
+                apply( ModifyPred, [ I, Info ] )
             ;
                 apply( LessPred, [ Key, K ] )
             ->
