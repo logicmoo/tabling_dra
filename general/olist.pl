@@ -33,6 +33,21 @@ olist_member( M, OL ) :-
 
 
 %%------------------------------------------------------------------------------
+%% olist_member_reversed( +- item, + open list ):
+%% Generate a member of the open list, or check that a given term is a member:
+%% in the case of generation, proceed from the end of the list forwards.
+
+olist_member_reversed( M, OL ) :-
+        nonvar( OL ),
+        OL = [ H | T ],
+        (
+            olist_member_reversed( M, T )
+        ;
+            M = H
+        ).
+
+
+%%------------------------------------------------------------------------------
 %% olist_add( + open list, + item ):
 %% Add this item at the end of the open list.
 
