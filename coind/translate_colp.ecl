@@ -301,13 +301,13 @@ initialise_tables :-
 :- mode write_declarations_as_comments( + ).
 
 write_declarations_as_comments( OutputStream ) :-
-        writeln( OutputStream, "%% COINDUCTIVE PREDICATES:" ),
+        writeln( OutputStream, '%% COINDUCTIVE PREDICATES:' ),
         coinductive( Pattern ),                   % i.e., sequence through these
         write_pred_spec_comment( Pattern, OutputStream ),
         fail.
 
 write_declarations_as_comments( OutputStream ) :-
-        writeln( OutputStream, "%% \"SUPPORT\" PREDICATES:" ),
+        writeln( OutputStream, '%% \"SUPPORT\" PREDICATES:' ),
         support( Pattern ),                       % i.e., sequence through these
         write_pred_spec_comment( Pattern, OutputStream ),
         fail.
@@ -320,7 +320,7 @@ write_declarations_as_comments( OutputStream ) :-
 
 write_pred_spec_comment( Pattern, OutputStream ) :-
         functor( Pattern, P, K ),
-        write(   OutputStream, "%%   " ),
+        write(   OutputStream, '%%   ' ),
         writeln( OutputStream, P / K ).
 
 
@@ -478,7 +478,7 @@ check_contiguity( Head ) :-
         defined( Head ),
         !,
         functor( Head, P, K ),
-        error( [ "Clauses for predicate ", P/K, " are not contiguous" ] ).
+        error( [ 'Clauses for predicate ', P/K, ' are not contiguous' ] ).
 
 check_contiguity( _ ).
 
@@ -540,7 +540,7 @@ transform_clause( Fact, NewFact ) :-
 
 transform_body( Var ) :-
         !,
-        error( [ "Variable literal: \"", Var, "\"" ] ).
+        error( [ 'Variable literal: \"', Var, '\"' ] ).
 
 transform_body( (Calls1 , Calls2), HypVar, (NewCalls1 , NewCalls2) ) :-
         !,
@@ -589,11 +589,11 @@ transform_logical_atom( \+ C, _, \+ C ) :-
 
 transform_logical_atom( \+ C, _, _ ) :-
         !,
-        error( [ "Negative literal: \"", \+ C, "\"" ] ).
+        error( [ 'Negative literal: \"', \+ C, '\"' ] ).
 
 transform_logical_atom( call( C ), _, _ ) :-
         !,
-        error( [ "Invocation of \"call/1\": \"", call( C ), "\"" ] ).
+        error( [ 'Invocation of \"call/1\": \"', call( C ), '\"' ] ).
 
 transform_logical_atom( once Calls, Hyp, once NewCalls ) :-
         !,
@@ -667,7 +667,7 @@ process_translator_directive( (top PredSpecs) ) :-
 
 declare_coinductive( Patterns ) :-
         member( Pattern, Patterns ),              % i.e., sequence through these
-        check_declaration_order( Pattern, "coinductive" ),
+        check_declaration_order( Pattern, 'coinductive' ),
         (
             support( Pattern )
         ->
@@ -678,7 +678,7 @@ declare_coinductive( Patterns ) :-
         (
             coinductive( Pattern )
         ->
-            duplicate_warning( Pattern, "coinductive" )
+            duplicate_warning( Pattern, 'coinductive' )
         ;
             assert( coinductive( Pattern ) )
         ),
@@ -693,7 +693,7 @@ declare_coinductive( _ ).
 
 declare_support( Patterns ) :-
         member( Pattern, Patterns ),              % i.e., sequence through these
-        check_declaration_order( Pattern, "support" ),
+        check_declaration_order( Pattern, 'support' ),
         (
             coinductive( Pattern )
         ->
@@ -704,7 +704,7 @@ declare_support( Patterns ) :-
         (
             support( Pattern )
         ->
-            duplicate_warning( Pattern, "support" )
+            duplicate_warning( Pattern, 'support' )
         ;
             assert( support( Pattern ) )
         ),
@@ -718,11 +718,11 @@ declare_support( _ ).
 
 declare_top( Patterns ) :-
         member( Pattern, Patterns ),             % i.e., sequence through these
-        check_declaration_order( Pattern, "top" ),
+        check_declaration_order( Pattern, 'top' ),
         (
             top( Pattern )
         ->
-            duplicate_warning( Pattern, "top" )
+            duplicate_warning( Pattern, 'top' )
         ;
             assert( top( Pattern ) )
         ),
@@ -740,8 +740,8 @@ declare_top( _ ).
 
 duplicate_warning( Pattern, Kind ) :-
             functor( Pattern, P, K ),
-            warning( [ "Duplicate declaration of ", P / K,
-                       " as a \"", Kind, "\" predicate"
+            warning( [ 'Duplicate declaration of ', P / K,
+                       ' as a \"', Kind, '\" predicate'
                      ]
                    ).
 
@@ -754,7 +754,7 @@ duplicate_warning( Pattern, Kind ) :-
 
 overlap_error( Pattern ) :-
             functor( Pattern, P, K ),
-            error( [ P/K, " declared both as \"coinductive\" and as \"support\""
+            error( [ P/K, ' declared both as \"coinductive\" and as \"support\"'
                    ]
                  ).
 
@@ -771,7 +771,7 @@ check_declaration_order( Pattern, Kind ) :-
         defined( Pattern ),
         !,
         functor( Pattern, P, K ),
-        error( [ P/K, " declared as \"", Kind, "\" after it has been defined" ]
+        error( [ P/K, ' declared as \"', Kind, '\" after it has been defined' ]
              ).
 
 check_declaration_order( _, _ ).
