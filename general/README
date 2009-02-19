@@ -39,11 +39,7 @@ top_level.ecl:
 top_level.pl:
         Ditto, converted to Sicstus Prolog.
 
-utilities.ecl:
-        A set of useful predicates, loaded and called by the other programs.
-        Eclipse-specific code.
-
 utilities.pl:
-        Ditto, converted to Sicstus Prolog.
+        A set of useful predicates, loaded and called by the other programs.
 
 --------------------------------------------------------------------------------
