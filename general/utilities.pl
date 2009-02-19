@@ -547,7 +547,7 @@ write_list( S, NotAList ) :-
 
 
 %%------------------------------------------------------------------------------
-%% getline( + input stream, - list of character strings ) :
+%% getline( + input stream, - list of character atoms ) :
 %%    Reads characters from this input stream upto (and including) the nearest
 %%    newline.  The newline is not included in the list of characters that is
 %%    returned.

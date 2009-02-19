@@ -485,12 +485,13 @@ ensure_dynamic( _ ).
 :- mode process_query( +, + ).
 
 process_query( Query, VarDict ) :-
-        write( output, '-- Query: ' ),
-        write( output, Query ),
-        writeln( output, '.  --' ),
+        std_output_stream( Output ),
+        write( Output, '-- Query: ' ),
+        write( Output, Query ),
+        writeln( Output, '.  --' ),
         execute_query( Query, Result ),
         show_result( Result, VarDict ),
-        nl( output ),
+        nl( Output ),
         Result = no.                             % i.e., backtrack if 'yes'.
 
 %
@@ -560,9 +561,11 @@ check_not_builtin( _ ).
 %% Exit upon encountering end of file.
 
 top :-
+        std_input_stream( Input ),
+        std_output_stream( Output ),
         repeat,
-        write( output, ': ' ),                            % a prompt
-        readvar( input, Term, VarDict ),
+        write( Output, ': ' ),                            % a prompt
+        readvar( Input, Term, VarDict ),
         verify_program_item( Term ),
         interactive_term( Term, VarDict ),
         ( Term = end_of_file ; Term = quit ),             % i.e., normally fails
@@ -608,13 +611,15 @@ interactive_term( Other, VarDict ) :-                  % other: treat as a query
 :- mode satisfied_with_query( + ).
 
 satisfied_with_query( yes ) :-
-        flush( output ),
+        std_output_stream( Output ),
+        flush( Output ),
         user_accepts,
         !.
 
 satisfied_with_query( no ) :-
-        nl( output ),
-        flush( output ).
+        std_output_stream( Output ),
+        nl( Output ),
+        flush( Output ).
 
 
 %% user_accepts:
@@ -622,9 +627,11 @@ satisfied_with_query( no ) :-
 %% If the first character is a semicolon, fail.
 
 user_accepts :-
-        write( output, '  (more?) ' ),
-        flush( output ),
-        getline( input, Line ),
-        Line \= [ ";" | _ ].             % i.e., fail if 1st char is a semicolon
+        std_input_stream( Input ),
+        std_output_stream( Output ),
+        write( Output, '  (more?) ' ),
+        flush( Output ),
+        getline( Input, Line ),
+        Line \= [ ';' | _ ].             % i.e., fail if 1st char is a semicolon
 
 %-------------------------------------------------------------------------------

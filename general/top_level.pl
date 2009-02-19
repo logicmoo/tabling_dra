@@ -414,12 +414,13 @@ process_directive( Directive ) :-                % unsupported directive
 :- mode process_query( +, + ).
 
 process_query( Query, VarDict ) :-
-        write( user_output, '-- Query: ' ),
-        write( user_output, Query ),
-        writeln( user_output, '.  --' ),
+        std_output_stream( Output ),
+        write( Output, '-- Query: ' ),
+        write( Output, Query ),
+        writeln( Output, '.  --' ),
         execute_query( Query, Result ),
         show_result( Result, VarDict ),
-        nl( user_output ),
+        nl( Output ),
         Result = no.                             % i.e., backtrack if 'yes'.
 
 %
@@ -489,9 +490,10 @@ check_not_builtin( _ ).
 %% Exit upon encountering end of file.
 
 top :-
+        std_input_stream( Input ),
         repeat,
-        read_term( user_input, Term, [ variable_names( VarDict ) ] ),
-        getline( user_input, _ ),                         % the rest of the line
+        read_term( Input, Term, [ variable_names( VarDict ) ] ),
+        getline( Input, _ ),                         % the rest of the line
         verify_program_item( Term ),
         interactive_term( Term, VarDict ),
         ( Term = end_of_file ; Term = quit ),             % i.e., normally fails
@@ -537,13 +539,15 @@ interactive_term( Other, VarDict ) :-                  % other: treat as a query
 :- mode satisfied_with_query( + ).
 
 satisfied_with_query( yes ) :-
-        flush_output( user_output ),
+        std_output_stream( Output ),
+        flush_output( Output ),
         user_accepts,
         !.
 
 satisfied_with_query( no ) :-
-        nl( user_output ),
-        flush_output( user_output ).
+        std_output_stream( Output ),
+        nl( Output ),
+        flush_output( Output ).
 
 
 %% user_accepts:
@@ -551,9 +555,11 @@ satisfied_with_query( no ) :-
 %% If the first character is a semicolon, fail.
 
 user_accepts :-
-        write( user_output, '  (more?) ' ),
-        flush_output( user_output ),
-        getline( user_input, Line ),
+        std_input_stream( Input ),
+        std_output_stream( Output ),
+        write( Output, '  (more?) ' ),
+        flush_output( Output ),
+        getline( Input, Line ),
         Line \= [ ';' | _ ].             % i.e., fail if 1st char is a semicolon
 
 %-------------------------------------------------------------------------------
