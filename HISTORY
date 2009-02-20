@@ -52,11 +52,12 @@
                  - "support" and "load_support" implemented in "top_level".
                  - "dra" can now handle "support".
 
-               Sixth "internal public" release:
+19 Feb 2009:   Sixth "internal public" release:
 
                  - Various incompatibilies between the Eclipse and Sicstus
                    versions of programs ameliorated.  Was able to remove
                    several .ecl files, as their .pl versions can be run on
                    both systems.
+                 - Suppressed a few minor errors caused by changed conventions.
 
 -------------------------------------------------------------------------------
