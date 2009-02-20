@@ -3,7 +3,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 16 February 2009.                                          %%%
+%%%  Last update: 20 February 2009.                                          %%%
 %%%                                                                          %%%
 %%%                                                                          %%%
 
@@ -348,11 +348,12 @@ process_term( (?- Query), VarDict ) :-
         process_query( Query, VarDict ),
         !.                                            % no alternative solutions
 
-process_term( Clause, _ ) :-
+process_term( Clause, VarDict ) :-
         get_clause_head( Clause, Head ),
         hook_predicate( Head ),              % metainterpreter's hook predicate
         !,
         check_not_builtin( Clause ),         % fatal error if redefining builtin
+        check_for_singleton_variables( Clause, VarDict ),    % warn if singleton
         asserta( Clause ).
 
 process_term( Clause, _ ) :-

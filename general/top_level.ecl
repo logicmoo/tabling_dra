@@ -407,8 +407,9 @@ process_term( Clause, _ ) :-
         check_not_builtin( Clause ),         % fatal error if redefining builtin
         asserta( Clause ).
 
-process_term( Clause, _ ) :-
+process_term( Clause, VarDict ) :-
         check_not_builtin( Clause ),         % fatal error if redefining builtin
+        check_for_singleton_variables( Clause, VarDict ),    % warn if singleton
         ensure_dynamic( Clause ),
         assertz( Clause ) @ interpreted.
 
