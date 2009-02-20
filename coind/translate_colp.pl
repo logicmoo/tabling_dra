@@ -363,7 +363,7 @@ write_essence_hook( OutputStream ) :-
         (
             lp_system( sicstus )
         ->
-            writeclause( OutputStream, (:- multifile essence_hook/2) )
+            writeclause( OutputStream, (:- multifile( essence_hook/2) ) )
         ;
             true
         ),

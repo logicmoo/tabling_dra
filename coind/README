@@ -6,13 +6,10 @@ colp.pl:
         A metainterpreter of "co-logic programming".  Just load it into
         Eclipse or Sicstus!  The head comment explains how to use it.
 
-translate_colp.ecl:
+translate_colp.pl:
         A translator that converts "co-logic programming" programs into
         straightforward logic programs.  The head comment explains how
         to use it.
-
-translate_colp.pl:
-        Ditto converted to Sicstus.
 
 example.clp:
         This trivial file illustrates the use of file inclusion (works
