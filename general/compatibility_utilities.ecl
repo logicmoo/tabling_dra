@@ -42,6 +42,14 @@ name_chars( Atom, NameChars ) :-
 
 
 %%------------------------------------------------------------------------------
+%% clause_in_module( + module name, +- clause head, clause body ):
+%% Like clause/2, but from the named module.
+
+clause_in_module( ModuleName, Head, Body ) :-
+        clause( Head, Body ) @ ModuleName .
+
+
+%%------------------------------------------------------------------------------
 %% flush_output( + output stream ):
 %% Flush out the buffer of the stream.
 

@@ -4,9 +4,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 2 February 2009.                                           %%%
-%%%                                                                          %%%
-%%%  Converted to Sicstus Prolog: 26 January 2009.                           %%%
+%%%  Last update: 19 February 2009.                                          %%%
 %%%                                                                          %%%
 
 %%% NOTE:
@@ -75,7 +73,7 @@ hook_predicate( '' ).              % No hooks used here
 :- op( 1000, fy, tabled ).         % allow  ":- tabled p/k ."        (see below)
 
 
-default_extension( ".clp" ).       % default extension for file names
+default_extension( '.clp' ).       % default extension for file names
 
 
 %% initialise:
@@ -187,7 +185,7 @@ solve( Goal, Hypotheses ) :-                      % call a coinductive predicate
         solve_coinductive_call( Goal, Hypotheses ).
 
 solve( Goal, Hypotheses ) :-                      % call a "normal" predicate
-        clause( interpreted : Goal, Body ),
+        clause_in_module( interpreted, Goal, Body ),
         solve( Body, Hypotheses ).
 
 
@@ -199,7 +197,7 @@ solve_coinductive_call( Goal, Hypotheses ) :-
             member( Goal, Hypotheses ).                   % the hypotheses first
 
 solve_coinductive_call( Goal, Hypotheses ) :-
-            clause( interpreted: Goal, Body ),
+            clause_in_module( interpreted, Goal, Body ),
             solve( Body, [ Goal | Hypotheses ] ).         % then the clauses
 
 

@@ -4,10 +4,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 2 February 2009.                                           %%%
-%%%                                                                          %%%
-%%%  NOTE: Some of the code may be Eclipse-specific and may require          %%%
-%%%        minor tweaking for other Prolog systems.                          %%%
+%%%  Last update: 19 February 2009.                                          %%%
 %%%                                                                          %%%
 
 %%% NOTE:
@@ -76,7 +73,7 @@ hook_predicate( '' ).              % No hooks used here
 :- op( 1000, fy, tabled ).         % allow  ":- tabled p/k ."        (see below)
 
 
-default_extension( ".clp" ).       % default extension for file names
+default_extension( '.clp' ).       % default extension for file names
 
 
 %% initialise:
@@ -100,7 +97,7 @@ legal_directive( (tabled      _) ).
 %% execute_directive( + directive ):
 %% Check and process the legal directives.
 
-execute_directive( coinductive PredSpecs ) :-      % declaration of coinductive
+execute_directive( (coinductive PredSpecs) ) :-     % declaration of coinductive
         predspecs_to_patterns( PredSpecs, Patterns ),
         declare_coinductive( Patterns ).
 
@@ -119,8 +116,8 @@ declare_coinductive( Patterns ) :-
             coinductive( Pattern )
         ->
             functor( Pattern, P, K ),
-            warning( [ "Duplicate declaration of ", P / K,
-                       " as a \"coinductive\" predicate"
+            warning( [ 'Duplicate declaration of ', P / K,
+                       ' as a \"coinductive\" predicate'
                      ]
                    )
         ;
@@ -173,9 +170,9 @@ solve( ( Goal1 , Goal2 ), Hypotheses ) :-         % conjunction
         solve( Goal1, Hypotheses ),
         solve( Goal2, Hypotheses ).
 
-solve( once Goal, Hypotheses ) :-                 % yield only one solution
+solve( once( Goal ), Hypotheses ) :-              % yield only one solution
         !,
-        once solve( Goal, Hypotheses ).
+        once( solve( Goal, Hypotheses ) ).
 
 solve( Goal, _Hypotheses ) :-                     % other supported built-in
         builtin( Goal ),
@@ -188,7 +185,7 @@ solve( Goal, Hypotheses ) :-                      % call a coinductive predicate
         solve_coinductive_call( Goal, Hypotheses ).
 
 solve( Goal, Hypotheses ) :-                      % call a "normal" predicate
-        clause( Goal, Body )@interpreted,
+        clause_in_module( interpreted, Goal, Body ),
         solve( Body, Hypotheses ).
 
 
@@ -200,7 +197,7 @@ solve_coinductive_call( Goal, Hypotheses ) :-
             member( Goal, Hypotheses ).                   % the hypotheses first
 
 solve_coinductive_call( Goal, Hypotheses ) :-
-            clause( Goal, Body )@interpreted,
+            clause_in_module( interpreted, Goal, Body ),
             solve( Body, [ Goal | Hypotheses ] ).         % then the clauses
 
 

@@ -141,12 +141,12 @@
 %%%
 %%%          - default_extension/1:
 %%%                 This predicate is optional.  If present, its argument
-%%%                 should be a string that describes the extension to be
+%%%                 should be an atom whose name is the extension string to be
 %%%                 added to file names that do not already have an extension.
 %%%                 (The string should begin with a period!)
 %%%                 For example, a metainterpreter for coinductive logic
 %%%                 programming might contain the following fact:
-%%%                      default_extension( ".clp" ).
+%%%                      default_extension( '.clp' ).
 %%%
 %%%          - initialise/0:
 %%%                 This will be called before loading a new program,

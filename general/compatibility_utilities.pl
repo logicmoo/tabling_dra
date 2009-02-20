@@ -36,6 +36,14 @@ name_chars( Atom, NameChars ) :-
 
 
 %%------------------------------------------------------------------------------
+%% clause_in_module( + module name, +- clause head, clause body ):
+%% Like clause/2, but from the named module.
+
+clause_in_module( ModuleName, Head, Body ) :-
+        clause( ModuleName : Head, Body ).
+
+
+%%------------------------------------------------------------------------------
 %% setval( + name, + value ):
 %% A naive implementation of setval/2: set this counter to this value.
 
