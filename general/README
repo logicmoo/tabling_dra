@@ -28,8 +28,11 @@ higher_order.pl:
 olist.pl:
         Basic operations on open lists.
 
-sets.pl:
-        Simple operations on sets, used by utilities.
+open_set_in_tree.pl:
+        Simple operations on open sets, used by utilities.
+
+set_in_list.pl:
+        Simple operations on smallish sets, used by utilities.
 
 top_level.ecl:
         A simple top level (i.e., code that reads and stores programs,
