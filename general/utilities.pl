@@ -6,7 +6,7 @@
 %%%                                                                          %%%
 
 
-:- ensure_loaded( sets ).
+:- ensure_loaded( set_in_list ).
 :- ensure_loaded( compatibility_utilities ).
 
 
@@ -345,7 +345,7 @@ check_body_( call( A ), Vars, Clause ) :-
         ;
             % var( A ),
             (
-                is_set_member( A, Vars )
+                is_in_set( A, Vars )
             ->
                 true
             ;

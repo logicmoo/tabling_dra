@@ -1,33 +1,20 @@
 %%%  Simple, but useful operations on sets.                                  %%%
+%%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February 2009).                      %%%
 %%%                                                                          %%%
-%%%  Last update: 12 February 2009.                                          %%%
+%%%  Last update: 20 February 2009.                                          %%%
 %%%                                                                          %%%
-%%%  NOTE: Some of the code may be Eclipse-specific and may require          %%%
-%%%        minor tweaking for other Prolog systems.                          %%%
+%%%  NOTE: Different Prolog variables are treated as different items: this   %%%
+%%%        is done by design!                                                %%%
 %%%                                                                          %%%
-%%%  NOTE: Different Prolog variables are treated as different items!        %%%
+%%%        This implementation should only be used for smallish sets.        %%%
+%%%        The cost of insertion or membership check is proportional to      %%%
+%%%        the size of the set, the cost of set operations (union etc.)      %%%
+%%%        is quadratic in the size of the sets.                             %%%
+%%%                                                                          %%%
 
 
-%%% In this version sets are represented just by lists.
-
-
-%%------------------------------------------------------------------------------
-%% make_set( + list, - set ):
-%% Create a set that contains all the elements in the list.
-
-:- mode make_set( +, - ).
-
-make_set( L, S ) :-
-        empty_set( S0 ),
-        make_set_( L, S0, S ).
-
-%
-make_set_( [], S, S ).
-
-make_set_( [ H | T ], S, NS ) :-
-        add_to_set( H, S, S2 ),
-        make_set_( T, S2, NS ).
+%%% Sets are represented as unordered lists.
 
 
 %%------------------------------------------------------------------------------
@@ -38,26 +25,26 @@ empty_set( [] ).
 
 
 %%------------------------------------------------------------------------------
-%% is_set_member( + item, + set ):
+%% is_in_set( + item, + set ):
 %% Is the given item a member of the set?
 
-:- mode is_set_member( +, + ).
+:- mode is_in_set( +, + ).
 
-is_set_member( Item, [ H | _ ] ) :-
+is_in_set( Item, [ H | _ ] ) :-
         Item == H,
         !.
 
-is_set_member( Item, [ _ | T ] ) :-
-        is_set_member( Item, T ).
+is_in_set( Item, [ _ | T ] ) :-
+        is_in_set( Item, T ).
 
 
 %%------------------------------------------------------------------------------
-%% set_member( + set, - item ):
-%% Nondeterministically produce members of the set.
+%% gen_set_member( + set, - item ):
+%% Nondeterministically generate members of the set.
 
-:- mode set_member( +, - ).
+:- mode gen_set_member( +, - ).
 
-set_member( Item, Set ) :-
+gen_set_member( Item, Set ) :-
         member( Item, Set ).
 
 
@@ -68,7 +55,7 @@ set_member( Item, Set ) :-
 :- mode add_to_set( +, +, - ).
 
 add_to_set( Item, Set, Set ) :-
-        is_set_member( Item, Set ),
+        is_in_set( Item, Set ),
         !.
 
 add_to_set( Item, Set, [ Item | Set ] ).
@@ -87,12 +74,12 @@ set_union( S, [], S ) :-
         !.
 
 set_union( [ H | T ], S, NS ) :-
-        is_set_member( H, S ),
+        is_in_set( H, S ),
         !,
         set_union( T, S, NS ).
 
 set_union( [ H | T ], S, [ H | NS ] ) :-
-        % \+ is_set_member( H, S ),
+        % \+ is_in_set( H, S ),
         set_union( T, S, NS ).
 
 
@@ -109,12 +96,12 @@ set_intersection( _, [], [] ) :-
         !.
 
 set_intersection( [ H | T ], S, [ H | NS ] ) :-
-        is_set_member( H, S ),
+        is_in_set( H, S ),
         !,
         set_intersection( T, S, NS ).
 
 set_intersection( [ _ | T ], S, NS ) :-
-        % \+ is_set_member( H, S ),
+        % \+ is_in_set( H, S ),
         set_intersection( T, S, NS ).
 
 
@@ -131,12 +118,12 @@ set_difference( S, [], S ) :-
         !.
 
 set_difference( [ H | T ], S, NS ) :-
-        is_set_member( H, S ),
+        is_in_set( H, S ),
         !,
         set_difference( T, S, NS ).
 
 set_difference( [ H | T ], S, [ H | NS ] ) :-
-        % \+ is_set_member( H, S ),
+        % \+ is_in_set( H, S ),
         set_difference( T, S, NS ).
 
 
@@ -147,9 +134,37 @@ set_difference( [ H | T ], S, [ H | NS ] ) :-
 :- mode symmetric_set_difference( +, +, - ).
 
 symmetric_set_difference( S1, S2, NS ) :-
-        set_union( S1, S2, Union ),
-        set_intersection( S1, S2, Intersection ),
-        set_difference( Union, Intersection, NS ).
+        set_difference( S1, S2, Diff12 ),
+        set_difference( S2, S1, Diff21 ),
+        append( Diff12, Diff21, NS ).
+
+
+%%------------------------------------------------------------------------------
+%% set_to_list( + set, - list ):
+%% Create a list that contains all the elements of the set.
+
+:- mode set_to_list( +, - ).
+
+set_to_list( S, S ).
+
+
+%%------------------------------------------------------------------------------
+%% list_to_set( + list, - set ):
+%% Create a set that contains all the elements from the list (without
+%% duplicates, of course).
+
+:- mode make_set( +, - ).
+
+make_set( L, S ) :-
+        empty_set( S0 ),
+        make_set_( L, S0, S ).
+
+%
+make_set_( [], S, S ).
+
+make_set_( [ H | T ], S, NS ) :-
+        add_to_set( H, S, S2 ),
+        make_set_( T, S2, NS ).
 
 %%------------------------------------------------------------------------------
 
