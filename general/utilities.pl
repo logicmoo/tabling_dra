@@ -298,7 +298,7 @@ has_good_clause_body( _Fact ).
 
 %
 % Arg1: the body
-% Arg2: the ground variables seen so far
+% Arg2: the variables seen so far
 % Arg3: the clause (just for better diagnostics)
 %
 check_body_( V, _, Clause ) :-
