@@ -2,10 +2,10 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February 2009)                       %%%
 %%%                                                                          %%%
-%%%  Last update: 19 February 2009.                                          %%%
+%%%  Last update: 20 February 2009.                                          %%%
 %%%                                                                          %%%
 
-
+:- ensure_loaded( higher_order ).
 :- ensure_loaded( library( terms ) ). % A Sicstus library, needed for variant/2.
 
 
@@ -55,6 +55,19 @@ clause_in_module( ModuleName, Head, Body ) :-
 
 is_builtin( Pred ) :-
         predicate_property( Pred, built_in ).
+
+
+%%------------------------------------------------------------------------------
+%% bind_variables_to_names( +- variable dictionary  ):
+%% The variable dictionary is of the format returned by read_term/3 with the
+%% option "variable_names", i.e., a list of pairs of the form "name = variable".
+%%  Go through the dictionary, binding each variable to the associated name.
+
+bind_variables_to_names( VarDict ) :-
+        map( bind_var_to_name, VarDict, _ ).
+
+%
+bind_var_to_name( Name = Name, _ ).
 
 
 %%------------------------------------------------------------------------------

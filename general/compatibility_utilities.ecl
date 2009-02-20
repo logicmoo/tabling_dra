@@ -2,8 +2,10 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February 2009)                       %%%
 %%%                                                                          %%%
-%%%  Last update: 19 February 2009.                                          %%%
+%%%  Last update: 20 February 2009.                                          %%%
 %%%                                                                          %%%
+
+:- ensure_loaded( higher_order ).
 
 
 %%------------------------------------------------------------------------------
@@ -62,6 +64,19 @@ clause_in_module( ModuleName, Head, Body ) :-
 is_builtin( Pred ) :-
         functor( Pred, P, K ),
         current_built_in( P/K ).
+
+
+%%------------------------------------------------------------------------------
+%% bind_variables_to_names( +- variable dictionary  ):
+%% The variable dictionary is of the format returned by readvar/3, i.e., a list
+%% of pairs of the form "[ name | variable]".  Go through the dictionary,
+%% binding each variable to the associated name.
+
+bind_variables_to_names( VarDict ) :-
+        map( bind_var_to_name, VarDict, _ ).
+
+%
+bind_var_to_name( [ Name | Name ], _ ).
 
 
 %%------------------------------------------------------------------------------
