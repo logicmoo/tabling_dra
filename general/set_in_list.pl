@@ -174,17 +174,17 @@ set_to_list( S, S ).
 %% Create a set that contains all the elements from the list (without
 %% duplicates, of course).
 
-:- mode make_set( +, - ).
+:- mode list_to_set( +, - ).
 
-make_set( L, S ) :-
+list_to_set( L, S ) :-
         empty_set( S0 ),
-        make_set_( L, S0, S ).
+        list_to_set_( L, S0, S ).
 
 %
-make_set_( [], S, S ).
+list_to_set_( [], S, S ).
 
-make_set_( [ H | T ], S, NS ) :-
+list_to_set_( [ H | T ], S, NS ) :-
         add_to_set( H, S, S2 ),
-        make_set_( T, S2, NS ).
+        list_to_set_( T, S2, NS ).
 
 %%------------------------------------------------------------------------------
