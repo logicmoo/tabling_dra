@@ -25,6 +25,19 @@ empty_set( [] ).
 
 
 %%------------------------------------------------------------------------------
+%% add_to_set( + item, + set, - new set ):
+%% Add the item to the set.
+
+:- mode add_to_set( +, +, - ).
+
+add_to_set( Item, Set, Set ) :-
+        is_in_set( Item, Set ),
+        !.
+
+add_to_set( Item, Set, [ Item | Set ] ).
+
+
+%%------------------------------------------------------------------------------
 %% is_in_set( + item, + set ):
 %% Is the given item a member of the set?
 
@@ -39,26 +52,21 @@ is_in_set( Item, [ _ | T ] ) :-
 
 
 %%------------------------------------------------------------------------------
-%% gen_set_member( + set, - item ):
+%% generate_member_of_set( + set, - item ):
 %% Nondeterministically generate members of the set.
 
-:- mode gen_set_member( +, - ).
+:- mode generate_member_of_set( +, - ).
 
-gen_set_member( Item, Set ) :-
+generate_member_of_set( Item, Set ) :-
         member( Item, Set ).
 
 
 %%------------------------------------------------------------------------------
-%% add_to_set( + item, + set, - new set ):
-%% Add the item to the set.
+%% from_set( + set, - item, - new set ):
+%% If the set is empty, fail;  otherwise return some element of the set, as well
+%% as the set without that element.
 
-:- mode add_to_set( +, +, - ).
-
-add_to_set( Item, Set, Set ) :-
-        is_in_set( Item, Set ),
-        !.
-
-add_to_set( Item, Set, [ Item | Set ] ).
+from_set( [ H | T ], H, T ).
 
 
 %%------------------------------------------------------------------------------
@@ -167,6 +175,3 @@ make_set_( [ H | T ], S, NS ) :-
         make_set_( T, S2, NS ).
 
 %%------------------------------------------------------------------------------
-
-
-
