@@ -2,12 +2,9 @@
 
 This directory includes the following files:
 
-colp.ecl:
-        A metainterpreter of "co-logic programming".  Just load it into
-        Eclipse!  The head comment explains how to use it.
-
 colp.pl:
-        Ditto converted to Sicstus.
+        A metainterpreter of "co-logic programming".  Just load it into
+        Eclipse or Sicstus!  The head comment explains how to use it.
 
 translate_colp.ecl:
         A translator that converts "co-logic programming" programs into
