@@ -9,8 +9,8 @@
 %%%                                                                          %%%
 %%%        This implementation should only be used for smallish sets.        %%%
 %%%        The cost of insertion or membership check is proportional to      %%%
-%%%        the size of the set, the cost of set operations (union etc.)      %%%
-%%%        is quadratic in the size of the sets.                             %%%
+%%%        the size of the set, the cost of set operations (union, equality  %%%
+%%%        etc.) is quadratic in the size of the sets.                       %%%
 %%%                                                                          %%%
 
 
@@ -28,7 +28,7 @@ empty_set( [] ).
 %% add_to_set( + item, + set, - new set ):
 %% Add the item to the set.
 
-:- mode add_to_set( +, +, - ).
+:- mode add_to_set( ?, +, - ).
 
 add_to_set( Item, Set, Set ) :-
         is_in_set( Item, Set ),
@@ -41,7 +41,7 @@ add_to_set( Item, Set, [ Item | Set ] ).
 %% is_in_set( + item, + set ):
 %% Is the given item a member of the set?
 
-:- mode is_in_set( +, + ).
+:- mode is_in_set( ?, + ).
 
 is_in_set( Item, [ H | _ ] ) :-
         Item == H,
@@ -55,7 +55,7 @@ is_in_set( Item, [ _ | T ] ) :-
 %% generate_member_of_set( + set, - item ):
 %% Nondeterministically generate members of the set.
 
-:- mode generate_member_of_set( +, - ).
+:- mode generate_member_of_set( +, ? ).
 
 generate_member_of_set( Item, Set ) :-
         member( Item, Set ).
@@ -66,7 +66,20 @@ generate_member_of_set( Item, Set ) :-
 %% If the set is empty, fail;  otherwise return some element of the set, as well
 %% as the set without that element.
 
+:- mode from_set( +, -, - ).
+
 from_set( [ H | T ], H, T ).
+
+
+%%------------------------------------------------------------------------------
+%% equal_sets( + set, + set ):
+%% Are the two sets equal?
+
+:- mode equal_sets( +, + ).
+
+equal_sets( S1, S2 ) :-
+        symmetric_set_difference( S1, S2, SD ),
+        empty_set( SD ).
 
 
 %%------------------------------------------------------------------------------
