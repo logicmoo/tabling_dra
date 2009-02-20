@@ -83,6 +83,11 @@ initialise :-
         retractall( coinductive( _ ) ).
 
 
+%% Invoked by top level: do nothing.
+
+program_loaded.
+
+
 %% The legal directives (check external form only).
 %% Note: ":- top ...", ":- bottom ..." and ":- tabled ..." are ignored by this
 %%       metainterpreter, and are allowed only to allow the same examples to be
