@@ -129,7 +129,7 @@ gtv_( T, S, NS ) :-
 % is_an_instance( T1, T2 ) :-
 %         check( (mk_ground( T1 ) , T1 = T2) ).
 
-is_an_instance( T1, T2 ) :-  instance( T1, T2 ). % use the built-in from Eclipse
+is_an_instance( T1, T2 ) :-  instance( T1, T2 ).              % use the built-in
 
 
 %%------------------------------------------------------------------------------
@@ -142,7 +142,7 @@ is_an_instance( T1, T2 ) :-  instance( T1, T2 ). % use the built-in from Eclipse
 %         is_an_instance( T1, T2 ),
 %         is_an_instance( T2, T1 ).
 
-are_variants( T1, T2 ) :-  variant( T1, T2 ).    % use the built-in from Eclipse
+are_variants( T1, T2 ) :-  variant( T1, T2 ).                 % use the built-in
 
 
 
