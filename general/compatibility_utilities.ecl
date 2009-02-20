@@ -7,6 +7,12 @@
 
 
 %%------------------------------------------------------------------------------
+%% Identify the system.
+
+lp_system( eclipse ).
+
+
+%%------------------------------------------------------------------------------
 %% The standard streams.
 
 std_input_stream(   input          ).
@@ -47,6 +53,15 @@ name_chars( Atom, NameChars ) :-
 
 clause_in_module( ModuleName, Head, Body ) :-
         clause( Head, Body ) @ ModuleName .
+
+
+%%------------------------------------------------------------------------------
+%% is_built_in( + goal ):
+%% Does this goal call a built-in predicate?
+
+is_builtin( Pred ) :-
+        functor( Pred, P, K ),
+        current_built_in( P/K ).
 
 
 %%------------------------------------------------------------------------------

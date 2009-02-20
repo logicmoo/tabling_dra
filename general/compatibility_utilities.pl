@@ -10,6 +10,12 @@
 
 
 %%------------------------------------------------------------------------------
+%% Identify the system.
+
+lp_system( sicstus ).
+
+
+%%------------------------------------------------------------------------------
 %% The standard streams.
 
 std_input_stream(   user_input  ).
@@ -41,6 +47,14 @@ name_chars( Atom, NameChars ) :-
 
 clause_in_module( ModuleName, Head, Body ) :-
         clause( ModuleName : Head, Body ).
+
+
+%%------------------------------------------------------------------------------
+%% is_built_in( + goal ):
+%% Does this goal call a built-in predicate?
+
+is_builtin( Pred ) :-
+        predicate_property( Pred, built_in ).
 
 
 %%------------------------------------------------------------------------------
@@ -106,5 +120,17 @@ writeclause( OutputStream, Clause ) :-
 writeln( OutputStream, Term ) :-
         write( OutputStream, Term ),
         nl(    OutputStream ).
+
+
+%%------------------------------------------------------------------------------
+%% concat_atoms( + atom, + atom, - atom ):
+%% Return an atom whose name is the concatenation of the names of the first two
+%% atoms.
+
+concat_atoms( A, B, AB ) :-
+        name( A, AChars ),
+        name( B, BChars ),
+        append( AChars, BChars, ABChars ),
+        name( AB, ABChars ).
 
 %%------------------------------------------------------------------------------

@@ -64,6 +64,7 @@
 %%%       that take advantage of both coinduction and tabling.  The translator
 %%%       automatically transforms the predicate specifications in
 %%%       ":- tabled ..." (unless they refer to predicates declared as
+%%%       "support").
 %%%       Moreover, the translator issues appropriate "essence_hook" clauses
 %%%       that allow the implementation of tabling to strip the additional
 %%%       "administrative" argument from instances of tabled predicates.  In
@@ -87,7 +88,7 @@
 %%%
 %%%  (where PredSpec is of the form "p/k", or "p/k, q/k, ...": the item that
 %%%   precedes the slash is the name of a predicate, and the item that follows
-%%%   the slash is a natural number denoting the predicate's arity).
+%%%   the slash is a natural number denoting the arity of the predicate).
 %%%
 %%%  These directives are treated as declarations of coinductive predicates.
 %%%
@@ -117,7 +118,7 @@
 %%%
 %%%
 %%% Please note that the various declarations of predicates should precede their
-%%% definitions.  (It is a fatal error if they don't.)
+%%% definitions.  (It is a fatal error if they do not.)
 
 
 %%% The transformation
@@ -223,13 +224,17 @@ tc( FileName ) :-
 
 open_streams( FileName, InputStream, OutputStream ) :-
         ensure_filename_is_an_atom( FileName ),
-        atom_string( FileName, FileNameString ),
-        ensure_extension( FileNameString,     ".clp",
-                          RootFileNameString, InputFileNameString
+        name_chars( FileName, FileNameChars  ),
+        name_chars( '.clp',   InputExtensionChars ),
+        ensure_extension( FileNameChars,     InputExtensionChars,
+                          RootFileNameChars, InputFileNameChars
                         ),
-        concat_strings( RootFileNameString, ".pl", OutputFileNameString ),
-        open( InputFileNameString,  read , InputStream  ),
-        open( OutputFileNameString, write, OutputStream ).
+        name_chars( '.pl',   OutputExtensionChars ),
+        append( RootFileNameChars, OutputExtensionChars, OutputFileNameChars ),
+        name( InputFileName,  InputFileNameChars  ),
+        name( OutputFileName, OutputFileNameChars ),
+        open( InputFileName,  read , InputStream   ),
+        open( OutputFileName, write, OutputStream  ).
 
 
 
@@ -334,7 +339,7 @@ write_top_predicates( OutputStream ) :-
         top( Pattern ),                           % i.e., sequence through these
         Pattern =.. [ F | Args ],
         transform_predicate_name( F, NF ),
-        once append( Args, [ [] ], ExtendedArgs ),
+        once( append( Args, [ [] ], ExtendedArgs ) ),
         Call =.. [ NF | ExtendedArgs ],
         writeclause( OutputStream, (Pattern :- Call) ),
         fail.
@@ -595,7 +600,7 @@ transform_logical_atom( call( C ), _, _ ) :-
         !,
         error( [ 'Invocation of \"call/1\": \"', call( C ), '\"' ] ).
 
-transform_logical_atom( once Calls, Hyp, once NewCalls ) :-
+transform_logical_atom( once( Calls ), Hyp, once( NewCalls ) ) :-
         !,
         transform_body( Calls, Hyp, NewCalls ).
 
@@ -607,14 +612,8 @@ transform_logical_atom( Pred, HypVar, NewPred ) :-
         % \+ (support( Pred ) ; is_built_in( Pred )),
         Pred =.. [ Name | Args ],
         transform_predicate_name( Name, NewName ),
-        once append( Args, [ HypVar ], NewArgs ),
+        once( append( Args, [ HypVar ], NewArgs ) ),
         NewPred =.. [ NewName | NewArgs ].
-
-
-%%
-is_builtin( Pred ) :-
-        functor( Pred, P, K ),
-        current_built_in( P/K ).
 
 
 %% transform_predicate_name( + name, - new name ):

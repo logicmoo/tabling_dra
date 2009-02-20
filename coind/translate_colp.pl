@@ -224,11 +224,13 @@ tc( FileName ) :-
 
 open_streams( FileName, InputStream, OutputStream ) :-
         ensure_filename_is_an_atom( FileName ),
-        name( FileName, FileNameChars ),
-        ensure_extension( FileNameChars,     ".clp",
+        name_chars( FileName, FileNameChars  ),
+        name_chars( '.clp',   InputExtensionChars ),
+        ensure_extension( FileNameChars,     InputExtensionChars,
                           RootFileNameChars, InputFileNameChars
                         ),
-        append( RootFileNameChars, ".pl", OutputFileNameChars ),
+        name_chars( '.pl',   OutputExtensionChars ),
+        append( RootFileNameChars, OutputExtensionChars, OutputFileNameChars ),
         name( InputFileName,  InputFileNameChars  ),
         name( OutputFileName, OutputFileNameChars ),
         open( InputFileName,  read , InputStream   ),
@@ -339,7 +341,7 @@ write_top_predicates( OutputStream ) :-
         transform_predicate_name( F, NF ),
         once( append( Args, [ [] ], ExtendedArgs ) ),
         Call =.. [ NF | ExtendedArgs ],
-        write_clause( (Pattern :- Call), OutputStream ),
+        writeclause( OutputStream, (Pattern :- Call) ),
         fail.
 
 write_top_predicates( OutputStream ) :-
@@ -348,8 +350,8 @@ write_top_predicates( OutputStream ) :-
 
 
 %% write_essence_hook( + output stream ):
-%% Output "essence_hook/2" clauses for those tabled predicates that have not%
-% been declared as support.
+%% Output "essence_hook/2" clauses for those tabled predicates that have not
+%% been declared as support.
 
 write_essence_hook( OutputStream ) :-
         tabled( Pattern ),                       % i.e., sequence through tabled
@@ -357,9 +359,15 @@ write_essence_hook( OutputStream ) :-
         Pattern =.. [ F | Args ],
         drop_last( Args, ArgsButLast ),
         PatternButLast =.. [ F | ArgsButLast ],
-        write_clause( (:- multifile essence_hook/2)          , OutputStream ),
-        write_clause( (:- dynamic essence_hook/2)            , OutputStream ),
-        write_clause( essence_hook( Pattern, PatternButLast ), OutputStream ),
+        writeclause( OutputStream, (:- dynamic essence_hook/2) ),
+        (
+            lp_system( sicstus )
+        ->
+            writeclause( OutputStream, (:- multifile essence_hook/2) )
+        ;
+            true
+        ),
+        writeclause( OutputStream, essence_hook( Pattern, PatternButLast ) ),
         fail.
 
 write_essence_hook( _ ).
@@ -615,20 +623,13 @@ transform_logical_atom( Pred, HypVar, NewPred ) :-
         NewPred =.. [ NewName | NewArgs ].
 
 
-%%
-is_builtin( Pred ) :-
-        predicate_property( Pred, built_in ).
-
-
 %% transform_predicate_name( + name, - new name ):
 %% Transform the name of a predicate (by extending it with "_").
 
 :- mode transform_predicate_name( +, - ).
 
 transform_predicate_name( Name, NewName ) :-
-        name( Name, NameChars ),
-        once( append( NameChars, "_", NewNameChars ) ),
-        name( NewName, NewNameChars ).
+        concat_atoms( Name, '_', NewName ).
 
 
 
