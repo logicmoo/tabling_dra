@@ -5,6 +5,8 @@
 %%%                                                                          %%%
 %%%  Last update: 20 February 2009.                                          %%%
 %%%                                                                          %%%
+%%%  NOTE: Some of the code may be Sicstus-specific and may require          %%%
+%%%        tweaking for other Prolog systems.                                %%%
 %%%                                                                          %%%
 
 %%% NOTES FOR USERS:
@@ -200,6 +202,7 @@
 
 
 :- ensure_loaded( utilities ).
+:- ensure_loaded( program_consistency ).
 
 :- op( 1000, fy, top          ).     % allow  ":- top p/k ."
 :- op( 1000, fy, support      ).     % allow  ":- support p/k ."
@@ -240,6 +243,7 @@ prog( FileName ) :-
         create_modules,
         initialise,                              % provided by a metainterpreter
         process_file( FileName ),
+        check_general_consistency,
         program_loaded,                          % provided by a metainterpreter
         top.
 
@@ -348,16 +352,16 @@ process_term( (?- Query), VarDict ) :-
         process_query( Query, VarDict ),
         !.                                            % no alternative solutions
 
-process_term( Clause, VarDict ) :-
+process_term( Clause, _ ) :-
         get_clause_head( Clause, Head ),
         hook_predicate( Head ),              % metainterpreter's hook predicate
         !,
         check_not_builtin( Clause ),         % fatal error if redefining builtin
-        check_for_singleton_variables( Clause, VarDict ),    % warn if singleton
         asserta( Clause ).
 
-process_term( Clause, _ ) :-
+process_term( Clause, VarDict ) :-
         check_not_builtin( Clause ),         % fatal error if redefining builtin
+        check_for_singleton_variables( Clause, VarDict ),    % warn if singleton
         assertz( interpreted : Clause ).
 
 

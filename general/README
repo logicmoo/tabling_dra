@@ -31,6 +31,10 @@ olist.pl:
 open_set_in_tree.pl:
         Simple operations on open sets, used by utilities.
 
+program_consistency.pl:
+        An auxiliary of top_level: checks general consistency of the loaded
+        program.
+
 set_in_list.pl:
         Simple operations on smallish sets, used by utilities.
 

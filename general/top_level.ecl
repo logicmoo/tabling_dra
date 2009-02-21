@@ -3,10 +3,10 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 16 February 2009.                                          %%%
+%%%  Last update: 20 February 2009.                                          %%%
 %%%                                                                          %%%
 %%%  NOTE: Some of the code may be Eclipse-specific and may require          %%%
-%%%        minor tweaking for other Prolog systems.                          %%%
+%%%        tweaking for other Prolog systems.                                %%%
 %%%                                                                          %%%
 
 %%% NOTES FOR USERS:
@@ -207,6 +207,7 @@
 
 
 :- ensure_loaded( utilities ).
+:- ensure_loaded( program_consistency ).
 
 :- op( 1000, fy, top          ).     % allow  ":- top p/k ."
 :- op( 1000, fy, support      ).     % allow  ":- support p/k ."
@@ -254,6 +255,7 @@ prog( FileName ) :-
         create_modules,
         initialise,                              % provided by a metainterpreter
         process_file( FileName ),
+        check_general_consistency,
         program_loaded,                          % provided by a metainterpreter
         top.
 
