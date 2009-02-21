@@ -1,0 +1,2 @@
+% Note that Y is truly a singleton on the second branch!
+a(X) :- b(X, Y), c( Y ); d(Y).

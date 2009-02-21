@@ -8,8 +8,9 @@ bad3.tlp:
 bad4.tlp:
 bad5.tlp:
 bad6.tlp:
+bad7.tlp:
         Examples that test some of the diagnostics of the tabling
-        interpreter.
+        interpreter and/or the top level.
 
 comment_example.tlp:
 
