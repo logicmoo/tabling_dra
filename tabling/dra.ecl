@@ -497,14 +497,14 @@ program_loaded :-                                         % invoked by top_level
 check_consistency :-
         tabled( Head ),
         functor( Head, P, K ),
-        \+ current_predicate( P / K )@interpreted,
+        \+ current_predicate_in_module( interpreted, P / K ),
         warning( [ P/K, ' declared as tabled, but not defined' ] ),
         fail.
 
 check_consistency :-
         coinductive( Head ),
         functor( Head, P, K ),
-        \+ current_predicate( P / K )@interpreted,
+        \+ current_predicate_in_module( interpreted, P / K ),
         warning( [ P/K, ' declared as coinductive, but not defined' ] ),
         fail.
 
@@ -1101,7 +1101,7 @@ get_remaining_tabled_answers( Goal, Index, Label, Level ) :-
 use_clause( Goal, Body ) :-
         (
             functor( Goal, P, K ),
-            current_predicate( P/K )@interpreted
+            current_predicate_in_module( interpreted, P/K )
         ->
             clause( Goal, Body )@interpreted
         ;
