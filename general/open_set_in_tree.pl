@@ -6,7 +6,7 @@
 %%%  Last update: 20 February 2009.                                          %%%
 %%%                                                                          %%%
 %%%  NOTE: Terms that are variants are treated as the same item: this is     %%%
-%%%        done because comparison of variables is unreliable.               %%%
+%%%        so because comparison of variables is unreliable.                 %%%
 %%%                                                                          %%%
 %%%        The cost of insertion or membership check can be logarithmic      %%%
 %%%        in the size of the set, but can be proportional to the size if    %%%

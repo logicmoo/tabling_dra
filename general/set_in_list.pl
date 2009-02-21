@@ -5,7 +5,7 @@
 %%%  Last update: 20 February 2009.                                          %%%
 %%%                                                                          %%%
 %%%  NOTE: Different Prolog variables are treated as different items: this   %%%
-%%%        is done by design!                                                %%%
+%%%        is so by design!                                                  %%%
 %%%                                                                          %%%
 %%%        This implementation should only be used for smallish sets.        %%%
 %%%        The cost of insertion or membership check is proportional to      %%%
