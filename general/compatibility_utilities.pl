@@ -50,6 +50,14 @@ clause_in_module( ModuleName, Head, Body ) :-
 
 
 %%------------------------------------------------------------------------------
+%% current_predicate_in_module( + module name, +- predicate specification ):
+%% Like current_predicate/2, but from the named module.
+
+current_predicate_in_module( ModuleName, PredSpec ) :-
+        current_predicate( ModuleName : PredSpec ).
+
+
+%%------------------------------------------------------------------------------
 %% is_built_in( + goal ):
 %% Does this goal call a built-in predicate?
 
