@@ -248,7 +248,7 @@ is_a_good_clause( T ) :-
         nonvar( T ),
         get_clause_head( T, H ),
         is_a_good_clause_head( H ),
-        has_good_clause_body( T ).
+        has_a_good_clause_body( T ).
 
 
 %%------------------------------------------------------------------------------
@@ -279,7 +279,7 @@ is_a_good_clause_head( Hd ) :-
 
 
 %%------------------------------------------------------------------------------
-%% has_good_clause_body( + term ):
+%% has_a_good_clause_body( + term ):
 %% Treat this non-variable term as a clause, check it for elementary sanity.
 %% Assume that the head is not a variable.
 %%
@@ -287,15 +287,15 @@ is_a_good_clause_head( Hd ) :-
 %%       Invocations of call/1 are allowed, but an error will be raised if
 %%       the argument is a variable that had no earlier occurrences.
 
-:-mode has_good_clause_body( + ).
+:-mode has_a_good_clause_body( + ).
 
-has_good_clause_body( Clause) :-
+has_a_good_clause_body( Clause) :-
         Clause = (Head :- Body),
         !,
         term_variables( Head, HeadVars ),
         check_for_variable_calls( Body, HeadVars, Clause ).
 
-has_good_clause_body( _Fact ).
+has_a_good_clause_body( _Fact ).
 
 
 % check_for_variable_calls( + (part of a) clause body,
@@ -424,14 +424,16 @@ verify_program_item( _ ).
 check_for_singleton_variables( Clause, VarDict ) :-
         bind_variables_to_names( VarDict ),        % we will backtrack from this
         shake_clause( Clause, Paths ),
-        map( singleton_vars_in_path, Paths, [ Set | Sets ] ),
-        fold( set_intersection, Set, Sets, Folded ),
+        map( singleton_vars_in_path, Paths, Sets),
+        empty_set( Empty ),
+        fold( set_union, Empty, Sets, Folded ),
         (
             \+ empty_set( Folded )
         ->
             set_to_list( Folded, List ),
-            warning( [ 'Singleton variables ', List,
-                       ' in clause \"', Clause, '\"'
+            sort( List, SortedList ),
+            warning( [ 'Singleton variables ', SortedList,
+                       ' on a path in clause \"', Clause, '\"'
                      ]
                    )
         ),
