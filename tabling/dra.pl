@@ -777,7 +777,7 @@ solve( call( Goal ), Stack, Hyp, Level ) :-
 solve( assert( Fact ), _, _, _ ) :-
         !,
         (
-            \+ is_good_clause_head( Fact )
+            \+ is_a_good_clause_head( Fact )
         ->
             error( [ "Bad fact: ", assert( Fact ) ] )
         ;
@@ -791,7 +791,7 @@ solve( assert( Fact ), _, _, _ ) :-
 solve( retractall( FactPattern ), _, _, _ ) :-
         !,
         (
-            \+ is_good_clause_head( FactPattern )
+            \+ is_a_good_clause_head( FactPattern )
         ->
             error( [ "Bad fact: ", retractall( FactPattern ) ] )
         ;

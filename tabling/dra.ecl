@@ -781,7 +781,7 @@ solve( call( Goal ), Stack, Hyp, Level ) :-
 solve( assert( Clause ), _, _, _ ) :-
         !,
         (
-            \+ is_good_clause( Clause )
+            \+ is_a_good_clause( Clause )
         ->
             error( [ 'Bad clause argument: ', assert( Clause ) ] )
         ;
