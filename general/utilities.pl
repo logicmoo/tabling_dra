@@ -537,7 +537,8 @@ vars_in_arg( H, First, Other, NewFirst, NewOther ) :-
                 NewOther = Other
             )
         ;
-            true
+            NewFirst = First,
+            NewOther = Other
         ).
 
 vars_in_arg( H, First, Other, NewFirst, NewOther ) :-
