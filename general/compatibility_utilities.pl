@@ -6,7 +6,8 @@
 %%%                                                                          %%%
 
 :- ensure_loaded( higher_order ).
-:- ensure_loaded( library( terms ) ). % A Sicstus library, needed for variant/2.
+:- ensure_loaded( library( terms ) ). % A Sicstus library, for variant/2 and
+                                      %   term_variables/2.
 
 
 %%------------------------------------------------------------------------------
@@ -34,11 +35,11 @@ getchar( Stream, Atom ) :-
 
 
 %%------------------------------------------------------------------------------
-%% name_chars( + atom, - list of characters that form its name ):
+%% name_chars( + atom or number, - list of characters that form its name ):
 %% Used because Eclipse complains about name/2 being obsolete.
 
-name_chars( Atom, NameChars ) :-
-        name( Atom, NameChars ).
+name_chars( Atomic, NameChars ) :-
+        name( Atomic, NameChars ).
 
 
 %%------------------------------------------------------------------------------

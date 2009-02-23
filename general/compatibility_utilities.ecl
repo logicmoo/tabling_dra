@@ -34,19 +34,43 @@ getchar( Stream, Atom ) :-
 
 
 %%------------------------------------------------------------------------------
-%% name_chars( +- atom, -+ list of characters that form its name ):
+%% name_chars( +- atom or number, -+ list of characters that form its name ):
 %% Used because Eclipse complains about name/2 being obsolete.
 
-name_chars( Atom, NameChars ) :-
+name_chars( Atomic, NameChars ) :-
         (
-            var( Atom )
+            var( Atomic )
         ->
+            NameChars = [ First | _ ],
             string_list( NameString, NameChars ),
-            atom_string( Atom, NameString )
+            (
+                is_digit_char( First )
+            ->
+                number_string( Atomic, NameString )
+            ;
+                atom_string( Atomic, NameString )
+            )
         ;
-            atom_string( Atom, NameString ),
+            atom( Atomic )
+        ->
+            atom_string( Atomic, NameString ),
             string_list( NameString, NameChars )
+        ;
+            number( Atomic )
+        ->
+            number_string( Atomic, NameString ),
+            string_list( NameString, NameChars )
+        ;
+            error( [ 'Bad argument type in ', name_chars( Atomic, NameChars ) ]
+                 )
         ).
+
+%
+is_digit_char( C ) :-
+        name_chars( 0, [ ZeroChar ] ),
+        ZeroChar =< C,
+        name_chars( 9, [ NineChar ] ),
+        NineChar >= C.
 
 
 %%------------------------------------------------------------------------------
