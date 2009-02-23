@@ -66,25 +66,36 @@ current_predicate_in_module( ModuleName, PredSpec ) :-
 
 
 %%------------------------------------------------------------------------------
+%% assertz_in_module( + module name, + clause ):
+%% Like assertz/1, but into this module.
+
+assertz_in_module( Module, Clause ) :-
+        assertz( Clause ) @ Module .
+
+
+%%------------------------------------------------------------------------------
+%% compile_to_module( + module name, + file name ):
+%% Compile the program in this file into this module.
+
+compile_to_module( Module, FileName ) :-
+        compile( FileName ) @ Module.
+
+
+%%------------------------------------------------------------------------------
+%% write_shallow( + output stream, + term, + maximum depth ):
+%% Like write/2, but only to a limited print depth.
+
+write_shallow( OutputStream, Term, MaxDepth ) :-
+        write_term( OutputStream, Term, [ depth( MaxDepth ) ] ).
+
+
+%%------------------------------------------------------------------------------
 %% is_built_in( + goal ):
 %% Does this goal call a built-in predicate?
 
 is_builtin( Pred ) :-
         functor( Pred, P, K ),
         current_built_in( P/K ).
-
-
-%%------------------------------------------------------------------------------
-%% bind_variables_to_names( +- variable dictionary  ):
-%% The variable dictionary is of the format returned by readvar/3, i.e., a list
-%% of pairs of the form "[ name | variable]".  Go through the dictionary,
-%% binding each variable to the associated name.
-
-bind_variables_to_names( VarDict ) :-
-        map( bind_var_to_name, VarDict, _ ).
-
-%
-bind_var_to_name( [ Name | Name ], _ ).
 
 
 %%------------------------------------------------------------------------------

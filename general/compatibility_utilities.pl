@@ -58,6 +58,30 @@ current_predicate_in_module( ModuleName, PredSpec ) :-
 
 
 %%------------------------------------------------------------------------------
+%% assertz_in_module( + module name, + clause ):
+%% Like assertz/1, but into this module.
+
+assertz_in_module( Module, Clause ) :-
+        assertz( Module : Clause ).
+
+
+%%------------------------------------------------------------------------------
+%% compile_to_module( + module name, + file name ):
+%% Compile the program in this file into this module.
+
+compile_to_module( Module, FileName ) :-
+        compile( Module : FileName ).
+
+
+%%------------------------------------------------------------------------------
+%% write_shallow( + output stream, + term, + maximum depth ):
+%% Like write/2, but only to a limited print depth.
+
+write_shallow( OutputStream, Term, MaxDepth ) :-
+        write_term( OutputStream, Term, [ max_depth( MaxDepth ) ] ).
+
+
+%%------------------------------------------------------------------------------
 %% is_built_in( + goal ):
 %% Does this goal call a built-in predicate?
 
@@ -66,16 +90,30 @@ is_builtin( Pred ) :-
 
 
 %%------------------------------------------------------------------------------
-%% bind_variables_to_names( +- variable dictionary  ):
-%% The variable dictionary is of the format returned by read_term/3 with the
-%% option "variable_names", i.e., a list of pairs of the form "name = variable".
-%%  Go through the dictionary, binding each variable to the associated name.
+%% readvar( + input stream, - term, - variable dictionary  ):
+%% Simulates Eclipse's readvar/3.  The variable dictionay will be in the format
+%% used by Eclipse, not by Sicstus (i.e., an entry has the form
+%% "[ name | Variable ]" rather than "name = variable".
 
-bind_variables_to_names( VarDict ) :-
-        map( bind_var_to_name, VarDict, _ ).
+readvar( InputStream, Term, EclipseVarDict ) :-
+        read_term( ProgStream, Term, [ variable_names( SicstusVarDict ) ] ),
+        map( translate_vardict_entry, SicstusVarDict, EclipseVarDict ).
 
 %
-bind_var_to_name( Name = Name, _ ).
+translate_vardict_entry( N = V, [ N | V ] ).
+
+
+
+%%------------------------------------------------------------------------------
+%% erase_module( + module name ):
+%% Simulates Eclipse's erase_module/1.
+
+erase_module( Module ) :-
+        current_predicate( Module : PredSpec ),
+        abolish( Module : PredSpec ),
+        fail.
+
+erase_module( _ ).
 
 
 %%------------------------------------------------------------------------------
