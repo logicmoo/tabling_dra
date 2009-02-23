@@ -3,9 +3,9 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 20 February 2009.                                          %%%
+%%%  Last update: 23 February 2009.                                          %%%
 %%%                                                                          %%%
-%%%  NOTE: Some of the code may be Sicstus-specific and may require          %%%
+%%%  NOTE: This code runs on Sicstus and Eclipse.  It may require some       %%%
 %%%        tweaking for other Prolog systems.                                %%%
 %%%                                                                          %%%
 
@@ -105,6 +105,11 @@
 %%%       Prolog.  (Please note also that support predicates can use the full
 %%%       range of built-in predicates available in the host logic programming
 %%%       system.)
+%%%
+%%%       Predicates that are declared as "support" must be defined in other
+%%%       files.  To compile and load such files, use
+%%%
+%%%           :- load_support( filename ).
 
 
 
@@ -211,6 +216,14 @@
 :- dynamic support/1.
 
 
+% If p/k has already been seen (and declared as dynamic), the fact is recorded
+% as known( p, k ).
+% (Unlike Sicstus, Eclipse requires a dynamic declaration before the first
+%  assert.)
+
+:- dynamic known/2 .
+
+
 %% Default print depth.  (May be changed by the metainterpreter by invoking
 %% set_print_depth( N ).)
 
@@ -239,6 +252,7 @@ set_print_depth( Strange ) :-
 
 
 prog( FileName ) :-
+        retractall( known( _, _ ) ),
         erase_modules,
         create_modules,
         initialise,                              % provided by a metainterpreter
@@ -251,34 +265,95 @@ prog( FileName ) :-
 
 %% NOTE: In Eclipse it is possible to use the module facility in a way that
 %%       allows redeclaration of predicates that are built-ins, but that are
-%%       not wanted.  It is not obvious how to do it in Sicstus, so the
-%%       interpreted program cannot define predicates whose names happen to
+%%       not wanted (see below).  It is not obvious how to do it in Sicstus, so
+%%       the interpreted program cannot define predicates whose names happen to
 %%       clash with the names of built-ins. Hence in the Sicstus version
-%%       the only module that is used is "interpreted".
+%%       the only modules that are created are "interpreted" and support.
+%%
+%% NOTE (Specific to Eclipse):
+%%       In order to avoid name conflicts with the numerous built-in predicates
+%%       of Eclipse, the only thing "interpreted" imports is the module
+%%       "interface".  The module "interface" is created by the top-level from
+%%       a declaration of built-ins allowed by the metainterpreter (and provided
+%%       by the latter in table "builtin").  The difficulty is that Eclipse does
+%%       not allow direct exportation of built-ins: this is solved by defining
+%%       yet another module, called "interface_aux".
+%%       The exact mechanics are best explained by means of an example:
+%%
+%%       1. Let the metainterpreter contain a declaration of only one built-in:
+%%             builtin( writeln( _ ) ).
+%%
+%%       2. The top level will add the following clause to module
+%%          "interface_aux" (which imports all the built-ins by default):
+%%             xxx_writeln( X ) :-  writeln( X ).
+%%
+%%       3. "xxx_writeln/1" will be exported by "interface_aux".
+%%
+%%       4. Module "interface" will import only "interface_aux", and will be
+%%          closed to default importation of built-ins.  It will define clause:
+%%             writeln( X) :- xxx_writeln( X ).
+%%
+%%       5. "writeln/1" is now a user-defined predicate and can be exported from
+%%          "interface".
+%%
+%%       6. "interpreted" will import only "interface", and will be closed to
+%%          default importation of built-ins.  The interpreted program can use
+%%          "writeln/1" and no other built-ins.  It can also define predicates
+%%          whose names would normally clash with names of built-ins (e.g.,
+%%          "connect/2", which might be useful in, say, a graph-processing
+%%          application).
+%%
+%%       Please note that all this does not apply to "support".
 
 %% erase_modules:
 %% Erase the modules that might be there after interpreting the previous
 %% program.
 
 erase_modules :-
-        current_predicate( interpreted : PredSpec ),
-        abolish( interpreted : PredSpec ),
-        fail.
-
-erase_modules :-
-        current_predicate( support : PredSpec ),
-        abolish( support : PredSpec ),
-        fail.
-
-erase_modules.
+        erase_module( interpreted ),
+        erase_module( support ),
+        (
+            lp_system( eclipse )
+        ->
+            erase_module( interface ),
+            erase_module( interface_aux )
+        ;
+            true
+        ).
 
 
 %% create_modules:
 %% Create the modules.
-%% In Sicstus this is a no-op: the module "interpreted" will be created
-%% dynamically with the first assertion.
+%% (In Sicstus this is a no-op: the module "interpreted" will be created
+%%  dynamically with the first assertion.)
 
-create_modules.
+create_modules :-
+        \+ lp_system( eclipse ),
+        !.
+
+create_modules :-
+        lp_system( eclipse ),
+        create_module( interface_aux ),
+        create_module( interface  , [], [ interface_aux ] ),
+        create_module( interpreted, [], [ interface     ] ),
+        create_module( support ),
+        fill_interface_modules.
+
+%
+fill_interface_modules :-
+        builtin( Pattern ),
+        functor( Pattern, F, K ),
+        concat_atoms( 'xxx_', F, ExtF ),
+        mk_pattern( ExtF, K, ExtPattern ),
+        ExtPattern =.. [ _ | Args ],
+        Pattern    =.. [ _ | Args ],     % i.e., unify arguments of the patterns
+        assert( (ExtPattern :- Pattern) ) @ interface_aux,
+        assert( (Pattern :- ExtPattern) ) @ interface,
+        export( ExtF / K ) @ interface_aux,
+        export( F    / K ) @ interface,
+        fail.
+
+fill_interface_modules.
 
 
 
@@ -314,7 +389,7 @@ process_file( FileName ) :-
 
 process_input( ProgStream ) :-
         repeat,
-        read_term( ProgStream, Term, [ variable_names( VarDict ) ] ),
+        readvar( ProgStream, Term, VarDict ),
         verify_program_item( Term ),
         process_term( Term, VarDict ),
         Term = end_of_file,
@@ -362,7 +437,8 @@ process_term( Clause, _ ) :-
 process_term( Clause, VarDict ) :-
         check_not_builtin( Clause ),         % fatal error if redefining builtin
         check_for_singleton_variables( Clause, VarDict ),    % warn if singleton
-        assertz( interpreted : Clause ).
+        ensure_dynamic( Clause ),
+        assertz_in_module( interpreted, Clause ).
 
 
 %% include_files( + list of file names ):
@@ -376,6 +452,26 @@ include_files( List ) :-
         fail.
 
 include_files( _ ).
+
+
+
+%% ensure_dynamic( + clause ):
+%% Make sure the predicate of this clause is dynamic.
+%% known/2 is used to avoid multiple declarations.
+%% (NOTE: This is specific to Eclipse.)
+
+:- mode ensure_dynamic( + ).
+
+ensure_dynamic( Clause ) :-
+        lp_system( eclipse ),
+        get_clause_head( Clause, Head ),
+        functor( Head, PredicateSymbol, Arity ),
+        \+ known( PredicateSymbol, Arity ),
+        assert( known( PredicateSymbol, Arity ) ),
+        dynamic( PredicateSymbol / Arity ) @ interpreted,
+        fail.
+
+ensure_dynamic( _ ).
 
 
 
@@ -399,7 +495,7 @@ process_directive( (support PredSpecs) ) :-      % store in "support" table
 
 process_directive( (load_support FileName) ) :-  % compile into module "support"
         !,
-        compile( support : FileName ).
+        compile_to_module( support, FileName ).
 
 process_directive( Directive ) :-
         legal_directive( Directive ),            % provided by a metainterpreter
@@ -456,16 +552,17 @@ show_result( no, _ ) :-
 
 %% show_bindings( + variable dictionary ):
 %% Use the variable dictionary to show the results of a query.
+%% (Recall that the variable dictionary is in Eclipse format.)
 
 :- mode show_bindings( + ).
 
 show_bindings( Dict ) :-
         std_output_stream( Output ),
         print_depth( MaxDepth ),
-        member( (Name = Var), Dict ),
+        member( [ Name | Var ], Dict ),
         write( Output, Name ),
         write( Output, ' = ' ),
-        write_term( Output, Var, [ max_depth( MaxDepth ) ] ),
+        write_shallow( Output, Var, MaxDepth ),
         nl( Output ),
         fail.
 
@@ -478,7 +575,13 @@ show_bindings( _ ).
 
 check_not_builtin( Clause ) :-
         get_clause_head( Clause, Head ),
-        predicate_property( Head, built_in ),
+        (
+            lp_system( eclipse )
+        ->
+            builtin( Head )     % recall that in Eclipse we hid other built-ins
+        ;
+            is_builtin( Head )
+        ),
         !,
         error( [ 'An attempt to redefine a built-in predicate:\n***        ',
                  Clause,
@@ -499,9 +602,17 @@ check_not_builtin( _ ).
 
 top :-
         std_input_stream( Input ),
+        std_output_stream( Output ),
         repeat,
-        read_term( Input, Term, [ variable_names( VarDict ) ] ),
-        getline( Input, _ ),                         % the rest of the line
+        (
+            lp_system( eclipse )
+        ->
+            write( Output, ': ' )                         % a prompt
+        ;
+            true
+        ),
+        readvar( Input, Term, VarDict ),
+        getline( Input, _ ),                              % the rest of the line
         verify_program_item( Term ),
         interactive_term( Term, VarDict ),
         ( Term = end_of_file ; Term = quit ),             % i.e., normally fails
