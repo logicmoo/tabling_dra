@@ -241,6 +241,20 @@ check_predspec( PredSpec ) :-
 
 
 %%------------------------------------------------------------------------------
+%% bind_variables_to_names( +- variable dictionary  ):
+%% The variable dictionary is of the format returned by readvar/3, i.e., a list
+%% of pairs of the form "[ name | variable ]".  Go through the dictionary,
+%% binding each variable to the associated name.
+
+bind_variables_to_names( VarDict ) :-
+        map( bind_var_to_name, VarDict, _ ).
+
+%
+bind_var_to_name( [ Name | Name ], _ ).
+
+
+
+%%------------------------------------------------------------------------------
 %% is_a_good_clause( + term ):
 %% Is this term a reasonable clause?
 
