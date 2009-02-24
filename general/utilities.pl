@@ -2,7 +2,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 20 February 2009.                                          %%%
+%%%  Last update: 23 February 2009.                                          %%%
 %%%                                                                          %%%
 
 
@@ -423,7 +423,11 @@ extract_variables_( T, Vars, NVars ) :-
 check_for_variable_calls( V, _, Clause ) :-
         is_a_variable_name( V ),
         !,
-        error( [ 'A variable literal (\"', V, '\") in \"', Clause, '\"' ] ).
+        error( lines( [ [ 'A variable literal (\"', V, '\") in' ],
+                        [ Clause, '.' ]
+                      ]
+                    )
+             ).
 
 check_for_variable_calls( (A ; B), Vars, Clause ) :-
         !,
@@ -462,10 +466,12 @@ check_for_variable_calls( call( A ), Vars, Clause ) :-
             ->
                 true
             ;
-                error( [ 'The variable argument of \"', call( A ),
-                         '\" does not have previous occurrences in \"',
-                         Clause, '.\"'
-                       ]
+                error( lines( [ [ 'The variable argument of \"', call( A ),
+                                  '\" does not have previous occurrences in'
+                                ],
+                                [ Clause, '.' ]
+                              ]
+                            )
                      )
             )
         ).
@@ -473,7 +479,11 @@ check_for_variable_calls( call( A ), Vars, Clause ) :-
 check_for_variable_calls( T, _, Clause ) :-
         \+ callable( T ),
         !,
-        error( [ 'Incorrect literal (\"', T, '\") in \"', Clause, '.\"' ] ).
+        error( lines( [ [ 'Incorrect literal (\"', T, '\") in' ],
+                        [ Clause, '.' ]
+                      ]
+                    )
+             ).
 
 check_for_variable_calls( _, _, _ ).
 
@@ -491,9 +501,10 @@ check_for_singleton_variables( Clause ) :-
         ->
             true
         ;
-            warning( [ 'Singleton variables ', Singletons,
-                       ' in clause \"', Clause, '.\"'
-                     ]
+            warning( lines( [ [ 'Singleton variables ', Singletons, ' in' ],
+                              [ Clause, '.' ]
+                            ]
+                          )
                    )
         ).
 
@@ -630,7 +641,7 @@ ensure_filename_is_an_atom( FileName ) :-
 :- mode ensure_extension( +, +, -, - ).
 
 ensure_extension( FileNameChars, _, RootFileNameChars, FileNameChars ) :-
-        name_chars( '.', Dot ),
+        name_chars( '.', [ Dot ] ),
         append( RootFileNameChars, [ Dot | _ ], FileNameChars ), % has extension
         !.
 
@@ -790,6 +801,8 @@ putchars( OutputStream, [ C | Cs ] ) :-
 %% Print this term or list of terms as a warning.
 %% There are no spaces between items on the list.
 %% Strings are printed without quotes.
+%% NOTE: If the term is "lines/1", then the argument should be a non-empty list.
+%%       Each of the top level items on the list is printed in a separate line.
 
 warning( V ) :-
         var( V ),
@@ -810,13 +823,41 @@ warning( [ A | B ] ) :-
         std_warning_stream( WS ),
         begin_warning,
         write_list( WS, [ A | B ] ),
+        write( WS, ' ' ),
+        end_warning.
+
+warning( lines( [ FirstLine | OtherLines ]  ) ) :-
+        !,
+        begin_warning,
+        std_warning_stream( WS ),
+        warning_line( WS, FirstLine ),
+        warning_lines( OtherLines, WS ),
         end_warning.
 
 warning( NotAList ) :-
         begin_warning,
         std_warning_stream( WS ),
         write( WS, NotAList ),
+        write( WS, ' ' ),
         end_warning.
+
+%
+warning_lines( [], _ ).
+
+warning_lines( [ Line | Lines ], WS ) :-
+        write( WS, '---          ' ),
+        warning_line( WS, Line ),
+        warning_lines( Lines, WS ).
+
+%
+warning_line( WS, List ) :-
+        ( List = [] ; List = [ _ | _ ] ),
+        !,
+        write_list( WS, List ),
+        nl( WS ).
+
+warning_line( WS, Term ) :-
+        writeln( WS, Term ).
 
 
 %%------------------------------------------------------------------------------
@@ -834,25 +875,23 @@ begin_warning :-
 
 end_warning :-
         std_warning_stream( WS ),
-        writeln( WS, ' ---' ).
+        writeln( WS, '---' ).
 
 
 
 %%------------------------------------------------------------------------------
 %% error( + term ):
 %% error( + list of terms ):
-%% Print this term or list of terms as a error, then abort the computation.
+%% Print this term or list of terms as an error, then abort the computation.
 %% There are no spaces between items on the list.
 %% Strings are printed without quotes.
+%% NOTE: If the term is "lines/1", then the argument should be a non-empty list.
+%%       Each of the top level items on the list is printed in a separate line.
 
 error( V ) :-
         var( V ),
         !,
-        warning( [ 'Incorrect invocation of error/1: \"',
-                   error( V ),
-                   '\"'
-                 ]
-               ).
+        error( [ 'Incorrect invocation of error/1: \"', error( V ), '\"' ] ).
 
 error( [] ) :-
         !,
@@ -867,12 +906,39 @@ error( [ A | B ] ) :-
         write( ES, ' ' ),
         end_error.
 
+error( lines( [ FirstLine | OtherLines ]  ) ) :-
+        !,
+        begin_error,
+        std_error_stream( ES ),
+        error_line( ES, FirstLine ),
+        error_lines( OtherLines, ES ),
+        end_error.
+
 error( NotAList ) :-
         begin_error,
         std_error_stream( ES ),
         write( ES, NotAList ),
         write( ES, ' ' ),
         end_error.
+
+%
+error_lines( [], _ ).
+
+error_lines( [ Line | Lines ], ES ) :-
+        write( ES, '***        ' ),
+        error_line( ES, Line ),
+        error_lines( Lines, ES ).
+
+%
+error_line( ES, List ) :-
+        ( List = [] ; List = [ _ | _ ] ),
+        !,
+        write_list( ES, List ),
+        nl( ES ).
+
+error_line( ES, Term ) :-
+        writeln( ES, Term ).
+
 
 
 %%------------------------------------------------------------------------------
