@@ -97,7 +97,7 @@ is_builtin( Pred ) :-
 %% "[ name | Variable ]" rather than "name = variable".
 
 readvar( InputStream, Term, EclipseVarDict ) :-
-        read_term( ProgStream, Term, [ variable_names( SicstusVarDict ) ] ),
+        read_term( InputStream, Term, [ variable_names( SicstusVarDict ) ] ),
         map( translate_vardict_entry, SicstusVarDict, EclipseVarDict ).
 
 %
