@@ -1,5 +1,8 @@
 
-p( V, 'V' ).   % singleton V
+p( V, 'V' ).                  % singleton V
+
+a( _, _X ) :-  b( _Y, Z ).    % only Z is a singleton
 
 % Note that Y is truly a singleton on the second branch!
 a(X) :- b(X, Y), c( Y ); d(Y).
+
