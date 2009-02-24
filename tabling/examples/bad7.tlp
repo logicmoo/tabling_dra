@@ -3,6 +3,19 @@ p( V, 'V' ).                  % singleton V
 
 a( _, _X ) :-  b( _Y, Z ).    % only Z is a singleton
 
-% Note that Y is truly a singleton on the second branch!
+% Note that Y is truly a singleton on the second branch in the first clause, but
+% not in the second!
 a(X) :- b(X, Y), c( Y ); d(Y).
+a(X) :- b(X, Y), (c( Y ); d(Y)).
+
+
+% Here Y should be a singleton.
+a :- \+ b( Y ), c(Y).
+
+% Here Y should be a singleton in the first branch
+a :- (\+ b( Y ); c(Y)), d( Y ).
+
+% Here Y should be a singleton in the first branch
+a(X) :-(b( Y ), fail ; c(Y)), d( Y ).
+
 
