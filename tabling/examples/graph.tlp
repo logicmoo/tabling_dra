@@ -34,4 +34,4 @@ path( A, B ) :-  path( A, C ), path( C, B ).
 ?- path( c, c ).      % expected:  yes
 ?- path( c, b ).      % expected:  yes
 ?- path( c, e ).      % expected:  no
-?- path( X, Y ).      % expected:  see the picture
+?- path( _X, _Y ).    % expected:  see the picture
