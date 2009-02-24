@@ -2,28 +2,24 @@
 
 This directory includes the following files:
 
-eager_tabling.ecl:
-        A metainterpreter for tabled logic programs that applies a
-        top-down, "eager tabling" strategy.  Neither the query nor the
-        tabled answers need be ground, but when a query is executed, the
-        interpreter tries to table as many solutions (both to the goal
-        and to its descendants) as it can before it succeeds with the
-        first solution.
+dra.ecl:
+        A wrapping of dra_common.pl for Eclipse.
 
-        Just load it into Eclipse!  The head comment explains how to use
-        it.
+dra.pl:
+        A wrapping of dra_common.pl for Sicstus.
 
-        NOTE: Don't use this version if the tabled program is also
-              coinductive (and has been translated into Prolog by
-              ../coind/translate_colp)! Eclipse is currently not good at
-              handling cyclic terms, so use the Sicstus version instead.
+dra_common.pl:
 
-colp.pl:
-        Ditto converted to Sicstus.
+        The code for an interpreter that implements tabling by using "Dynamic
+        Reordering of Alternatives".  This interpreter can handle programs
+        that use not only tabling, but also co-logic programming (even when
+        the same predicate is both coinductive and tabled).
+
+        Just load 'dra' into Eclipse or Sicstus!  The head comment explains
+        how to use it.
 
 examples:
         Some examples of tabled programs, all with the extension
         ".tlp".
-        See also "../mixed/examples/LTL".
 
 --------------------------------------------------------------------------------

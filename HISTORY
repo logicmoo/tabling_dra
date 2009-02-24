@@ -63,4 +63,9 @@
                  - Added checking for singleton variables.
                  - Improved the format of longer diagnostic messages.
 
+   Feb 2009:   Seventh "internal public" release:
+
+                 - "dra" now has common code for both systems, only tiny
+                   shell files remain.
+
 -------------------------------------------------------------------------------
