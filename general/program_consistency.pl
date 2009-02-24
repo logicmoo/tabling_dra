@@ -16,13 +16,15 @@
 %%  - is there a call to an undefined predicate?
 %%  - is there a defined predicate that is not called?
 
-check_general_consistency :-
-        findall( (Pattern :- Body),
-                 ( current_predicate_in_module( interpreted, PredSpec )
-                 , predspec_to_pattern( PredSpec, Pattern )
-                 , \+ builtin( Pattern )
-                 , clause_in_module( interpreted, Pattern, Body )
-                 ),
-                 Clauses
-               ),
-        true.   %<<<<< TBD
+check_general_consistency.
+
+%check_general_consistency :-
+%        findall( (Pattern :- Body),
+%                 ( current_predicate_in_module( interpreted, PredSpec )
+%                 , predspec_to_pattern( PredSpec, Pattern )
+%                 , \+ builtin( Pattern )
+%                 , clause_in_module( interpreted, Pattern, Body )
+%                 ),
+%                 Clauses
+%               ),
+%        true.   %<<<<< TBD
