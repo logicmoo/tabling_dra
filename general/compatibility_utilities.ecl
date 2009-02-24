@@ -90,6 +90,30 @@ current_predicate_in_module( ModuleName, PredSpec ) :-
 
 
 %%------------------------------------------------------------------------------
+%% assert_in_module( + module name, + clause ):
+%% Like assert/1, but into this module.
+
+assert_in_module( Module, Clause ) :-
+        assert( Clause ) @ Module .
+
+
+%%------------------------------------------------------------------------------
+%% retractall_in_module( + module name, + head pattern ):
+%% Like retractall/1, but into this module.
+
+retractall_in_module( Module, Head ) :-
+        retractall( Head ) @ Module .
+
+
+%%------------------------------------------------------------------------------
+%% call_in_module( + module name, + head pattern ):
+%% Like call/1, but into this module.
+
+call_in_module( Module, Head ) :-
+        call( Head ) @ Module .
+
+
+%%------------------------------------------------------------------------------
 %% assertz_in_module( + module name, + clause ):
 %% Like assertz/1, but into this module.
 
