@@ -390,7 +390,7 @@ process_file( FileName ) :-
 process_input( ProgStream ) :-
         repeat,
         readvar( ProgStream, Term, VarDict ),
-        verify_program_item( Term ),
+        verify_program_item( Term, VarDict ),
         process_term( Term, VarDict ),
         Term = end_of_file,
         !.
@@ -404,7 +404,7 @@ process_input( ProgStream ) :-
 %% The variable dictionary is used for printing out the results of a query.
 %%
 %% NOTE: The superficial correctness of this term as a program item has already
-%%       been verified by "verify_program_item/1".
+%%       been verified by "verify_program_item/2".
 
 :- mode process_term( +, + ).
 
@@ -434,9 +434,8 @@ process_term( Clause, _ ) :-
         check_not_builtin( Clause ),         % fatal error if redefining builtin
         asserta( Clause ).
 
-process_term( Clause, VarDict ) :-
+process_term( Clause, _ ) :-
         check_not_builtin( Clause ),         % fatal error if redefining builtin
-        check_for_singleton_variables( Clause, VarDict ),    % warn if singleton
         ensure_dynamic( Clause ),
         assertz_in_module( interpreted, Clause ).
 
@@ -612,8 +611,7 @@ top :-
             true
         ),
         readvar( Input, Term, VarDict ),
-        getline( Input, _ ),                              % the rest of the line
-        verify_program_item( Term ),
+        verify_program_item( Term, VarDict ),
         interactive_term( Term, VarDict ),
         ( Term = end_of_file ; Term = quit ),             % i.e., normally fails
         !.
