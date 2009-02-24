@@ -428,11 +428,11 @@ process_term( (?- Query), VarDict ) :-
         process_query( Query, VarDict ),
         !.                                            % no alternative solutions
 
-process_term( Clause, _ ) :-
+process_term( Clause, VarDict ) :-
         get_clause_head( Clause, Head ),
         hook_predicate( Head ),              % metainterpreter's hook predicate
         !,
-        check_not_builtin( Clause ),         % fatal error if redefining builtin
+        check_not_builtin( Clause, VarDict ),      % fatal if redefining builtin
         asserta( Clause ).
 
 process_term( Clause, VarDict ) :-
