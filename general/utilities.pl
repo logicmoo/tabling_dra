@@ -256,13 +256,86 @@ bind_var_to_name( [ Name | Name ], _ ).
 
 %%------------------------------------------------------------------------------
 %% is_a_good_clause( + term ):
-%% Is this term a reasonable clause?
+%% Is this term a reasonable clause?  Even if it is,  warnings may be produced.
 
 is_a_good_clause( T ) :-
+        mk_variable_dictionary( T, VarDict ),
+        is_a_good_clause( VarDict ).
+
+
+%%------------------------------------------------------------------------------
+%% mk_variable_dictionary( + term, - a variable dictionary ):
+%% Produce a variable dictionary for this term, as if it had been read by
+%% readvar/3.
+%% Since the original variable names are not available, we will use the names
+%% A, B, C, ... Z, V0, V1 etc.
+%% (This is done "by hand", since numbervars/3 are not very useful in Eclipse:
+%%  the writing predicates are not "aware" of '$VAR'(n).)
+
+mk_variable_dictionary( T, VarDict ) :-
+        term_variables( T, Vars ),
+        mk_variable_dictionary_( Vars, 'A', VarDict ).
+
+mk_variable_dictionary_( [], _, [] ).
+
+mk_variable_dictionary_( [ V | Vs ], Name, [ [ Name | V ] | VarDict ] ) :-
+        mk_next_name( Name, NextName ),
+        mk_variable_dictionary_( Vs, NextName, VarDict ).
+
+%
+% Once we run out of letters, we will use V0, V1 etc.
+%
+mk_next_name( 'Z', 'V0' ) :-
+        !.
+
+mk_next_name( Name, Next ) :-
+        name_chars( Name, [ C ] ),      % still in single letters?
+        !,
+        NC is C + 1,         % good for ASCII, might not work for some encodings
+        name_chars( Next, [ NC ] ).
+
+mk_next_name( Name, Next ) :-
+        name_chars( Name, [ CodeOfV | DigitChars ] ),
+        name_chars( Number, DigitChars ),
+        NextNumber is Number + 1,                               % good for ASCII
+        name_chars( NextNumber, NewDigitChars ),
+        name_chars( Next, [ CodeOfV | NewDigitChars ] ).
+
+
+%%------------------------------------------------------------------------------
+%% is_a_variable_name( + term ):
+%% Is this the name of a variable?
+
+is_a_variable_name( Term ) :-
+        atom( Term ),
+        name_chars( Term, [ FirstChar | _ ] ),
+        name_chars( FirstCharAtom, [ FirstChar ] ),
+        (
+            FirstCharAtom = '_',
+            !
+        ;
+            upper_case_letter( FirstCharAtom )
+        ).
+
+%
+upper_case_letter( Atom ) :-  uc( Atom ),  !.
+
+uc( 'A' ).  uc( 'B' ). uc( 'C' ).  uc( 'D' ).  uc( 'E' ).  uc( 'F' ).
+uc( 'G' ).  uc( 'H' ). uc( 'I' ).  uc( 'J' ).  uc( 'K' ).  uc( 'L' ).
+uc( 'M' ).  uc( 'N' ). uc( 'O' ).  uc( 'P' ).  uc( 'Q' ).  uc( 'R' ).
+uc( 'S' ).  uc( 'T' ). uc( 'U' ).  uc( 'V' ).  uc( 'W' ).  uc( 'X' ).
+uc( 'Y' ).  uc( 'Z' ).
+
+
+%%------------------------------------------------------------------------------
+%% is_a_good_clause( + term, + variable dictionary ):
+%% Is this term a reasonable clause?  Even if it is,  warnings may be produced.
+
+is_a_good_clause( T, VarDict ) :-
         nonvar( T ),
         get_clause_head( T, H ),
         is_a_good_clause_head( H ),
-        has_a_good_clause_body( T ).
+        has_a_good_clause_body( T, VarDict ).
 
 
 %%------------------------------------------------------------------------------
@@ -293,23 +366,53 @@ is_a_good_clause_head( Hd ) :-
 
 
 %%------------------------------------------------------------------------------
-%% has_a_good_clause_body( + term ):
+%% has_a_good_clause_body( + term, + variable dictionary ):
 %% Treat this non-variable term as a clause, check it for elementary sanity.
 %% Assume that the head is not a variable.
 %%
 %% NOTE: The check is mainly to ensure that there are no variable literals.
 %%       Invocations of call/1 are allowed, but an error will be raised if
 %%       the argument is a variable that had no earlier occurrences.
+%%       As an added bonus, we produce warnings about singleton variables.
 
-:-mode has_a_good_clause_body( + ).
+:- mode has_a_good_clause_body( ?, + ).
 
-has_a_good_clause_body( Clause) :-
+has_a_good_clause_body( Clause, VarDict ) :-
+        check( has_a_good_clause_body_( Clause, VarDict ) ).
+
+has_a_good_clause_body_( Clause, VarDict ) :-
+        bind_variables_to_names( VarDict ),    % this is why we call via check/1
         Clause = (Head :- Body),
         !,
         term_variables( Head, HeadVars ),
-        check_for_variable_calls( Body, HeadVars, Clause ).
+        check_for_variable_calls( Body, HeadVars, Clause ),
+        check_for_singleton_variables( Clause ).
 
-has_a_good_clause_body( _Fact ).
+has_a_good_clause_body_( _Fact, _ ).
+
+
+%% extract_variables( + term, - set of variable names ):
+%% Since we don't have real variables here, we can't use term_variables.
+
+extract_variables( T, VarSet ) :-
+        empty_set( Empty ),
+        extract_variables_( T, Empty, VarSet ).
+
+%
+extract_variables_( V, Vars, NVars ) :-
+        is_a_variable_name( V ),
+        !,
+        add_to_set( V, Vars, NVars ).
+
+extract_variables_( A, Vars, Vars ) :-
+        atomic( A ),
+        !.
+
+extract_variables_( T, Vars, NVars ) :-
+        compound( T ),
+        T =.. [ _ | Args ],
+        map( extract_variables, Args, Sets ),
+        fold( set_union, Vars, Sets, NVars ).
 
 
 % check_for_variable_calls( + (part of a) clause body,
@@ -318,29 +421,23 @@ has_a_good_clause_body( _Fact ).
 %                         )
 
 check_for_variable_calls( V, _, Clause ) :-
-        var( V ),
+        is_a_variable_name( V ),
         !,
         error( [ 'A variable literal (\"', V, '\") in \"', Clause, '\"' ] ).
 
-check_for_variable_calls( (A -> B ; C), Vars, Clause ) :-
-        !,
-        check_for_variable_calls( A, Vars, Clause ),
-        term_variables( A, AVs ),
-        list_to_set( AVs, AVars ),
-        set_union( AVars, Vars, NVars ),
-        check_for_variable_calls( B, NVars, Clause ),
-        check_for_variable_calls( C,  Vars, Clause ).
-
-check_for_variable_calls( ( A ; B ), Vars, Clause ) :-
+check_for_variable_calls( (A ; B), Vars, Clause ) :-
         !,
         check_for_variable_calls( A, Vars, Clause ),
         check_for_variable_calls( B, Vars, Clause ).
 
-check_for_variable_calls( ( A , B ), Vars, Clause ) :-
+check_for_variable_calls( (A -> B), Vars, Clause ) :-
+        !,
+        check_for_variable_calls( (A , B), Vars, Clause ).
+
+check_for_variable_calls( (A , B), Vars, Clause ) :-
         !,
         check_for_variable_calls( A, Vars, Clause ),
-        term_variables( A, AVs ),
-        list_to_set( AVs, AVars ),
+        extract_variables( A, AVars ),
         set_union( AVars, Vars, NVars ),
         check_for_variable_calls( B, NVars, Clause ).
 
@@ -355,11 +452,11 @@ check_for_variable_calls( once( A ), Vars, Clause ) :-
 check_for_variable_calls( call( A ), Vars, Clause ) :-
         !,
         (
-            nonvar( A )
+            \+ is_a_variable_name( A )
         ->
             check_for_variable_calls( A, Vars, Clause )
         ;
-            % var( A ),
+            % is_a_variable_name( A ),
             (
                 is_in_set( A, Vars )
             ->
@@ -381,6 +478,76 @@ check_for_variable_calls( T, _, Clause ) :-
 check_for_variable_calls( _, _, _ ).
 
 
+%% check_for_singleton_variables( + a clause with variables bound to names ):
+%% Produce a warning if there is a path in the clause on which a variable occurs
+%% only once, and the name of that variable does not begin with an underscore.
+%% Always succeed.
+%% Assume the clause has been verified by is_a_good_clause/1.
+
+check_for_singleton_variables( Clause ) :-
+        cs( Clause, _, Singletons ),
+        (
+            empty_set( Singletons )
+        ->
+            true
+        ;
+            warning( [ 'Singleton variables ', Singletons,
+                       ' in clause \"', Clause, '.\"'
+                     ]
+                   )
+        ).
+
+%
+% cs( + (sub)term, - variables seen, - set of singletons ):
+% Produce the set of variables occurring in this term, as well as the set of
+% variables that are singletons in this term.
+% Note that singletons is a subset of seen.
+
+cs( V, [ V ], [ V ] ) :-
+        is_a_variable_name( V ),
+        !.
+
+cs( A, [], [] ) :-
+        atomic( A ),
+        !.
+
+cs( (A ; B), Seen, Single ) :-
+        !,
+        cs( A, SeenA, SingleA ),
+        cs( B, SeenB, SingleB ),
+        set_union( SeenA,   SeenB,   Seen   ),
+        set_union( SingleA, SingleB, Single ).
+
+cs( (A , B), Seen, Single ) :-
+        !,
+        cs( [ A | B ], Seen, Single ).
+
+cs( (A :- B), Seen, Single ) :-
+        !,
+        cs( [ A | B ], Seen, Single ).
+
+cs( (A -> B), Seen, Single ) :-
+        !,
+        cs( [ A | B ], Seen, Single ).
+
+cs( [ A | B ], Seen, Single ) :-
+        !,
+        cs( A, SeenA, SingleA ),
+        cs( B, SeenB, SingleB ),
+        set_union( SeenA, SeenB, Seen ),
+        set_difference( SingleA, SeenB, SA ),
+        set_difference( SingleB, SeenA, SB ),
+        set_union( SA, SB, Single ).
+
+cs( C, Seen, Single ) :-
+        compound( C ),
+        !,
+        C =.. [ _ | Args ],
+        cs( Args, Seen, Single ).
+
+cs( T, Seen, Single ) :-
+        error( [ 'INTERNAL ERROR: (utilities)', cs( T, Seen, Single ) ] ).
+
 
 %%------------------------------------------------------------------------------
 %% verify_program( + list of terms ):
@@ -391,184 +558,46 @@ check_for_variable_calls( _, _, _ ).
 
 verify_program( Terms ) :-
         member( Term, Terms ),
-        verify_program_item( Term ),
+        mk_variable_dictionary( Term, VarDict ),
+        verify_program_item( Term, VarDict ),
         fail.
 
 verify_program( _ ).
 
 
 %%------------------------------------------------------------------------------
-%% verify_program_item( + list of terms ):
+%% verify_program_item( + list of terms, + variable dictionary ):
 %% Given a term that should  be a clause, a directive, or a query,
 %% raise an error if it is obviously incorrect.
 
-verify_program_item( Var ) :-
+verify_program_item( end_of_file, _ ) :-
+        !.       % An ugly fix for an error in Eclipse (does not bind VarDict!)
+
+verify_program_item( Var, VarDict ) :-
         var( Var ),
         !,
+        bind_variables_to_names( VarDict ),
         error( [ 'A variable clause: \"', Var, '\"' ] ).
 
-verify_program_item( (:- Var) ) :-
+verify_program_item( (:- Var), VarDict ) :-
         var( Var ),
         !,
+        bind_variables_to_names( VarDict ),
         error( [ 'A variable directive: \"', (:- Var), '\"' ] ).
 
-verify_program_item( (?- Var) ) :-
+verify_program_item( (?- Var), VarDict ) :-
         var( Var ),
         !,
+        bind_variables_to_names( VarDict ),
         error( [ 'A variable query: \"', (?- Var), '\"' ] ).
 
-verify_program_item( Clause ) :-
-        \+ is_a_good_clause( Clause ),
+verify_program_item( Clause, VarDict ) :-
+        \+ is_a_good_clause( Clause, VarDict ),
         !,
+        bind_variables_to_names( VarDict ),
         error( [ 'Incorrect clause: \"', Clause, '.\"' ] ).
 
-verify_program_item( _ ).
-
-
-
-%%------------------------------------------------------------------------------
-%% check_for_singleton_variables( + a clause,
-%%                                + its variable dictionary
-%%                              ):
-%% Produce a warning if there is a path in the clause on which a variable occurs
-%% only once, and the name of that variable does not begin with an underscore.
-%% Always succeed.
-%% Assume the clause has been verified by is_a_good_clause/1.
-
-check_for_singleton_variables( Clause, VarDict ) :-
-        bind_variables_to_names( VarDict ),        % we will backtrack from this
-        shake_clause( Clause, Paths ),
-        map( singleton_vars_in_path, Paths, Sets),
-        empty_set( Empty ),
-        fold( set_union, Empty, Sets, Folded ),
-        (
-            \+ empty_set( Folded )
-        ->
-            set_to_list( Folded, List ),
-            sort( List, SortedList ),
-            warning( [ 'Singleton variables ', SortedList,
-                       ' on a path in clause \"', Clause, '\"'
-                     ]
-                   )
-        ),
-        fail.
-
-check_for_singleton_variables( _, _ ).
-
-
-%% shake_clause( + clause, - a list of reversed paths ):
-%% Given a clause, return the list of possible paths.
-
-shake_clause( (Head :- Body ), Paths ) :-
-        !,
-        shake_body( Body, Paths1 ),
-        cons_to_all( Head, Paths1, Paths ).
-
-shake_clause( Head, [ [ Head ] ] ).
-
-%
-shake_body( ( A ; B ), Paths ) :-
-        !,
-        shake_body( A, PathsA ),
-        shake_body( B, PathsB ),
-        append( PathsA, PathsB, Paths ).
-
-shake_body( (( A ; B ) , C), Paths ) :-
-        !,
-        shake_body( (A , C), PathsA ),
-        shake_body( (B , C), PathsB ),
-        append( PathsA, PathsB, Paths ).
-
-shake_body( (fail , B), Paths ) :-
-        !,
-        shake_body( B, Paths ).
-
-shake_body( (A , B), Paths ) :-
-        !,
-        shake_body( B, Paths1 ),
-        cons_to_all( A, Paths1, Paths ).
-
-shake_body( (A -> B), Paths ) :-
-        !,
-        shake_body( (A , B), Paths ).
-
-shake_body( Literal, [ [ Literal ] ] ).
-
-
-% cons_to_all( + term, + list of lists, - modified list of lists ):
-% Put the first argument at the beginning of each list in the list.
-
-cons_to_all( _, [], [] ).
-cons_to_all( Term, [ H | T ], [ [ Term | H ] | TT ] ) :-
-        cons_to_all( Term, T, TT ).
-
-
-% singleton_vars_in_path( + list of simple literals in source form,
-%                         - set of singleton variables
-%                       ):
-% Return the set of those variables that have only one occurrence and a name
-% that does not begin with '_'.
-
-singleton_vars_in_path( Path, SingleOccurrences ) :-
-        empty_set( FirstOccurrences ),
-        empty_set( OtherOccurrences ),
-        singletons_in_path( Path, FirstOccurrences, OtherOccurrences,
-                            SingleOccurrences
-                          ).
-
-%
-singletons_in_path( [], First, Other, Single ) :-
-        set_difference( First, Other, Single ).
-
-singletons_in_path( [ H | T ], First, Other, Single ) :-
-        H =.. [ _ | Args ],
-        vars_in_args( Args, First, Other, NewFirst, NewOther ),
-        singletons_in_path( T, NewFirst, NewOther, Single ).
-
-%
-vars_in_args( [], First, Other, First, Other ).
-
-vars_in_args( [ H | T ], First, Other, NewFirst, NewOther ) :-
-        vars_in_arg( H, First, Other, NFirst, NOther ),
-        vars_in_args( T, NFirst, NOther, NewFirst, NewOther ).
-
-%
-vars_in_arg( H, First, Other, NewFirst, NewOther ) :-
-        atom( H ),
-        !,
-        name_chars( H, [ FirstChar | _ ] ),
-        name_chars( FirstLetterAtom, [ FirstChar ] ),
-        (
-            upper_case_letter( FirstLetterAtom )
-        ->
-            (
-                is_in_set( H, First )
-            ->
-                NewFirst = First,
-                add_to_set( H, Other, NewOther )
-            ;
-                add_to_set( H, First, NewFirst ),
-                NewOther = Other
-            )
-        ;
-            NewFirst = First,
-            NewOther = Other
-        ).
-
-vars_in_arg( H, First, Other, NewFirst, NewOther ) :-
-        % \+ atom( H ),
-        H =.. [ _ | Args ],
-        vars_in_args( Args, First, Other, NewFirst, NewOther ).
-
-%
-upper_case_letter( Atom ) :- uc( Atom ).
-
-uc( 'A' ).  uc( 'B' ). uc( 'C' ).  uc( 'D' ).  uc( 'E' ).  uc( 'F' ).
-uc( 'G' ).  uc( 'H' ). uc( 'I' ).  uc( 'J' ).  uc( 'K' ).  uc( 'L' ).
-uc( 'M' ).  uc( 'N' ). uc( 'O' ).  uc( 'P' ).  uc( 'Q' ).  uc( 'R' ).
-uc( 'S' ).  uc( 'T' ). uc( 'U' ).  uc( 'V' ).  uc( 'W' ).  uc( 'X' ).
-uc( 'Y' ).  uc( 'Z' ).
-
+verify_program_item( _, _ ).
 
 
 
