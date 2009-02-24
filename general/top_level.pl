@@ -118,8 +118,9 @@
 %%%    6. The clauses read in by the top level are loaded into the module
 %%%       "interpreted".  This is done to avoid conflicts with predicates
 %%%       used in the metainterpreter (and the top level).  The metainterpreter
-%%%       must access them by using
-%%%          clause( ... ) @ interpreted.
+%%%       must access them by using the predicate imported from
+%%%       "compatibility_utilties":
+%%%          clause_in_module( interpreted, ... )
 %%%
 %%%
 %%%    7. The top level notes "support" declarations in the table "support".
@@ -239,7 +240,7 @@ set_print_depth( N ) :-
 
 set_print_depth( Strange ) :-
         error( [ 'The argument of set_print_depth/1 is not a positive integer',
-                 Strange
+                 ': \"', Strange, '\"'
                ]
              ).
 
@@ -347,10 +348,10 @@ fill_interface_modules :-
         mk_pattern( ExtF, K, ExtPattern ),
         ExtPattern =.. [ _ | Args ],
         Pattern    =.. [ _ | Args ],     % i.e., unify arguments of the patterns
-        assert( (ExtPattern :- Pattern) ) @ interface_aux,
-        assert( (Pattern :- ExtPattern) ) @ interface,
-        export( ExtF / K ) @ interface_aux,
-        export( F    / K ) @ interface,
+        assertz_in_module( interface_aux, (ExtPattern :- Pattern) ),
+        assertz_in_module( interface,     (Pattern :- ExtPattern) ),
+        export_from_module( interface_aux, ExtF / K ),
+        export_from_module( interface    , F    / K ),
         fail.
 
 fill_interface_modules.
@@ -434,8 +435,8 @@ process_term( Clause, _ ) :-
         check_not_builtin( Clause ),         % fatal error if redefining builtin
         asserta( Clause ).
 
-process_term( Clause, _ ) :-
-        check_not_builtin( Clause ),         % fatal error if redefining builtin
+process_term( Clause, VarDict ) :-
+        check_not_builtin( Clause, VarDict ),      % fatal if redefining builtin
         ensure_dynamic( Clause ),
         assertz_in_module( interpreted, Clause ).
 
@@ -467,7 +468,7 @@ ensure_dynamic( Clause ) :-
         functor( Head, PredicateSymbol, Arity ),
         \+ known( PredicateSymbol, Arity ),
         assert( known( PredicateSymbol, Arity ) ),
-        dynamic( PredicateSymbol / Arity ) @ interpreted,
+        dynamic_in_module( interpreted, PredicateSymbol / Arity ),
         fail.
 
 ensure_dynamic( _ ).
@@ -504,7 +505,7 @@ process_directive( Directive ) :-
 process_directive( Directive ) :-                % unsupported directive
         % \+ legal_directive( Directive ),
         !,
-        error( [ 'Unknown directive: \"', (:- Directive), '.\"' ] ).
+        error( lines( [ 'Unknown directive:', [ (:- Directive), '.' ] ] ) ).
 
 
 %% process_query( + query, + variable dictionary ):
@@ -569,10 +570,10 @@ show_bindings( _ ).
 
 
 
-%% check_not_builtin( + clause ):
+%% check_not_builtin( + clause, + variable dictionary ):
 %% Raise a fatal error if this clause attempts to redefine a built-in predicate.
 
-check_not_builtin( Clause ) :-
+check_not_builtin( Clause, VarDict ) :-
         get_clause_head( Clause, Head ),
         (
             lp_system( eclipse )
@@ -582,13 +583,14 @@ check_not_builtin( Clause ) :-
             is_builtin( Head )
         ),
         !,
-        error( [ 'An attempt to redefine a built-in predicate:\n***        ',
-                 Clause,
-                 '.\n'
-               ]
+        bind_variables_to_names( VarDict ),
+        error( lines( [ 'An attempt to redefine a built-in predicate:',
+                        [ Clause, '.' ]
+                      ]
+                    )
              ).
 
-check_not_builtin( _ ).
+check_not_builtin( _, _ ).
 
 
 
