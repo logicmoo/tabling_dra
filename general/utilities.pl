@@ -279,9 +279,12 @@ bind_var_to_name( [ Name | Name ], _ ).
 %% Produce a variable dictionary for this term, as if it had been read by
 %% readvar/3.
 %% Since the original variable names are not available, we will use the names
-%% A, B, C, ... Z, V0, V1 etc.
-%% (This is done "by hand", since numbervars/3 are not very useful in Eclipse:
-%%  the writing predicates are not "aware" of '$VAR'(n).)
+%% A, B, C, ... Z, V0, V1 etc. This has an important disadvantage: each variable
+%% whose name originally began with underscores (e.g., an anonymous variable)
+%% will obtain a "normal" name, and look like a singleton.
+%%
+%% (All this is done "by hand", since numbervars/3 are not very useful in
+%% Eclipse: the writing predicates are not "aware" of '$VAR'(n).)
 
 mk_variable_dictionary( T, VarDict ) :-
         term_variables( T, Vars ),
@@ -601,9 +604,28 @@ cs( T, VarDict, Seen, Single ) :-
 
 
 %%------------------------------------------------------------------------------
+%% verify_program_with_vars( + list of pairs ):
+%% Like verify_program/1 below, but instead of a list of terms we have a list
+%% of pairs (pair( term, variable dictionary for the term)), i.e., we can use
+%% information about original variable names.
+
+:- mode verify_program_with_vars( + ).
+
+verify_program_with_vars( Pairs ) :-
+        member( Pair, Pairs ),
+        Pair = pair( Term, VarDict ),
+        verify_program_item( Term, VarDict ),
+        fail.
+
+verify_program_with_vars( _ ).
+
+
+
+%%------------------------------------------------------------------------------
 %% verify_program( + list of terms ):
 %% Given a list of terms that should all be clauses, directives, or queries,
 %% raise an error if any of the terms is obviously incorrect.
+%% See also verify_program_with_vars/1 above.
 
 :- mode verify_program( + ).
 
@@ -690,11 +712,46 @@ ensure_extension( FileNameChars, ExtChars,
 
 
 %%------------------------------------------------------------------------------
+%% read_terms_with_vars( + input stream,
+%%                       - list of terms with variable dictionaries
+%%                     ):
+%% Like read_terms/2 (see below), but each item on the resulting list is of
+%% the form "pair( term, variable dictionary )", where the variable dictionary
+%% is of the format returned by readvar.
+
+:- mode read_terms_with_vars( +, - ).
+
+read_terms_with_vars( InputStream, Terms ) :-
+        readvar( InputStream, Term, VarDict ),
+        read_terms_with_vars_( InputStream, pair( Term, VarDict ), Terms ).
+
+%
+read_terms_with_vars_( _, pair( end_of_file, _ ), [] ) :-
+        !.
+
+read_terms_with_vars_( InputStream, Pair, [ Pair | Pairs ] ) :-
+        % Pair \= pair( end_of_file, _ ),
+        process_if_op_directive( Pair ),
+        readvar( InputStream, NextTerm, NextVarDict ),
+        read_terms_with_vars_( InputStream,
+                               pair( NextTerm, NextVarDict ), Pairs
+                             ).
+
+%
+process_if_op_directive( pair( (:- op( P, F, Ops)), _ ) ) :-
+        !,
+        op( P, F, Ops ).
+
+process_if_op_directive( _ ).
+
+
+%%------------------------------------------------------------------------------
 %% read_terms( + input stream, - list of terms ):
 %% Given an open input stream, produce all the terms that can be read from it.
 %%
 %% NOTE: Operator declarations are interpreted on the fly, but not deleted from
 %%       output.
+%%       See also read_terms_with_vars/2 above.
 
 :- mode read_terms( +, - ).
 
@@ -711,13 +768,6 @@ read_terms_( InputStream, Term, [ Term | Terms ] ) :-
         process_if_op_directive( Term ),
         read( InputStream, NextTerm ),
         read_terms_( InputStream, NextTerm, Terms ).
-
-%
-process_if_op_directive( (:- op( P, F, Ops)) ) :-
-        !,
-        op( P, F, Ops ).
-
-process_if_op_directive( _ ).
 
 
 
