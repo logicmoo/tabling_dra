@@ -109,7 +109,7 @@ check_transitions :-
 check_transitions :-
         state( S ),
         (
-            (\+ trans( S, Set ) ; trans( S, [] ))
+            (\+ trans( S, _Set ) ; trans( S, [] ))
         ->
             write( 'No transition out of state ' ),
             write( S ),
@@ -127,7 +127,7 @@ check_transitions.
 %--- The formula is normalized: only propositions can be negated.
 
 verify( S, g A   ) :-  once( coverify( S, g A   ) ).
-verify( S, A r b ) :-  once( coverify( S, A r B ) ).
+verify( S, A r B ) :-  once( coverify( S, A r B ) ).
 verify( S, A     ) :-  A \= g _,  a \= _ r _,  tverify( S, A ).
 
 
