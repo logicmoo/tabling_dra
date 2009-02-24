@@ -2,7 +2,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February 2009)                       %%%
 %%%                                                                          %%%
-%%%  Last update: 20 February 2009.                                          %%%
+%%%  Last update: 23 February 2009.                                          %%%
 %%%                                                                          %%%
 
 :- ensure_loaded( higher_order ).
@@ -95,6 +95,22 @@ current_predicate_in_module( ModuleName, PredSpec ) :-
 
 assertz_in_module( Module, Clause ) :-
         assertz( Clause ) @ Module .
+
+
+%%------------------------------------------------------------------------------
+%% export_from_module( + module name, + predicate specification ):
+%% export/1 factored out here, because Sicstus does not like the "@".
+
+export_from_module( Module, PredSpec ) :-
+        export( PredSpec ) @ Module.
+
+
+%%------------------------------------------------------------------------------
+%% dynamic_in_module( + module name, + predicate specification ):
+%% dynamic/1 factored out here, because Sicstus does not like the "@".
+
+dynamic_in_module( Module, PredSpec ) :-
+        dynamic( PredSpec ) @ Module.
 
 
 %%------------------------------------------------------------------------------
