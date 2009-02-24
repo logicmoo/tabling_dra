@@ -38,13 +38,10 @@ program_consistency.pl:
 set_in_list.pl:
         Simple operations on smallish sets, used by utilities.
 
-top_level.ecl:
+top_level.pl:
         A simple top level (i.e., code that reads and stores programs,
         executes queries etc.).  It is loaded automatically by those
-        metainterpreters that need it.  Eclipse-specific code.
-
-top_level.pl:
-        Ditto, converted to Sicstus Prolog.
+        metainterpreters that need it.
 
 utilities.pl:
         A set of useful predicates, loaded and called by the other programs.
