@@ -253,16 +253,6 @@ bind_variables_to_names( VarDict ) :-
 bind_var_to_name( [ Name | Name ], _ ).
 
 
-
-%%------------------------------------------------------------------------------
-%% is_a_good_clause( + term ):
-%% Is this term a reasonable clause?  Even if it is,  warnings may be produced.
-
-is_a_good_clause( T ) :-
-        mk_variable_dictionary( T, VarDict ),
-        is_a_good_clause( VarDict ).
-
-
 %%------------------------------------------------------------------------------
 %% mk_variable_dictionary( + term, - a variable dictionary ):
 %% Produce a variable dictionary for this term, as if it had been read by
@@ -325,6 +315,16 @@ uc( 'G' ).  uc( 'H' ). uc( 'I' ).  uc( 'J' ).  uc( 'K' ).  uc( 'L' ).
 uc( 'M' ).  uc( 'N' ). uc( 'O' ).  uc( 'P' ).  uc( 'Q' ).  uc( 'R' ).
 uc( 'S' ).  uc( 'T' ). uc( 'U' ).  uc( 'V' ).  uc( 'W' ).  uc( 'X' ).
 uc( 'Y' ).  uc( 'Z' ).
+
+
+
+%%------------------------------------------------------------------------------
+%% is_a_good_clause( + term ):
+%% Is this term a reasonable clause?  Even if it is,  warnings may be produced.
+
+is_a_good_clause( T ) :-
+        mk_variable_dictionary( T, VarDict ),
+        is_a_good_clause( VarDict ).
 
 
 %%------------------------------------------------------------------------------
