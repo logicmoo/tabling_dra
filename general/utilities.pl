@@ -241,10 +241,31 @@ check_predspec( PredSpec ) :-
 
 
 %%------------------------------------------------------------------------------
+%% bind_all_variables_to_names( +- term, +- variable dictionary  ):
+%% Make sure that all the variables in this term are instantiated to their
+%% names. This is not quite the same as bind_variables_to_names/1 (see below),
+%% because variables that were originally represented by underscores do not find
+%% their way into the variable dictionary.
+
+bind_all_variables_to_names( Term, VarDict ) :-
+        bind_variables_to_names( VarDict ),
+        term_variables( Term, AnonymousVars ),
+        bind_anonymous( AnonymousVars ).
+
+%
+bind_anonymous( [] ).
+
+bind_anonymous( [ '_' | Vs ] ) :-
+        bind_anonymous( Vs ).
+
+
+
+%%------------------------------------------------------------------------------
 %% bind_variables_to_names( +- variable dictionary  ):
 %% The variable dictionary is of the format returned by readvar/3, i.e., a list
 %% of pairs of the form "[ name | variable ]".  Go through the dictionary,
 %% binding each variable to the associated name.
+%% NOTE: See bind_all_variables_to_names/2 above!
 
 bind_variables_to_names( VarDict ) :-
         map( bind_var_to_name, VarDict, _ ).
@@ -374,190 +395,209 @@ is_a_good_clause_head( Hd ) :-
 %%       Invocations of call/1 are allowed, but an error will be raised if
 %%       the argument is a variable that had no earlier occurrences.
 %%       As an added bonus, we produce warnings about singleton variables.
+%%
+%% Throughout most of the code we carry a context argument (Ctxt): this is
+%% a structure that holds the entire clause and the variable dictionary, and
+%% we use it to produce better diagnostics.
 
 :- mode has_a_good_clause_body( ?, + ).
 
 has_a_good_clause_body( Clause, VarDict ) :-
-        check( has_a_good_clause_body_( Clause, VarDict ) ).
+        has_a_good_clause_body_( Clause, ctxt( VarDict, Clause ) ).
 
-has_a_good_clause_body_( Clause, VarDict ) :-
-        bind_variables_to_names( VarDict ),    % this is why we call via check/1
+has_a_good_clause_body_( Clause, Ctxt ) :-
         Clause = (Head :- Body),
         !,
         term_variables( Head, HeadVars ),
-        check_for_variable_calls( Body, HeadVars, Clause ),
-        check_for_singleton_variables( Clause ).
+        check_for_variable_calls( Body, HeadVars, Ctxt ),
+        check_for_singleton_variables( Clause, Ctxt ).
 
-has_a_good_clause_body_( _Fact, _ ).
+has_a_good_clause_body_( Fact, Ctxt ) :-
+        check_for_singleton_variables( Fact, Ctxt ).
 
 
-%% extract_variables( + term, - set of variable names ):
-%% Since we don't have real variables here, we can't use term_variables.
+% clause_error( + list to be displayed (the error message), + the context ):
+% Show the error and the entire clause, with proper variable names.
+% For the time being V and 'V' will both appear as V on output.
 
-extract_variables( T, VarSet ) :-
-        empty_set( Empty ),
-        extract_variables_( T, Empty, VarSet ).
+clause_error( MsgList, ctxt( VarDict, Clause ) ) :-
+        bind_all_variables_to_names( Clause, VarDict ),     % may affect MSgList
+        append( MsgList, [ ':' ], FullMsgList ),
+        error( lines( [ FullMsgList, [ Clause, '.' ] ] ) ).
 
-%
-extract_variables_( V, Vars, NVars ) :-
-        is_a_variable_name( V ),
-        !,
-        add_to_set( V, Vars, NVars ).
 
-extract_variables_( A, Vars, Vars ) :-
-        atomic( A ),
-        !.
+% clause_warning( + list to be displayed (the warning message), + the context ):
+% Show the warning and the entire clause, with proper variable names.
+% For the time being V and 'V' will both appear as V on output.
 
-extract_variables_( T, Vars, NVars ) :-
-        compound( T ),
-        T =.. [ _ | Args ],
-        map( extract_variables, Args, Sets ),
-        fold( set_union, Vars, Sets, NVars ).
+clause_warning( MsgList, ctxt( VarDict, Clause ) ) :-
+        bind_all_variables_to_names( Clause, VarDict ),     % may affect MSgList
+        append( MsgList, [ ' in' ], FullMsgList ),
+        warning( lines( [ FullMsgList, [ Clause, '.' ] ] ) ),
+        fail.
+
+clause_warning( _, _ ).
+
 
 
 % check_for_variable_calls( + (part of a) clause body,
 %                           + the set of variables seen so far,
-%                           + the clause (just for better diagnostics)
+%                           + the context (just for better diagnostics)
 %                         )
 
-check_for_variable_calls( V, _, Clause ) :-
-        is_a_variable_name( V ),
+check_for_variable_calls( V, _, Ctxt ) :-
+        var( V ),
         !,
-        error( lines( [ [ 'A variable literal (\"', V, '\") in' ],
-                        [ Clause, '.' ]
-                      ]
-                    )
-             ).
+        clause_error( [ 'A variable literal (\"', V, '\")' ], Ctxt ).
 
-check_for_variable_calls( (A ; B), Vars, Clause ) :-
+check_for_variable_calls( (A ; B), Vars, Ctxt ) :-
         !,
-        check_for_variable_calls( A, Vars, Clause ),
-        check_for_variable_calls( B, Vars, Clause ).
+        check_for_variable_calls( A, Vars, Ctxt ),
+        check_for_variable_calls( B, Vars, Ctxt ).
 
-check_for_variable_calls( (A -> B), Vars, Clause ) :-
+check_for_variable_calls( (A -> B), Vars, Ctxt ) :-
         !,
-        check_for_variable_calls( (A , B), Vars, Clause ).
+        check_for_variable_calls( (A , B), Vars, Ctxt ).
 
-check_for_variable_calls( (A , B), Vars, Clause ) :-
+check_for_variable_calls( (A , B), Vars, Ctxt ) :-
         !,
-        check_for_variable_calls( A, Vars, Clause ),
-        extract_variables( A, AVars ),
+        check_for_variable_calls( A, Vars, Ctxt ),
+        term_variables( A, AVars ),
         set_union( AVars, Vars, NVars ),
-        check_for_variable_calls( B, NVars, Clause ).
+        check_for_variable_calls( B, NVars, Ctxt ).
 
-check_for_variable_calls( \+ A, Vars, Clause ) :-
+check_for_variable_calls( \+ A, Vars, Ctxt ) :-
         !,
-        check_for_variable_calls( A, Vars, Clause ).
+        check_for_variable_calls( A, Vars, Ctxt ).
 
-check_for_variable_calls( once( A ), Vars, Clause ) :-
+check_for_variable_calls( once( A ), Vars, Ctxt ) :-
         !,
-        check_for_variable_calls( A, Vars, Clause ).
+        check_for_variable_calls( A, Vars, Ctxt ).
 
-check_for_variable_calls( call( A ), Vars, Clause ) :-
+check_for_variable_calls( call( T ), Vars, Ctxt ) :-
         !,
         (
-            \+ is_a_variable_name( A )
+            nonvar( T )
         ->
-            check_for_variable_calls( A, Vars, Clause )
+            check_for_variable_calls( T, Vars, Ctxt )
         ;
-            % is_a_variable_name( A ),
+            % var( T ),
             (
-                is_in_set( A, Vars )
+                is_in_set( T, Vars )
             ->
                 true
             ;
-                error( lines( [ [ 'The variable argument of \"', call( A ),
-                                  '\" does not have previous occurrences in'
-                                ],
-                                [ Clause, '.' ]
-                              ]
+                clause_error( [ 'The variable argument of \"', call( T ),
+                                '\" does not have previous occurrences'
+                              ],
+                              Ctxt
                             )
-                     )
             )
         ).
 
-check_for_variable_calls( T, _, Clause ) :-
+check_for_variable_calls( T, _, Ctxt ) :-
         \+ callable( T ),
         !,
-        error( lines( [ [ 'Incorrect literal (\"', T, '\") in' ],
-                        [ Clause, '.' ]
-                      ]
-                    )
-             ).
+        clause_error( [ 'Incorrect literal (\"', T, '\")' ], Ctxt ).
 
 check_for_variable_calls( _, _, _ ).
 
 
-%% check_for_singleton_variables( + a clause with variables bound to names ):
+
+%% check_for_singleton_variables( + clause, + context ):
 %% Produce a warning if there is a path in the clause on which a variable occurs
-%% only once, and the name of that variable does not begin with an underscore.
+%% only once, that occurrence of the variable is not a unique occurrence of the
+%% variable on other paths, and the name of the variable does not begin with an
+%% underscore.
 %% Always succeed.
 %% Assume the clause has been verified by is_a_good_clause/1.
 
-check_for_singleton_variables( Clause ) :-
-        cs( Clause, _, Singletons ),
+check_for_singleton_variables( Clause, Ctxt ) :-
+        Ctxt = ctxt( VarDict, _ ),
+        cs( Clause, VarDict, _, Singletons ),
         (
             empty_set( Singletons )
         ->
             true
         ;
-            warning( lines( [ [ 'Singleton variables ', Singletons, ' in' ],
-                              [ Clause, '.' ]
-                            ]
-                          )
-                   )
+            clause_warning( [ 'Singleton variables ', Singletons ], Ctxt )
         ).
 
 %
-% cs( + (sub)term, - variables seen, - set of singletons ):
+% cs( + (sub)term,      + variable dictionary,
+%     - variables seen, - set of singletons
+%   ):
 % Produce the set of variables occurring in this term, as well as the set of
 % variables that are singletons in this term.
-% Note that singletons is a subset of seen.
+% Note that the set of singletons is a subset of the set of seen.
+% Note also that a variable whose name begins with an underscore "does not
+% count".
 
-cs( V, [ V ], [ V ] ) :-
-        is_a_variable_name( V ),
-        !.
+cs( V, VarDict, Seen, Single ) :-
+        var( V ),
+        member( [ Name | Var ], VarDict ),
+        Var == V,
+        !,
+        name_chars( '_',  [ Underscore ] ),
+        (
+            name_chars( Name, [ Underscore | _ ] )
+        ->
+            empty_set( Seen ),
+            empty_set( Single )
+        ;
+            Seen   = [ V ],
+            Single = [ V ]
+        ).
 
-cs( A, [], [] ) :-
+cs( V, _, Seen, Single ) :-    % turns out '_' is not included in VarDict!
+        var( V ),
+        empty_set( Seen ),
+        empty_set( Single ).
+
+cs( A, _, [], [] ) :-
         atomic( A ),
         !.
 
-cs( (A ; B), Seen, Single ) :-
+cs( (A ; B), VarDict, Seen, Single ) :-
         !,
-        cs( A, SeenA, SingleA ),
-        cs( B, SeenB, SingleB ),
+        cs( A, VarDict, SeenA, SingleA ),
+        cs( B, VarDict, SeenB, SingleB ),
         set_union( SeenA,   SeenB,   Seen   ),
         set_union( SingleA, SingleB, Single ).
 
-cs( (A , B), Seen, Single ) :-
+cs( (A , B), VarDict, Seen, Single ) :-
         !,
-        cs( [ A | B ], Seen, Single ).
+        cs( [ A | B ], VarDict, Seen, Single ).
 
-cs( (A :- B), Seen, Single ) :-
+cs( (A :- B), VarDict, Seen, Single ) :-
         !,
-        cs( [ A | B ], Seen, Single ).
+        cs( [ A | B ], VarDict, Seen, Single ).
 
-cs( (A -> B), Seen, Single ) :-
+cs( (A -> B), VarDict, Seen, Single ) :-
         !,
-        cs( [ A | B ], Seen, Single ).
+        cs( [ A | B ], VarDict, Seen, Single ).
 
-cs( [ A | B ], Seen, Single ) :-
+cs( [ A | B ], VarDict, Seen, Single ) :-
         !,
-        cs( A, SeenA, SingleA ),
-        cs( B, SeenB, SingleB ),
+        cs( A, VarDict, SeenA, SingleA ),
+        cs( B, VarDict, SeenB, SingleB ),
         set_union( SeenA, SeenB, Seen ),
         set_difference( SingleA, SeenB, SA ),
         set_difference( SingleB, SeenA, SB ),
         set_union( SA, SB, Single ).
 
-cs( C, Seen, Single ) :-
+cs( C, VarDict, Seen, Single ) :-
         compound( C ),
         !,
         C =.. [ _ | Args ],
-        cs( Args, Seen, Single ).
+        cs( Args, VarDict, Seen, Single ).
 
-cs( T, Seen, Single ) :-
-        error( [ 'INTERNAL ERROR: (utilities)', cs( T, Seen, Single ) ] ).
+cs( T, VarDict, Seen, Single ) :-
+        error( [ 'INTERNAL ERROR: (utilities)',
+                 cs( T, VarDict, Seen, Single )
+               ]
+             ).
+
 
 
 %%------------------------------------------------------------------------------
