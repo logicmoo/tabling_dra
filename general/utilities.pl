@@ -581,9 +581,6 @@ verify_program( _ ).
 %% Given a term that should  be a clause, a directive, or a query,
 %% raise an error if it is obviously incorrect.
 
-verify_program_item( end_of_file, _ ) :-
-        !.       % An ugly fix for an error in Eclipse (does not bind VarDict!)
-
 verify_program_item( Var, VarDict ) :-
         var( Var ),
         !,
