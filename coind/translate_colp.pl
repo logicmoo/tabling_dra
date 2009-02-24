@@ -249,14 +249,18 @@ open_streams( FileName, InputStream, OutputStream ) :-
 :- mode translate( +, + ).
 
 translate( InputStream, OutputStream ) :-
-        read_terms( InputStream, Terms ),
-        verify_program( Terms ),
+        read_terms_with_vars( InputStream, Pairs ),
+        verify_program_with_vars( Pairs ),
         initialise_tables,
+        map( first, Pairs, Terms ),
         transform( Terms, '', ProcessedTerms ),
         write_declarations_as_comments( OutputStream ),
         write_top_predicates( OutputStream ),
         write_essence_hook( OutputStream ),
         write_clauses( ProcessedTerms, OutputStream ).
+
+%
+first( pair( A, _ ), A ).
 
 
 
