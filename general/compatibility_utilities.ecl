@@ -163,6 +163,17 @@ is_builtin( Pred ) :-
 
 
 %%------------------------------------------------------------------------------
+%% ordered_term_variables( + term, - list of variables ):
+%% Produce the set of variables in this term in the order of their occurrence.
+%% (term_variables/2 does it in that order in Sicstus, but in reverse order in
+%%  Eclipse.)
+
+ordered_term_variables( Term, Variables ) :-
+        term_variables( Term, Vs ),
+        reverse( Vs, Variables ).
+
+
+%%------------------------------------------------------------------------------
 %% flush_output( + output stream ):
 %% Flush out the buffer of the stream.
 

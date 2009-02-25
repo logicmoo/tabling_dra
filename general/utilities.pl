@@ -249,7 +249,7 @@ check_predspec( PredSpec ) :-
 
 bind_all_variables_to_names( Term, VarDict ) :-
         bind_variables_to_names( VarDict ),
-        term_variables( Term, AnonymousVars ),
+        ordered_term_variables( Term, AnonymousVars ),
         bind_anonymous( AnonymousVars ).
 
 %
@@ -279,16 +279,16 @@ bind_var_to_name( [ Name | Name ], _ ).
 %% Produce a variable dictionary for this term, as if it had been read by
 %% readvar/3.
 %% Since the original variable names are not available, we will use the names
-%% A, B, C, ... Z, V0, V1 etc. This has an important disadvantage: each variable
-%% whose name originally began with underscores (e.g., an anonymous variable)
-%% will obtain a "normal" name, and look like a singleton.
+%% _A, _B, _C, ... _Z, _V0, _V1 etc. (The underscore is added to avoid spurious
+%% messages about singleton variables in case these names are used for output
+%% that will subsequently be read by Prolog again.)
 %%
 %% (All this is done "by hand", since numbervars/3 are not very useful in
 %% Eclipse: the writing predicates are not "aware" of '$VAR'(n).)
 
 mk_variable_dictionary( T, VarDict ) :-
-        term_variables( T, Vars ),
-        mk_variable_dictionary_( Vars, 'A', VarDict ).
+        ordered_term_variables( T, Vars ),
+        mk_variable_dictionary_( Vars, '_A', VarDict ).
 
 mk_variable_dictionary_( [], _, [] ).
 
@@ -299,21 +299,21 @@ mk_variable_dictionary_( [ V | Vs ], Name, [ [ Name | V ] | VarDict ] ) :-
 %
 % Once we run out of letters, we will use V0, V1 etc.
 %
-mk_next_name( 'Z', 'V0' ) :-
+mk_next_name( '_Z', '_V0' ) :-
         !.
 
 mk_next_name( Name, Next ) :-
-        name_chars( Name, [ C ] ),      % still in single letters?
+        name_chars( Name, [ U, C ] ),      % still in single letters?
         !,
         NC is C + 1,         % good for ASCII, might not work for some encodings
-        name_chars( Next, [ NC ] ).
+        name_chars( Next, [ U, NC ] ).
 
 mk_next_name( Name, Next ) :-
-        name_chars( Name, [ CodeOfV | DigitChars ] ),
+        name_chars( Name, [ CodeOfUndercore, CodeOfV | DigitChars ] ),
         name_chars( Number, DigitChars ),
         NextNumber is Number + 1,                               % good for ASCII
         name_chars( NextNumber, NewDigitChars ),
-        name_chars( Next, [ CodeOfV | NewDigitChars ] ).
+        name_chars( Next, [ CodeOfUndercore, CodeOfV | NewDigitChars ] ).
 
 
 %%------------------------------------------------------------------------------
@@ -411,7 +411,7 @@ has_a_good_clause_body( Clause, VarDict ) :-
 has_a_good_clause_body_( Clause, Ctxt ) :-
         Clause = (Head :- Body),
         !,
-        term_variables( Head, HeadVars ),
+        ordered_term_variables( Head, HeadVars ),
         check_for_variable_calls( Body, HeadVars, Ctxt ),
         check_for_singleton_variables( Clause, Ctxt ).
 
@@ -465,7 +465,7 @@ check_for_variable_calls( (A -> B), Vars, Ctxt ) :-
 check_for_variable_calls( (A , B), Vars, Ctxt ) :-
         !,
         check_for_variable_calls( A, Vars, Ctxt ),
-        term_variables( A, AVars ),
+        ordered_term_variables( A, AVars ),
         set_union( AVars, Vars, NVars ),
         check_for_variable_calls( B, NVars, Ctxt ).
 
