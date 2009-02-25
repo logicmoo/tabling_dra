@@ -619,10 +619,29 @@ top :-
             true
         ),
         readvar( Input, Term, VarDict ),
-        verify_program_item( Term, VarDict ),
-        interactive_term( Term, VarDict ),
-        ( Term = end_of_file ; Term = quit ),             % i.e., normally fails
+        bare_to_query( Term, NTerm ),
+        verify_program_item( NTerm, VarDict ),
+        interactive_term( NTerm, VarDict ),
+        ( NTerm = end_of_file ; NTerm = quit ),           % i.e., normally fails
         !.
+
+
+%% bare_to_query( + term, - term ):
+%% A term that is not end_of_file, a directive, or a query is
+%% translated to a query.  (So, for example, there will be no check for
+%% singleton variables.)
+
+bare_to_query( Term, Term ) :-
+        (
+            Term = end_of_file
+        ;
+            Term = (:- _)
+        ;
+            Term = (?- _)
+        ),
+        !.
+
+bare_to_query( Bare, (?- Bare) ).
 
 
 %% interactive_term( + term, + variable dictionary ):
@@ -649,13 +668,6 @@ interactive_term( (?- Query), VarDict ) :-             % query
         show_result( Result, VarDict ),
         satisfied_with_query( Result ),                % or backtrack to retry
         !.
-
-interactive_term( Other, VarDict ) :-                  % other: treat as a query
-        % Other \= end_of_file,
-        % Other \= quit,
-        % Other \= (:- _),
-        % Other \= (?- _),
-        interactive_term( (?- Other), VarDict ).
 
 
 %% satisfied_with_query( + answer ):

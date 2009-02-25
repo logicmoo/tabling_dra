@@ -661,6 +661,12 @@ verify_program_item( (?- Var), VarDict ) :-
         bind_variables_to_names( VarDict ),
         error( [ 'A variable query: \"', (?- Var), '\"' ] ).
 
+verify_program_item( (?- Query), VarDict ) :-       % avoid check for singletons
+        !,
+        empty_set( Empty ),
+        check_for_variable_calls( Query, Empty, ctxt( VarDict, (?- Query) ) ).
+
+
 verify_program_item( Clause, VarDict ) :-
         \+ is_a_good_clause( Clause, VarDict ),
         !,
