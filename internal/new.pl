@@ -128,12 +128,11 @@ solve( Goals, Stack ) :-
         ),
         rule( Goal, Body - NewGoals ),           % i.e, Body = the new resolvent
         (
-            true
+            optional_trace( '.. new resolvent'( Body ) )
         ;
             optional_trace( '.. retrying'( OriginalGoal ) ),
             fail
         ),
-        optional_trace( '.. new resolvent'( Body ) ),
         solve( Body, [ OriginalGoal | Stack ] ).
 
 solve( Goals, _ ) :-
