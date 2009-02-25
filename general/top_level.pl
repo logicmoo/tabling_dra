@@ -147,6 +147,12 @@
 %%%    8. The metainterpreter should provide the following predicates
 %%%       ("hooks") that will be called by the top level:
 %%%
+%%%          - builtin/1:
+%%%                 Defines patterns for built-in predicates from the host
+%%%                 system that can be invoked by the interpreted program.
+%%%                 For example, to allow writeln/2, declare:
+%%%                     builtin( writeln( _, _ ) ).
+%%%
 %%%          - default_extension/1:
 %%%                 This predicate is optional.  If present, its argument
 %%%                 should be an atom whose name is the extension string to be
