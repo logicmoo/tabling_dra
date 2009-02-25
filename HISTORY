@@ -67,5 +67,7 @@
 
                  - "dra" now has common code for both systems, only tiny
                    shell files remain.
+                 - Queries are no longer checked for singleton variables.
+                 - Various small improvements.
 
 -------------------------------------------------------------------------------
