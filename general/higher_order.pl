@@ -5,10 +5,29 @@
 %%%  Last update: 18 February 2009.                                          %%%
 %%%                                                                          %%%
 
+%%% NOTE: Throughout the file "predicate name" will be used either for
+%%        the name of a predicate, or for a list representing a partially
+%%        applied predicate (see apply/2).
+
 
 %%------------------------------------------------------------------------------
 %% apply( + predicate name, + list of arguments ):
-%% Apply this predicate to the arguments.
+%% apply( + list,           + list of arguments ):
+%% For the first form: apply this predicate to the arguments.
+%% For the second form: the list represents a partially-applied predicate,
+%% i.e., it should consist of a predicate name and the first few actual
+%% arguments. The list of arguments should then be just enough for the remaining
+%% arguments.
+%% For example, if we have
+%%     sum( A, B, C ) :-  C is A + B.
+%% then
+%%     map( [ sum, 5 ], [ 1, 2, 3 ], Result )
+%% will bind Result to [ 6, 7, 8 ].
+
+apply( [ PredName | InitialArguments ], RemainingArguments ) :-
+        !,
+        append( InitialArguments, RemainingArguments, AllArguments ),
+        apply( PredName, AllArguments ).
 
 apply( PredName, Arguments ) :-
         Literal =.. [ PredName | Arguments ],
