@@ -98,6 +98,14 @@ assert_in_module( Module, Clause ) :-
 
 
 %%------------------------------------------------------------------------------
+%% assertz_in_module( + module name, + clause ):
+%% Like assertz/1, but into this module.
+
+assertz_in_module( Module, Clause ) :-
+        assertz( Clause ) @ Module .
+
+
+%%------------------------------------------------------------------------------
 %% retractall_in_module( + module name, + head pattern ):
 %% Like retractall/1, but into this module.
 
@@ -111,14 +119,6 @@ retractall_in_module( Module, Head ) :-
 
 call_in_module( Module, Head ) :-
         call( Head ) @ Module .
-
-
-%%------------------------------------------------------------------------------
-%% assertz_in_module( + module name, + clause ):
-%% Like assertz/1, but into this module.
-
-assertz_in_module( Module, Clause ) :-
-        assertz( Clause ) @ Module .
 
 
 %%------------------------------------------------------------------------------
