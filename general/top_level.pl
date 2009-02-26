@@ -94,9 +94,11 @@
 %%%           :- top p/1, q/2.
 %%%           :- support check_consistency/1.
 %%%
-%%%       The "top" declaration is just ignored: it is useful only when
-%%%       translating coinductive programs into Prolog (see
-%%%       ../coind/translate_colp).
+%%%       The "top" declaration indicates predicates that will be called "from
+%%%       the outside", so if they are not called in the program, there will be
+%%%       no warning.
+%%%       (This declaration is also recognized when translating coinductive
+%%%        programs into Prolog: see "../coind/translate_colp".)
 %%%
 %%%       The "support" declaration means that the metainterpreter should treat
 %%%       this predicate as a built-in, i.e., just let Prolog execute it.  This
@@ -221,14 +223,15 @@
 :- op( 1000, fy, load_support ).     % allow  ":- load_support filename ."
 
 :- dynamic support/1.
+:- dynamic top/1.
 
 
-% If p/k has already been seen (and declared as dynamic), the fact is recorded
-% as known( p, k ).
+% If "p/k" has already been seen (and declared as dynamic), the fact is recorded
+% as "known( p( _, _, ...) )" (with "k" arguments).
 % (Unlike Sicstus, Eclipse requires a dynamic declaration before the first
 %  assert.)
 
-:- dynamic known/2 .
+:- dynamic known/1 .
 
 
 %% Default print depth.  (May be changed by the metainterpreter by invoking
@@ -259,7 +262,9 @@ set_print_depth( Strange ) :-
 
 
 prog( FileName ) :-
-        retractall( known( _, _ ) ),
+        retractall( known( _ )   ),
+        retractall( support( _ ) ),
+        retractall( top( _ )     ),
         erase_modules,
         create_modules,
         initialise,                              % provided by a metainterpreter
@@ -463,7 +468,7 @@ include_files( _ ).
 
 %% ensure_dynamic( + clause ):
 %% Make sure the predicate of this clause is dynamic.
-%% known/2 is used to avoid multiple declarations.
+%% known/1 is used to avoid multiple declarations.
 %% (NOTE: This is specific to Eclipse.)
 
 :- mode ensure_dynamic( + ).
@@ -471,10 +476,10 @@ include_files( _ ).
 ensure_dynamic( Clause ) :-
         lp_system( eclipse ),
         get_clause_head( Clause, Head ),
-        functor( Head, PredicateSymbol, Arity ),
-        \+ known( PredicateSymbol, Arity ),
-        assert( known( PredicateSymbol, Arity ) ),
-        dynamic_in_module( interpreted, PredicateSymbol / Arity ),
+        \+ known( Head ),
+        assert( known( Head ) ),
+        functor( Head, PredicateName, Arity ),
+        dynamic_in_module( interpreted, PredicateName / Arity ),
         fail.
 
 ensure_dynamic( _ ).
@@ -486,7 +491,16 @@ ensure_dynamic( _ ).
 
 :- mode process_directive( + ).
 
-process_directive( (top _) ) :-  !.              % just ignore this
+process_directive( (top PredSpecs) ) :-
+        !,
+        predspecs_to_patterns( PredSpecs, Patterns ),
+        (
+            member( Pattern, Patterns ),
+            assert( top( Pattern ) ),
+            fail
+        ;
+            true
+        ).
 
 process_directive( (support PredSpecs) ) :-      % store in "support" table
         !,
@@ -627,13 +641,15 @@ top :-
 
 
 %% bare_to_query( + term, - term ):
-%% A term that is not end_of_file, a directive, or a query is
+%% A term that is not end_of_file, quit, a directive, or a query is
 %% translated to a query.  (So, for example, there will be no check for
 %% singleton variables.)
 
 bare_to_query( Term, Term ) :-
         (
             Term = end_of_file
+        ;
+            Term = quit
         ;
             Term = (:- _)
         ;
