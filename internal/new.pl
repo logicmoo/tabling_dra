@@ -38,10 +38,10 @@ default_extension( '.pl' ).
 hook_predicate( '' ).
 
 
-:- dynamic rule/2.
+:- dynamic rule/3.
 
 initialise :-
-        retractall( rule( _, _ ) ).
+        retractall( rule( _, _, _ ) ).
 
 program_loaded :-
         transform_program.
@@ -54,20 +54,24 @@ query( Goals ) :-
 
 
 %% Transform the program: each clause is converted so that its body is a d-list,
-%% and then asserted in rule/2.
-%% For example:
+%% and then asserted in rule/3, together with a number unique for the predicate.
+%% For example,
 %%    anc( X, Y ) :- anc( X, Z ), p( Z, Y ).
 %% will be stored as
-%%    rule( anc( X, Y ), [ anc( X, Z ), p( Z, Y ) | End ] - End ).
+%%    rule( anc( X, Y ), [ anc( X, Z ), p( Z, Y ) | End ] - End, 0 ).
+%% (assuming this is the first clause of anc/2).
 
 transform_program :-
         current_predicate_in_module( interpreted, P / K ),
         mk_pattern( P, K, Head ),
         \+ builtin( Head ),
+        setval( clause_counter, 0 ),
         clause_in_module( interpreted, Head, Body ),
         transform_body( Body, DList ),
-%        writeln( asserting( rule( Head, DList ) ) ),
-        assertz( rule( Head, DList ) ),
+        getval( clause_counter, N ),
+%        writeln( asserting( rule( Head, DList, N ) ) ),
+        assertz( rule( Head, DList, N ) ),
+        incval( clause_counter ),
         fail.
 
 transform_program.
@@ -115,37 +119,83 @@ solve( [ G | Gs ], Stack ) :-
         call( G ),
         solve( Gs, Stack ).
 
+% If the resolvent starts with a non-empty prefix of variant goals, but there
+% is at least one "regular" goal, postpone the variants and execute the first
+% "regular".  However, make sure that we do not execute built-ins until they are
+% leftmost "of natural causes".
 solve( Goals, Stack ) :-
         append( PrefixOfVariants, [ Goal | Gs ], Goals ),
-        \+ is_variant_of_ancestor( Goal, Stack ),
+        ( \+ is_variant_of_ancestor( Goal, Stack, _ )
+        ,
+          ( \+ builtin( Goal )
+          ;
+            PrefixOfVariants = []
+          )
+        ),
+        !,
         append( Gs, PrefixOfVariants, NewGoals ),
         copy_term( Goal, OriginalGoal ),
         (
-            optional_trace( '.. entering'( Goal ) )
+            true
         ;
             optional_trace( '.. failing'( Goal ) ),
             fail
         ),
-        rule( Goal, Body - NewGoals ),           % i.e, Body = the new resolvent
+        rule( Goal, Body - NewGoals, N ),        % i.e, Body = the new resolvent
         (
+            optional_trace( '.. entering at clause'( Goal, [ N ] ) ),
             optional_trace( '.. new resolvent'( Body ) )
         ;
             optional_trace( '.. retrying'( OriginalGoal ) ),
             fail
         ),
-        solve( Body, [ OriginalGoal | Stack ] ).
+        solve( Body, [ pair( OriginalGoal, [ N ] ) | Stack ] ).
 
+% All the goals are variants: execute the first one that has clauses unexplored
+% by variant ancestors, postponing those that precede it, but
+% don't have such claues.
+solve( Goals, Stack ) :-
+        append( PrefixOfExhaustedVariants, [ Goal | Gs ], Goals ),
+        (
+            is_variant_of_ancestor( Goal, Stack, AncSet ),
+            copy_term( Goal, Copy ),
+            rule( Copy, _, N ),
+            \+ is_in_set( N, AncSet )
+        ),
+        !,
+        append( Gs, PrefixOfExhaustedVariants, NewGoals ),
+        copy_term( Goal, OriginalGoal ),
+        (
+            true
+        ;
+            optional_trace( '.. failing variant'( Goal ) ),
+            fail
+        ),
+        rule( Goal, Body - NewGoals, RN ),       % i.e, Body = the new resolvent
+        \+ is_in_set( RN, AncSet ),
+        add_to_set( RN, AncSet, NewSet ),
+        (
+            optional_trace( '.. entering variant at clause'( Goal, NewSet ) ),
+            optional_trace( '.. new resolvent'( Body ) )
+        ;
+            optional_trace( '.. retrying variant'( OriginalGoal ) ),
+            fail
+        ),
+        solve( Body, [ pair( OriginalGoal, NewSet ) | Stack ] ).
+
+% Only variant calls, no unexplored clauses.
 solve( Goals, _ ) :-
-        optional_trace( '.. failing: variants only'( Goals ) ),
+        optional_trace( '.. failing: exhausted variants only'( Goals ) ),
         fail.
 
 
 
-%% is_variant_of_ancestor( + goal, + stack ):
-%% Is the goal a variant of something in the stack?
+%% is_variant_of_ancestor( + goal, + stack, - set of clause numbers ):
+%% Is the goal a variant of something in the stack? If so, return the associated
+%% set of clause numbers
 
-is_variant_of_ancestor( Goal, Stack ) :-
-        member( G, Stack ),
+is_variant_of_ancestor( Goal, Stack, N ) :-
+        member( pair(G , N), Stack ),
         are_variants( G, Goal ),
         !.
 
@@ -155,8 +205,10 @@ is_variant_of_ancestor( Goal, Stack ) :-
 
 optional_trace( X ) :-
         tracing,
-        !,
-        writeln( X ).
+        mk_variable_dictionary( X, VarDict ),
+        bind_variables_to_names( VarDict ),
+        writeln( X ),
+        fail.
 
 optional_trace( _ ).
 
