@@ -3,7 +3,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 24 February 2009.                                          %%%
+%%%  Last update: 26 February 2009.                                          %%%
 %%%                                                                          %%%
 %%%  NOTE: This code runs on Sicstus and Eclipse.  It may require some       %%%
 %%%        tweaking for other Prolog systems.                                %%%

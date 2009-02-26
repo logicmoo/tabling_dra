@@ -1,6 +1,6 @@
 %% This is example2.clp from Luke Simon's thesis, with some tweaks.
 
-:- support num/1, drop/3 .
+:- support num/1, drop/3 .       % For translation (expect a warning with colp!)
 :- top comember/2.
 
 % A number.
