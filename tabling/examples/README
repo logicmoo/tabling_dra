@@ -9,6 +9,8 @@ bad4.tlp:
 bad5.tlp:
 bad6.tlp:
 bad7.tlp:
+bad8.tlp:
+bad9.tlp:
         Examples that test some of the diagnostics of the tabling
         interpreter and/or the top level.
 
