@@ -477,7 +477,8 @@ ensure_dynamic( Clause ) :-
         lp_system( eclipse ),
         get_clause_head( Clause, Head ),
         \+ known( Head ),
-        assert( known( Head ) ),
+        most_general_instance( Head, Pattern ),
+        assert( known( Pattern ) ),
         functor( Head, PredicateName, Arity ),
         dynamic_in_module( interpreted, PredicateName / Arity ),
         fail.
