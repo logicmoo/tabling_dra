@@ -27,6 +27,8 @@ path( A, B ) :-  edge( A, B ).
 
 path( A, B ) :-  path( A, C ), path( C, B ).
 
+:- top q1/0, q2/0, q3/0, q4/0, q5/0, q6/0.
+
 q1 :-  path( a, a ).      % expected:  yes
 q2 :-  path( a, d ).      % expected:  no
 q3 :-  path( c, c ).      % expected:  yes
