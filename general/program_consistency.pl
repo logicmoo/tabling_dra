@@ -126,6 +126,8 @@ set_of_called( OSetOfDefined, PredSpec, OSetOfCalled ) :-
 %
 warnings_about_called( OSetOfPredSpecsBad, ParentPredSpec ) :-
         generate_member_of_oset( OSetOfPredSpecsBad, PredSpecBad ),
+        predspec_to_pattern( PredSpecBad, Pattern ),
+        \+ builtin( Pattern ),
         warning( [ 'Undefined predicate ', PredSpecBad,
                    ' called from ', ParentPredSpec
                  ]
