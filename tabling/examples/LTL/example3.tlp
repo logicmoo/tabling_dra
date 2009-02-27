@@ -46,6 +46,8 @@ trans( s2, s2 ).
 holds( s1, p ).
 
 
+:- top q/0.
+
 %                                         Expected   Prolog    Tabling
 
 q :-  check( s0, g p ).             %     no         no        no

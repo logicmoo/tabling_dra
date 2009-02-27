@@ -85,11 +85,12 @@ holds( s7, close ).
 holds( s7, heat  ).
 
 
+:- top q1/0, q2/0, q3/0, q4/0.
 %                                           Expected   Prolog    Tabling
 
 q1 :-  check( s1,   g(~ heat u close) ).   % yes       loops     yes
 
-q2 :-  check( s1, ~ g(~ heat u close) ).   % no        no        no
+q2 :-  check( s1, ~ g(~ heat u close) ).   % no        loops     no
 
 q3 :-  check( s1, f( close ) ).            % yes       yes       yes
 

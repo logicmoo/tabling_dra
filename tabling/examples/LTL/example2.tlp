@@ -51,6 +51,8 @@ holds( s2, s ).
 holds( s3, q ).
 
 
+:- top q1/0, q2/0, q3/0, q4/0,  q5/0,  q6/0.
+
 %                                         Expected   Prolog    Tabling
 
 q1  :-  check( s0, f p ).              %  yes        yes       yes
