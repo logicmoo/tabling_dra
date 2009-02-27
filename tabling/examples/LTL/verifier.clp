@@ -1,11 +1,21 @@
 %% Gopal Gupta's LTL interpreter (modified by F.K.).
 
+:- op( 10,  fy , ~   ).   % not
+:- op( 20, xfy , ^   ).   % and
+:- op( 30, xfy , v   ).   % or
+:- op( 10,  fy , x   ).   % LTL: "next"
+:- op( 10,  fy , f   ).   % LTL: "eventually"
+:- op( 10,  fy , g   ).   % LTL: "always"
+:- op( 20, xfx , u   ).   % LTL: "until"
+:- op( 20, xfx , r   ).   % LTL: "release"
+
+:- [ normalize ].
+
+
 :- top check/2.          % make check( S, F ) available in its original form
 
-:- support normalize/2.
-:- load_support( normalize ).
-
-:- ['operators.pl'].
+% Don't transform these:
+:- support holds/2, normalize/2, proposition/1, state/1, trans/2.
 
 
 %% Check whether the state satisfies the formula.
@@ -28,6 +38,7 @@ check( State, Formula ) :-
 % Check the consistency of the automaton's description.
 
 :- dynamic automaton_error/0.
+:- support automaton_error/0.
 
 check_consistency :-
         retractall( automaton_error ),

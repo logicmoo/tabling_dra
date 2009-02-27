@@ -1,9 +1,8 @@
 %--- Normalize an LTL formula by pushing negations to the level of propositions
 %--- and applying some absorption and idempotency laws.
-%---
-%--- NOTE: see ltl_interpreter for the declarations of operators.
 
 
+:- [ operators ].
 
 normalize( ~( A v B ) , Normalized ) :-
         normalize( ~ A ^ ~ B , Normalized ).
@@ -76,7 +75,11 @@ normalize( g f g A , Normalized ) :-
         normalize( f g A , Normalized ).
 
 normalize( ~ P, ~ P ) :-
-        proposition( P ).
+        presumably_proposition( P ).
 
 normalize( P, P ) :-
-        proposition( P ).
+        presumably_proposition( P ).
+
+
+presumably_proposition( A ) :-
+        atom( A ).

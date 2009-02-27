@@ -7,10 +7,8 @@ NOTE: 1. Each of the examples in this directory has two versions:
 
            - A file whose name ends with ".pl" includes the translated
              version of the verifier (i.e., "verifier.pl").  The example can
-             be executed by "dra" (by specifying the entire file name,
-             together with the extension).  It can also be executed directly
-             in Prolog, but some queries may loop, and will have to be
-             interrupted by the user.
+             be executed directly in Prolog, but some queries may loop, and
+             will have to be interrupted by the user.
 
       2. If you want to try the examples directly in your logic programming
           system (without tabling), then it's best to comment out the
@@ -22,36 +20,40 @@ NOTE: 1. Each of the examples in this directory has two versions:
 
 This directory includes the following files:
 
-verifier.tlp:
+verifier.clp:
+        A version of "verifier.tlp" (see below) that can be translated to
+        "verifier.pl" by using "../../../coind/translate.colp".
 
+verifier.tlp:
         A version of Gopal Gupta's elegant "interpreter for Linear Temporal
         Logic" (more specifically, a program that verifies whether a given
         LTL formula holds in a given state of a given automaton).
 
         The program contains both tabled and coinductive predicates
         (however, each predicate is either tabled or coinductive, not
-        both). It can be executed as follows:
+        both). It can be executed in one of two ways as follows:
 
-          (1) Use "../../../coind/translate.colp" to translate
-             "verifier.tlp" into "verifier.pl".
-
-          (2) Load a concrete example that includes the translated verifier
-              into an implementation of tabled logic programming, and then
-              issue queries relevant to the example.
+           1. Load a concrete example that includes the translated verifier
+              (i.e., "verifier.pl") into an implementation of tabled logic
+              programming (e.g., "dra"), and then issue queries relevant to
+              the example.
 
               (The example would contain a definition of an automaton,
               possibly with some queries.  File inclusion is done with a
               directive:
                    :-[ 'verifier.pl' ].
-              The "dra" interpreter is an implementation of tabled logic
-              programming.)
+              )
 
-        Since the "dra" interpreter also supports coinductive programming
-        directly, the translation step can be omitted.
+           2. Just load an example that includes 'verifier.tlp" into "dra".
+              Since the "dra" interpreter also supports coinductive
+              programming directly, the translation step can be omitted.
 
 normalize.pl:
         Simple normalization of LTL expressions, used by
         "interpreter.tlp".
+
+operators.pl:
+        Declarations of operators used by both normalize.pl and verifier.tlp.
 
 errors.tlp:
         A version of "example3.tlp" into which a number of errors have been
