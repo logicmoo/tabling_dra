@@ -63,11 +63,18 @@
                  - Added checking for singleton variables.
                  - Improved the format of longer diagnostic messages.
 
-   Feb 2009:   Seventh "internal public" release:
+26 Feb 2009:   Seventh "internal public" release:
 
                  - "dra" now has common code for both systems, only tiny
                    shell files remain.
                  - Queries are no longer checked for singleton variables.
+                 - Implemented checks for undefined predicates and predicates
+                   that are defined but not called: gave meaning to
+                   ":- top ...".
+                 - Updated a number of examples with top declarations, to
+                   suppress the new warnings.
+                 - Brought the LTL examples in line with the latest
+                   improvements (particularly "support").
                  - Various small improvements.
 
 -------------------------------------------------------------------------------
