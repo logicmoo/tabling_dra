@@ -61,7 +61,7 @@ check_general_consistency :-
                          ),
         oset_union( OSetOfDefined, OSetOfCallableSupport, OSetOfAllDefined ),
 
-        get_called_predicates( OSetOfAllDefined, OSetOfCalled ),
+        get_called_predicates( OSetOfDefined, OSetOfAllDefined, OSetOfCalled ),
         oset_difference( OSetOfDefined, OSetOfCalled, OSetOfDefinedUncalled ),
         oset_difference( OSetOfDefinedUncalled, OSetOfDeclaredTop,
                          OSetOfUncalled
@@ -91,22 +91,23 @@ uncalled_warnings( _ ).
 
 
 
-%% get_called_predicates( + open set of defined predicates,
+%% get_called_predicates( + open set of predicates,
+%%                        + open set of all defined predicates,
 %%                        - open set of predicates called from the defined ones
 %%                      ):
-%% Produce the set of called predicates, at the same time producing warnings
-%% about calls to undefined predicates.
+%% Produce the set of predicates called from the first set, at the same time
+%% producing warnings about calls to predicates that are not in the second set.
 
-get_called_predicates( OSetOfDefined, OSetOfCalled ) :-
-        sets_of_called( OSetOfDefined, ListOfSetsOfCalled ),
+get_called_predicates( OSetOfPredicates, OSetOfDefined, OSetOfCalled ) :-
+        sets_of_called( OSetOfPredicates, OSetOfDefined, ListOfSetsOfCalled ),
         empty_oset( Empty ),
         fold( oset_union, Empty, ListOfSetsOfCalled, OSetOfCalled ).
 
 %
-sets_of_called( OSetOfDefined, ListOfSetsOfCalled ) :-
-        oset_to_list( OSetOfDefined, ListOfDefined ),
+sets_of_called( OsetOfPredicates, OSetOfDefined, ListOfSetsOfCalled ) :-
+        oset_to_list( OsetOfPredicates, ListOfPredicates ),
         map( [ set_of_called, OSetOfDefined ],
-             ListOfDefined, ListOfSetsOfCalled
+             ListOfPredicates, ListOfSetsOfCalled
            ).
 
 %
