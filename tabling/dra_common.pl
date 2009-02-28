@@ -1432,9 +1432,9 @@ trace_entry( _, _, _, _ ).
 trace_success( Label, Goal, Index, Level ) :-
         tracing( Goal ),
         !,
+        std_output_stream( Output ),
         (
             write_level( Level ),
-            std_output_stream( Output ),
             write( Output, 'Success ' ),
             write_label_and_goal( Label, Goal, Index ),
             nl( Output )
