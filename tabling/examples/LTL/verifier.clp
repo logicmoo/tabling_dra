@@ -48,6 +48,16 @@
 
 check( State, Formula ) :-
         check_consistency,
+        (
+            state( State )
+        ->
+            true
+        ;
+            write( '\"' ),
+            write( State ),
+            writeln( '\" is not a state' ),
+            fail
+        ),
         once( normalize( ~ Formula, NormalizedNegationOfFormula ) ),
         write( 'Negated and normalized: ' ),
         writeln( NormalizedNegationOfFormula ),
