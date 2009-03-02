@@ -733,7 +733,7 @@ solve( once( Goal ), Stack, Hyp, Level ) :-
         ).
 
 
-% A conditional.
+% A conditional with an else.
 
 solve( (Cond -> Then ; _Else), Stack, Hyp, Level ) :-
         solve( Cond, Stack, Hyp, Level ),
@@ -743,6 +743,14 @@ solve( (Cond -> Then ; _Else), Stack, Hyp, Level ) :-
 solve( (_Cond -> _Then ; Else), Stack, Hyp, Level ) :-
         !,
         solve( Else, Stack, Hyp, Level ).
+
+
+% A conditional without an else.
+
+solve( (Cond -> Then), Stack, Hyp, Level ) :-
+        solve( Cond, Stack, Hyp, Level ),
+        !,
+        solve( Then, Stack, Hyp, Level ).
 
 
 % A disjunction without a conditional.

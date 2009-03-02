@@ -50,10 +50,7 @@ verifier.tlp:
 
 normalize.pl:
         Simple normalization of LTL expressions, used by
-        "interpreter.tlp".
-
-operators.pl:
-        Declarations of operators used by both normalize.pl and verifier.tlp.
+        "verifier.tlp".
 
 errors.tlp:
         A version of "example3.tlp" into which a number of errors have been

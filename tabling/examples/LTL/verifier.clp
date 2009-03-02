@@ -1,4 +1,27 @@
 %% Gopal Gupta's LTL interpreter (modified by F.K.).
+%%
+%% Include with the definition of an automaton, which should specify
+%% the following predicates:
+%%      proposition/1   - succeeds only if the argument is a proposition,
+%%                        can be used to enumerate all the symbols that denote
+%%                        propositions.
+%%      state/1         - succeeds only if the argument is a state,
+%%                        can be used to enumerate all the symbols that denote
+%%                        states.
+%%      trans/2         - given the first argument (which should represent a
+%%                        state S) nondeterministically produces the symbols
+%%                        that represent all the states that can be reached from
+%%                        S.
+%%      holds/2         - succeeds only if the first argument represents a
+%%                        state, and the second represents a proposition that
+%%                        holds in that state.
+%%
+%% Invoke through
+%%
+%%    check( state, formula ).
+%%
+%% The formula will be normalized and negated by the program.
+
 
 :- op( 10,  fy , ~   ).   % not
 :- op( 20, xfy , ^   ).   % and
@@ -21,11 +44,13 @@
 %% Check whether the state satisfies the formula.
 %% This is done by checking that it does not satisfy the formula's negation.
 %% (We have to apply the conditional, because our tabling interpreter does not
-%%  support the cut.)
+%%  support the cut, and we don't yet support negation for coinduction.)
 
 check( State, Formula ) :-
         check_consistency,
         once( normalize( ~ Formula, NormalizedNegationOfFormula ) ),
+        write( 'Negated and normalized: ' ),
+        writeln( NormalizedNegationOfFormula ),
         (
             once( verify( State, NormalizedNegationOfFormula ) )
         ->

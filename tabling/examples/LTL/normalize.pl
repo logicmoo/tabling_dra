@@ -2,84 +2,98 @@
 %--- and applying some absorption and idempotency laws.
 
 
-:- [ operators ].
-
-normalize( ~( A v B ) , Normalized ) :-
-        normalize( ~ A ^ ~ B , Normalized ).
-
-normalize( ~( A ^ B ) , Normalized ) :-
-        normalize( ~ A v ~ B , Normalized ).
-
-normalize( ~ ~ A , Normalized ) :-
-        normalize( A , Normalized ).
-
-normalize( ~ x A , Normalized ) :-
-        normalize( x ~ A , Normalized ).
-
-normalize( ~ f A , Normalized ) :-
-        normalize( g ~ A , Normalized ).
-
-normalize( ~ g A , Normalized ) :-
-        normalize( f ~ A , Normalized ).
-
-normalize( ~( A u B ) , Normalized ) :-
-        normalize( ~ A r ~ B , Normalized ).
-
-normalize( ~( A r B ) , Normalized ) :-
-        normalize( ~ A u ~ B , Normalized ).
-
-normalize( A v B , NA v NB ) :-
-        normalize( A, NA ),
-        normalize( B, NB ).
-
-normalize( A ^ B , NA ^ NB ) :-
-        normalize( A, NA ),
-        normalize( B, NB ).
-
-normalize( ~ A , ~ NA ) :-
-        normalize( A, NA ).
-
-normalize( x A , x NA ) :-
-        normalize( A, NA ).
-
-normalize( f A , f NA ) :-
-        normalize( A, NA ).
-
-normalize( g A , g NA ) :-
-        normalize( A, NA ).
-
-normalize( A u B , NA u NB ) :-
-        normalize( A, NA ),
-        normalize( B, NB ).
-
-normalize( A r B , NA r NB ) :-
-        normalize( A, NA ),
-        normalize( B, NB ).
-
-normalize( f f A , Normalized ) :-
-        normalize( f A , Normalized ).
-
-normalize( g g A , Normalized ) :-
-        normalize( g A , Normalized ).
-
-normalize( A u (A u B) , Normalized ) :-
-        normalize( A u B , Normalized  ).
-
-normalize( (A u B) u B , Normalized ) :-
-        normalize( A u B , Normalized  ).
-
-normalize( f g f A , Normalized ) :-
-        normalize( g f A , Normalized ).
-
-normalize( g f g A , Normalized ) :-
-        normalize( f g A , Normalized ).
-
-normalize( ~ P, ~ P ) :-
-        presumably_proposition( P ).
-
-normalize( P, P ) :-
-        presumably_proposition( P ).
+normalize( X, Normalized ) :-
+        (
+            var( X )
+        ->
+            writeln( '*** The formula is a Prolog variable!' ),
+            Normalized = ?
+        ;
+            once( norm( X, Normalized, OK ) )
+        ->
+            var( OK )
+        ).
 
 
-presumably_proposition( A ) :-
-        atom( A ).
+% If an error is found, OK will cease to be a variable.
+
+norm( ~( A v B ) , Normalized, OK ) :-
+        once( norm( ~ A ^ ~ B , Normalized, OK ) ).
+
+norm( ~( A ^ B ) , Normalized, OK ) :-
+        once( norm( ~ A v ~ B , Normalized, OK ) ).
+
+norm( ~ ~ A , Normalized, OK ) :-
+        once( norm( A , Normalized, OK ) ).
+
+norm( ~ x A , Normalized, OK ) :-
+        once( norm( x ~ A , Normalized, OK ) ).
+
+norm( ~ f A , Normalized, OK ) :-
+        once( norm( g ~ A , Normalized, OK ) ).
+
+norm( ~ g A , Normalized, OK ) :-
+        once( norm( f ~ A , Normalized, OK ) ).
+
+norm( ~( A u B ) , Normalized, OK ) :-
+        once( norm( ~ A r ~ B , Normalized, OK ) ).
+
+norm( ~( A r B ) , Normalized, OK ) :-
+        once( norm( ~ A u ~ B , Normalized, OK ) ).
+
+norm( A v B , NA v NB, OK ) :-
+        once( norm( A, NA, OK ) ),
+        once( norm( B, NB, OK ) ).
+
+norm( A ^ B , NA ^ NB, OK ) :-
+        once( norm( A, NA, OK ) ),
+        once( norm( B, NB, OK ) ).
+
+norm( ~ A , ~ NA, OK ) :-
+        once( norm( A, NA, OK ) ).
+
+norm( x A , x NA, OK ) :-
+        once( norm( A, NA, OK ) ).
+
+norm( f A , f NA, OK ) :-
+        once( norm( A, NA, OK ) ).
+
+norm( g A , g NA, OK ) :-
+        once( norm( A, NA, OK ) ).
+
+norm( A u B , NA u NB, OK ) :-
+        once( norm( A, NA, OK ) ),
+        once( norm( B, NB, OK ) ).
+
+norm( A r B , NA r NB, OK ) :-
+        once( norm( A, NA, OK ) ),
+        once( norm( B, NB, OK ) ).
+
+norm( f f A , Normalized, OK ) :-
+        once( norm( f A , Normalized, OK ) ).
+
+norm( g g A , Normalized, OK ) :-
+        once( norm( g A , Normalized, OK ) ).
+
+norm( A u (A u B) , Normalized, OK ) :-
+        once( norm( A u B , Normalized, OK )  ).
+
+norm( (A u B) u B , Normalized, OK ) :-
+        once( norm( A u B , Normalized, OK )  ).
+
+norm( f g f A , Normalized, OK ) :-
+        once( norm( g f A , Normalized, OK ) ).
+
+norm( g f g A , Normalized, OK ) :-
+        once( norm( f g A , Normalized, OK ) ).
+
+norm( ~ P, ~ P, _ ) :-
+        proposition( P ).
+
+norm( P, P, _ ) :-
+        proposition( P ).
+
+norm( X, ?, ? ) :-
+        write( '*** This is not a well-formed (sub)formula: \"' ),
+        write( X ),
+        writeln( '\"' ).
