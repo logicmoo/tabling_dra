@@ -2,6 +2,9 @@
 
 This directory includes the following files:
 
+clause_verification.pl:
+        Utilities for checking whether clauses are well-formed.
+
 compatibility_utilities.ecl:
 compatibility_utilities.pl:
         Predicates that hide some incompatibilities between Eclipse and
@@ -10,6 +13,10 @@ compatibility_utilities.pl:
 dlist.pl:
         Basic operations on difference lists.
 
+errors_and_warnings.pl:
+        Utilities for producing diagnostics (and aborting execution in the
+        case of errors).
+
 goal_table_in_tree.pl:
         A data structure for keeping Prolog goals, implemented as an open
         tree of open lists.
@@ -17,9 +24,6 @@ goal_table_in_tree.pl:
 goal_table_simple.pl:
         A data structure for keeping Prolog goals, implemented as an open
         list.
-
-otree.pl:
-        Basic operations on open trees.
 
 higher_order.pl:
         A few predicates for higher order operations (simulating some basic
@@ -31,9 +35,15 @@ olist.pl:
 open_set_in_tree.pl:
         Simple operations on open sets, used by utilities.
 
+otree.pl:
+        Basic operations on open trees.
+
 program_consistency.pl:
         An auxiliary of top_level: checks general consistency of the loaded
         program.
+
+README:
+        This file
 
 set_in_list.pl:
         Simple operations on smallish sets, used by utilities.
@@ -45,5 +55,9 @@ top_level.pl:
 
 utilities.pl:
         A set of useful predicates, loaded and called by the other programs.
+        Loads also most of the other utility files in this directory.
+
+vardict_utilities.pl:
+        Utilities that have to do with variable dictionaries.
 
 --------------------------------------------------------------------------------
