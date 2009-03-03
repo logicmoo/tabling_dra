@@ -83,5 +83,8 @@
                    well-formedness of the formula.
                  - The check for singleton variables takes into account \+/1
                    and fail/0.
+                 - Various small improvements.
+
+ ? Mar 2009:   Ninth "internal public" release:
 
 -------------------------------------------------------------------------------
