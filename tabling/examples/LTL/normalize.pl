@@ -6,7 +6,8 @@ normalize( X, Normalized ) :-
         (
             var( X )
         ->
-            writeln( '*** The formula is a Prolog variable!' ),
+            write( '*** The formula is a Prolog variable!' ),
+            nl,
             Normalized = ?
         ;
             once( norm( X, Normalized, OK ) )
@@ -96,4 +97,5 @@ norm( P, P, _ ) :-
 norm( X, ?, ? ) :-
         write( '*** This is not a well-formed (sub)formula: \"' ),
         write( X ),
-        writeln( '\"' ).
+        write( '\"' ),
+        nl.

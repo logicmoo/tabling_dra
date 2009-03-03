@@ -51,12 +51,14 @@ check( State, Formula ) :-
         ;
             write( '\"' ),
             write( State ),
-            writeln( '\" is not a state' ),
+            write( '\" is not a state' ),
+            nl,
             fail
         ),
         once( normalize( ~ Formula, NormalizedNegationOfFormula ) ),
         write( 'Negated and normalized: ' ),
-        writeln( NormalizedNegationOfFormula ),
+        write( NormalizedNegationOfFormula ),
+        nl,
         (
             once( verify( State, NormalizedNegationOfFormula ) )
         ->
