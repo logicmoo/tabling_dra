@@ -2,7 +2,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 2 March 2009.                                              %%%
+%%%  Last update: 3 March 2009.                                              %%%
 %%%                                                                          %%%
 
 :- ensure_loaded( compatibility_utilities ).
@@ -160,29 +160,6 @@ has_a_good_clause_body_( Clause, Ctxt ) :-
 
 has_a_good_clause_body_( Fact, Ctxt ) :-
         check_for_singleton_variables( Fact, Ctxt ).
-
-
-% clause_error( + list to be displayed (the error message), + the context ):
-% Show the error and the entire clause, with proper variable names.
-% For the time being V and 'V' will both appear as V on output.
-
-clause_error( MsgList, ctxt( VarDict, Clause ) ) :-
-        bind_all_variables_to_names( Clause, VarDict ),     % may affect MSgList
-        append( MsgList, [ ':' ], FullMsgList ),
-        error( lines( [ FullMsgList, [ Clause, '.' ] ] ) ).
-
-
-% clause_warning( + list to be displayed (the warning message), + the context ):
-% Show the warning and the entire clause, with proper variable names.
-% For the time being V and 'V' will both appear as V on output.
-
-clause_warning( MsgList, ctxt( VarDict, Clause ) ) :-
-        bind_all_variables_to_names( Clause, VarDict ),     % may affect MSgList
-        append( MsgList, [ ' in' ], FullMsgList ),
-        warning( lines( [ FullMsgList, [ Clause, '.' ] ] ) ),
-        fail.
-
-clause_warning( _, _ ).
 
 
 
@@ -478,6 +455,32 @@ result1( result( A, _, _ , _ ), A ).
 result2( result( _, B, _ , _ ), B ).
 result3( result( _, _, C , _ ), C ).
 result4( result( _, _, _ , D ), D ).
+
+
+
+%%------------------------------------------------------------------------------
+% clause_error( + list to be displayed (the error message), + the context ):
+% Show the error and the entire clause, with proper variable names.
+% For the time being V and 'V' will both appear as V on output.
+
+clause_error( MsgList, ctxt( VarDict, Clause ) ) :-
+        bind_all_variables_to_names( Clause, VarDict ),     % may affect MSgList
+        append( MsgList, [ ':' ], FullMsgList ),
+        error( lines( [ FullMsgList, [ Clause, '.' ] ] ) ).
+
+
+%%------------------------------------------------------------------------------
+% clause_warning( + list to be displayed (the warning message), + the context ):
+% Show the warning and the entire clause, with proper variable names.
+% For the time being V and 'V' will both appear as V on output.
+
+clause_warning( MsgList, ctxt( VarDict, Clause ) ) :-
+        bind_all_variables_to_names( Clause, VarDict ),     % may affect MSgList
+        append( MsgList, [ ' in' ], FullMsgList ),
+        warning( lines( [ FullMsgList, [ Clause, '.' ] ] ) ),
+        fail.
+
+clause_warning( _, _ ).
 
 
 %%------------------------------------------------------------------------------
