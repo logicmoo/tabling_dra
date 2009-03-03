@@ -77,7 +77,7 @@
                    improvements (particularly "support").
                  - Various small improvements.
 
-2 Mar 2009:    Eighth "internal public" release:
+ 2 Mar 2009:   Eighth "internal public" release:
 
                  - The LTL example has been improved with a check for
                    well-formedness of the formula.
