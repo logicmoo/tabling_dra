@@ -621,6 +621,9 @@ check_not_builtin( _, _ ).
 %% characters upto the nearest newline: if the first character is ";",
 %% backtrack to find alternative solutions.
 %% Exit upon encountering end of file.
+%% NOTE: When running on Sicstus, each term must come on a separate line: after
+%%       reading the term the rest of the line is ignored, to facilitate
+%%       interaction with the user when asking whether more answers are needed.
 
 top :-
         std_input_stream( Input ),
@@ -629,15 +632,22 @@ top :-
         (
             lp_system( eclipse )
         ->
-            write( Output, ': ' )                         % a prompt
+            write( Output, ': ' )                    % a prompt
         ;
             true
         ),
         readvar( Input, Term, VarDict ),
+        (
+            lp_system( sicstus )
+        ->
+            getline( Input, _ )                      % skip the rest of the line
+        ;
+            true
+        ),
         bare_to_query( Term, NTerm ),
         verify_program_item( NTerm, VarDict ),
         interactive_term( NTerm, VarDict ),
-        ( NTerm = end_of_file ; NTerm = quit ),           % i.e., normally fails
+        ( NTerm = end_of_file ; NTerm = quit ),      % i.e., normally fails
         !.
 
 
