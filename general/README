@@ -2,6 +2,9 @@
 
 This directory includes the following files:
 
+boolean_operations.pl:
+        Evaluation of simple boolean expressions.
+
 clause_verification.pl:
         Utilities for checking whether clauses are well-formed.
 

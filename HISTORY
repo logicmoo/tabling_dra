@@ -81,5 +81,7 @@
 
                  - The LTL example has been improved with a check for
                    well-formedness of the formula.
+                 - The check for singleton variables takes into account \+/1
+                   and fail/0.
 
 -------------------------------------------------------------------------------

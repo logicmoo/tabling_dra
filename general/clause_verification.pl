@@ -6,6 +6,7 @@
 %%%                                                                          %%%
 
 :- ensure_loaded( compatibility_utilities ).
+:- ensure_loaded( boolean_operations ).
 :- ensure_loaded( vardict_utilities ).
 :- ensure_loaded( errors_and_warnings ).
 
@@ -258,8 +259,7 @@ check_for_variable_calls( _, _, _ ).
 %% Assume the clause has been verified by is_a_good_clause/1.
 
 check_for_singleton_variables( Clause, Ctxt ) :-
-        Ctxt = ctxt( VarDict, _ ),
-        cs( Clause, VarDict, _, Singletons ),
+        cs( Clause, Ctxt, _, _, _, Singletons ),
         (
             empty_set( Singletons )
         ->
@@ -269,16 +269,22 @@ check_for_singleton_variables( Clause, Ctxt ) :-
         ).
 
 %
-% cs( + (sub)term,      + variable dictionary,
-%     - variables seen, - set of singletons
+% cs( + (sub)term,
+%     + context,
+%     - boolean indicating whether the construct must fail,
+%     - set of variables seen from front,
+%     - set of variables seen from behind,
+%     - set of singletons,
 %   ):
-% Produce the set of variables occurring in this term, as well as the set of
-% variables that are singletons in this term.
+% Produce the sets of variables occurring in this term (those that can be "seen"
+% from the front and those that can be "seen" from behind: cf. negation), as
+% well as the set of  variables that are singletons in this term.
+% Produce warnings about obviously dead code
 % Note that the set of singletons is a subset of the set of seen.
 % Note also that a variable whose name begins with an underscore "does not
 % count".
 
-cs( V, VarDict, Seen, Single ) :-
+cs( V, ctxt( VarDict, _), false, SeenFromFront, SeenFromBehind, Single ) :-
         var( V ),
         member( [ Name | Var ], VarDict ),
         Var == V,
@@ -287,60 +293,191 @@ cs( V, VarDict, Seen, Single ) :-
         (
             name_chars( Name, [ Underscore | _ ] )
         ->
-            empty_set( Seen ),
-            empty_set( Single )
+            empty_set( SeenFromFront  ),
+            empty_set( SeenFromBehind ),
+            empty_set( Single         )
         ;
-            Seen   = [ V ],
-            Single = [ V ]
+            empty_set( Empty ),
+            add_to_set( V, Empty, SeenFromFront  ),
+            add_to_set( V, Empty, SeenFromBehind ),
+            add_to_set( V, Empty, Single         )
         ).
 
-cs( V, _, Seen, Single ) :-    % turns out '_' is not included in VarDict!
-        var( V ),
-        empty_set( Seen ),
-        empty_set( Single ).
+cs( V, _, false, SeenFromFront, SeenFromBehind, Single ) :-
+        var( V ),                                       % '_' is not in VarDict!
+        !,
+        empty_set( SeenFromFront  ),
+        empty_set( SeenFromBehind ),
+        empty_set( Single         ).
 
-cs( A, _, [], [] ) :-
+cs( fail, _, true, SeenFromFront, SeenFromBehind, Single ) :-
+        !,
+        empty_set( SeenFromFront  ),
+        empty_set( SeenFromBehind ),
+        empty_set( Single         ).
+
+cs( A, _, false, SeenFromFront, SeenFromBehind, Single ) :-
         atomic( A ),
-        !.
-
-cs( (A ; B), VarDict, Seen, Single ) :-
         !,
-        cs( A, VarDict, SeenA, SingleA ),
-        cs( B, VarDict, SeenB, SingleB ),
-        set_union( SeenA,   SeenB,   Seen   ),
-        set_union( SingleA, SingleB, Single ).
+        empty_set( SeenFromFront  ),
+        empty_set( SeenFromBehind ),
+        empty_set( Single         ).
 
-cs( (A , B), VarDict, Seen, Single ) :-
+cs( ((A ; B) , C), Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ) :-
         !,
-        cs( [ A | B ], VarDict, Seen, Single ).
+        cs_join( ((A ; B), C), Ctxt, MustFail,
+                 SeenFromFront, SeenFromBehind, Single
+               ).
 
-cs( (A :- B), VarDict, Seen, Single ) :-
+cs( (A ; B), Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ) :-
         !,
-        cs( [ A | B ], VarDict, Seen, Single ).
+        cs( A, Ctxt, MustFailA, SeenFromFrontA, SeenFromBehindA, SingleA ),
+        cs( B, Ctxt, MustFailB, SeenFromFrontB, SeenFromBehindB, SingleB ),
+        set_union( SeenFromFrontA , SeenFromFrontB , SeenFromFront  ),
+        set_union( SeenFromBehindA, SeenFromBehindB, SeenFromBehind ),
+        set_union( SingleA        , SingleB        , Single         ),
+        bool_eval( MustFailA and MustFailB, MustFail ).
 
-cs( (A -> B), VarDict, Seen, Single ) :-
+cs( (A , B), Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ) :-
         !,
-        cs( [ A | B ], VarDict, Seen, Single ).
+        cs( A, Ctxt, MustFailA, SeenFromFrontA, SeenFromBehindA, SingleA ),
+        cs( B, Ctxt, MustFailB, SeenFromFrontB, SeenFromBehindB, SingleB ),
+        (
+            MustFailA = true
+        ->
+            MustFail      = true,
+            SeenFromFront = SeenFromFrontA,
+            Single        = SingleA,
+            empty_set( SeenFromBehind ),
+            clause_warning( [ 'Obviously dead code: \"', B, '\"' ], Ctxt )
+        ;
+            set_union( SeenFromFrontA, SeenFromFrontB, SeenFromFront ),
+            (
+                MustFailB = true
+            ->
+                MustFail = true,
+                empty_set( SeenFromBehind )
+            ;
+                set_union( SeenFromBehindA, SeenFromBehindB, SeenFromBehind ),
+                bool_eval( MustFailA or MustFailB, MustFail )
+            ),
+            set_intersection( SeenFromBehindA, SeenFromFrontB, SeepingAB ),
+            set_difference( SingleA, SeepingAB, SA ),
+            set_difference( SingleB, SeepingAB, SB ),
+            set_union( SA, SB, Single )
+        ).
 
-cs( [ A | B ], VarDict, Seen, Single ) :-
+cs( (A :- B), Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ) :-
         !,
-        cs( A, VarDict, SeenA, SingleA ),
-        cs( B, VarDict, SeenB, SingleB ),
-        set_union( SeenA, SeenB, Seen ),
-        set_difference( SingleA, SeenB, SA ),
-        set_difference( SingleB, SeenA, SB ),
+        cs(  (A , B), Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ).
+
+cs( (A -> B), Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ) :-
+        !,
+        cs( (A -> B), Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ).
+
+cs( [ A | B ], Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ) :-
+        !,
+        cs( A, Ctxt, MustFailA, SeenFromFrontA, SeenFromBehindA, SingleA ),
+        cs( B, Ctxt, MustFailB, SeenFromFrontB, SeenFromBehindB, SingleB ),
+        set_union( SeenFromFrontA, SeenFromFrontB, SeenFromFront ),
+        set_union( SeenFromBehindA, SeenFromBehindB, SeenFromBehind ),
+        bool_eval( MustFailA or MustFailB, MustFail ),
+        set_intersection( SeenFromBehindA, SeenFromFrontB, SeepingAB ),
+        set_difference( SingleA, SeepingAB, SA ),
+        set_difference( SingleB, SeepingAB, SB ),
         set_union( SA, SB, Single ).
 
-cs( C, VarDict, Seen, Single ) :-
+cs( \+ C, Ctxt, false, SeenFromFront, Empty, Single ) :-
+        empty_set( Empty ),
+        cs( C, Ctxt, _, SeenFromFront, _, Single ).
+
+cs( C, Ctxt, false, SeenFromFront, SeenFromBehind, Single ) :-
         compound( C ),
         !,
         C =.. [ _ | Args ],
-        cs( Args, VarDict, Seen, Single ).
+        cs( Args, Ctxt, _, SeenFromFront, SeenFromBehind, Single ).
 
-cs( T, VarDict, Seen, Single ) :-
-        error( [ 'INTERNAL ERROR: (utilities)',
-                 cs( T, VarDict, Seen, Single )
+cs( T, Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ) :-
+        error( [ 'INTERNAL ERROR: (clause_verification)',
+                 cs( T, Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single )
                ]
              ).
+
+
+% Several paths seem to converge: special treatment is needed if any of them
+% is known to fail.
+
+cs_join( ((A ; B) , C), Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single
+       ) :-
+        cs( C, Ctxt, MustFailC, SeenFromFrontC, SeenFromBehindC, SingleC ),
+        unfold_disjunction( (A ; B), Disjunctions ),
+        map( [ cs2, Ctxt ], Disjunctions, Results ),
+        map( [ cs_adjust, SeenFromFrontC ], Results, Adjusted ),
+        map( result1, Adjusted, ListMustFail   ),
+        map( result2, Adjusted, ListFromFront  ),
+        map( result3, Adjusted, ListFromBehind ),
+        map( result4, Adjusted, ListSingle     ),
+        fold( bool_and, true, ListMustFail, AllMustFailExp ),
+        bool_eval( AllMustFailExp, MustFailAlt ),
+        empty_set( Empty ),
+        fold( set_union, Empty, ListFromFront , SeenFromFrontAlt  ),
+        fold( set_union, Empty, ListFromBehind, SeenFromBehindAlt ),
+        fold( set_union, Empty, ListSingle    , SingleAlt         ),
+        (
+            MustFailAlt = true
+        ->
+            MustFail      = true,
+            SeenFromFront = SeenFromFrontAlt,
+            Single        = SingleAlt,
+            empty_set( SeenFromBehind ),
+            clause_warning( [ 'Obviously dead code: \"', C, '\"' ], Ctxt )
+        ;
+            set_union( SeenFromFrontAlt, SeenFromFrontC, SeenFromFront ),
+            (
+                MustFailC = true
+            ->
+                MustFail = true,
+                empty_set( SeenFromBehind )
+            ;
+                set_union( SeenFromBehindAlt, SeenFromBehindC, SeenFromBehind ),
+                bool_eval( MustFailAlt or MustFailC, MustFail )
+            ),
+            set_intersection( SeenFromBehindAlt, SeenFromFrontC, SeepingBC ),
+            set_difference( SingleC, SeepingBC, SC ),
+            set_union( SingleAlt, SC, Single )
+        ).
+
+%
+unfold_disjunction( (A ; B), [ A | Disjuncts ] ) :-
+        !,
+        unfold_disjunction( B, Disjuncts ).
+
+unfold_disjunction( A, [ A ] ).
+
+%
+cs2( Ctxt, Construct, result( MustFail, SeenFromFront, SeenFromBehind, Single )
+   ) :-
+        cs( Construct, Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ).
+
+%
+cs_adjust( SeenFromFollower, Result, NewResult ) :-
+        Result = result( MustFail, SeenFromFront, SeenFromBehind, Single ),
+        (
+            MustFail = true
+        ->
+            NewResult = Result
+        ;
+            set_intersection( SeenFromBehind, SeenFromFollower, Seeping ),
+            set_difference( Single, Seeping, NewSingle ),
+            NewResult =
+                      result( false, SeenFromFront, SeenFromBehind, NewSingle )
+        ).
+
+%
+result1( result( A, _, _ , _ ), A ).
+result2( result( _, B, _ , _ ), B ).
+result3( result( _, _, C , _ ), C ).
+result4( result( _, _, _ , D ), D ).
+
 
 %%------------------------------------------------------------------------------
