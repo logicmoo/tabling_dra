@@ -85,6 +85,8 @@
                    and fail/0.
                  - Various small improvements.
 
- ? Mar 2009:   Ninth "internal public" release:
+ 3 Mar 2009:   Ninth "internal public" release:
+
+                 - Fixed a problem with user interaction on Sicstus.
 
 -------------------------------------------------------------------------------
