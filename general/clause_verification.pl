@@ -373,7 +373,7 @@ cs( (A :- B), Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ) :-
 
 cs( (A -> B), Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ) :-
         !,
-        cs( (A -> B), Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ).
+        cs( (A , B), Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ).
 
 cs( [ A | B ], Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ) :-
         !,
