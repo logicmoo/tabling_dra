@@ -48,3 +48,5 @@ is_a_variant_in_goal_table( Goal, Table ) :-
 
 goal_table_add( Table, Goal ) :-
         olist_add( Table, Goal ).
+
+%%------------------------------------------------------------------------------

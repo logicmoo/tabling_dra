@@ -169,3 +169,5 @@ extract_called( Predicate, OSetOfCalled ) :-
 
 extract_called( _, Empty ) :-
         empty_oset( Empty ).
+
+%%------------------------------------------------------------------------------

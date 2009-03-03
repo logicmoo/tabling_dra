@@ -94,5 +94,4 @@ fold( PredName, Initial, [ H | T ], Result ) :-
         apply( PredName, [Initial, H, R ] ),
         fold( PredName, R, T, Result ).
 
-
 %%------------------------------------------------------------------------------
