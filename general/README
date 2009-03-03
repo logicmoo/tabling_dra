@@ -32,6 +32,9 @@ higher_order.pl:
         A few predicates for higher order operations (simulating some basic
         operations known from functional programming).
 
+io_utilities.pl:
+        Utilities that have to do with input and output.
+
 olist.pl:
         Basic operations on open lists.
 
