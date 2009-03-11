@@ -167,7 +167,7 @@ check_transitions.
 
 verify( S, g A   ) :-  once( coverify( S, g A   ) ).
 verify( S, A r B ) :-  once( coverify( S, A r B ) ).
-verify( S, A     ) :-  A \= g _,  a \= _ r _,  tverify( S, A ).
+verify( S, A     ) :-  A \= g _,  A \= _ r _,  tverify( S, A ).
 
 
 :- tabled tverify/2.
