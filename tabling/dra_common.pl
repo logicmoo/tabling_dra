@@ -528,6 +528,7 @@ check_consistency.
 %%        Certain other built-ins may also require special treatment.
 
 builtin( (_ , _)            ).  % special treatment in solve/3
+builtin( (_ -> _)           ).  % special treatment in solve/3
 builtin( (_ -> _ ; _)       ).  % special treatment in solve/3
 builtin( (_ ; _)            ).  % special treatment in solve/3
 builtin( \+( _ )            ).  % special treatment in solve/3
@@ -538,6 +539,7 @@ builtin( _ > _              ).
 builtin( _ >= _             ).
 builtin( _ \= _             ).
 builtin( _ is _             ).
+builtin( append( _, _, _ )  ).
 builtin( assert( _ )        ).  % special treatment in solve/3
 builtin( atom( _ )          ).
 builtin( call( _ )          ).
@@ -847,7 +849,9 @@ solve( Goal, Stack, Hyp, Level ) :-
         !,
         trace_entry( coinductive, Goal, '?', Level ),
         (
-            member( Goal, Hyp ),
+            essence_hook( Goal, Essence ),
+            member( G, Hyp ),
+            essence_hook( G, Essence ),
             trace_success( 'coinductive (hypothesis)', Goal, '?', Level )
         ;
             NLevel is Level + 1,
