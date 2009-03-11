@@ -45,8 +45,6 @@
 %% This is done by checking that it does not satisfy the formula's negation.
 %% (We have to apply the conditional, because our tabling interpreter does not
 %%  support the cut, and we don't yet support negation for coinduction.)
-% NOTE: The dynamic declaration is necessary for Eclipse.
-%       On Sicstus we will see a warning, but things will work fine otherwise.
 
 check( State, Formula ) :-
         check_consistency,
@@ -80,6 +78,8 @@ check( State, Formula ) :-
 
 
 % Check the consistency of the automaton's description.
+% NOTE: The dynamic declaration is necessary for Eclipse.
+%       On Sicstus we will see a warning, but things will work fine otherwise.
 
 :- dynamic automaton_error/0.
 :- support automaton_error/0.
