@@ -24,35 +24,31 @@
 %                  |
 %                  v
 %               S1: p <---+
-%                 | q     |
+%                 |       |
 %                 |       |
 %                 +-------+
 
 proposition( p ).
 proposition( q ).
 
-
 state( s0 ).
 state( s1 ).
 state( s2 ).
 
-
 trans( s0, s1 ).
 trans( s0, s2 ).
-
 trans( s1, s1 ).
-
 trans( s2, s2 ).
 
-
 holds( s1, p ).
-holds( s1, q ).
-
 holds( s2, q ).
 
-
 %                                         Expected   Prolog    Tabling
-
-q1 :-  check( s0, x p ^ x q ).        %    no         no        no
+q1 :-  check( s0, x p ^ x q   ).      %    no         no        no
 q2 :-  check( s0, x ~p v x ~q ).      %    no         no        no
-q3 :-  check( s0, x p         ).      %    no         no       no
+q3 :-  check( s0, x p         ).      %    no         no        no
+q4 :-  check( s0, x q         ).      %    no         no        no
+q5 :-  check( s0, x p         ).      %    no         no        no
+q6 :-  check( s0, x q         ).      %    no         no        no
+q7 :-  check( s0, x (p v q)   ).      %    yes        yes       yes
+q8 :-  check( s0, x (~p v ~q) ).      %    yes        yes       yes
