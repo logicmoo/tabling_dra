@@ -73,6 +73,12 @@ example3.pl:
 example3.tlp:
         A smaller example.
 
+example4.pl:
+example4.tlp:
+        A small example that attempts to catch a possible error in treating
+        conjunctions when one conjunct is true along one path, and the other
+        along another.
+
 small_example.pl:
 small_example.tlp:
         An even smaller example, good for tracing while troubleshooting the
