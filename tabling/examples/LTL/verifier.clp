@@ -32,7 +32,7 @@
 :- op( 20, xfx , u   ).   % LTL: "until"
 :- op( 20, xfx , r   ).   % LTL: "release"
 
-:- [ normalize ].
+:- [ 'normalize.pl' ].
 
 
 :- top check/2.          % make check( S, F ) available in its original form
@@ -45,6 +45,8 @@
 %% This is done by checking that it does not satisfy the formula's negation.
 %% (We have to apply the conditional, because our tabling interpreter does not
 %%  support the cut, and we don't yet support negation for coinduction.)
+% NOTE: The dynamic declaration is necessary for Eclipse.
+%       On Sicstus we will see a warning, but things will work fine otherwise.
 
 check( State, Formula ) :-
         check_consistency,
