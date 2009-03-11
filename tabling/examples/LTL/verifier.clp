@@ -59,6 +59,11 @@ check( State, Formula ) :-
             nl,
             fail
         ),
+        write( 'Query for state ' ),
+        write( State ),
+        write( ': ' ),
+        write( Formula ),
+        nl,
         once( normalize( ~ Formula, NormalizedNegationOfFormula ) ),
         write( 'Negated and normalized: ' ),
         write( NormalizedNegationOfFormula ),
