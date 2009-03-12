@@ -91,7 +91,7 @@ verify_program_item( _, _ ).
 
 is_a_good_clause( T ) :-
         mk_variable_dictionary( T, VarDict ),
-        is_a_good_clause( VarDict ).
+        is_a_good_clause( T, VarDict ).
 
 
 %%------------------------------------------------------------------------------
