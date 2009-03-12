@@ -61,8 +61,9 @@ check( State, Formula ) :-
         write( Formula ),
         nl,
         once( normalize( ~ Formula, NormalizedNegationOfFormula ) ),
-        write( 'Negated and normalized: ' ),
+        write( '(Negated and normalized: ' ),
         write( NormalizedNegationOfFormula ),
+        write( ')' ),
         nl,
         (
             once( verify( State, NormalizedNegationOfFormula ) )
