@@ -1,14 +1,19 @@
 --------------------------------------------------------------------------------
 
-NOTE: 1. Each of the examples in this directory has two versions:
+NOTE: 1. Each of the examples in this directory has three versions:
 
-           - A file whose name ends with ".tlp" is for direct execution in
+           - File whose name ends with "_cex.tlp" are for direct execution in
+             "dra".  They use "verifier_cex.tlp" (see below), and have a
+             slightly different format of the transition information.
+
+           - Other files whose name ends with ".tlp" are for direct execution in
              "dra" (i.e., "verifier.tlp" is used without translation).
 
-           - A file whose name ends with ".pl" includes the translated
-             version of the verifier (i.e., "verifier.pl").  The example can
+           - Files whose name ends with ".pl" include the translated
+             version of the verifier (i.e., "verifier.pl").  The examples can
              be executed directly in Prolog, but some queries may loop, and
              will have to be interrupted by the user.
+
 
       2. If you want to try the examples directly in your logic programming
           system (without tabling), then it's best to comment out the
@@ -48,6 +53,15 @@ verifier.tlp:
               Since the "dra" interpreter also supports coinductive
               programming directly, the translation step can be omitted.
 
+verifier_cex:
+        This is a version of "verifier.tlp" that automatically negates the
+        query and produces a counterexample if the query fails.  The
+        description of an automaton for this version can be simpler, in that
+        information about transitions can be given in the form of a
+        straightforward table of transitions (i.e., there is no need to fit
+        all transitions out of a state into a fact whose second argument is
+        a list).
+
 normalize.pl:
         Simple normalization of LTL expressions, used by
         "verifier.tlp".
@@ -58,6 +72,7 @@ errors.tlp:
 
 example.pl:
 example.tlp:
+example_cex.tlp:
         The definition of a simple automaton and some convenient LTL
         queries.
 
@@ -67,25 +82,30 @@ example.tlp:
 
 example2.pl:
 example2.tlp:
+example2_cex.tlp:
         A somewhat more complex example similar to "example.tlp".
 
 example3.pl:
 example3.tlp:
+example3_cex.tlp:
         A smaller example.
 
 example4.pl:
 example4.tlp:
+example4_cex.tlp:
         A small example that attempts to catch a possible error in treating
         conjunctions when one conjunct is true along one path, and the other
         along another.
 
 small_example.pl:
 small_example.tlp:
+small_example_cex.tlp:
         An even smaller example, good for tracing while troubleshooting the
         tabling interpreter.
 
 microwave.pl:
 microwave.tlp:
+microwave_cex.tlp:
         Another example in the same spirit.  This one is actually a
         (somewhat simplified) model of a microwave oven.
 
