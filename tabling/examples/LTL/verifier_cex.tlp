@@ -64,14 +64,16 @@ check( State, Formula ) :-
         write( ': ' ),
         write( Formula ),
         nl,
-        write( 'Negated and normalized: ' ),
+        write( '(Negated and normalized: ' ),
         write( NormalizedNegationOfFormula ),
+        write( ')' ),
         nl,
         (
             once( verify( State, NormalizedNegationOfFormula, Path ) )
         ->
             write( 'COUNTEREXAMPLE: ' ),
-            write( Path ),
+            once( append( Path, [], ClosedPath ) ),
+            write( ClosedPath ),
             nl,
             fail
         ;
@@ -189,11 +191,11 @@ tverify( S, ~ A,   [ S ]     ) :-  proposition( A ), \+ holds( S, A ).
 
 tverify( S, A ^ B, Path      ) :-  verify( S, A, PathA ), verify( S, B, PathB ),
                                    (
-                                       append( PathA, _, PathB )
+                                       append( PathA, _, PathB )       % prefix?
                                    ->
                                        Path = PathB
                                    ;
-                                       append( PathB, _, PathA )
+                                       append( PathB, _, PathA )       % prefix?
                                    ->
                                        Path = PathA
                                    % otherwise fail!
