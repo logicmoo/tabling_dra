@@ -1,6 +1,6 @@
 %% Get the translated interpreter:
 
-:- [ 'verifier.tlp' ].
+:- [ 'v.pl' ].
 
 
 %--- An example that distinguishes between the "one path" and "all pathes"

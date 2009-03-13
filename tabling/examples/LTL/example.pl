@@ -1,6 +1,6 @@
 %% Get the translated interpreter:
 
-:- [ 'verifier.pl' ].
+:- [ 'v.pl' ].
 
 
 %--- An example: some states, some queries...
@@ -74,7 +74,7 @@ q1  :- check( s0, g p ).                  % no       no        no
 
 q2  :- check( s0, f p ).                  % no       no        no
 
-q3  :- check( s0, f p v f t ).            % no       no        no
+q3  :- check( s0, f p v f t ).            % yes
 
 q4  :- check( s0, f (p v t) ).            % yes      yes       yes
 
