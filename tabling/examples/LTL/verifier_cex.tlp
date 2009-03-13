@@ -1,7 +1,7 @@
 %% Gopal Gupta's LTL interpreter (modified by F.K.).
 %%
 %% This is a version of verifier.tlp that has been extended to produce a
-%%  counterexample.
+%% counterexample.
 %%
 %% Include with the definition of an automaton, which should specify
 %% the following predicates:
