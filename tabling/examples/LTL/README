@@ -2,14 +2,14 @@
 
 NOTE: 1. Each of the examples in this directory has three versions:
 
-           - File whose name ends with "_cex.tlp" are for direct execution in
-             "dra".  They use "verifier_cex.tlp" (see below), and have a
-             slightly different format of the transition information.
+           - File whose name ends with ".tlp" are for direct execution in
+             "dra".  They use "verifier.tlp" (see below)
 
-           - Other files whose name ends with ".tlp" are for direct execution in
-             "dra" (i.e., "verifier.tlp" is used without translation).
+           - Files whose name ends with "_v.pl" include the experimental
+             verifier in pure Prolog (v.pl).  Some of them work, some not:
+             this is work in progress.
 
-           - Files whose name ends with ".pl" include the translated
+           - Other files whose name ends with ".pl" include the translated
              version of the verifier (i.e., "verifier.pl").  The examples can
              be executed directly in Prolog, but some queries may loop, and
              will have to be interrupted by the user.
@@ -17,13 +17,22 @@ NOTE: 1. Each of the examples in this directory has three versions:
 
       2. If you want to try the examples directly in your logic programming
           system (without tabling), then it's best to comment out the
-          directive ":- tabled tverify_ / 3." in "verifier.pl".
+          directive ":- tabled tverify_ / 3." in "verifier.pl" after you
+          translate "verifier.clp".
 
 
 
 ..........................................................................
 
 This directory includes the following files:
+
+v.pl:
+
+        This is a straightforward Prolog program that attempts to emulate the
+        functions of "verifier.tlp" with a completely different algorithm, by
+        visiting each node once and appropriately simplifying the LTL formula
+        at each node.  This is still work in progress, not all the examples
+        will work
 
 verifier.clp:
         A version of "verifier.tlp" (see below) that can be translated to
@@ -32,35 +41,13 @@ verifier.clp:
 verifier.tlp:
         A version of Gopal Gupta's elegant "interpreter for Linear Temporal
         Logic" (more specifically, a program that verifies whether a given
-        LTL formula holds in a given state of a given automaton).
+        LTL formula holds in a given state of a given automaton). It
+        automatically negates the query and produces a counterexample if the
+        query fails.
 
-        The program contains both tabled and coinductive predicates
-        (however, each predicate is either tabled or coinductive, not
-        both). It can be executed in one of two ways as follows:
-
-           1. Load a concrete example that includes the translated verifier
-              (i.e., "verifier.pl") into an implementation of tabled logic
-              programming (e.g., "dra"), and then issue queries relevant to
-              the example.
-
-              (The example would contain a definition of an automaton,
-              possibly with some queries.  File inclusion is done with a
-              directive:
-                   :-[ 'verifier.pl' ].
-              )
-
-           2. Just load an example that includes 'verifier.tlp" into "dra".
-              Since the "dra" interpreter also supports coinductive
-              programming directly, the translation step can be omitted.
-
-verifier_cex:
-        This is a version of "verifier.tlp" that automatically negates the
-        query and produces a counterexample if the query fails.  The
-        description of an automaton for this version can be simpler, in that
-        information about transitions can be given in the form of a
-        straightforward table of transitions (i.e., there is no need to fit
-        all transitions out of a state into a fact whose second argument is
-        a list).
+        The program contains both tabled and coinductive predicates (however,
+        each predicate is either tabled or coinductive, not both). To execute
+        it, just load an example that includes 'verifier.tlp" into "dra".
 
 normalize.pl:
         Simple normalization of LTL expressions, used by
@@ -72,40 +59,36 @@ errors.tlp:
 
 example.pl:
 example.tlp:
-example_cex.tlp:
+example_v.tlp:
         The definition of a simple automaton and some convenient LTL
         queries.
 
-        For the ".tlp" version: just load the example into "dra" (by writing
-            prog( example ).  and then type "q1.", "q2." etc. to that
-            interpreter's top level.
-
 example2.pl:
 example2.tlp:
-example2_cex.tlp:
+example2_v.tlp:
         A somewhat more complex example similar to "example.tlp".
 
 example3.pl:
 example3.tlp:
-example3_cex.tlp:
+example3_v.tlp:
         A smaller example.
 
 example4.pl:
 example4.tlp:
-example4_cex.tlp:
+example4_v.tlp:
         A small example that attempts to catch a possible error in treating
         conjunctions when one conjunct is true along one path, and the other
         along another.
 
 small_example.pl:
 small_example.tlp:
-small_example_cex.tlp:
+small_example_v.tlp:
         An even smaller example, good for tracing while troubleshooting the
         tabling interpreter.
 
 microwave.pl:
 microwave.tlp:
-microwave_cex.tlp:
+microwave_v.tlp:
         Another example in the same spirit.  This one is actually a
         (somewhat simplified) model of a microwave oven.
 
