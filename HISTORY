@@ -41,8 +41,8 @@
                  - Really deleted "eager_tabling" ;-).
                  - Found a couple of errors in "dra".
                  - "dra" checks consistency of declarations with definitions.
-                 - "dra" gives priority to new answers (this can be changed by
-                    using ":- old_first ...").
+                 - "dra" gives priority to new answers (this can be changed
+                    by using ":- old_first ...").
                  - The wallpaper trace is more informative.
 
 19 Feb 2009:   Fifth "internal public" release:
@@ -89,9 +89,16 @@
 
                  - Fixed a problem with user interaction on Sicstus.
 
- ? Mar 2009:   Tenth "internal public" release:
+13 Mar 2009:   Tenth "internal public" release:
 
                  - In "dra" activated "essence_hook" for matching with
                    coinductive hypotheses.
+
+                 - Fixed the LTL verifier to take care of the error
+                   discovered by Brian DeVries.  The verifier now produces
+                   counterexamples.
+
+                 - Introduced an LTL verifier in straight Prolog (for
+                   comparison). This is still experimental and incomplete.
 
 -------------------------------------------------------------------------------
