@@ -1,6 +1,6 @@
 %% Get the translated interpreter:
 
-:- [ 'v.pl' ].
+:- [ 'verifier.pl' ].
 
 
 %--- An example that distinguishes between the "one path" and "all pathes"
@@ -44,7 +44,5 @@ holds( s1, p ).
 holds( s2, q ).
 
 
-:- top q/0.
-
 %                                         Expected   Prolog    Tabling
-q :-  check( s0, x p v x q ).         %   yes        no        no
+q :-  check( s0, x p v x q ).         %   yes        yes       yes
