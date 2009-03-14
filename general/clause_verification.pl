@@ -2,7 +2,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 3 March 2009.                                              %%%
+%%%  Last update: 12 March 2009.                                             %%%
 %%%                                                                          %%%
 
 :- ensure_loaded( compatibility_utilities ).
