@@ -88,6 +88,15 @@ norm( f g f A , Normalized, OK ) :-
 norm( g f g A , Normalized, OK ) :-
         once( norm( f g A , Normalized, OK ) ).
 
+norm( x A ^ x B , Normalized, OK ) :-
+        once( norm( x (A ^ B) , Normalized, OK ) ).
+
+norm( g A ^ g B , Normalized, OK ) :-
+        once( norm( g (A ^ B) , Normalized, OK ) ).
+
+norm( f A v f B , Normalized, OK ) :-
+        once( norm( f (A v B) , Normalized, OK ) ).
+
 norm( ~ P, ~ P, _ ) :-
         proposition( P ).
 
