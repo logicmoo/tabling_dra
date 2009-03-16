@@ -1,5 +1,4 @@
 %% This is an experimental version of a pure Prolog counterpart of verifier.tlp.
-%% NOTE: This program is unable to handle the "next" operator (x).
 %%
 %% The approach is to visit each node at most once, and rewrite the expression
 %% to take into account the valuation of propositions in that node.
@@ -180,9 +179,9 @@ verify( S, F, Path ) :-
                     fail
                 )
             ;
-
+                once( strip_off_x( NF, NNF ) ),
                 trans( S, NS ),
-                verify( NS, NF, [ pair( S, F ) | Path ] )
+                verify( NS, NNF, [ pair( S, F ) | Path ] )
             )
         ).
 
@@ -196,6 +195,23 @@ disjunct( A, _ v B ) :-  disjunct( A, B ).
 disjunct( A, A     ).
 
 
+%% strip_off_x( + formula, - formula ):
+%% Strip off the "x" operator from every disjunct, raise an alarm and abort if
+%% there are disjuncts that are not so wrapped.
+
+strip_off_x( x A v B, A v NB ) :-  strip_off_x( B, NB ).
+
+strip_off_x( x F, F ).
+
+strip_off_x( F, _ ) :-
+        F \= x F,
+        write( 'Formula not in X : ' ),
+        write( F ),
+        nl,
+        abort.
+
+
+
 %% rewrite( + formula, + state, - new formula ):
 %% The formula has been normalized, so that negations are applied only to
 %% propositions.
@@ -204,33 +220,37 @@ rewrite( F, S, NF ) :-
         once( r( F, S, NF ) ).
 
 %
-r( A v B, S, NF ) :-  r( A, S, NA ),  r( B, S, NB ),
-                      simplify( NA v NB, NF ).
+r( A v B, S, NF  ) :-  r( A, S, NA ),  r( B, S, NB ),
+                       simplify( NA v NB, NF ).
 
-r( A ^ B, S, NF ) :-  r( A, S, NA ),  r( B, S, NB ),
-                      simplify( NA ^ NB, NF ).
+r( A ^ B, S, NF  ) :-  r( A, S, NA ),  r( B, S, NB ),
+                       simplify( NA ^ NB, NF ).
 
-r( f A  , S, NF ) :-  r( A, S, NA ),
-                      simplify( NA v f A, NF ).
+r( x A  , _, x A ).
 
-r( g A  , S, NF ) :-  r( A, S, NA ),
-                      simplify( NA ^ g A, NF ).
+r( f A  , S, NF  ) :-  r( A, S, NA ),
+                       simplify( NA v x f A, NF ).
 
-r( A u B, S, NF ) :-  r( A, S, NA ),  r( B, S, NB ),
-                      simplify( NB v (NA ^ (A u B)), NF ).
+r( g A  , S, NF  ) :-  r( A, S, NA ),
+                       simplify( NA ^ x g A, NF ).
 
-r( A r B, S, NF ) :-  r( A, S, NA ),  r( B, S, NB ),
-                      simplify( (NB ^ NA) v (A r B), NF ).
+r( A u B, S, NF  ) :-  r( A, S, NA ),  r( B, S, NB ),
+                       simplify( NA ^ x (A u B), Conj ),
+                       simplify( NB v Conj, NF ).
 
-r( ~ P  , S, NF ) :-  proposition( P ),
-                      ( holds( S, P ) -> NF = false
-                      ;                  NF = true
-                      ).
+r( A r B, S, NF  ) :-  r( A, S, NA ),  r( B, S, NB ),
+                       simplify( NB ^ NA, Conj ),
+                       simplify( Conj v x (A r B), NF ).
 
-r( P    , S, NF ) :-  proposition( P ),
-                      ( holds( S, P ) -> NF = true
-                      ;                  NF = false
-                      ).
+r( ~ P  , S, NF  ) :-  proposition( P ),
+                       ( holds( S, P ) -> NF = false
+                       ;                  NF = true
+                       ).
+
+r( P    , S, NF  ) :-  proposition( P ),
+                       ( holds( S, P ) -> NF = true
+                       ;                  NF = false
+                       ).
 
 
 %% simplify( + formula, + state,- new formula ):
@@ -247,12 +267,13 @@ s( A     v false, A     ).
 s(  A v A  v B  , NF    ) :-  s( A v B    , NF ).
 s( (A v B) v C  , NF    ) :-  s( A v B v C, NF ).
 
-s( true  ^ A    , A     ).
-s( A     ^ true , A     ).
 s( false ^ _    , false ).
 s( _     ^ false, false ).
+s( true  ^ A    , A     ).
+s( A     ^ true , A     ).
 s(  A ^ A  ^ B  , NF    ) :-  s( A ^ B    , NF ).
 s( (A ^ B) ^ C  , NF    ) :-  s( A ^ B ^ C, NF ).
+s( x A ^ x B    , x NF  ) :-  s( A ^ B    , NF ).
 
 s( F            , F     ).
 
