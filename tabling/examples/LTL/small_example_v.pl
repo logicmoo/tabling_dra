@@ -12,8 +12,7 @@ trans( s1, s0 ).
 holds( s0, p ).
 holds( s1, p ).
 
-:- top q/0.
-%                                          Expected   Prolog    Tabling
-q  :- check( s0, g p ).                 %  yes        loops     yes
+%                                          Expected   v.pl
+q  :- check( s0, g p ).                 %  yes        yes
 
 

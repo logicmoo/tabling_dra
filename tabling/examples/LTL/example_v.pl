@@ -68,29 +68,29 @@ holds( s4, p ).
 holds( s4, s ).
 
 
-%                                         Expected   Prolog    Tabling
+%                                         Expected   v.pl
 
-q1  :- check( s0, g p ).                  % no       no        no
+q1  :- check( s0, g p ).                  % no       no
 
-q2  :- check( s0, f p ).                  % no       no        no
+q2  :- check( s0, f p ).                  % no       no
 
-q3  :- check( s0, f p v f t ).            % yes
+q3  :- check( s0, f p v f t ).            % yes      yes
 
-q4  :- check( s0, f (p v t) ).            % yes      yes       yes
+q4  :- check( s0, f (p v t) ).            % yes      yes
 
-q5  :- check( s1, g p ).                  % no       no        no
+q5  :- check( s1, g p ).                  % no       no
 
-q6  :- check( s1, f p ).                  % no       no        no
+q6  :- check( s1, f p ).                  % no       no
 
-q7  :- check( s0, f g p ).                % no       no        no
+q7  :- check( s0, f g p ).                % no       no
 
-q8  :- check( s2, g p ).                  % yes      loops     yes
+q8  :- check( s2, g p ).                  % yes      yes
 
-q9  :- check( s2, f g p ).                % yes      loops     yes
+q9  :- check( s2, f g p ).                % yes      yes
 
-q10  :- check( s2, f( q ^ z ) ).          % no       no        no
+q10  :- check( s2, f( q ^ z ) ).          % no       no
 
-q11 :- check( s2, f q ^ f z ).            % yes      yes       yes
+q11 :- check( s2, f q ^ f z ).            % yes      yes
 
-q12 :- check( s2, g f s ).                % yes      loops     yes
+q12 :- check( s2, g f s ).                % yes      yes
 

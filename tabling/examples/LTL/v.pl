@@ -1,5 +1,16 @@
 %% This is an experimental version of a pure Prolog counterpart of verifier.tlp.
-%% Still under development!
+%% NOTE: This program is unable to handle the "next" operator (x).
+%%
+%% The approach is to visit each node at most once, and rewrite the expression
+%% to take into account the valuation of propositions in that node.
+%% The cost is O( number of nodes ) * O( length of formula ).
+%% We don't yet have a proof of correctness, but all the examples work.
+%%
+%% Written by Feliks Kluzniak at UTD (March 2009).
+%% Last update: 16 March 2009.
+
+
+%% The operators
 
 :- op( 10,  fy , ~   ).   % not
 :- op( 20, xfy , ^   ).   % and
@@ -140,7 +151,7 @@ check_transitions.
 
 
 
-%--- The formula is normalized: only propositions can be negated.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% verify( + state, + formula, + path ) :
 %% Verify whether the formula holds for this state (which we reached by this
@@ -148,7 +159,7 @@ check_transitions.
 %% (The formula is our negated thesis, so we are looking for one path.)
 
 verify( S, F, Path ) :-
-        once( rewrite( F, S, NF ) ),
+        rewrite( F, S, NF ),
         (
             NF = true
         ->
@@ -176,6 +187,7 @@ verify( S, F, Path ) :-
         ).
 
 
+
 %% disjunct( +- disjunct, + formula ):
 %% Like member, only of an outermost disjunction rather than a list.
 
@@ -185,45 +197,63 @@ disjunct( A, A     ).
 
 
 %% rewrite( + formula, + state, - new formula ):
+%% The formula has been normalized, so that negations are applied only to
+%% propositions.
 
-rewrite( f A  , S, NF ) :-  rewrite( A, S, NA ), simplifyI( NA v f A, S, NF ).
-rewrite( g A  , S, NF ) :-  rewrite( A, S, NA ), simplifyI( NA ^ g A, S, NF ).
-rewrite( A ^ B, S, NF ) :-  rewrite( A, S, NA ), rewrite( B, S, NB ),
-                            simplifyI( NA ^ NB, S, NF ).
-rewrite( A v B, S, NF ) :-  rewrite( A, S, NA ), rewrite( B, S, NB ),
-                            simplify( NA v NB, S, NF ).
-rewrite( F    , S, NF ) :-  simplify( F, S, NF ).
+rewrite( F, S, NF ) :-
+        once( r( F, S, NF ) ).
 
-simplifyI( F, S, NF ) :-
-        simplifyIS( F, S, [], NF ).
+%
+r( A v B, S, NF ) :-  r( A, S, NA ),  r( B, S, NB ),
+                      simplify( NA v NB, NF ).
 
-simplifyIS( F, _, T, F  ) :-  member( F, T ).
-simplifyIS( F, S, T, NF ) :-  simplify( F, S, F2 ),
-                              simplifyIS( F2, S, [ F | T ], NF ).
+r( A ^ B, S, NF ) :-  r( A, S, NA ),  r( B, S, NB ),
+                      simplify( NA ^ NB, NF ).
+
+r( f A  , S, NF ) :-  r( A, S, NA ),
+                      simplify( NA v f A, NF ).
+
+r( g A  , S, NF ) :-  r( A, S, NA ),
+                      simplify( NA ^ g A, NF ).
+
+r( A u B, S, NF ) :-  r( A, S, NA ),  r( B, S, NB ),
+                      simplify( NB v (NA ^ (A u B)), NF ).
+
+r( A r B, S, NF ) :-  r( A, S, NA ),  r( B, S, NB ),
+                      simplify( (NB ^ NA) v (A r B), NF ).
+
+r( ~ P  , S, NF ) :-  proposition( P ),
+                      ( holds( S, P ) -> NF = false
+                      ;                  NF = true
+                      ).
+
+r( P    , S, NF ) :-  proposition( P ),
+                      ( holds( S, P ) -> NF = true
+                      ;                  NF = false
+                      ).
+
 
 %% simplify( + formula, + state,- new formula ):
-%% The subformulae have now been rewritten.
-%%
-%% NOTE: Need also rules for until and release!  <<<<<<<<<<<<
+%% The formula has now been rewritten: simplify the result.
 
-simplify( ~P, S, true  ) :-  proposition( P ),  \+ holds( S, P ).
-simplify( ~P, S, false ) :-  proposition( P ),     holds( S, P ).
+simplify( F, NF ) :-
+        once( s( F, NF ) ).
 
-simplify( P, S, true  ) :-  proposition( P ),     holds( S, P ).
-simplify( P, S, false ) :-  proposition( P ),  \+ holds( S, P ).
+%
+s( true  v _    , true  ).
+s( _     v true , true  ).
+s( false v A    , A     ).
+s( A     v false, A     ).
+s(  A v A  v B  , NF    ) :-  s( A v B    , NF ).
+s( (A v B) v C  , NF    ) :-  s( A v B v C, NF ).
 
-simplify( false ^ _    , _, false ).
-simplify( _     ^ false, _, false ).
-simplify( true  ^ F    , _, F     ).
-simplify( F     ^ true , _, F     ).
-simplify( A     ^ A    , _, A     ).
-simplify( A ^ A ^ F    , _, A ^ F ).
+s( true  ^ A    , A     ).
+s( A     ^ true , A     ).
+s( false ^ _    , false ).
+s( _     ^ false, false ).
+s(  A ^ A  ^ B  , NF    ) :-  s( A ^ B    , NF ).
+s( (A ^ B) ^ C  , NF    ) :-  s( A ^ B ^ C, NF ).
 
-simplify( true  v _    , _, true  ).
-simplify( _     v true , _, true  ).
-simplify( false v F    , _, F     ).
-simplify( F     v false, _, F     ).
-simplify( A     v A    , _, A     ).
-simplify( A v A v F    , _, A v F ).
+s( F            , F     ).
 
-simplify( F            , _, F     ).
+%-------------------------------------------------------------------------------

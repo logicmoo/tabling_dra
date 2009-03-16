@@ -44,7 +44,5 @@ holds( s1, p ).
 holds( s2, q ).
 
 
-:- top q/0.
-
-%                                         Expected   Prolog    Tabling
-q :-  check( s0, x p v x q ).         %   yes        no        yes
+%                                         Expected   v.pl
+q :-  check( s0, x p v x q ).         %   yes        yes
