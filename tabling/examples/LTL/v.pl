@@ -260,21 +260,21 @@ simplify( F, NF ) :-
         once( s( F, NF ) ).
 
 %
-s( true  v _    , true  ).
-s( _     v true , true  ).
-s( false v A    , A     ).
-s( A     v false, A     ).
-s(  A v A  v B  , NF    ) :-  s( A v B    , NF ).
-s( (A v B) v C  , NF    ) :-  s( A v B v C, NF ).
+s( true    v _    , true  ).
+s( _       v true , true  ).
+s( false   v A    , NA    ) :-  s( A        , NA ).
+s( A       v false, NA    ) :-  s( A        , NA ).
+s(  A v A  v B    , NF    ) :-  s( A v B    , NF ).
+s( (A v B) v C    , NF    ) :-  s( A v B v C, NF ).
 
-s( false ^ _    , false ).
-s( _     ^ false, false ).
-s( true  ^ A    , A     ).
-s( A     ^ true , A     ).
-s(  A ^ A  ^ B  , NF    ) :-  s( A ^ B    , NF ).
-s( (A ^ B) ^ C  , NF    ) :-  s( A ^ B ^ C, NF ).
-s( x A ^ x B    , x NF  ) :-  s( A ^ B    , NF ).
+s( false   ^ _    , false ).
+s( _       ^ false, false ).
+s( true    ^ A    , NA    ) :-  s( A        , NA ).
+s( A       ^ true , NA    ) :-  s( A        , NA ).
+s(  A ^ A  ^ B    , NF    ) :-  s( A ^ B    , NF ).
+s( (A ^ B) ^ C    , NF    ) :-  s( A ^ B ^ C, NF ).
+s( x A     ^ x B  , x NF  ) :-  s( A ^ B    , NF ).
 
-s( F            , F     ).
+s( F              , F     ).
 
 %-------------------------------------------------------------------------------
