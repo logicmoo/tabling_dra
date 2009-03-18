@@ -8,15 +8,21 @@ dra.ecl:
 dra.pl:
         A wrapping of dra_common.pl for Sicstus.
 
-dra_common.pl:
+dra_builtins.pl:
+        This file contains declarations of built-in predicates that are
+        allowed by the "dra" interpreter.  Support for many new predicates
+        can be obtained simply by extending the table, but some may require
+        special support from the interpreter.  In particular, addition of the
+        cut would be non-trivial (and probably ill-advised).
 
+dra_common.pl:
         The code for an interpreter that implements tabling by using "Dynamic
         Reordering of Alternatives".  This interpreter can handle programs
         that use not only tabling, but also co-logic programming (even when
         the same predicate is both coinductive and tabled).
 
-        Just load 'dra' into Eclipse or Sicstus!  The head comment explains
-        how to use it.
+        Just load 'dra' into Eclipse or Sicstus!  The head comment
+        explains how to use it.
 
 examples:
         Some examples of tabled programs, all with the extension

@@ -3,7 +3,7 @@
 %%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 27 February 2009.                                          %%%
+%%%  Last update: 18 March 2009.                                             %%%
 %%%                                                                          %%%
 
 %%% NOTE:
@@ -11,7 +11,7 @@
 %%%    1. See ../general/top_level.ecl for a description of how to load
 %%%       and run programs.
 %%%       Please note that in Eclipse after loading this interpreter you
-%%%       have to issue
+%%%       should issue
 %%%            :- import dra.
 %%%       if you don't want to keep writing
 %%%            dra:prog( filename )
@@ -62,12 +62,24 @@
 %%%    2. The program should contain no other directives. It may, however,
 %%%       contain queries, which will be executed immediately upon reading.
 %%%
-%%%    3. If the program invokes a built-in predicate, that predicate must
-%%%       be declared in the table "builtin/1" below.  Every addition should
-%%%       be considered carefully: some might require special treatment by
-%%%       the interpreter.
+%%%    3. Just before the result of a query is reported, the interpreter
+%%%       produces a printout with statistics accummulated since the previous
+%%%       printout (or since the beginning, if this is the first printout during
+%%%       this session with the interpreted program). The printout looks like
+%%%       this:
 %%%
-%%%    4. The program may contain clauses that modify the definition of the
+%%%           [K steps, M new answers tabled (N in all)]
+%%%
+%%%       where K, M and N are some natural numbers. K is the number of
+%%%       evaluated goals, M is the number of new additions to the answer table,
+%%%       N is the current size of the answer table.
+%%%
+%%%    4. If the program invokes a built-in predicate, that predicate must
+%%%       be declared in the table "builtin/1" (see file "dra_builtins.pl").
+%%%       Every addition should be considered carefully: some built-ins might
+%%%       require special treatment by the interpreter.
+%%%
+%%%    5. The program may contain clauses that modify the definition of the
 %%%       interpreter's predicate "essence_hook/2" (the clauses will be asserted
 %%%       at the front of the predicate, and will thus override the default
 %%%       definition for some cases).  The default definition is
@@ -449,11 +461,30 @@
            by invocations of "trace" (most often in "trace" directives
            encountered when the interpreted program is being read).
 
+   -- step_counter
+
+           This is a non-logical variable that keeps track of the number of
+           goals resolved during the evaluation of each query.  The final value
+           is printed after the query terminates.
+
+           The variable is cleared before the evaluation of a new query.
+
+   -- old_table_size
+
+           This is a non-logical variable that is used to store the value of
+           "number_of_answers" before the evaluation of a query.  Used to
+           produce automatic information about the growth of the table after the
+           query terminates.
+
+           The variable is reinitialized before the evaluation of a new query.
+
+
 *******************************************************************************/
 
 
 :- ensure_loaded( [ '../general/top_level',
-                    '../general/utilities'
+                    '../general/utilities',
+                    dra_builtins
                   ]
                 ).
 
@@ -492,7 +523,9 @@ initialise :-                                             % invoked by top_level
         retractall( completed( _, _ )           ),
         retractall( tracing( _ )                ),
         setval( number_of_answers, 0 ),
-        setval( unique_index,      0 ).
+        setval( unique_index,      0 ),
+        setval( step_counter,      0 ),
+        setval( old_table_size,    0 ).
 
 
 %% Checking consistency:
@@ -535,45 +568,6 @@ check_consistency :-
         fail.
 
 check_consistency.
-
-
-
-%%%%%  Built-in predicates  %%%%
-%%
-%%  NOTE: Just adding "!" won't do the trick, the main interpreter would
-%%        have to be modified substantially.
-%%        Certain other built-ins may also require special treatment.
-
-builtin( (_ , _)            ).  % special treatment in solve/3
-builtin( (_ -> _)           ).  % special treatment in solve/3
-builtin( (_ -> _ ; _)       ).  % special treatment in solve/3
-builtin( (_ ; _)            ).  % special treatment in solve/3
-builtin( \+( _ )            ).  % special treatment in solve/3
-builtin( _ < _              ).
-builtin( _ = _              ).
-builtin( _ =< _             ).
-builtin( _ > _              ).
-builtin( _ >= _             ).
-builtin( _ \= _             ).
-builtin( _ is _             ).
-builtin( append( _, _, _ )  ).
-builtin( assert( _ )        ).  % special treatment in solve/3
-builtin( atom( _ )          ).
-builtin( call( _ )          ).
-builtin( fail               ).
-builtin( false              ).
-builtin( member( _, _ )     ).
-builtin( nl                 ).
-builtin( once( _ )          ).  % special treatment in solve/3
-builtin( read( _ )          ).
-builtin( retractall( _ )    ).  % special treatment in solve/3
-builtin( set_flag( _, _ )   ).
-builtin( true               ).
-builtin( var( _ )           ).
-builtin( write( _ )         ).
-builtin( write_term( _, _ ) ).
-builtin( writeln( _ )       ).
-builtin( set_print_depth( _, _ )   ).      % not a real built-in, see  top_level
 
 
 
@@ -759,9 +753,41 @@ query( Goals ) :-                                         % invoked by top_level
         retractall( result( _, _ )              ),
         retractall( loop( _, _ )                ),
         retractall( looping_alternative( _, _ ) ),
-        setval( unique_index, 0 ),
+        setval( unique_index,      0    ),
+        getval( number_of_answers, NAns ),
+        setval( old_table_size,    NAns ),
+        setval( step_counter,      0    ),
+        (
+            solve( Goals, [], [], 0 ),
+            print_statistics,
+            setval( step_counter, 0 ),
+            setval( old_table_size, NAns )
+        ;
+            print_statistics,
+            setval( step_counter, 0 ),
+            setval( old_table_size, NAns ),
+            fail
+        ).
 
-        solve( Goals, [], [], 0 ).
+
+%% Print information about the number of steps and the answer table.
+
+print_statistics :-
+        std_output_stream( Output ),
+        getval( step_counter, NSteps ),
+        getval( number_of_answers, NAns ),
+        getval( old_table_size, OldNAns ),
+        TableGrowth is NAns - OldNAns,
+        write( Output, '[' ),
+        write( Output, NSteps ),
+        write( Output, ' steps, ' ),
+        write( Output, TableGrowth ),
+        write( Output, ' new answers tabled (' ),
+        write( Output, NAns ),
+        write( Output, ' in all)' ),
+        write( Output, ']' ),
+        nl(    Output ).
+
 
 
 
@@ -880,6 +906,7 @@ solve( assert( Clause ), _, _, _ ) :-
         ;
             true
         ),
+        incval( step_counter ),
         assert_in_module( interpreted, Clause ).
 
 
@@ -887,6 +914,7 @@ solve( assert( Clause ), _, _, _ ) :-
 
 solve( retractall( C ), _, _, _ ) :-
         !,
+        incval( step_counter ),
         retractall_in_module( interpreted, C ).
 
 
@@ -895,6 +923,7 @@ solve( retractall( C ), _, _, _ ) :-
 solve( BuiltIn, _, _, _ ) :-
         builtin( BuiltIn ),
         !,
+        incval( step_counter ),
         call( BuiltIn ).
 
 
@@ -903,6 +932,7 @@ solve( BuiltIn, _, _, _ ) :-
 solve( Goal, _, _, _ ) :-
         support( Goal ),
         !,
+        incval( step_counter ),
         call_in_module( support, Goal ).
 
 
@@ -912,6 +942,7 @@ solve( Goal, Stack, Hyp, Level ) :-
         \+ tabled( Goal ),
         \+ coinductive( Goal ),
         !,
+        incval( step_counter ),
         trace_entry( normal, Goal, '?', Level ),
         (
             NLevel is Level + 1,
@@ -931,6 +962,7 @@ solve( Goal, Stack, Hyp, Level ) :-
         \+ tabled( Goal ),
         coinductive( Goal ),
         !,
+        incval( step_counter ),
         trace_entry( coinductive, Goal, '?', Level ),
         (
             essence_hook( Goal, Essence ),
@@ -954,6 +986,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 solve( Goal, _, _, Level ) :-
         is_completed( Goal ),
         !,
+        incval( step_counter ),
         trace_entry( completed, Goal, '?', Level ),
         (
             get_all_tabled_answers( Goal, '?', completed, Level )
@@ -993,6 +1026,7 @@ solve( Goal, Stack, Hyp, Level ) :-
                                 triple( G, I, C ), InterveningTriples
                               ),
         !,
+        incval( step_counter ),
         get_unique_index( Index ),
         trace_entry( variant, Goal, Index, Level ),
         (
@@ -1076,6 +1110,7 @@ solve( Goal, Stack, Hyp, Level ) :-
         ;
             NHyp = Hyp
         ),
+        incval( step_counter ),
         copy_term( Goal, OriginalGoal ),
         add_pioneer( Goal, Index ),
         trace_entry( pioneer, Goal, Index, Level ),
