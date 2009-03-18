@@ -231,6 +231,15 @@ writeln( OutputStream, Term ) :-
 
 
 %%------------------------------------------------------------------------------
+%% writeln( + term ):
+%% Write the term to the standard output stream, followed by a newline.
+
+writeln( Term ) :-
+        std_output_stream( OutputStream ),
+        writeln( OutputStream, Term ).
+
+
+%%------------------------------------------------------------------------------
 %% concat_atoms( + atom, + atom, - atom ):
 %% Return an atom whose name is the concatenation of the names of the first two
 %% atoms.
