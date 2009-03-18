@@ -17,30 +17,47 @@
 %%%            dra:prog( filename )
 %%%       every time.
 %%%
-%%%    2. Tabled and coinductive predicates should be declared as such in
-%%%       the program file, e.g.,
-%%%           :- tabled      ancestor/2.
-%%%           :- coinductive comember/2.
+%%%    2. The interpreter supports a number of directives:
 %%%
-%%%       To include files use the usual Prolog syntax:
-%%%           :- [ file1, file2, ... ].
+%%%       a) Tabled and coinductive predicates should be declared as such in
+%%%          the program file, e.g.,
+%%%              :- tabled      ancestor/2.
+%%%              :- coinductive comember/2.
 %%%
-%%%       To declare predicates used in an interpreted program as dynamic, use
-%%%           :- dynamic p/k.
+%%%       b) To include files use the usual Prolog syntax:
+%%%              :- [ file1, file2, ... ].
 %%%
-%%%       By default, a goal produces new (i.e., heretofore unknown) answers
-%%%       before producing old ones.  To reverse this behaviour, use
+%%%       c) To declare predicates used in an interpreted program as dynamic,
+%%%          use
+%%%              :- dynamic p/k.
 %%%
-%%%           :- old_first p/k.
-%%%       or
-%%%           :- old_first all.
+%%%       d) By default, a goal produces new (i.e., heretofore unknown) answers
+%%%          before producing old ones.  To reverse this behaviour, use
 %%%
-%%%       To produce a wallpaper trace use the trace directive. For example,
-%%%           :- trace p/3, q/0, r/1.
-%%%       will trace predicates "p/3", "q/0" and "r/1".  If you want to trace
-%%%       everything, use
-%%%           :- trace all.
-%%%       These directives are cumulative.
+%%%              :- old_first p/k.
+%%%          or
+%%%              :- old_first all.
+%%%
+%%%       e) To produce a wallpaper trace use the trace directive. For example,
+%%%
+%%%              :- trace p/3, q/0, r/1.
+%%%
+%%%          will trace predicates "p/3", "q/0" and "r/1".  If you want to trace
+%%%          everything, use
+%%%
+%%%              :- trace all.
+%%%
+%%%          These directives are cumulative.
+%%%
+%%%       f) To print out subsets of the current answer table, use
+%%%
+%%%              :- answers( Goal, Pattern ).
+%%%
+%%%          this will print tabled answer that is associated with a variant
+%%%          of the goal and unifiable with Pattern.
+%%%          To get a dump of the entire table, use just
+%%%
+%%%              :- answers.
 %%%
 %%%    2. The program should contain no other directives. It may, however,
 %%%       contain queries, which will be executed immediately upon reading.
@@ -594,6 +611,8 @@ legal_directive( (trace _)       ).
 legal_directive( (dynamic _)     ).
 legal_directive( (old_first _)   ).
 legal_directive( (multifile _)   ).
+legal_directive( answers( _, _ ) ).
+legal_directive( answers         ).
 
 
 %% Check and process the legal directives (invoked by top_level)
@@ -643,7 +662,26 @@ execute_directive( (trace PredSpecs) ) :-
 execute_directive( (dynamic PredSpecs) ) :-
         dynamic_in_module( interpreted, PredSpecs).
 
+
 execute_directive( (multifile _) ).    % ignore
+
+
+execute_directive( answers( Goal, Pattern ) ) :-
+        copy_term( Goal, OriginalGoal ),
+        get_answer( Goal ),
+        Goal = Pattern,
+        write( OriginalGoal ),  write( ' :  ' ),  writeln( Goal ),
+        fail.
+
+execute_directive( answers( _, _ ) ).
+
+
+execute_directive( answers ) :-
+        answer( _, B, C ),
+        write( B ),  write( ' :  ' ),  writeln( C ),
+        fail.
+
+execute_directive( answers ).
 
 
 %% will_trace( + list of patterns ):
