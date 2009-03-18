@@ -1,0 +1,31 @@
+\chapter{Introduction\label{sec:intro}}
+
+This document is a user manual for \about{dra}, an interpreter for tabled
+logic programming with coinduction.
+
+The interpreter implements ``top-down tabled programming'' via so called
+``Dynamic Reordering of Alternatives'' \cite{guo-gupta-dra}.
+
+There are two significant changes with respect to the description in the
+paper:
+\begin{enumerate}
+
+\item A tabled goal will never produce the same answer twice.
+
+  More specifically: two answers will never be variants of each
+  other.\footnote{
+  Please note that in this document \about{goal} means an instance of a
+  procedure call.}
+
+\item By default, new answers for a tabled goal will be produced before old
+  answers.  The user can reverse the order by means of a directive
+  (\prog{:-~old\_first.}).
+
+  A ``new answer for a tabled goal'' is an answer that has not yet been seen
+  (and tabled) for a variant of the goal.
+
+  The default behaviour is intended to help computations converge more
+  quickly.  The user is given an option to change it, because some predicates
+  may produce a very large (even infinite) set of answers on backtracking,
+  and the application does not require those answers.
+\end{enumerate}
