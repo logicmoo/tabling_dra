@@ -24,39 +24,17 @@
 %%%       contain queries, which will be executed immediately upon reading.
 %%%
 %%%    3. If the program invokes a built-in predicate, that predicate must
-%%%       be declared in the table builtin/1 below.
+%%%       be declared in the table builtin/1 (see file "colp_builtins.pl").
 
 %%% LIMITATIONS: - The interpreted program should not contain cuts.
 %%%              - Error detection is quite rudimentary.
 
 
 :- ensure_loaded( [ '../general/top_level',
-                    '../general/utilities'
+                    '../general/utilities',
+                    colp_builtins
                   ]
                 ).
-
-
-
-%%%%%  Built-in predicates  %%%%
-%%
-%%  NOTE: Just adding "!" won't do the trick, the main metainterpreter
-%%        would have to be modified.
-
-builtin( true               ).
-builtin( false              ).
-builtin( fail               ).
-builtin( _ = _              ).
-builtin( _ \= _             ).
-builtin( \+( _ )            ).
-builtin( once( _ )          ).   % special treatment in solve/2
-builtin( (_ ->_ ; _)        ).   % special treatment in solve/2
-builtin( (_ ; _)            ).   % special treatment in solve/2
-builtin( (_ , _)            ).   % special treatment in solve/2
-builtin( writeln( _ )       ).
-builtin( write( _ )         ).
-builtin( write_term( _, _ ) ).
-builtin( nl                 ).
-builtin( set_print_depth( _, _ )   ).      % not a real built-in, see  top_level
 
 
 
