@@ -667,21 +667,11 @@ execute_directive( (multifile _) ).    % ignore
 
 
 execute_directive( answers( Goal, Pattern ) ) :-
-        copy_term( Goal, OriginalGoal ),
-        get_answer( Goal ),
-        Goal = Pattern,
-        write( OriginalGoal ),  write( ' :  ' ),  writeln( Goal ),
-        fail.
-
-execute_directive( answers( _, _ ) ).
+        print_required_answers( Goal, Pattern ).
 
 
 execute_directive( answers ) :-
-        answer( _, B, C ),
-        write( B ),  write( ' :  ' ),  writeln( C ),
-        fail.
-
-execute_directive( answers ).
+        print_all_answers.
 
 
 %% will_trace( + list of patterns ):
@@ -693,6 +683,62 @@ will_trace( Patterns ) :-
         fail.
 
 will_trace( _ ).
+
+
+%% print_required_answers( + goal, + pattern ):
+%% Print the tabled answers that are associated with this goal and are unifiable
+%% with this pattern.
+
+print_required_answers( Goal, Pattern ) :-
+        copy_term( Goal, OriginalGoal ),
+        get_answer( Goal ),                            % iterate through answers
+        Goal = Pattern,
+        mk_variable_dictionary( OriginalGoal + Goal, VarDict ),
+        bind_variables_to_names( VarDict ),
+        write( OriginalGoal ),  write( ' :  ' ),  writeln( Goal ),
+        fail.
+
+print_required_answers( _, _ ).
+
+
+%% print_all_answers:
+%% Print all the tabled answers, taking care to group them by the indexing goal.
+
+print_all_answers :-
+        findall( Goal, answer( _, Goal, _ ), Goals ),
+        remove_variants( Goals, DifferentGoals ),
+        sort( DifferentGoals, SortedDifferentGoals ),
+        (
+            member( Goal, SortedDifferentGoals ),      % iterate through members
+            print_required_answers( Goal, _ ),
+            nl,
+            fail
+        ;
+            true
+        ).
+
+
+%% remove_variants( + list, - reduced list ):
+%% Remove each member of the list that is a variant of
+%% a member that precedes it.  No need to preserve the order.
+
+remove_variants( List, ReducedList ) :-
+        remove_variants_( List, [], ReducedList ).
+
+%
+remove_variants_( [], Accumulator, Accumulator ).
+
+remove_variants_( [ H | T ], Accumulator, RL ) :-
+        member( M, Accumulator ),
+        are_variants( H, M ),
+        !,
+        remove_variants_( T, Accumulator, RL ).
+
+remove_variants_( [ H | T ], Accumulator, RL ) :-
+        % H not a variant of a member of Accumulator
+        remove_variants_( T, [ H | Accumulator ], RL ).
+
+
 
 
 
