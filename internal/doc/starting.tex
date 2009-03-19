@@ -1,0 +1,25 @@
+\Chapter{Starting the interpreter\label{chap:starting}}
+
+The interpreter is written in Prolog.  It is distributed in source
+form.\footnote{%
+  Please see the ``README'' files in the distribution tree: they will help you
+  find your way around.}
+
+The interpreter is known to run on Eclipse 6.0 and Sicstus 4.0.  If you plan
+to run programs that take advantage of coinductive programming, you will
+probably do better with Sicstus, which has much better support for cyclic
+terms.
+
+For both these systems, the simplest way to proceed is:
+\begin{enumerate}
+\item start your logic programming system;
+\item type in the following directive:\\
+  \ind\prog{:-~[~'}\about{Path}\prog{/tabling/dra'~]}\\
+  where \about{Path} is the path to the root of the distribution tree.
+\end{enumerate}
+
+It may well be that things have been installed differently on your site.
+This might be because the interpreter has been modified to run with a
+different Prolog system, or because an immediately-loadable version has been
+made available in some standard directory. The person responsible for the
+local installation of the interpreter will provide you with more details.

@@ -1,13 +1,15 @@
-\chapter{Introduction\label{sec:intro}}
+\Chapter{Introduction\label{sec:intro}}
 
 This document is a user manual for \about{dra}, an interpreter for tabled
 logic programming with coinduction.
 
 The interpreter implements ``top-down tabled programming'' via so called
-``Dynamic Reordering of Alternatives'' \cite{guo-gupta-dra}.
+``Dynamic Reordering of Alternatives'' \cite{guo-gupta-dra}.  It also
+supports ``co-logic programming'', i.e., logic programs that contain
+coinductive predicates \cite{coinductive}, \cite{co-LP}.
 
-There are two significant changes with respect to the description in the
-paper:
+Appart from support for coinduction, there are two significant changes with
+respect to the original description \cite{guo-gupta-dra}:
 \begin{enumerate}
 
 \item A tabled goal will never produce the same answer twice.
@@ -27,5 +29,5 @@ paper:
   The default behaviour is intended to help computations converge more
   quickly.  The user is given an option to change it, because some predicates
   may produce a very large (even infinite) set of answers on backtracking,
-  and the application does not require those answers.
+  and the application might not require those answers.
 \end{enumerate}

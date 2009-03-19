@@ -21,6 +21,15 @@
 %----------------------------------------------------------------------
 %  MACROS
 
+% Facilitate transition between article and book:
+\newcommand*{\Chapter}[1]{\chapter{#1}}
+\newcommand*{\Section}[1]{\section{#1}}
+\newcommand*{\Subsection}[1]{\subsection{#1}}
+%\newcommand*{\Chapter}[1]{\section{#1}}
+%\newcommand*{\Section}[1]{\subsection{#1}}
+%\newcommand*{\Subsection}[1]{\subsubsection{#1}}
+
+
 % Definition of a new concept:
 \newcommand*{\defconcept}[1]{\textbf{\emph{#1}}\index{#1|textsl}}
 % Ditto if the word is different from the index entry:
@@ -134,7 +143,10 @@
 User Manual}
 
 \author{Feliks Klu{\'z}niak\\
-\emph{University of Texas at Dallas}}
+  \emph{Applied Logic, Programming Languages and Systems Lab}\\
+  \emph{Department of Computer Science}\\
+  \emph{University of Texas at Dallas}
+}
 \date{\today}
 
 \bibliographystyle{plain}
@@ -148,6 +160,7 @@ User Manual}
 \tableofcontents
 
 \include{intro}
+\include{starting}
 
 \bibliography{bibliography}
 \printindex

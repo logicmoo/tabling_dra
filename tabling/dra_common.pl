@@ -149,7 +149,7 @@
          The default behaviour is intended to help computations converge more
          quickly.  The user is given an option to change it, because some
          predicates may produce a very large (even infinite) set of answers on
-         backtracking, and the application does not require those answers.
+         backtracking, and the application might not require those answers.
 
    The terminology has been modified under the influence of
 
