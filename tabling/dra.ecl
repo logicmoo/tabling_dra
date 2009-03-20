@@ -2,6 +2,6 @@
 
 :- module( dra ).
 
-:- export prog/1.
+:- export prog/1, top/0 .
 
 :- ensure_loaded( [ dra_common ] ).

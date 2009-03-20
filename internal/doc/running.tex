@@ -1,0 +1,75 @@
+\Chapter{Running a program\label{chap:running}}
+
+Once you have loaded the interpreter into your logic programing system, you
+may want to run a program in the interpreter. This is done by
+writing\\
+\ind\prog{prog(~}\patt{filename}\prog{~ ).}\progidx{prog}%
+\footnote{
+  If you are running in Eclipse, and have not imported the module \about{dra}
+  (as explained on \vpageref{import-dra}), you must write \prog{dra:prog}
+  instead of \prog{prog}.
+}\\
+\patt{filename} should be the name of the file that contains your program.
+If the name has no extension, the default extension will be \prog{.tlp}.  If
+the name should have a different extension, you must type in the entire name,
+ecnclosed in single quotes, e.g.,\\
+\ind\prog{prog(~'myfile.pl'~ ).}\\
+Quotes must also be used if the file is not in the current directory and you
+are providing an absolute or relative path.
+
+As the file is being read and loaded, directives and queries are interpreted
+on-the-fly. Each query is evaluated to give all solutions (i.e., as if the
+user kept responding with a semicolon): to avoid that use the built-in
+predicate \pred{once/1}.
+
+After the file is loaded (and all the directives and queries it contains are
+executed), interactive mode is started.  This is very much like the usual
+top-level loop, except that it is the associated interpreter -- and not the
+underlying logic programming system -- that is used to evaluate queries and
+directives.
+
+Please note that in the interactive mode one cannot input more than one term
+per line.
+
+
+To just enter interactive mode invoke\\
+\ind\prog{top}.\progidx{top}%
+\footnote{Again, \prog{dra:top} in Eclipse, if you have not imported
+  \about{dra}.}\\
+ The interpreter does not allow you to input clauses directly from your
+ terminal, but this facility may be useful if you have exited interactive
+ mode (see below) or interrupted the execution of the interpreter: the
+ program that was most recently loaded is still there.
+
+To exit interactive mode enter the end of file character
+(\about{Ctrl-D}),%
+\footnote{
+  \about{Ctrl-D} appears not to work with tkeclipse.}
+or just write\\
+\ind\prog{quit.}
+
+You should be aware that loading a program obliterates all traces of
+previously loaded programs, including the contents of the answer table.  So
+if you are interested in re-running your program from scratch (so that it
+does not take advantage of answers that were already tabled), you should load
+it again.
+
+
+When a query succeeds, the bindings of variables should be printed upto a
+certain maximum depth.  The default value in the distributed version of the
+interpreter is 10.  The maximum depth can be changed from the interpreted
+program (or interactively from the top-level) by invoking\\
+\ind\prog{set\_print\_depth(~}\patt{N}\prog{~ )}\progidx{set\_print\_depth}
+
+where \patt{N} is a positive integer.
+
+Please note that with some Prolog implementations this might not prevent a
+loop if the printed term is cyclic (as will often happen for coinductive
+programs).
+
+Note also that the foregoing does not apply to invocations of built-in
+predicates in the interpreted program.  It is up to the user to apply the
+built-in appropriate for the host logic programming system.  For example, in
+the case of Sicstus, use \prog{write\_term(~T,~[~max\_depth(~10~)~]~)} rather
+than just \prog{write( T )}, especially if you expect the instantiation of
+\prog{T} to be cyclic.

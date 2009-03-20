@@ -1,7 +1,8 @@
 \Chapter{Starting the interpreter\label{chap:starting}}
 
 The interpreter is written in Prolog.  It is distributed in source
-form.\footnote{%
+form.%
+\footnote{
   Please see the ``README'' files in the distribution tree: they will help you
   find your way around.}
 
@@ -17,6 +18,11 @@ For both these systems, the simplest way to proceed is:
   \ind\prog{:-~[~'}\about{Path}\prog{/tabling/dra'~]}\\
   where \about{Path} is the path to the root of the distribution tree.
 \end{enumerate}
+
+The interpreter is encapsulated in its own module, called \about{dra}.  So
+if you are running Eclipse, you will find life more convenient if you import
+the module by writing\\
+\ind\prog{:- import dra.}\label{import-dra}\progidx{import}
 
 It may well be that things have been installed differently on your site.
 This might be because the interpreter has been modified to run with a

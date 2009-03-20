@@ -66,7 +66,7 @@
 %%%                is cyclic (as will often happen for coinductive programs).
 %%%
 %%%                Note also that the foregoing does not apply to invocations of
-%%%                builtins in the interpreted program.  It is upto the user to
+%%%                builtins in the interpreted program.  It is up to the user to
 %%%                apply the builtin appropriate for the host logic programming
 %%%                system.  For example, in the case of Sicstus, use
 %%%                "write_term( T, [ max_depth( 10 ) ] )" rather than just

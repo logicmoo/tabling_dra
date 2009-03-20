@@ -1,12 +1,79 @@
 \Chapter{Introduction\label{sec:intro}}
 
 This document is a user manual for \about{dra}, an interpreter for tabled
-logic programming with coinduction.
+logic programming with coinduction.%
+\footnote{
+  The manual has been written for users of various versions of Unix: if you
+  are running another system, various small details (such as the way to enter
+  the end-of-file character) may be different.}
 
 The interpreter implements ``top-down tabled programming'' via so called
 ``Dynamic Reordering of Alternatives'' \cite{guo-gupta-dra}.  It also
 supports ``co-logic programming'', i.e., logic programs that contain
 coinductive predicates \cite{coinductive}, \cite{co-LP}.
+
+\breakup
+
+When you declare a predicate as tabled\index{tabled predicate}, there will be
+two consequences:
+\begin{enumerate}
+
+\item Every time a goal with this predicate symbol (i.e., an invocation of
+  this predicate) succeeds, the result is stored in a table.\footnote{
+    A tabled result is commonly referred to as an ``answer''.\index{answer}}
+  Once all the possible results have been so stored, subsequent invocations
+  can draw upon the tabled results, instead of recomputing them all over
+  again. This is all done in a way that does not affect the semantics of the
+  program, except perhaps for the order in which results are reported and the
+  number of repetitions of the same result. (Of course, if your program is
+  not sufficiently close to pure Prolog, e.g., if it has relies on and/or
+  produces side-effects, then all bets are off.)
+
+  This may not always be as advantageous as one might think, for two reasons:
+  \begin{enumerate}
+  \item If the number of results is large, and goals are seldom repeated, the
+    main effect might be a significantly increased demand for memory, which
+    is not offset by shorter processing time.
+
+  \item It so happens that in order to preserve the semantics of the program
+    the results must be associated with the goal that produced them, and are
+    accessible only to variant goals.  Other goals that invoke the same
+    predicate will require recomputation, and the computed results will
+    increase the size of the table, even if they are the same as those that
+    have already been computed.
+  \end{enumerate}
+
+\item When a goal that invokes a tabled predicate is found to be a variant of
+  one of its ancestors on the recursion stack, the goal is not
+  expanded.\footnote{
+    Instead, it succeeds with results that have already been put into the
+    table (or fails if there are none).  Things are arranged so that all the
+    results that can be computed will eventually wind up in the table.}
+  This allows you to write your predicates in a more declarative fashion,
+  without worrying, e.g., about the danger of left recursion.
+\end{enumerate}
+A more extensive discussion of tabling is well outside the scope of this user
+manual.
+
+
+\breakup
+
+When you declare a predicate as coinductive\index{coinductive predicate},
+there is only one effect:
+\begin{itemize}
+  \item If a goal that invokes a coinductive predicate is found to be
+    unifiable with an ancestor on the recursion stack, the goal is unified
+    with the ancestor and succeeds.  Upon backtracking it is unified---one by
+    one---with other such ancestors, and expanded in the normal way (i.e., by
+    using clauses) only when all the unifiable ancestors have been taked
+    advantage of in this manner.
+\end{itemize}
+This gives the predicate a radically new meaning, which is often the
+appropriate one for operations on ``infinite'' terms (represented by cyclic
+terms).  Again, further discussion of the concept is outside the scope of
+this document.
+
+\breakup
 
 Appart from support for coinduction, there are two significant changes with
 respect to the original description \cite{guo-gupta-dra}:

@@ -6,15 +6,12 @@
 \usepackage{makeidx,showidx}
 \usepackage{index}  % prevents expansion in index entries, needed for progidx
 
-%\proofmodetrue      %  <<<< (index) suppress for the final copy <<<<<<
-
-\newindex{xpreds}{pdx}{pnd}{Index of procedures}
 
 
 \makeindex
 
-\setlength{\parindent}{2ex}
-\setlength{\parskip}{0.5ex}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2ex}
 
 \floatplacement{listing}{htbp}
 
@@ -29,6 +26,9 @@
 %\newcommand*{\Section}[1]{\subsection{#1}}
 %\newcommand*{\Subsection}[1]{\subsubsection{#1}}
 
+% Three asterisks break the text up where even a subsection is not merited:
+% use this as a separate paragraph:
+\newcommand*{\breakup}{\[\ast\ast\ast\]}
 
 % Definition of a new concept:
 \newcommand*{\defconcept}[1]{\textbf{\emph{#1}}\index{#1|textsl}}
@@ -65,7 +65,7 @@
 \newcommand*{\pred}[1]{\about{#1}}
 
 % An index entry for a procedure:
-\newcommand*{\progidx}[1]{\index[xpreds]{#1@\prog{#1}}}
+\newcommand*{\progidx}[1]{\index{#1@\prog{#1}}}
 
 % A reference to a figure:
 \newcommand*{\figref}[1]{Fig.~\vref{#1}}
@@ -161,7 +161,10 @@ User Manual}
 
 \include{intro}
 \include{starting}
+\include{running}
+\include{programs}
 
 \bibliography{bibliography}
+\addcontentsline{toc}{chapter}{Index}
 \printindex
 \end{document}
