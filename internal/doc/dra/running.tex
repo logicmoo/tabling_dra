@@ -1,36 +1,43 @@
 \Chapter{Running a program\label{chap:running}}
 
+
+%-------------------------------------------------------------------------------
+\Section{Loading a program\label{sec:loading}}
+
 Once you have loaded the interpreter into your logic programing system, you
-may want to run a program in the interpreter. This is done by
+may want to load and run a program in the interpreter. This is done by
 writing\\
 \ind\prog{prog(~}\patt{filename}\prog{~ ).}\progidx{prog}%
 \footnote{
   If you are running in Eclipse, and have not imported the module \about{dra}
-  (as explained on \vpageref{import-dra}), you must write \prog{dra:prog}
+  (as explained on \Pageref{import-dra}), you must write \prog{dra:prog}
   instead of \prog{prog}.
 }\\
 \patt{filename} should be the name of the file that contains your program.
 If the name has no extension, the default extension will be \prog{.tlp}.  If
 the name should have a different extension, you must type in the entire name,
-ecnclosed in single quotes, e.g.,\\
-\ind\prog{prog(~'myfile.pl'~ ).}\\
+enclosed in single quotes, e.g.,\\
+\ind\prog{prog(~'myfile.pl'~).}\\
 Quotes must also be used if the file is not in the current directory and you
 are providing an absolute or relative path.
 
 As the file is being read and loaded, directives and queries are interpreted
 on-the-fly. Each query is evaluated to give all solutions (i.e., as if the
-user kept responding with a semicolon): to avoid that use the built-in
-predicate \pred{once/1}.
+user kept responding with a semicolon): to avoid that you can use the
+built-in predicate \pred{once/1} in the queries.
+
+
+%-------------------------------------------------------------------------------
+\Section{Interacting with a loaded program\label{sec:interacting}}
 
 After the file is loaded (and all the directives and queries it contains are
 executed), interactive mode is started.  This is very much like the usual
-top-level loop, except that it is the associated interpreter -- and not the
+top-level loop, except that it is the interpreter -- and not the
 underlying logic programming system -- that is used to evaluate queries and
 directives.
 
 Please note that in the interactive mode one cannot input more than one term
 per line.
-
 
 To just enter interactive mode invoke\\
 \ind\prog{top}.\progidx{top}%
@@ -59,7 +66,7 @@ When a query succeeds, the bindings of variables should be printed upto a
 certain maximum depth.  The default value in the distributed version of the
 interpreter is 10.  The maximum depth can be changed from the interpreted
 program (or interactively from the top-level) by invoking\\
-\ind\prog{set\_print\_depth(~}\patt{N}\prog{~ )}\progidx{set\_print\_depth}
+\ind\prog{set\_print\_depth(~}\patt{N}\prog{~)}\progidx{set\_print\_depth}
 
 where \patt{N} is a positive integer.
 
@@ -70,6 +77,30 @@ programs).
 Note also that the foregoing does not apply to invocations of built-in
 predicates in the interpreted program.  It is up to the user to apply the
 built-in appropriate for the host logic programming system.  For example, in
-the case of Sicstus, use \prog{write\_term(~T,~[~max\_depth(~10~)~]~)} rather
-than just \prog{write( T )}, especially if you expect the instantiation of
+the case of Sicstus, use \prog{write\_term(~T,~[~max\_depth(~10~)~]~)}, rather
+than just \prog{write( T )}, if you expect the instantiation of
 \prog{T} to be cyclic.
+
+
+
+%-------------------------------------------------------------------------------
+\Section{Including other files\label{sec:loading}}
+
+To include files (interactively or from other files) you can use the usual
+Prolog syntax:\\
+\ind\prog{:- [~}\patt{file1}\prog{,~}\patt{file2}\prog{,~}\patt{...}\prog{~].}
+
+Please note that there is a difference between
+\prog{prog(~}\patt{file}\prog{~)} and \prog{:-~[~}\patt{file}\prog{~].}.  If
+the former is used, the metainterpreter is (re)initialised before loading the
+file: all previous information, including the answer table, is cleared.  If
+the latter is used, the contents of the file are just added to the
+interpreter's memory.
+
+It is recommended that these directives be used mostly in the text of a
+program.  All the files that are loaded by an invocation of \pred{prog/1} are
+treated as a single program, and the program is subjected to a number of
+sanity checks.  Files that are included interactively from the top level are
+not checked, and errors such as re-definition of predicates defined in other
+files might lead to unexpected results.
+

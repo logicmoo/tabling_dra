@@ -6,7 +6,12 @@ This document is a user manual for \about{dra}, an interpreter for tabled
 logic programming with coinduction.  The manual has been written for users of
 various versions of Unix: if you are running another system, various small
 details (such as the way to enter the end-of-file character) may be
-different.
+different.%
+\footnote{
+  All comments, queries and suggestions about this manual or the software
+  will be most welcome: my e-mail address is
+  \prog{feliks.kluzniak@utdallas.edu}.  Please note that I will not be able
+  to provide assistance with Windows.}
 
 The interpreter implements ``top-down tabled programming'' via so called
 ``Dynamic Reordering of Alternatives'' \cite{guo-gupta-dra}.  It also
@@ -28,8 +33,8 @@ respect to the original description \cite{guo-gupta-dra}:
 
 \item
   By default, new results for a tabled goal will be produced before old
-  answers.  The user can reverse the order by means of a directive
-  (\prog{:-~old\_first.}).
+  answers.  The user can reverse the order by issuing the directive\\
+  \ind\prog{:-~old\_first.}
 
   A ``new result for a tabled goal'' is a result that has not yet been
   tabled for this goal.  (More precisely: the table does not contain a
@@ -42,7 +47,7 @@ respect to the original description \cite{guo-gupta-dra}:
 \end{enumerate}
 
 
-%-----------
+%-------------------------------------------------------------------------------
 \Section{Tabling\label{sec:tabling}}
 
 When you declare a predicate as tabled\index{tabled predicate}, there will be
@@ -88,7 +93,8 @@ A more extensive discussion of tabling is well outside the scope of this user
 manual.
 
 
-%----------------
+
+%-------------------------------------------------------------------------------
 \Section{Coinduction\label{sec:coindution}}
 
 When you declare a predicate as coinductive\index{coinductive predicate},

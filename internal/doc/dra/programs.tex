@@ -1,2 +1,185 @@
 \Chapter{The interpreted programs\label{chap:programs}}
 
+
+
+%-------------------------------------------------------------------------------
+\Section{Limitations\label{sec:limitations}}
+
+The interpreter does not support full Prolog.  Here are the main limitations
+of the interpreted language:
+\begin{enumerate}
+
+\item
+  The interpreted program must not contain cuts.  Use of the conditional
+  construct is permitted, as is the use of \pred{once/1}.
+
+\item
+  The interpreted program must not contain variable literals.  It may contain
+  invocations of \pred{call/1}, but if the argument of \pred{call/1} is not
+  properly instantiated at runtime, the results will be undefined.
+
+  In some cases the interpreter can verify that the argument of an occurrence
+  of \pred{call/1} cannot be instantiated at run-time, and it will then raise
+  a fatal error.  The check is quite conservative, so the absence of such an
+  error message does not mean that the program is correct in that respect.
+
+\item
+  The repertoire of built-in procedures recognized by the interpreter is
+  somewhat limited.  This is done by design, to facilitate porting to
+  different Prolog systems.  The recognized built-ins are declared in the
+  file \prog{dra\_builtins.pl}, and new built-ins can be added as the need
+  arises.  For most built-ins it is a matter of just adding another line to
+  the file, but a few might require special treatment by the
+  interpreter.\footnote{
+    Please contact me if you have question or encounter any problems.}
+\end{enumerate}
+
+If those limitations seem too strict, you may in some cases get around them
+by separating your program into two layers: see \Secref{sec:support}.
+
+
+%-------------------------------------------------------------------------------
+\Section{The notion of ``support''\label{sec:support}}
+
+The interpreter provides you with an opportunity to divide your program into
+two layers: an upper layer which makes use of the special facilities provided
+by the interpreter (i.e., tabling and/or coinduction), and a lower layer of
+``support'' software that requires only standard Prolog.  This can be useful
+for increasing efficiency: the support layer will be compiled just as all
+other ``normal'' Prolog programs.  An additional advantage is that the
+support layer can use the full range of built-in predicates available in the
+host logic programming system.
+
+The interface between the two layers consists of a handful of entry-point
+predicates, each of which is  declared by a directive similar to the
+following one:\\
+\ind\prog{:- support check\_consistency/1.}\progidx{support}\\
+Please note that this directive cannot be entered interactively: it must be
+included in the text of the upper layer part of your program.
+
+The support declaration means that the metainterpreter should treat the
+declared predicate as a built-in, i.e., just let Prolog execute it.
+
+The support layer cannot invoke the upper layer, so there is no need to
+declare those predicates in the support layer that are not directly invoked
+by the upper layer.
+
+Predicates that are declared as "support" must be defined in other files.  To
+compile and load such files, use the following directive in the text of your
+program:\\
+\ind\prog{:- load\_support(~}\patt{filename}\prog{~).}\\
+The extension of the \patt{filename} will usually be your logic programming
+system's default extension for names of files that contain Prolog code.
+
+
+%-------------------------------------------------------------------------------
+\Section{Directives\label{sec:directives}}
+
+    5. The interpreted program may contain declarations of "top" and
+       "support" predicates, in the form of directives:
+
+           :- top p/1, q/2.
+
+
+       The "top" declaration indicates predicates that will be called "from
+       the outside", so if they are not called in the program, there will be
+       no warning.
+       (This declaration is also recognized when translating coinductive
+        programs into Prolog: see "../coind/translate\_colp".)
+    2. The interpreter supports a number of directives:
+
+       a) Tabled and coinductive predicates should be declared as such in
+          the program file, e.g.,
+              :- tabled      ancestor/2.
+              :- coinductive comember/2.
+
+       b) To include files use the usual Prolog syntax:
+              :- [ file1, file2, ... ].
+
+       c) To declare predicates used in an interpreted program as dynamic,
+          use
+              :- dynamic p/k.
+
+       d) By default, a goal produces new (i.e., heretofore unknown) answers
+          before producing old ones.  To reverse this behaviour, use
+
+              :- old\_first p/k.
+          or
+              :- old\_first all.
+
+       e) To produce a wallpaper trace use the trace directive. For example,
+
+              :- trace p/3, q/0, r/1.
+
+          will trace predicates "p/3", "q/0" and "r/1".  If you want to trace
+          everything, use
+
+              :- trace all.
+
+          These directives are cumulative.
+
+       f) To print out subsets of the current answer table, use
+
+              :- answers( Goal, Pattern ).
+
+          this will print tabled answer that is associated with a variant
+          of the goal and unifiable with Pattern.
+          To get a dump of the entire table, use just
+
+              :- answers.
+
+    2. The program should contain no other directives. It may, however,
+       contain queries, which will be executed immediately upon reading.
+
+    3. Just before the result of a query is reported, the interpreter
+       produces a printout with statistics accummulated since the previous
+       printout (or since the beginning, if this is the first printout during
+       this session with the interpreted program). The printout looks like
+       this:
+
+           [K steps, M new answers tabled (N in all)]
+
+       where K, M and N are some natural numbers. K is the number of
+       evaluated goals, M is the number of new additions to the answer table,
+       N is the current size of the answer table.
+
+
+%-------------------------------------------------------------------------------
+\Section{hooks\label{sec:hooks}}
+
+    5. The program may contain clauses that modify the definition of the
+       interpreter's predicate "essence\_hook/2" (the clauses will be asserted
+       at the front of the predicate, and will thus override the default
+       definition for some cases).  The default definition is
+
+          essence\_hook( T, T ).
+
+       This predicate is invoked \_in certain contexts\_ when:
+          - two terms are about to be compared (either for equality or to
+            check whether they are variants of each other);
+          - an answer is tabled;
+          - an answer is retrieved from the table.
+
+       The primary intended use is to suppress arguments that carry only
+       administrative information and that may differ in two terms that are
+       "semantically" equal or variants of each other. (Such, for example, is
+       the argument that carries the set of coinductive hypotheses in a
+       co-logic program translated into Prolog: see "../coind/translate\_clp".
+       Mind you, that translation need not be applied to programs executed by
+       this interpreter).
+
+       For example, the presence of
+
+          essence\_hook( p( A, B, \_ ),  p( A, B ) ).
+
+       will result in "p( a, b, c )" and "p( a, b, d )" being treated as
+       identical, as each of them will be translated to "p( a, b )" before
+       comparison.
+
+       NOTE: This facility should be used with the utmost caution, as it
+             may drastically affect the semantics of the interpreted program
+             in a fashion that would be hard to understand for someone who
+             does not understand the details of the interpreter.
+
+ LIMITATIONS: - The interpreted program should not contain cuts.
+              - Error detection is quite rudimentary.

@@ -7,20 +7,21 @@ form.%
   find your way around.}
 
 The interpreter is known to run on Eclipse 6.0 and Sicstus 4.0.  If you plan
-to run programs that take advantage of coinductive programming, you will
-probably do better with Sicstus, which has much better support for cyclic
-terms.
+to run programs that take advantage of coinductive programming, you might
+prefer to use Sicstus, which has much better support for cyclic terms.
 
 For both these systems, the simplest way to proceed is:
 \begin{enumerate}
-\item start your logic programming system;
-\item type in the following directive:\\
+\item
+  start your logic programming system;
+\item
+  type in the following directive:\\
   \ind\prog{:-~[~'}\about{Path}\prog{/tabling/dra'~]}\\
   where \about{Path} is the path to the root of the distribution tree.
 \end{enumerate}
 
-The interpreter is encapsulated in its own module, called \about{dra}.  So
-if you are running Eclipse, you will find life more convenient if you import
+The interpreter is encapsulated in its own module, called \about{dra}.  So if
+you are running Eclipse, you will probably find it more convenient to import
 the module by writing\\
 \ind\prog{:- import dra.}\label{import-dra}\progidx{import}
 
