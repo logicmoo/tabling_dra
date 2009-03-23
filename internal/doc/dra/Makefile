@@ -1,16 +1,13 @@
-all:	dra_manual.dvi
+all:	manual.dvi
 
-dra_manual.dvi: *.tex dra_manual.bbl
-	latex dra_manual
-	makeindex dra_manual
-	latex dra_manual
+manual.dvi: *.tex manual.bbl
+	latex manual
+	makeindex manual
+	latex manual
 
-dra_manual.bbl: bibliography.bib
-	latex dra_manual
-	bibtex dra_manual
+manual.bbl: bibliography.bib
+	latex manual
+	bibtex manual
 
 clean:
 	rm -rf *.aux *.log *.bbl *.blg *.idx *.ind *.ilg *.toc
-
-
-
