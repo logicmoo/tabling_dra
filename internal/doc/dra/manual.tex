@@ -28,17 +28,12 @@
 
 % Three asterisks break the text up where even a subsection is not merited:
 % use this as a separate paragraph:
-\newcommand*{\breakup}{\[\ast\ast\ast\]}
+\newcommand*{\Breakup}{\[\ast\ast\ast\]}
 
 % Definition of a new concept:
-\newcommand*{\defconcept}[1]{\textbf{\emph{#1}}\index{#1|textsl}}
+\newcommand*{\Defconcept}[1]{\textbf{\emph{#1}}\index{#1|textsl}}
 % Ditto if the word is different from the index entry:
-\newcommand*{\defconcepti}[2]{\textbf{\emph{#1}}\index{#2|textsl}}
-
-% Definition in the glossary
-\newcommand*{\defgloss}[1]{#1\index{#1|textsl}}
-% Ditto if the word is different from the index entry:
-\newcommand*{\defglossi}[2]{#1\index{#2|textsl}}
+\newcommand*{\Defconcepti}[2]{\textbf{\emph{#1}}\index{#2|textsl}}
 
 % A short form of a tiny \marginpar:
 \newcommand*{\mpar}[1]{\marginpar{\tiny#1}}
@@ -68,74 +63,21 @@
 \newcommand*{\progidx}[1]{\index{#1@\prog{#1}}}
 
 % A reference to a figure:
-\newcommand*{\figref}[1]{Fig.~\vref{#1}}
-
-% A reference to a listing:
-\newcommand*{\lstref}[1]{Listing~\vref{#1}}
+\newcommand*{\Figref}[1]{Fig.~\vref{#1}}
 
 % A reference to a chapter:
-\newcommand*{\chapref}[1]{chapter~\ref{#1}}
+\newcommand*{\Chapref}[1]{chapter~\ref{#1}}
 
 % A reference to a section:
-\newcommand*{\secref}[1]{Sec.~\ref{#1}}
+\newcommand*{\Secref}[1]{Sec.~\ref{#1}}
 
 % An indentation
 \newcommand*{\ind}{\hbox{\hspace{2em}}}
-
-% Mathcal in normal text:
-\newcommand*{\normcal}[1]{\(\mathcal{#1}\)}
-
-% An explanation in Dijsktra-style proof via eqnarray*:
-\newcommand*{\expl}[1]{\mbox{[~\emph{#1}~]}}
-
-% Abbreviations for use in tabular:
-\newcommand*{\h}{\hspace{1pt}}
-\newcommand*{\mc}[3]{\multicolumn{#1}{#2}{#3}}
-
-% The set of natural numbers: must be in math mode!
-\newcommand*{\N}{\mathcal{N}}
-
-% The powerset of something: must be in math mode!
-\newcommand*{\Power}{\mathcal{P}}
-
-% A binary relation between two arguments: must be in math mode!
-% \binrel{a}{R}{c} to get a R b.
-\newcommand*{\binrel}[3]{#1\,#2\,#3}
-
-% The implication symbols: must be in math mode!
-\newcommand*{\Implies}{\Rightarrow}
-\newcommand*{\Implied}{\Lefttarrow}
-\newcommand*{\IFF}{\Leftrightarrow}
-
-% The disjunction symbol: must be in math mode!
-\newcommand*{\Or}{\vee}
-
-% The conjunction symbol: must be in math mode!
-\newcommand*{\And}{\wedge}
-
-% The dot that divides the quantifier and variables and the quantified
-% formula: must be in math mode!
-\newcommand*{\qdot}{ \;.\;}
-
-% A universally quantified formula: must be in math mode!
-\newcommand*{\All}[2]{(\forall #1 \qdot #2)}
-
-% An equivalence class with for this relation, with this representative: must
-% be in math mode!
-\newcommand*{\EqClass}[2]{[#2]_{#1}}
 
 
 
 %----------------------------------------------------------------------
 %  ENVIRONMENTS
-
-\floatstyle{boxed}
-\newfloat{listing}{htbp}{lst}[chapter]
-\floatname{listing}{Listing}
-
-\newenvironment{warning}%
-{\begin{quote}\textbf{Warning:}\itshape}%
-{\end{quote}}
 
 
 %----------------------------------------------------------------------
