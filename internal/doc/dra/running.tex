@@ -14,9 +14,11 @@ writing\\
   instead of \prog{prog}.
 }\\
 \patt{filename} should be the name of the file that contains your program.
-If the name has no extension, the default extension will be \prog{.tlp}.  If
-the name should have a different extension, you must type in the entire name,
-enclosed in single quotes, e.g.,\\
+If the name has no extension, the default extension will be \prog{.tlp}.%
+\index{default extension (file name)}%
+\index{extension of file name!default}\index{file!name!default extension}
+If the name should have a different extension, you must type in the entire
+name, enclosed in single quotes, e.g.,\\
 \ind\prog{prog(~'myfile.pl'~).}\\
 Quotes must also be used if the file is not in the current directory and you
 are providing an absolute or relative path.
@@ -61,6 +63,19 @@ if you are interested in re-running your program from scratch (so that it
 does not take advantage of answers that were already tabled), you should load
 it again.
 
+Just before the result of a query is reported, the interpreter produces a
+printout with statistics accummulated since the previous printout (or since
+the beginning, if this is the first printout during this session with the
+interpreted program). The printout looks like this:\\
+\ind\prog[}\patt{K}\prog{~steps,~}\patt{M}\prog{~new~answers~tabled~(}%
+\patt{N}\prog{~in~all)]}\\
+\patt{K}, \patt{M} and \patt{N} are natural numbers. \patt{K} is the number
+of evaluated goals, \patt{M} is the number of new additions to the answer
+table and \patt{N} is the current size of the answer table.
+
+Please note that in you might sometimes see new answers tabled in 0 steps:
+this may happen when you ask for more results and the last goal to be
+activated has still not completed its task.
 
 When a query succeeds, the bindings of variables should be printed upto a
 certain maximum depth.  The default value in the distributed version of the
@@ -84,23 +99,27 @@ than just \prog{write( T )}, if you expect the instantiation of
 
 
 %-------------------------------------------------------------------------------
-\Section{Including other files\label{sec:loading}}
+\Section{Including other files\label{sec:including}%
+\index{including a file}\index{file!inclusion}}
 
 To include files (interactively or from other files) you can use the usual
 Prolog syntax:\\
-\ind\prog{:- [~}\patt{file1}\prog{,~}\patt{file2}\prog{,~}\patt{...}\prog{~].}
+\ind
+\prog{:-~[~}\patt{file1}\prog{,~}\patt{file2}\prog{,~}\patt{...}\prog{~].}\\
+The default extension is \prog{.tlp}.
 
 Please note that there is a difference between
 \prog{prog(~}\patt{file}\prog{~)} and \prog{:-~[~}\patt{file}\prog{~].}.  If
-the former is used, the metainterpreter is (re)initialised before loading the
+the former is used, the interpreter is (re)initialised before loading the
 file: all previous information, including the answer table, is cleared.  If
 the latter is used, the contents of the file are just added to the
 interpreter's memory.
 
-It is recommended that these directives be used mostly in the text of a
-program.  All the files that are loaded by an invocation of \pred{prog/1} are
-treated as a single program, and the program is subjected to a number of
-sanity checks.  Files that are included interactively from the top level are
-not checked, and errors such as re-definition of predicates defined in other
-files might lead to unexpected results.
-
+% PROBABLY UNTRUE:
+% It is recommended that these directives be used mostly in the text of a
+% program.  All the files that are loaded by an invocation of \pred{prog/1} are
+% treated as a single program, and the program is subjected to a number of
+% sanity checks.  Files that are included interactively from the top level are
+% not checked, and errors such as re-definition of predicates defined in other
+% files might lead to unexpected results.
+%

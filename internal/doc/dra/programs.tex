@@ -68,118 +68,138 @@ Predicates that are declared as "support" must be defined in other files.  To
 compile and load such files, use the following directive in the text of your
 program:\\
 \ind\prog{:- load\_support(~}\patt{filename}\prog{~).}\\
-The extension of the \patt{filename} will usually be your logic programming
-system's default extension for names of files that contain Prolog code.
+
+In this context, the extension of the \patt{filename} will usually be your
+logic programming system's default extension for names of files that contain
+Prolog code.%
+\index{default extension (file name)}%
+\index{extension of file name!default}\index{file!name!default extension}
+
 
 
 %-------------------------------------------------------------------------------
 \Section{Directives\label{sec:directives}}
 
-    5. The interpreted program may contain declarations of "top" and
-       "support" predicates, in the form of directives:
+Apart from the support directive and directives for file inclusion (see
+\Secref{sec:including}, the interpreter recognizes a number of other
+directives, which are listed below.  Any other directive is treated as an
+error.
+\begin{itemize}
 
-           :- top p/1, q/2.
+\item [Declarations of tabled predicates]
+  To declare a predicate as tabled, use a directive similar to the following:\\
+  \ind\prog{:-~tabled~ancestor/2.}\progidx{tabled}\\
+  The declaration should precede the definition of the predicate.\footnote{
+    In literature about logic programming with tabling one can often
+    encounter the form \prog{:- table~}\patt{...}.  Since the directive is
+    almost universally called a declaration (i.e., not a command), the word
+    \about{tabled} is obviously more appropriate.}
 
+\item [Declarations of coinductive predicates]
+  To declare a predicate as tabled, use a directive similar to the following:\\
+  \ind\prog{:-~coinductive~ancestor/2.}\progidx{coinductive}\\
+  The declaration should precede the definition of the predicate.
 
-       The "top" declaration indicates predicates that will be called "from
-       the outside", so if they are not called in the program, there will be
-       no warning.
-       (This declaration is also recognized when translating coinductive
-        programs into Prolog: see "../coind/translate\_colp".)
-    2. The interpreter supports a number of directives:
+\item [Declarations of ``entry points'']
+  Before execution begins, the program is subjected to a number of useful
+  sanity checks.  One of these is a check whether every defined predicates
+  is actually called from somewhere (i.e., whether there is no dead code).
 
-       a) Tabled and coinductive predicates should be declared as such in
-          the program file, e.g.,
-              :- tabled      ancestor/2.
-              :- coinductive comember/2.
+  Since it is not unusual for a program to contain a handful of such
+  predicates (intended as ``entry points'' that are supposed to be invoked
+  from a query), the user can declare them by using a directive similar to
+  the following:\\
+  \ind\prog{:-~top~p/1,~q/2.}\progidx{top}\\
+  The declaration is given only to suppress warnings.  However, it is an
+  error for an undefined predicate or a support predicate to be so declared.
 
-       b) To include files use the usual Prolog syntax:
-              :- [ file1, file2, ... ].
+\item[Declarations of dynamic predicates]
+  To declare a predicate whose clauses are asserted and/or retracted by the
+  interpreted program, use\\
+  \ind\prog{:-~ dynamic~p/k.}\progidx{dynamic}
 
-       c) To declare predicates used in an interpreted program as dynamic,
-          use
-              :- dynamic p/k.
+\item[Changing the order of results\label{old-first}]
+  By default, a goal produces new (i.e., heretofore unknown) results before
+  producing old ones (see also \Pageref{new-result}).  To reverse this
+  behaviour,  use\\
+  \ind\prog{:-~old\_first~p/k}.\progidx{old\_first}\\
+  or\\
+  \ind{:-~old\_first~all.}
 
-       d) By default, a goal produces new (i.e., heretofore unknown) answers
-          before producing old ones.  To reverse this behaviour, use
+\item[Producing a trace]
+  To produce a wallpaper trace of what happens to some chosen predicates, use
+  a directive similar to the following:\\
+  \ind\prog{:-~trace~p/3,~q/0,~r/1.}\progidx{trace}\\
+  If you want to trace everything, use\\
+  \ind\prog{:-~trace~all.}\\
+  These directives are cumulative.
 
-              :- old\_first p/k.
-          or
-              :- old\_first all.
+  All the details of the trace will not be easy to understand for someone who
+  does not know the details of the DRA method \cite{guo-gupta-dra}, but you
+  can glean some useful information, especially about what new answers are
+  added to the table.
 
-       e) To produce a wallpaper trace use the trace directive. For example,
+\item[Querying the answer table]
+To print out subsets of the current answer table, use\\
+\ind\prog{:-~answers(~}\patt{Goal}\prog{,~}\patt{Pattern}\prog{~).}%
+\progidx{answers}\\
+where \patt{Goal} and \patt{Pattern} are terms.
+This will print all tabled answer that are associated with a variant of the
+goal and unifiable with the pattern.
 
-              :- trace p/3, q/0, r/1.
+To produce a dump of the entire table, use just\\
+\ind\prog{:-~answers.}
 
-          will trace predicates "p/3", "q/0" and "r/1".  If you want to trace
-          everything, use
+\item[Producing a trace]
+  To produce a wallpaper trace of what happens to some chosen predicates, use
+  a directive similar to the following:\\
+  \ind\prog{:-~trace~p/3,~q/0,~r/1.}\progidx{trace}\\
+  If you want to trace everything, use\\
+  \ind\prog{:-~trace~all.}\\
+  These directives are cumulative.
 
-              :- trace all.
+  All the details of the trace will not be easy to understand for someone who
+  does not know the details of the DRA method \cite{guo-gupta-dra}, but you
+  can glean some useful information, especially about how new answers are
+  added to the table.
 
-          These directives are cumulative.
-
-       f) To print out subsets of the current answer table, use
-
-              :- answers( Goal, Pattern ).
-
-          this will print tabled answer that is associated with a variant
-          of the goal and unifiable with Pattern.
-          To get a dump of the entire table, use just
-
-              :- answers.
-
-    2. The program should contain no other directives. It may, however,
-       contain queries, which will be executed immediately upon reading.
-
-    3. Just before the result of a query is reported, the interpreter
-       produces a printout with statistics accummulated since the previous
-       printout (or since the beginning, if this is the first printout during
-       this session with the interpreted program). The printout looks like
-       this:
-
-           [K steps, M new answers tabled (N in all)]
-
-       where K, M and N are some natural numbers. K is the number of
-       evaluated goals, M is the number of new additions to the answer table,
-       N is the current size of the answer table.
+\end{itemize}
 
 
 %-------------------------------------------------------------------------------
 \Section{hooks\label{sec:hooks}}
 
-    5. The program may contain clauses that modify the definition of the
-       interpreter's predicate "essence\_hook/2" (the clauses will be asserted
-       at the front of the predicate, and will thus override the default
-       definition for some cases).  The default definition is
+The program may contain clauses that modify the definition of the
+interpreter's predicate \pred{essence\_hook/2} (the clauses will be asserted
+at the front of the predicate, and will thus override the default definition
+for some cases).  The interpreter's default definition is\\
+\ind\prog{essence\_hook(~T,~T~).}
 
-          essence\_hook( T, T ).
+This predicate is invoked, in certain contexts, when:
+\begin{LightItemize}
+  \item
+    two terms are about to be compared (either for equality or to check
+    whether they are variants of each other);
+  \item
+    an answer is tabled;
+  \item
+    an answer is retrieved from the table.
+\end{LightItemize}
 
-       This predicate is invoked \_in certain contexts\_ when:
-          - two terms are about to be compared (either for equality or to
-            check whether they are variants of each other);
-          - an answer is tabled;
-          - an answer is retrieved from the table.
+The primary intended use is to suppress arguments that carry only
+administrative information and that may differ in two terms that are
+``semantically'' equal or variants of each other.
 
-       The primary intended use is to suppress arguments that carry only
-       administrative information and that may differ in two terms that are
-       "semantically" equal or variants of each other. (Such, for example, is
-       the argument that carries the set of coinductive hypotheses in a
-       co-logic program translated into Prolog: see "../coind/translate\_clp".
-       Mind you, that translation need not be applied to programs executed by
-       this interpreter).
+For example, the presence of\\
+\ind\prog{essence\_hook(~p(~A,~B,~\_~),~~p(~A,~B~)~).}\\
 
-       For example, the presence of
+will result in \prog{p(~a,~b,~c~)} and \prog{p(~a,~b,~d~)} being treated as
+identical, as each of them will be translated to \prog{p(~a,~b~)} before
+comparison.
 
-          essence\_hook( p( A, B, \_ ),  p( A, B ) ).
-
-       will result in "p( a, b, c )" and "p( a, b, d )" being treated as
-       identical, as each of them will be translated to "p( a, b )" before
-       comparison.
-
-       NOTE: This facility should be used with the utmost caution, as it
-             may drastically affect the semantics of the interpreted program
-             in a fashion that would be hard to understand for someone who
-             does not understand the details of the interpreter.
-
- LIMITATIONS: - The interpreted program should not contain cuts.
-              - Error detection is quite rudimentary.
+\begin{Warning}
+This facility should be used with the utmost caution, as it may drastically
+affect the semantics of the interpreted program in a fashion that would be
+hard to understand for someone who does not understand the details of the
+interpreter.
+\end{Warning}

@@ -53,8 +53,8 @@
 %%%
 %%%              :- answers( Goal, Pattern ).
 %%%
-%%%          this will print tabled answer that is associated with a variant
-%%%          of the goal and unifiable with Pattern.
+%%%          this will print all tabled answers that are associated with a
+%%%          variant of Goal and unifiable with Pattern.
 %%%          To get a dump of the entire table, use just
 %%%
 %%%              :- answers.

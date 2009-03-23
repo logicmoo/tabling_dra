@@ -34,11 +34,12 @@ respect to the original description \cite{guo-gupta-dra}:
 \item
   By default, new results for a tabled goal will be produced before old
   answers.  The user can reverse the order by issuing the directive\\
-  \ind\prog{:-~old\_first.}
+  \ind\prog{:-~old\_first.}\\
+  (see \Pageref{old-first}).
 
-  A ``new result for a tabled goal'' is a result that has not yet been
-  tabled for this goal.  (More precisely: the table does not contain a
-  variant of this result associated with a variant of this goal.)
+  A ``new result for a tabled goal''\label{new-result} is a result that has
+  not yet been tabled for this goal.  (More precisely: the table does not
+  contain a variant of this result associated with a variant of this goal.)
 
   The default behaviour is intended to help computations converge more
   quickly.  The user is given an option to change it, because some predicates
