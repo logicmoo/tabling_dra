@@ -57,7 +57,7 @@
 %%%          variant of Goal and unifiable with Pattern.
 %%%          To get a dump of the entire table, use just
 %%%
-%%%              :- answers.
+%%%              :- answers( _, _ ).
 %%%
 %%%    2. The program should contain no other directives. It may, however,
 %%%       contain queries, which will be executed immediately upon reading.
@@ -664,10 +664,6 @@ execute_directive( answers( Goal, Pattern ) ) :-
         print_required_answers( Goal, Pattern ).
 
 
-execute_directive( answers ) :-
-        print_all_answers.
-
-
 %% will_trace( + list of patterns ):
 %% Store the patterns in tracing/1:
 
@@ -681,7 +677,23 @@ will_trace( _ ).
 
 %% print_required_answers( + goal, + pattern ):
 %% Print the tabled answers that are associated with this goal and are unifiable
-%% with this pattern.
+%% with this pattern.  If the goal is a variable, go through all the entries in
+%% the table.
+
+print_required_answers( Var, Pattern ) :-
+        var( Var ),
+        !,
+        findall( Goal, answer( _, Goal, _ ), Goals ),
+        remove_variants( Goals, DifferentGoals ),
+        sort( DifferentGoals, SortedDifferentGoals ),
+        (
+            member( Goal, SortedDifferentGoals ),      % iterate through members
+            print_required_answers( Goal, Pattern ),
+            nl,
+            fail
+        ;
+            true
+        ).
 
 print_required_answers( Goal, Pattern ) :-
         copy_term( Goal, OriginalGoal ),
@@ -693,23 +705,6 @@ print_required_answers( Goal, Pattern ) :-
         fail.
 
 print_required_answers( _, _ ).
-
-
-%% print_all_answers:
-%% Print all the tabled answers, taking care to group them by the indexing goal.
-
-print_all_answers :-
-        findall( Goal, answer( _, Goal, _ ), Goals ),
-        remove_variants( Goals, DifferentGoals ),
-        sort( DifferentGoals, SortedDifferentGoals ),
-        (
-            member( Goal, SortedDifferentGoals ),      % iterate through members
-            print_required_answers( Goal, _ ),
-            nl,
-            fail
-        ;
-            true
-        ).
 
 
 %% remove_variants( + list, - reduced list ):
