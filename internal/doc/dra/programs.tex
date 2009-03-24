@@ -7,16 +7,17 @@
 
 The interpreter does not support full Prolog.  Here are the main limitations
 of the interpreted language:
-\begin{enumerate}
+\begin{Enumerate}
 
 \item
-  The interpreted program must not contain cuts.  Use of the conditional
-  construct is permitted, as is the use of \pred{once/1}.
+  The interpreted program must not contain cuts\index{cut}.  Use of the
+  conditional construct\index{conditional construct} is permitted, as is the
+  use of \predidx{once/1}.
 
 \item
   The interpreted program must not contain variable literals.  It may contain
-  invocations of \pred{call/1}, but if the argument of \pred{call/1} is not
-  properly instantiated at runtime, the results will be undefined.
+  invocations of \predidx{call/1}, but if the argument of \pred{call/1} is
+  not properly instantiated at runtime, the results will be undefined.
 
   In some cases the interpreter can verify that the argument of an occurrence
   of \pred{call/1} cannot be instantiated at run-time, and it will then raise
@@ -24,15 +25,14 @@ of the interpreted language:
   error message does not mean that the program is correct in that respect.
 
 \item
-  The repertoire of built-in procedures recognized by the interpreter is
-  somewhat limited.  This is done by design, to facilitate porting to
-  different Prolog systems.  The recognized built-ins are declared in the
-  file \prog{dra\_builtins.pl}, and new built-ins can be added as the need
-  arises.  For most built-ins it is a matter of just adding another line to
-  the file, but a few might require special treatment by the
-  interpreter.\footnote{
-    Please contact me if you have question or encounter any problems.}
-\end{enumerate}
+  The repertoire of built-in predicates\index{built-in predicates} recognized
+  by the interpreter is somewhat limited.  This is done by design, to
+  facilitate porting to different Prolog systems.  The recognized built-ins
+  are declared in the file \prog{dra\_builtins.pl}, and new declarations can be
+  added as the need arises.  For most built-ins it is a matter of just adding
+  another line to the file, but a few might require special treatment by the
+  interpreter.
+\end{Enumerate}
 
 If those limitations seem too strict, you may in some cases get around them
 by separating your program into two layers: see \Secref{sec:support}.
@@ -67,13 +67,14 @@ by the upper layer.
 Predicates that are declared as "support" must be defined in other files.  To
 compile and load such files, use the following directive in the text of your
 program:\\
-\ind\prog{:- load\_support(~}\patt{filename}\prog{~).}\\
+\ind\prog{:- load\_support(~\patt{filename}~).}\\
 
-In this context, the extension of the \patt{filename} will usually be your
+In this context, the default extension of the \patt{filename} will be your
 logic programming system's default extension for names of files that contain
 Prolog code.%
 \index{default extension (file name)}%
-\index{extension of file name!default}\index{file!name!default extension}
+\index{extension of file name!default}%
+\index{file!name!default extension}
 
 
 
@@ -89,11 +90,7 @@ error.
 \item [Declarations of tabled predicates]
   To declare a predicate as tabled, use a directive similar to the following:\\
   \ind\prog{:-~tabled~ancestor/2.}\progidx{tabled}\\
-  The declaration should precede the definition of the predicate.\footnote{
-    In literature about logic programming with tabling one can often
-    encounter the form \prog{:- table~}\patt{...}.  Since the directive is
-    almost universally called a declaration (i.e., not a command), the word
-    \about{tabled} is obviously more appropriate.}
+  The declaration should precede the definition of the predicate.
 
 \item [Declarations of coinductive predicates]
   To declare a predicate as tabled, use a directive similar to the following:\\
@@ -141,7 +138,7 @@ error.
 
 \item[Querying the answer table]
 To print out subsets of the current answer table, use\\
-\ind\prog{:-~answers(~}\patt{Goal}\prog{,~}\patt{Pattern}\prog{~).}%
+\ind\prog{:-~answers(~\patt{Goal},~Pattern~).}%
 \progidx{answers}\\
 where \patt{Goal} and \patt{Pattern} are terms.
 This will print all tabled answer that are associated with a variant of the
@@ -167,7 +164,7 @@ To produce a dump of the entire table, use just\\
 
 
 %-------------------------------------------------------------------------------
-\Section{hooks\label{sec:hooks}}
+\Section{Hooks\label{sec:hooks}}
 
 The program may contain clauses that modify the definition of the
 interpreter's predicate \pred{essence\_hook/2} (the clauses will be asserted

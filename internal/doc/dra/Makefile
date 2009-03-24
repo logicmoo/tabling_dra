@@ -4,6 +4,7 @@ manual.dvi: *.tex manual.bbl
 	latex manual
 	makeindex manual
 	latex manual
+	latex manual
 
 manual.bbl: bibliography.bib
 	latex manual

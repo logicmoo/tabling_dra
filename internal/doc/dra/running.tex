@@ -7,14 +7,15 @@
 Once you have loaded the interpreter into your logic programing system, you
 may want to load and run a program in the interpreter. This is done by
 writing\\
-\ind\prog{prog(~}\patt{filename}\prog{~ ).}\progidx{prog}%
+\ind\prog{prog(~\patt{filename}~).}\progidx{prog}%
 \footnote{
   If you are running in Eclipse, and have not imported the module \about{dra}
   (as explained on \Pageref{import-dra}), you must write \prog{dra:prog}
   instead of \prog{prog}.
 }\\
 \patt{filename} should be the name of the file that contains your program.
-If the name has no extension, the default extension will be \prog{.tlp}.%
+If the name is given with no extension, the default extension
+\prog{.tlp} will be automatically appended to it.%
 \index{default extension (file name)}%
 \index{extension of file name!default}\index{file!name!default extension}
 If the name should have a different extension, you must type in the entire
@@ -64,25 +65,23 @@ does not take advantage of answers that were already tabled), you should load
 it again.
 
 Just before the result of a query is reported, the interpreter produces a
-printout with statistics accummulated since the previous printout (or since
-the beginning, if this is the first printout during this session with the
-interpreted program). The printout looks like this:\\
-\ind\prog[}\patt{K}\prog{~steps,~}\patt{M}\prog{~new~answers~tabled~(}%
-\patt{N}\prog{~in~all)]}\\
-\patt{K}, \patt{M} and \patt{N} are natural numbers. \patt{K} is the number
-of evaluated goals, \patt{M} is the number of new additions to the answer
-table and \patt{N} is the current size of the answer table.
+printout with statistics accummulated since the previous such printout (or
+since the beginning, if this is the first printout during this session with
+the interpreted program). The printout looks like
+this:\\ \ind\prog{[\patt{K}~steps,~\patt{M}~new~answers~tabled~(\patt{N}~in~all)]}\\ \patt{K},
+\patt{M} and \patt{N} are natural numbers. \patt{K} is the number of
+evaluated goals, \patt{M} is the number of new additions to the answer table,
+and \patt{N} is the current size of the answer table.
 
 Please note that in you might sometimes see new answers tabled in 0 steps:
-this may happen when you ask for more results and the last goal to be
-activated has still not completed its task.
+this may happen when you ask for more results (by typing a semicolon) and the
+last goal to be activated has still not completed its task.
 
 When a query succeeds, the bindings of variables should be printed upto a
 certain maximum depth.  The default value in the distributed version of the
 interpreter is 10.  The maximum depth can be changed from the interpreted
 program (or interactively from the top-level) by invoking\\
-\ind\prog{set\_print\_depth(~}\patt{N}\prog{~)}\progidx{set\_print\_depth}
-
+\ind\prog{set\_print\_depth(~\patt{N}~)}\progidx{set\_print\_depth}\\
 where \patt{N} is a positive integer.
 
 Please note that with some Prolog implementations this might not prevent a
@@ -91,10 +90,10 @@ programs).
 
 Note also that the foregoing does not apply to invocations of built-in
 predicates in the interpreted program.  It is up to the user to apply the
-built-in appropriate for the host logic programming system.  For example, in
-the case of Sicstus, use \prog{write\_term(~T,~[~max\_depth(~10~)~]~)}, rather
-than just \prog{write( T )}, if you expect the instantiation of
-\prog{T} to be cyclic.
+built-in that is appropriate for the host logic programming system.  For
+example, in the case of Sicstus, use
+\prog{write\_term(~T,~[~max\_depth(~10~)~]~)}, rather than just \prog{write(
+  T )}, if you expect the instantiation of \prog{T} to be cyclic.
 
 
 
@@ -105,15 +104,16 @@ than just \prog{write( T )}, if you expect the instantiation of
 To include files (interactively or from other files) you can use the usual
 Prolog syntax:\\
 \ind
-\prog{:-~[~}\patt{file1}\prog{,~}\patt{file2}\prog{,~}\patt{...}\prog{~].}\\
-The default extension is \prog{.tlp}.
+\prog{:-~[~\patt{file1},~\patt{file2},~\patt{...}~].}\\
+The default extension is \prog{.tlp}.%
+\index{default extension (file name)}%
+\index{extension of file name!default}\index{file!name!default extension}
 
-Please note that there is a difference between
-\prog{prog(~}\patt{file}\prog{~)} and \prog{:-~[~}\patt{file}\prog{~].}.  If
-the former is used, the interpreter is (re)initialised before loading the
-file: all previous information, including the answer table, is cleared.  If
-the latter is used, the contents of the file are just added to the
-interpreter's memory.
+Please note that \prog{:-~[~\patt{file}~].} is not equivalent to
+\prog{prog(~\patt{file}~)}. If the former is used, the contents of the file
+are just added to the interpreter's memory. If the latter is used, the
+interpreter is (re)initialised before loading the file: all previous
+information, including the answer table, disappears.
 
 % PROBABLY UNTRUE:
 % It is recommended that these directives be used mostly in the text of a

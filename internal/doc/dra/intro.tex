@@ -21,7 +21,7 @@ coinductive predicates \cite{coinductive}, \cite{co-LP}.
 
 Apart from support for coinduction, there are two significant changes with
 respect to the original description \cite{guo-gupta-dra}:
-\begin{enumerate}
+\begin{Enumerate}
 
 \item
   A tabled goal will never produce the same answer twice.\footnote{
@@ -34,8 +34,7 @@ respect to the original description \cite{guo-gupta-dra}:
 \item
   By default, new results for a tabled goal will be produced before old
   answers.  The user can reverse the order by issuing the directive\\
-  \ind\prog{:-~old\_first.}\\
-  (see \Pageref{old-first}).
+  \ind\prog{:-~old\_first.}
 
   A ``new result for a tabled goal''\label{new-result} is a result that has
   not yet been tabled for this goal.  (More precisely: the table does not
@@ -45,19 +44,32 @@ respect to the original description \cite{guo-gupta-dra}:
   quickly.  The user is given an option to change it, because some predicates
   may produce a very large (even infinite) set of answers on backtracking,
   and the application might not require those answers.
-\end{enumerate}
+\end{Enumerate}
 
 
 %-------------------------------------------------------------------------------
-\Section{Tabling\label{sec:tabling}}
+\Section{Tabling\label{sec:tabling}}%
+\index{tabled predicate}%
+\index{predicate!tabled}
 
-When you declare a predicate as tabled\index{tabled predicate}, there will be
+By default, each predicate that is defined in the interpreted program is a
+``normal'' Prolog predicate.  If you want a predicate (\pred{p/2}, say) to be
+tabled, you must put an appropriate declaring directive in your
+program:%
+\footnote{
+    In literature about logic programming with tabling one can often
+    encounter the form \prog{:- table p/2}.  Since the directive is
+    almost universally called a declaration (and not a command), the word
+    \about{tabled} is obviously more appropriate.}\\
+\ind\prog{:-~tabled~p/2.}\progidx{tabled}
+
+When you declare a predicate as tabled, there will be
 two consequences:
-\begin{enumerate}
-
-\item Every time a goal with this predicate symbol (i.e., an invocation of
-  this predicate) succeeds, the result is stored in a table.  Such a tabled
-  result is commonly referred to as an ``answer''.\index{answer}
+\begin{Enumerate}
+\item
+  Every time a goal with this predicate symbol (i.e., an invocation of this
+  predicate) succeeds, the result is stored in a table.  Such a tabled result
+  is commonly referred to as an ``answer''.\index{answer}
 
   Once all the possible results have been so stored, subsequent invocations
   can draw upon the tabled answers, instead of recomputing them all over
@@ -67,9 +79,22 @@ two consequences:
   not sufficiently close to pure Prolog, e.g., if it relies on and/or
   produces side-effects, then all bets are off.)
 
-  This may not always be as advantageous as one might think, for two reasons:
-  \begin{enumerate}
-  \item If the number of results is large, and goals are seldom repeated, the
+\item
+  When a goal that invokes a tabled predicate is found to be a variant of one
+  of its ancestors on the recursion stack, the goal is not
+  expanded.\footnote{
+    Instead, it succeeds with results that have already been put into the
+    table (or fails if there are none).  Things are arranged so that no
+    results are lost.}
+  This allows you to write your predicates in a more declarative fashion,
+  without worrying, e.g., about the danger of left recursion.
+\end{Enumerate}
+
+
+Tabling is not always as advantageous as one might think, for two reasons:
+  \begin{Enumerate}
+  \item
+    If the number of results is large, and goals are seldom repeated, the
     main effect might be a significantly increased demand for memory, which
     is not offset by shorter processing time.
 
@@ -79,28 +104,26 @@ two consequences:
     predicate will require recomputation, and the computed results will
     increase the size of the table, even if they are the same as those that
     have already been stored for another goal.
-  \end{enumerate}
+  \end{Enumerate}
 
-\item When a goal that invokes a tabled predicate is found to be a variant of
-  one of its ancestors on the recursion stack, the goal is not
-  expanded.\footnote{
-    Instead, it succeeds with results that have already been put into the
-    table (or fails if there are none).  Things are arranged so that all the
-    results that can be computed will eventually wind up in the table.}
-  This allows you to write your predicates in a more declarative fashion,
-  without worrying, e.g., about the danger of left recursion.
-\end{enumerate}
+
 A more extensive discussion of tabling is well outside the scope of this user
 manual.
 
 
 
 %-------------------------------------------------------------------------------
-\Section{Coinduction\label{sec:coindution}}
+\Section{Coinduction\label{sec:coindution}}%
+\index{coinductive predicate}%
+\index{predicate!coinductive}
 
-When you declare a predicate as coinductive\index{coinductive predicate},
-there is only one effect:
-\begin{itemize}
+If you want a predicate (\pred{p/2}, say) to be treated as a coinductive
+predicate, you must put an appropriate declaring directive in your
+program:\\
+\ind\prog{:-~coinductive~p/2.}\progidx{coinductive}
+
+When you declare a predicate as coinductive, there is only one effect:
+\begin{Itemize}
   \item
     If a goal that invokes a coinductive predicate is found to be unifiable
     with an ancestor on the recursion stack, the goal is unified with the
@@ -109,9 +132,9 @@ there is only one effect:
       In \about{dra} this is done in reverse chronological order, i.e.,
       the more immediate ancestors are used first.
     }, and expanded in the normal way (i.e., by
-    using clauses) only when all the unifiable ancestors have been taked
+    using clauses) only when all the unifiable ancestors have been taken
     advantage of in this manner.
-\end{itemize}
+\end{Itemize}
 This gives the predicate a radically new meaning, which is often the
 appropriate one for operations on ``infinite'' terms (represented by cyclic
 terms).  Again, further discussion of the concept is outside the scope of
