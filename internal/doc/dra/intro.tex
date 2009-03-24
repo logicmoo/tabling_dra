@@ -34,7 +34,7 @@ respect to the original description \cite{guo-gupta-dra}:
 \item
   By default, new results for a tabled goal will be produced before old
   answers.  The user can reverse the order by issuing the directive\\
-  \ind\prog{:-~old\_first.}
+  \ind\prog{:-~old\_first.}\label{dir:old-first}\progidx{old\_first}
 
   A ``new result for a tabled goal''\label{new-result} is a result that has
   not yet been tabled for this goal.  (More precisely: the table does not
@@ -61,7 +61,7 @@ program:%
     encounter the form \prog{:- table p/2}.  Since the directive is
     almost universally called a declaration (and not a command), the word
     \about{tabled} is obviously more appropriate.}\\
-\ind\prog{:-~tabled~p/2.}\progidx{tabled}
+\ind\prog{:-~tabled~p/2.}\label{dir:tabled}\progidx{tabled}
 
 When you declare a predicate as tabled, there will be
 two consequences:
@@ -120,7 +120,7 @@ manual.
 If you want a predicate (\pred{p/2}, say) to be treated as a coinductive
 predicate, you must put an appropriate declaring directive in your
 program:\\
-\ind\prog{:-~coinductive~p/2.}\progidx{coinductive}
+\ind\prog{:-~coinductive~p/2.}\label{dir:coinductive}\progidx{coinductive}
 
 When you declare a predicate as coinductive, there is only one effect:
 \begin{Itemize}

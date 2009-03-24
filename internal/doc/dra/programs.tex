@@ -53,7 +53,8 @@ host logic programming system.
 The interface between the two layers consists of a handful of entry-point
 predicates, each of which is  declared by a directive similar to the
 following one:\\
-\ind\prog{:- support check\_consistency/1.}\progidx{support}\\
+\ind\prog{:- support check\_consistency/1.}%
+\label{dir:support}\progidx{support}\\
 Please note that this directive cannot be entered interactively: it must be
 included in the text of the upper layer part of your program.
 
@@ -67,100 +68,95 @@ by the upper layer.
 Predicates that are declared as "support" must be defined in other files.  To
 compile and load such files, use the following directive in the text of your
 program:\\
-\ind\prog{:- load\_support(~\patt{filename}~).}\\
-
-In this context, the default extension of the \patt{filename} will be your
-logic programming system's default extension for names of files that contain
-Prolog code.%
+\ind\prog{:- load\_support(~\patt{filename}~).}%
+\label{dir:load-support}\progidx{load\_support}\\
+In this context, the default extension of the \patt{filename} will be the
+default extension used by the host logic programming system for names
+of files that contain Prolog code.%
 \index{default extension (file name)}%
-\index{extension of file name!default}%
-\index{file!name!default extension}
+\index{extension of file name!default}% \index{file!name!default extension}
 
 
 
 %-------------------------------------------------------------------------------
-\Section{Directives\label{sec:directives}}
+\Section{Declaration of entry points\label{sec:entry-points}}
 
-Apart from the support directive and directives for file inclusion (see
-\Secref{sec:including}, the interpreter recognizes a number of other
-directives, which are listed below.  Any other directive is treated as an
-error.
-\begin{itemize}
+Before execution begins, the interpreted program is subjected to a number of
+useful sanity checks.  One of these is a check whether every defined
+predicate is actually called from somewhere (i.e., whether there is no dead
+code).
 
-\item [Declarations of tabled predicates]
-  To declare a predicate as tabled, use a directive similar to the following:\\
-  \ind\prog{:-~tabled~ancestor/2.}\progidx{tabled}\\
-  The declaration should precede the definition of the predicate.
+Since it is not unusual for a program to contain a handful of such predicates
+(intended as ``entry points'' that are to be invoked from a query),
+the user can declare them by using a directive similar to the following:\\
+\ind\prog{:-~top~p/1,~q/2.}\label{dir:top}\progidx{top}\\
+The declaration is given only to suppress warnings.  However, it is an error
+for an undefined predicate or a support predicate to be so declared.
 
-\item [Declarations of coinductive predicates]
-  To declare a predicate as tabled, use a directive similar to the following:\\
-  \ind\prog{:-~coinductive~ancestor/2.}\progidx{coinductive}\\
-  The declaration should precede the definition of the predicate.
 
-\item [Declarations of ``entry points'']
-  Before execution begins, the program is subjected to a number of useful
-  sanity checks.  One of these is a check whether every defined predicates
-  is actually called from somewhere (i.e., whether there is no dead code).
 
-  Since it is not unusual for a program to contain a handful of such
-  predicates (intended as ``entry points'' that are supposed to be invoked
-  from a query), the user can declare them by using a directive similar to
-  the following:\\
-  \ind\prog{:-~top~p/1,~q/2.}\progidx{top}\\
-  The declaration is given only to suppress warnings.  However, it is an
-  error for an undefined predicate or a support predicate to be so declared.
+%-------------------------------------------------------------------------------
+\Section{Inspecting the answer table\label{sec:answer-table}}
 
-\item[Declarations of dynamic predicates]
-  To declare a predicate whose clauses are asserted and/or retracted by the
-  interpreted program, use\\
-  \ind\prog{:-~ dynamic~p/k.}\progidx{dynamic}
+In principle, the answer table is an auxiliary data structure that is, in
+effect, accessed by normal queries.
 
-\item[Changing the order of results\label{old-first}]
-  By default, a goal produces new (i.e., heretofore unknown) results before
-  producing old ones (see also \Pageref{new-result}).  To reverse this
-  behaviour,  use\\
-  \ind\prog{:-~old\_first~p/k}.\progidx{old\_first}\\
-  or\\
-  \ind{:-~old\_first~all.}
+However, the interpreter gives you the possibility of looking ``under its
+hood'' by accessing the table directly.  This might be useful for assessing
+the efficacy of your tabling declarations, or simply for satisfying your
+curiosity.
 
-\item[Producing a trace]
-  To produce a wallpaper trace of what happens to some chosen predicates, use
-  a directive similar to the following:\\
-  \ind\prog{:-~trace~p/3,~q/0,~r/1.}\progidx{trace}\\
-  If you want to trace everything, use\\
-  \ind\prog{:-~trace~all.}\\
-  These directives are cumulative.
-
-  All the details of the trace will not be easy to understand for someone who
-  does not know the details of the DRA method \cite{guo-gupta-dra}, but you
-  can glean some useful information, especially about what new answers are
-  added to the table.
-
-\item[Querying the answer table]
 To print out subsets of the current answer table, use\\
-\ind\prog{:-~answers(~\patt{Goal},~Pattern~).}%
-\progidx{answers}\\
+\ind\prog{:-~answers(~\patt{Goal},~\patt{Pattern}~).}%
+\label{dir:answers}\progidx{answers}\\
 where \patt{Goal} and \patt{Pattern} are terms.
 This will print all tabled answer that are associated with a variant of the
-goal and unifiable with the pattern.
+goal and unifiable with the pattern.  If the first argument is a variable,
+the pattern will be used as a filter for all the answers in the table.
 
-To produce a dump of the entire table, use just\\
-\ind\prog{:-~answers.}
+To produce a dump of the entire table, just use\\
+\ind\prog{:-~answers(~\_,~\_~).}
 
-\item[Producing a trace]
-  To produce a wallpaper trace of what happens to some chosen predicates, use
-  a directive similar to the following:\\
-  \ind\prog{:-~trace~p/3,~q/0,~r/1.}\progidx{trace}\\
-  If you want to trace everything, use\\
-  \ind\prog{:-~trace~all.}\\
-  These directives are cumulative.
+Please note that this sort of query must have the form of a directive.  This
+is so even when you are interacting with the top level:  if you give it
+just\\
+\ind\prog{answers(~\_,~\_~).}\\
+this will be treated as a query, equivalent to\\
+\ind\prog{?-~answers(~\_,~\_~).}\\
+and the interpreter will try to invoke the predicate \pred{answers/2} in your
+program.  The good news is that nothing prevents you from having such a
+predicate, i.e., the identifier \about{answers} is not reserved in any way.
 
-  All the details of the trace will not be easy to understand for someone who
-  does not know the details of the DRA method \cite{guo-gupta-dra}, but you
-  can glean some useful information, especially about how new answers are
-  added to the table.
 
-\end{itemize}
+
+%-------------------------------------------------------------------------------
+\Section{The ``wallpaper'' trace\label{sec:walpaper-trace}}
+
+The interpreter does not incorporate an interactive debugger, but it can
+produce a long trace of what happens during the execution of an interpreted
+program.  This facility is useful mainly for helping to diagnose problems
+with the interpreter: some of the information in the trace will not be easy
+to understand for someone who does not know the details of the DRA
+method~\cite{guo-gupta-dra}, and I will not try to explain it all here.
+Still, you might sometimes be able to get some useful information from the
+trace, e.g, about how new answers are added to the table.
+
+To produce a wallpaper trace of what happens to some chosen predicates, use a
+directive similar to the following:\\
+\ind\prog{:-~trace~p/3,~q/0,~r/1.}\label{dir:trace}\progidx{trace}\\
+If you want to trace everything, use\\
+\ind\prog{:-~trace~all.}\\
+These directives are cumulative.
+
+
+%-------------------------------------------------------------------------------
+\Section{Declaring a dynamic predicate\label{sec:dynamic}}
+
+To declare a predicate whose clauses are asserted and/or retracted by the
+interpreted program, use\index{predicate!dynamic}\\
+\ind\prog{:-~ dynamic~p/k.}\label{dir:dynamic}\progidx{dynamic}
+
+\vfill %<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 %-------------------------------------------------------------------------------
@@ -183,20 +179,19 @@ This predicate is invoked, in certain contexts, when:
     an answer is retrieved from the table.
 \end{LightItemize}
 
-The primary intended use is to suppress arguments that carry only
+The primary intended use is to allow suppression of arguments that carry only
 administrative information and that may differ in two terms that are
 ``semantically'' equal or variants of each other.
 
 For example, the presence of\\
 \ind\prog{essence\_hook(~p(~A,~B,~\_~),~~p(~A,~B~)~).}\\
-
 will result in \prog{p(~a,~b,~c~)} and \prog{p(~a,~b,~d~)} being treated as
 identical, as each of them will be translated to \prog{p(~a,~b~)} before
 comparison.
 
 \begin{Warning}
 This facility should be used with the utmost caution, as it may drastically
-affect the semantics of the interpreted program in a fashion that would be
-hard to understand for someone who does not understand the details of the
+affect the semantics of the interpreted program in a fashion that could be
+hard to understand for someone who is not familiar with the details of the
 interpreter.
 \end{Warning}

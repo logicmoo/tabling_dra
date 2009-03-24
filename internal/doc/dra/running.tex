@@ -28,7 +28,7 @@ As the file is being read and loaded, directives and queries are interpreted
 on-the-fly. Each query is evaluated to give all solutions (i.e., as if the
 user kept responding with a semicolon): to avoid that you can use the
 built-in predicate \pred{once/1} in the queries.
-
+\vfill %<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 %-------------------------------------------------------------------------------
 \Section{Interacting with a loaded program\label{sec:interacting}}
@@ -73,6 +73,7 @@ this:\\ \ind\prog{[\patt{K}~steps,~\patt{M}~new~answers~tabled~(\patt{N}~in~all)
 evaluated goals, \patt{M} is the number of new additions to the answer table,
 and \patt{N} is the current size of the answer table.
 
+
 Please note that in you might sometimes see new answers tabled in 0 steps:
 this may happen when you ask for more results (by typing a semicolon) and the
 last goal to be activated has still not completed its task.
@@ -81,7 +82,7 @@ When a query succeeds, the bindings of variables should be printed upto a
 certain maximum depth.  The default value in the distributed version of the
 interpreter is 10.  The maximum depth can be changed from the interpreted
 program (or interactively from the top-level) by invoking\\
-\ind\prog{set\_print\_depth(~\patt{N}~)}\progidx{set\_print\_depth}\\
+\ind\prog{set\_print\_depth(~\patt{N}~)}\predidx{set\_print\_depth/1}\\
 where \patt{N} is a positive integer.
 
 Please note that with some Prolog implementations this might not prevent a
@@ -104,7 +105,7 @@ example, in the case of Sicstus, use
 To include files (interactively or from other files) you can use the usual
 Prolog syntax:\\
 \ind
-\prog{:-~[~\patt{file1},~\patt{file2},~\patt{...}~].}\\
+\prog{:-~[~\patt{file1},~\patt{file2},~\patt{...}~].}\label{dir:include}\\
 The default extension is \prog{.tlp}.%
 \index{default extension (file name)}%
 \index{extension of file name!default}\index{file!name!default extension}

@@ -6,7 +6,7 @@
 \usepackage{makeidx,showidx}
 \usepackage{index}  % prevents expansion in index entries, needed for progidx
 
-\proofmodetrue      %  <<<< (index) suppress for the final copy <<<<<<
+%\proofmodetrue      %  <<<< (index) suppress for the final copy <<<<<<
 
 
 \makeindex
@@ -114,6 +114,17 @@
                }}%
                {\end{list}}
 
+% A lightweight enumerate, labeled with (a), {b):
+\newcounter{lightenumcnt}
+\newenvironment{LightEnumerate}
+               {\begin{list}{(\alph{lightenumcnt})}%
+                   {\setlength{\itemsep}{0pt}%
+                     \setlength{\topsep}{0pt}%
+                     \settowidth{\labelwidth}{(m)}%
+                     \usecounter{lightenumcnt}%
+               }}%
+               {\end{list}}
+
 %----------------------------------------------------------------------
 \title{The DRA Interpreter\\
 User Manual}
@@ -139,6 +150,7 @@ User Manual}
 \include{starting}
 \include{running}
 \include{programs}
+\include{directives}
 
 \bibliography{bibliography}
 \vfill\pagebreak
