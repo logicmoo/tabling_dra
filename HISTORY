@@ -101,14 +101,14 @@
                  - Introduced an LTL verifier in straight Prolog (for
                    comparison). This is still experimental and incomplete.
 
-18 Mar 2009 :  Eleventh "internal public" release:
+24 Mar 2009 :  Eleventh "internal public" release:
 
                  - The LTL verifier in straight Prolog has been rewritten.
                    It now works on all examples, but there is no proof that the
                    rewrite rules need no extension.  The program is
                    tabling/examples/LTL/v.pl.
 
-                 - New directives added to "dra": the user can now inspect
+                 - A new directive added to "dra": the user can now inspect
                    the answer table.
 
                  - A minor extension of "dra": statistics about the number of
