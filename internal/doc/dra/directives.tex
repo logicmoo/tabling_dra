@@ -6,7 +6,8 @@ take three forms:
 \begin{LightEnumerate}
 \item
   A predicate specification written as \pred{name/arity}: for example
-  \prog{foo/3};
+  \prog{foo/3} (in the short descriptions below we will assume this is the form
+  that is used);
 \item
   A sequence of such specifications, separated by commas: for example
   \prog{p/2,~q/1,~r/3};
@@ -32,11 +33,11 @@ other predicate specifications.
 
 \prog{:-~coinductive~\patt{PredSpec}.}
                    & \parbox[t]{\DescWidth}{
-                       predicate(s) are coinductive (\Pageref{dir:tabled})}\\
+                       predicate is coinductive (\Pageref{dir:tabled})}\\
 
-\prog{:-~dynamic~p/k.}
+\prog{:-~dynamic~\patt{PredSpec}.}
                   & \parbox[t]{\DescWidth}{
-                        predicate(s) are dynamic (\Pageref{dir:dynamic})}\\
+                        predicate is dynamic (\Pageref{dir:dynamic})}\\
 
 \prog{:- load\_support(~\patt{filename}~).}
                    & \parbox[t]{\DescWidth}{
@@ -50,18 +51,18 @@ other predicate specifications.
 
 \prog{:- support~\patt{PredSpec}}
                    & \parbox[t]{\DescWidth}{
-                       predicate(s) are entry points to the support layer
+                       predicate is an entry point to the support layer
                                                    (\Pageref{dir:support})}\\
 
 \prog{:-~tabled~\patt{PredSpec}.}
                    & \parbox[t]{\DescWidth}{
-                            predicate(s) are tabled (\Pageref{dir:tabled})}\\
+                            predicate is tabled (\Pageref{dir:tabled})}\\
 
 \prog{:-~top~\patt{PredSpec}}
                    & \parbox[t]{\DescWidth}{
-                        predicate(s) are entry points (\Pageref{dir:top})}\\
+                        predicate is an entry point (\Pageref{dir:top})}\\
 
-\prog{:-~trace~p/3,~q/0,~r/1.}
+\prog{:-~trace~\patt{PredSpec}.}
                   & \parbox[t]{\DescWidth}{
-                        trace the predicate(s) (\Pageref{dir:trace})}
+                        trace the predicate (\Pageref{dir:trace})}
 \end{tabular}

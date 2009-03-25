@@ -6,12 +6,7 @@ This document is a user manual for \about{dra}, an interpreter for tabled
 logic programming with coinduction.  The manual has been written for users of
 various versions of Unix: if you are running another system, various small
 details (such as the way to enter the end-of-file character) may be
-different.%
-\footnote{
-  All comments, queries and suggestions about this manual or the software
-  will be most welcome: my e-mail address is
-  \prog{feliks.kluzniak@utdallas.edu}.  Please note that I will not be able
-  to provide assistance with Windows.}
+different.
 
 The interpreter implements ``top-down tabled programming'' via so called
 ``Dynamic Reordering of Alternatives'' \cite{guo-gupta-dra}.  It also
@@ -26,7 +21,9 @@ respect to the original description \cite{guo-gupta-dra}:
 \item
   A tabled goal will never produce the same answer twice.\footnote{
   Please note that in this document \about{goal} means an instance of a
-  procedure call.}
+  procedure call (i.e., invocation of a predicate).  A ``tabled
+  goal''\index{goal}\index{goal!tabled}\index{tabled goal} is a goal that
+  invokes a tabled predicate.}
 
   More specifically: two answers will never be variants of each
   other.
@@ -37,8 +34,9 @@ respect to the original description \cite{guo-gupta-dra}:
   \ind\prog{:-~old\_first.}\label{dir:old-first}\progidx{old\_first}
 
   A ``new result for a tabled goal''\label{new-result} is a result that has
-  not yet been tabled for this goal.  (More precisely: the table does not
-  contain a variant of this result associated with a variant of this goal.)
+  not yet been tabled for this goal.  (More precisely: a result such that the
+  table does not yet contain a variant of this result associated with a
+  variant of this goal.)
 
   The default behaviour is intended to help computations converge more
   quickly.  The user is given an option to change it, because some predicates
@@ -57,8 +55,8 @@ By default, each predicate that is defined in the interpreted program is a
 tabled, you must put an appropriate declaring directive in your
 program:%
 \footnote{
-    In literature about logic programming with tabling one can often
-    encounter the form \prog{:- table p/2}.  Since the directive is
+    In literature about logic programming with tabling one often
+    encounters the form \prog{:- table p/2}.  Since the directive is
     almost universally called a declaration (and not a command), the word
     \about{tabled} is obviously more appropriate.}\\
 \ind\prog{:-~tabled~p/2.}\label{dir:tabled}\progidx{tabled}
@@ -68,8 +66,10 @@ two consequences:
 \begin{Enumerate}
 \item
   Every time a goal with this predicate symbol (i.e., an invocation of this
-  predicate) succeeds, the result is stored in a table.  Such a tabled result
-  is commonly referred to as an ``answer''.\index{answer}
+  predicate) succeeds, the result (i.e., the resulting instantiation of the
+  goal) is stored in a special table called the \Defconcept{answer
+    table}\index{table|see{answer table}}.  Such a tabled result is commonly
+  referred to as an \Defconcept{answer}.\index{answer}
 
   Once all the possible results have been so stored, subsequent invocations
   can draw upon the tabled answers, instead of recomputing them all over
@@ -96,14 +96,14 @@ Tabling is not always as advantageous as one might think, for two reasons:
   \item
     If the number of results is large, and goals are seldom repeated, the
     main effect might be a significantly increased demand for memory, which
-    is not offset by shorter processing time.
+    is not offset by a shorter processing time.
 
   \item It so happens that in order to preserve the semantics of the program
-    the results must be associated with the goal that produced them, and are
-    accessible only to variant goals.  Other goals that invoke the same
-    predicate will require recomputation, and the computed results will
+    the tabled answers must be associated with the goal that produced them,
+    and are accessible only to variant goals.  Other goals that invoke the
+    same predicate will require recomputation, and the computed results will
     increase the size of the table, even if they are the same as those that
-    have already been stored for another goal.
+    have already been stored.
   \end{Enumerate}
 
 

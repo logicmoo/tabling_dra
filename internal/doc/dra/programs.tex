@@ -15,26 +15,34 @@ of the interpreted language:
   use of \predidx{once/1}.
 
 \item
-  The interpreted program must not contain variable literals.  It may contain
-  invocations of \predidx{call/1}, but if the argument of \pred{call/1} is
-  not properly instantiated at runtime, the results will be undefined.
-
-  In some cases the interpreter can verify that the argument of an occurrence
-  of \pred{call/1} cannot be instantiated at run-time, and it will then raise
-  a fatal error.  The check is quite conservative, so the absence of such an
-  error message does not mean that the program is correct in that respect.
+  The interpreted program must not contain variable literals\index{variable
+    literal}.  It may contain invocations of \predidx{call/1}, but if the
+  argument of \pred{call/1} is not properly instantiated at runtime, you will
+  get an error message and the interpreter will quit.\footnote{
+    In some cases the interpreter can verify beforehand (i.e., at
+    ``compile-time'') that the argument of an occurrence of \pred{call/1}
+    cannot be instantiated at run-time, and it will then raise a fatal error.
+    The check is quite conservative, so the absence of such an error message
+    does not mean that the program is safe in that respect.}
 
 \item
   The repertoire of built-in predicates\index{built-in predicates} recognized
-  by the interpreter is somewhat limited.  This is done by design, to
-  facilitate porting to different Prolog systems.  The recognized built-ins
-  are declared in the file \prog{dra\_builtins.pl}, and new declarations can be
-  added as the need arises.  For most built-ins it is a matter of just adding
-  another line to the file, but a few might require special treatment by the
-  interpreter.
+  by the interpreter is somewhat limited.  This is done by design, mostly to
+  facilitate porting to different Prolog systems.
+
+  The recognized built-ins are declared in the file \prog{dra\_builtins.pl},
+  and new declarations can be added as the need arises.  For most built-ins
+  just adding another line to the file will suffice, but a few might
+  require special treatment by the interpreter.\footnote{
+    Having a file wherein you specify the names of built-in predicates you
+    actually want to use does have its advantages.  Some logic programming
+    systems (e.g., Eclipse) support a very extensive set of libraries that
+    define built-in predicates whose names are treated as reserved even if
+    you don't use the libraries.  As a result, many names that you might
+    reasonably want to use in your programs are not available to you.}
 \end{Enumerate}
 
-If those limitations seem too strict, you may in some cases get around them
+If these limitations seem too strict, you may in some cases get around them
 by separating your program into two layers: see \Secref{sec:support}.
 
 
@@ -65,10 +73,9 @@ The support layer cannot invoke the upper layer, so there is no need to
 declare those predicates in the support layer that are not directly invoked
 by the upper layer.
 
-Predicates that are declared as "support" must be defined in other files.  To
-compile and load such files, use the following directive in the text of your
-program:\\
-\ind\prog{:- load\_support(~\patt{filename}~).}%
+Predicates that are declared as ``support'' must be defined in other files.
+To compile and load such files, use the following directive in the text of
+your program:\\ \ind\prog{:- load\_support(~\patt{filename}~).}%
 \label{dir:load-support}\progidx{load\_support}\\
 In this context, the default extension of the \patt{filename} will be the
 default extension used by the host logic programming system for names
@@ -79,12 +86,11 @@ of files that contain Prolog code.%
 
 
 %-------------------------------------------------------------------------------
-\Section{Declaration of entry points\label{sec:entry-points}}
+\Section{Declaring ``entry points''\label{sec:entry-points}}
 
 Before execution begins, the interpreted program is subjected to a number of
-useful sanity checks.  One of these is a check whether every defined
-predicate is actually called from somewhere (i.e., whether there is no dead
-code).
+sanity checks.  One of these is a check whether every defined predicate is
+actually called from somewhere (i.e., whether there is no dead code).
 
 Since it is not unusual for a program to contain a handful of such predicates
 (intended as ``entry points'' that are to be invoked from a query),
@@ -96,76 +102,21 @@ for an undefined predicate or a support predicate to be so declared.
 
 
 %-------------------------------------------------------------------------------
-\Section{Inspecting the answer table\label{sec:answer-table}}
-
-In principle, the answer table is an auxiliary data structure that is, in
-effect, accessed by normal queries.
-
-However, the interpreter gives you the possibility of looking ``under its
-hood'' by accessing the table directly.  This might be useful for assessing
-the efficacy of your tabling declarations, or simply for satisfying your
-curiosity.
-
-To print out subsets of the current answer table, use\\
-\ind\prog{:-~answers(~\patt{Goal},~\patt{Pattern}~).}%
-\label{dir:answers}\progidx{answers}\\
-where \patt{Goal} and \patt{Pattern} are terms.
-This will print all tabled answer that are associated with a variant of the
-goal and unifiable with the pattern.  If the first argument is a variable,
-the pattern will be used as a filter for all the answers in the table.
-
-To produce a dump of the entire table, just use\\
-\ind\prog{:-~answers(~\_,~\_~).}
-
-Please note that this sort of query must have the form of a directive.  This
-is so even when you are interacting with the top level:  if you give it
-just\\
-\ind\prog{answers(~\_,~\_~).}\\
-this will be treated as a query, equivalent to\\
-\ind\prog{?-~answers(~\_,~\_~).}\\
-and the interpreter will try to invoke the predicate \pred{answers/2} in your
-program.  The good news is that nothing prevents you from having such a
-predicate, i.e., the identifier \about{answers} is not reserved in any way.
-
-
-
-%-------------------------------------------------------------------------------
-\Section{The ``wallpaper'' trace\label{sec:walpaper-trace}}
-
-The interpreter does not incorporate an interactive debugger, but it can
-produce a long trace of what happens during the execution of an interpreted
-program.  This facility is useful mainly for helping to diagnose problems
-with the interpreter: some of the information in the trace will not be easy
-to understand for someone who does not know the details of the DRA
-method~\cite{guo-gupta-dra}, and I will not try to explain it all here.
-Still, you might sometimes be able to get some useful information from the
-trace, e.g, about how new answers are added to the table.
-
-To produce a wallpaper trace of what happens to some chosen predicates, use a
-directive similar to the following:\\
-\ind\prog{:-~trace~p/3,~q/0,~r/1.}\label{dir:trace}\progidx{trace}\\
-If you want to trace everything, use\\
-\ind\prog{:-~trace~all.}\\
-These directives are cumulative.
-
-
-%-------------------------------------------------------------------------------
-\Section{Declaring a dynamic predicate\label{sec:dynamic}}
+\Section{Declaring dynamic predicates\label{sec:dynamic}}
 
 To declare a predicate whose clauses are asserted and/or retracted by the
 interpreted program, use\index{predicate!dynamic}\\
 \ind\prog{:-~ dynamic~p/k.}\label{dir:dynamic}\progidx{dynamic}
 
-\vfill %<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 %-------------------------------------------------------------------------------
-\Section{Hooks\label{sec:hooks}}
+\Section{Hooks\label{sec:hooks}}\index{hook}
 
 The program may contain clauses that modify the definition of the
-interpreter's predicate \pred{essence\_hook/2} (the clauses will be asserted
-at the front of the predicate, and will thus override the default definition
-for some cases).  The interpreter's default definition is\\
+interpreter's predicate \predidx{essence\_hook/2} (the clauses will be
+asserted at the front of the predicate, and will thus override the default
+definition for some cases).  The interpreter's default definition is\\
 \ind\prog{essence\_hook(~T,~T~).}
 
 This predicate is invoked, in certain contexts, when:
@@ -181,12 +132,12 @@ This predicate is invoked, in certain contexts, when:
 
 The primary intended use is to allow suppression of arguments that carry only
 administrative information and that may differ in two terms that are
-``semantically'' equal or variants of each other.
+considered to be ``semantically'' equal or variants of each other.
 
 For example, the presence of\\
 \ind\prog{essence\_hook(~p(~A,~B,~\_~),~~p(~A,~B~)~).}\\
 will result in \prog{p(~a,~b,~c~)} and \prog{p(~a,~b,~d~)} being treated as
-identical, as each of them will be translated to \prog{p(~a,~b~)} before
+identical: each of them will be translated to \prog{p(~a,~b~)} before
 comparison.
 
 \begin{Warning}
