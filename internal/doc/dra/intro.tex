@@ -19,24 +19,26 @@ respect to the original description \cite{guo-gupta-dra}:
 \begin{Enumerate}
 
 \item
-  A tabled goal will never produce the same answer twice.\footnote{
-  Please note that in this document \about{goal} means an instance of a
-  procedure call (i.e., invocation of a predicate).  A ``tabled
-  goal''\index{goal}\index{goal!tabled}\index{tabled goal} is a goal that
-  invokes a tabled predicate.}
+  A tabled goal will never produce the same result twice.\footnote{
+  In this document \Defconcept{goal} means an instance of a procedure call
+  (i.e., an invocation of a predicate).  A \Defconcept{tabled
+    goal}\index{goal!tabled} is a goal that invokes a tabled predicate. A
+  \Defconcept{result} is the instantiation of a goal when it succeeds.}
 
-  More specifically: two answers will never be variants of each
-  other.
+  More precisely: a tabled goal will not succeed twice with instantiations
+  that are variants of each other.\index{duplicate
+    results}\index{result!duplicate}
 
 \item
   By default, new results for a tabled goal will be produced before old
-  answers.  The user can reverse the order by issuing the directive\\
-  \ind\prog{:-~old\_first.}\label{dir:old-first}\progidx{old\_first}
+  answers.\index{order of results}\index{result!order}
+  The user can reverse the order by issuing the directive\\
+  \ind\prog{:-~old\_first.}\label{dir:old-first}\progidxonly{old\_first}
 
-  A ``new result for a tabled goal''\label{new-result} is a result that has
-  not yet been tabled for this goal.  (More precisely: a result such that the
-  table does not yet contain a variant of this result associated with a
-  variant of this goal.)
+  A ``new result for a tabled goal''\label{new-result}\index{new
+    result}\index{result!new} is a result that has not yet been tabled for
+  this goal.  (More precisely: a result such that the table does not yet
+  contain a variant of this result associated with a variant of this goal.)
 
   The default behaviour is intended to help computations converge more
   quickly.  The user is given an option to change it, because some predicates
@@ -59,7 +61,7 @@ program:%
     encounters the form \prog{:- table p/2}.  Since the directive is
     almost universally called a declaration (and not a command), the word
     \about{tabled} is obviously more appropriate.}\\
-\ind\prog{:-~tabled~p/2.}\label{dir:tabled}\progidx{tabled}
+\ind\prog{:-~tabled~p/2.}\label{dir:tabled}\progidxonly{tabled}
 
 When you declare a predicate as tabled, there will be
 two consequences:
@@ -120,7 +122,7 @@ manual.
 If you want a predicate (\pred{p/2}, say) to be treated as a coinductive
 predicate, you must put an appropriate declaring directive in your
 program:\\
-\ind\prog{:-~coinductive~p/2.}\label{dir:coinductive}\progidx{coinductive}
+\ind\prog{:-~coinductive~p/2.}\label{dir:coinductive}\progidxonly{coinductive}
 
 When you declare a predicate as coinductive, there is only one effect:
 \begin{Itemize}
@@ -128,10 +130,11 @@ When you declare a predicate as coinductive, there is only one effect:
     If a goal that invokes a coinductive predicate is found to be unifiable
     with an ancestor on the recursion stack, the goal is unified with the
     ancestor and succeeds.  Upon backtracking it is unified---one by
-    one---with other such ancestors\footnote{
+    one\footnote{
       In \about{dra} this is done in reverse chronological order, i.e.,
       the more immediate ancestors are used first.
-    }, and expanded in the normal way (i.e., by
+    }---with other such ancestors;
+    it is expanded in the normal way (i.e., by
     using clauses) only when all the unifiable ancestors have been taken
     advantage of in this manner.
 \end{Itemize}

@@ -2,7 +2,7 @@ all:	manual.dvi
 
 manual.dvi: *.tex manual.bbl
 	latex manual
-	makeindex manual
+	makeindex  -s index_style.ist manual
 	latex manual
 	latex manual
 

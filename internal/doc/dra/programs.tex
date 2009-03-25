@@ -10,9 +10,10 @@ of the interpreted language:
 \begin{Enumerate}
 
 \item
-  The interpreted program must not contain cuts\index{cut}.  Use of the
-  conditional construct\index{conditional construct} is permitted, as is the
-  use of \predidx{once/1}.
+  The interpreted program must not contain cuts\index{cut} (i.e., occurrences
+  of \pred{!/2}\index{"!/2@\pred{"!/2}}).  Use of the conditional
+  construct\index{conditional construct} is permitted, as is the use of
+  \predidx{once/1}.
 
 \item
   The interpreted program must not contain variable literals\index{variable
@@ -56,13 +57,13 @@ by the interpreter (i.e., tabling and/or coinduction), and a lower layer of
 for increasing efficiency: the support layer will be compiled just as all
 other ``normal'' Prolog programs.  An additional advantage is that the
 support layer can use the full range of built-in predicates available in the
-host logic programming system.
+host logic programming system, and in particular the cut.
 
 The interface between the two layers consists of a handful of entry-point
 predicates, each of which is  declared by a directive similar to the
 following one:\\
 \ind\prog{:- support check\_consistency/1.}%
-\label{dir:support}\progidx{support}\\
+\label{dir:support}\progidxonly{support}\\
 Please note that this directive cannot be entered interactively: it must be
 included in the text of the upper layer part of your program.
 
@@ -73,15 +74,18 @@ The support layer cannot invoke the upper layer, so there is no need to
 declare those predicates in the support layer that are not directly invoked
 by the upper layer.
 
-Predicates that are declared as ``support'' must be defined in other files.
-To compile and load such files, use the following directive in the text of
-your program:\\ \ind\prog{:- load\_support(~\patt{filename}~).}%
-\label{dir:load-support}\progidx{load\_support}\\
+Predicates that are declared as ``support'' (and those that are---directly or
+indirectly---called by them) must be defined in other files.
+To compile and load such a file, use the following directive in the text of
+your program:\\
+\ind\prog{:- load\_support(~\patt{filename}~).}%
+\label{dir:load-support}\progidxonly{load\_support}\\
 In this context, the default extension of the \patt{filename} will be the
 default extension used by the host logic programming system for names
 of files that contain Prolog code.%
-\index{default extension (file name)}%
-\index{extension of file name!default}% \index{file!name!default extension}
+\index{default extension}%
+\index{extension of file name!default}%
+\index{file!name!default extension}
 
 
 
@@ -93,9 +97,10 @@ sanity checks.  One of these is a check whether every defined predicate is
 actually called from somewhere (i.e., whether there is no dead code).
 
 Since it is not unusual for a program to contain a handful of such predicates
-(intended as ``entry points'' that are to be invoked from a query),
+on purpose (they are intended as ``entry points'' that are to be invoked from
+a query),
 the user can declare them by using a directive similar to the following:\\
-\ind\prog{:-~top~p/1,~q/2.}\label{dir:top}\progidx{top}\\
+\ind\prog{:-~top~p/1,~q/2.}\label{dir:top}\progidxonly{top}\\
 The declaration is given only to suppress warnings.  However, it is an error
 for an undefined predicate or a support predicate to be so declared.
 
@@ -106,7 +111,7 @@ for an undefined predicate or a support predicate to be so declared.
 
 To declare a predicate whose clauses are asserted and/or retracted by the
 interpreted program, use\index{predicate!dynamic}\\
-\ind\prog{:-~ dynamic~p/k.}\label{dir:dynamic}\progidx{dynamic}
+\ind\prog{:-~ dynamic~p/k.}\label{dir:dynamic}\progidxonly{dynamic}
 
 
 
