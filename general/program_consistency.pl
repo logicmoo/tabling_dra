@@ -142,6 +142,10 @@ warnings_about_called( _, _ ).
 %% Extract the list of predicates called by this body, except for predicates
 %% declared as builtin.
 
+extract_called( Var, _ ) :-
+        var( Var ),
+        !.
+
 extract_called( Binary, OSetOfCalled ) :-
         ( Binary = ( A ; B )
         ; Binary = ( A , B )
