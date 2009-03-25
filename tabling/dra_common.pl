@@ -882,9 +882,11 @@ solve( (Goals1 , Goals2), Stack, Hyp, Level ) :-
 
 solve( call( Goal ), Stack, Hyp, Level ) :-
         (
-            var( Goal )
+            ( var( Goal )                          % e.g., Eclipse
+            ; Goal = interpreted : V,  var( V )    % e.g., Sicstus
+            )
         ->
-            error( [ 'A variable meta-call:', call( Goal ) ] )
+            error( [ 'A variable meta-call: ', call( Goal ) ] )
         ;
             solve( Goal, Stack, Hyp, Level )
         ).
