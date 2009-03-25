@@ -3,7 +3,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 26 February 2009.                                          %%%
+%%%  Last update: 25 March 2009.                                             %%%
 %%%                                                                          %%%
 %%%  NOTE: This code runs on Sicstus and Eclipse.  It may require some       %%%
 %%%        tweaking for other Prolog systems.                                %%%
@@ -236,6 +236,8 @@
 
 %% Default print depth.  (May be changed by the metainterpreter by invoking
 %% set_print_depth( N ).)
+
+:- dynamic print_depth/1 .
 
 print_depth( 10 ).
 
