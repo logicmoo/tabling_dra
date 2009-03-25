@@ -3,7 +3,7 @@
 %%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 18 March 2009.                                             %%%
+%%%  Last update: 24 March 2009.                                             %%%
 %%%                                                                          %%%
 
 %%% NOTE:
