@@ -37,7 +37,7 @@ builtin( var( _ )           ).
 builtin( write( _ )         ).
 builtin( write_term( _, _ ) ).
 builtin( writeln( _ )       ).
-builtin( set_print_depth( _, _ ) ).       % not a real built-in, see "top_level"
+builtin( set_print_depth( _ ) ).          % not a real built-in, see "top_level"
 
 
 
