@@ -1,4 +1,4 @@
-\documentclass[12pt,draft]{report}
+\documentclass[12pt,final]{report}
 \usepackage{fancyvrb}
 \usepackage{float}
 \usepackage{varioref}
@@ -12,6 +12,8 @@
 \usepackage{parskip}[2001/04/09]
 %\setlength{\parindent}{0pt}
 %\setlength{\parskip}{2ex}
+
+\usepackage{hyperref}
 
 \makeindex
 
@@ -78,7 +80,7 @@
 \newcommand*{\Chapref}[1]{chapter~\ref{#1}}
 
 % A reference to a section:
-\newcommand*{\Secref}[1]{Sec.~\ref{#1}}
+\newcommand*{\Secref}[1]{Sec.~\protect\ref{#1}}
 
 % A reference to a page:
 \newcommand*{\Pageref}[1]{p.~\pageref{#1}}
