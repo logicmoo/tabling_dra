@@ -77,6 +77,11 @@ The subdirectory "examples" contains a handful of simple examples to
 exercise the interpreter and the translator.
 
 
+doc
+---
+Directory "doc" contains documentation.
+
+
 general
 -------
 Directory "general" contains utility code that is used by the other
@@ -85,7 +90,6 @@ programs.
 
 tabling
 -------
-
 Directory "tabling" is intended to contain interpreters that illustrate
 various approaches to logic programming with tabling.
 
