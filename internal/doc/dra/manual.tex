@@ -3,7 +3,7 @@
 \usepackage{float}
 \usepackage{varioref}
 \usepackage[nottoc]{tocbibind} % Doesn't play well with package "index" :-(
-\usepackage{makeidx,showidx}
+\usepackage{makeidx}
 \usepackage{index}  % prevents expansion in index entries, needed for progidx
 
 %\proofmodetrue      %  <<<< (index) suppress for the final copy <<<<<<
@@ -13,7 +13,7 @@
 %\setlength{\parindent}{0pt}
 %\setlength{\parskip}{2ex}
 
-\usepackage{hyperref}
+\usepackage[colorlinks]{hyperref}
 
 \makeindex
 
@@ -172,7 +172,8 @@ User Manual}
 \include{directives}
 
 \bibliography{bibliography}
-\vfill\pagebreak                       % <<----------<<
+\vfill\pagebreak    % <<----------<<  to get the right page number for Index
+
 \addcontentsline{toc}{chapter}{Index}
 \printindex
 \end{document}
