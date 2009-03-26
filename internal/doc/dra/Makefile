@@ -4,6 +4,9 @@
 
 all:	manual.dvi manual.pdf
 
+install: manual.dvi manual.pdf
+	cp manual.pdf ../../../doc
+
 manual.dvi: *.tex manual.bbl
 	latex manual
 	makeindex  -s index_style.ist manual
