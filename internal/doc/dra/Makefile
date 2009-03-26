@@ -1,5 +1,5 @@
 all:	manual.dvi
-#	pdflatex manual
+	pdflatex manual
 
 manual.dvi: *.tex manual.bbl
 	latex manual
