@@ -17,4 +17,5 @@ coind/example.pl
 .*\.blg
 .*\.ps
 .*\.pdf
+.*\.out
 
