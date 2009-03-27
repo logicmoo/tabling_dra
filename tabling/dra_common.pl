@@ -3,8 +3,9 @@
 %%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 24 March 2009.                                             %%%
+%%%  Last update: 27 March 2009.                                             %%%
 %%%                                                                          %%%
+version( 'DRA ((c) UTD 2009) version 0.9, 27 March 2009' ).
 
 %%% NOTE:
 %%%
@@ -525,7 +526,9 @@ initialise :-                                             % invoked by top_level
         setval( number_of_answers, 0 ),
         setval( unique_index,      0 ),
         setval( step_counter,      0 ),
-        setval( old_table_size,    0 ).
+        setval( old_table_size,    0 ),
+        version( Version ),
+        writeln( Version ).
 
 
 %% Checking consistency:
@@ -773,15 +776,23 @@ print_statistics :-
         getval( number_of_answers, NAns ),
         getval( old_table_size, OldNAns ),
         TableGrowth is NAns - OldNAns,
-        write( Output, '[' ),
-        write( Output, NSteps ),
-        write( Output, ' steps, ' ),
-        write( Output, TableGrowth ),
-        write( Output, ' new answers tabled (' ),
-        write( Output, NAns ),
-        write( Output, ' in all)' ),
-        write( Output, ']' ),
-        nl(    Output ).
+        write(  Output, '[' ),
+        write(  Output, NSteps ),
+        write(  Output, ' step' ),
+        plural( Output, NSteps ),
+        write(  Output, ' ' ),
+        write(  Output, TableGrowth ),
+        write(  Output, ' new answer' ),
+        plural( Output, TableGrowth ),
+        write(  Output, ' tabled (' ),
+        write(  Output, NAns ),
+        write(  Output, ' in all)' ),
+        write(  Output, ']' ),
+        nl(     Output ).
+
+%
+plural( _     , 1 ) :-  !.
+plural( Output, N ) :-  N \= 1,  write( Output, 's' ).
 
 
 
