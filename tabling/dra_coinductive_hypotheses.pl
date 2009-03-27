@@ -41,9 +41,16 @@
 %%
 %% The set of coinductive hypotheses is just a list.
 
+:- mode push_coinductive( +, +, - ).
+
 push_coinductive( Goal, Hyp, [ Goal | Hyp ] ).
+
+
+:- mode unify_with_coinductive_ancestor( +, + ).
 
 unify_with_coinductive_ancestor( Goal, Hyp ) :-
         essence_hook( Goal, Essence ),
         member( G, Hyp ),
         essence_hook( G, Essence ).
+
+%-------------------------------------------------------------------------------
