@@ -501,6 +501,10 @@ ensure_dynamic( _ ).
 
 :- mode process_directive( + ).
 
+process_directive( (top all) ) :-
+        !,
+        assert( top( _ ) ).
+
 process_directive( (top PredSpecs) ) :-
         !,
         predspecs_to_patterns( PredSpecs, Patterns ),

@@ -31,12 +31,18 @@ check_general_consistency :-
                  current_predicate_in_module( support, PredSpec ),
                  ListOfDefinedSupport
                ),
-        findall( P/K
-               , ( top( Pattern )
-                 , functor( Pattern, P, K )
-                 )
-               , ListOfDeclaredTop
-               ),
+        (
+            top( Var ),  var( Var )
+        ->
+            ListOfDeclaredTop = ListOfDefined
+        ;
+            findall( P/K
+                   , ( top( Pattern )
+                     , functor( Pattern, P, K )
+                     )
+                   , ListOfDeclaredTop
+                   )
+        ),
         findall( P/K
                , ( support( Pattern )
                  , functor( Pattern, P, K )
