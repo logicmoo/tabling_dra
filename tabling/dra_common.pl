@@ -485,7 +485,8 @@ version( 'DRA ((c) UTD 2009) version 0.9, 27 March 2009' ).
 
 :- ensure_loaded( [ '../general/top_level',
                     '../general/utilities',
-                    dra_builtins
+                    dra_builtins,
+                    dra_coinductive_hypotheses
                   ]
                 ).
 
@@ -983,14 +984,13 @@ solve( Goal, Stack, Hyp, Level ) :-
         incval( step_counter ),
         trace_entry( coinductive, Goal, '?', Level ),
         (
-            essence_hook( Goal, Essence ),
-            member( G, Hyp ),
-            essence_hook( G, Essence ),
+            unify_with_coinductive_ancestor( Goal, Hyp ),
             trace_success( 'coinductive (hypothesis)', Goal, '?', Level )
         ;
             NLevel is Level + 1,
             use_clause( Goal, Body ),
-            solve( Body, Stack, [ Goal | Hyp ], NLevel ),
+            push_coinductive( Goal, Hyp, NHyp ),
+            solve( Body, Stack, NHyp, NLevel ),
             trace_success( 'coinductive (clause)', Goal, '?', Level )
         ;
             trace_failure( coinductive, Goal, '?', Level ),
@@ -1124,7 +1124,7 @@ solve( Goal, Stack, Hyp, Level ) :-
         (
             coinductive( Goal )
         ->
-            NHyp = [ Goal | Hyp ]  % add this goal to the coinductive hypotheses
+            push_coinductive( Goal, Hyp, NHyp )
         ;
             NHyp = Hyp
         ),
@@ -1278,7 +1278,7 @@ compute_fixed_point_( Goal, Index, Stack, Hyp, Level, _ ) :-
         (
             coinductive( Goal )
         ->
-            NHyp = [ Goal | Hyp ]  % add this goal to the coinductive hypotheses
+            push_coinductive( Goal, Hyp, NHyp )
         ;
             NHyp = Hyp
         ),
