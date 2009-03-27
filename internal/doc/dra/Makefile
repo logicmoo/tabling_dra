@@ -2,9 +2,9 @@
 ## Repetition of latex runs within each command does not always seem to work
 ## well with pdf hyperlinks, so it is better to have the warning from LaTeX.
 
-all:	manual.dvi manual.pdf
+all:	manual.dvi
 
-install: manual.dvi manual.pdf
+install: manual.pdf
 	cp manual.pdf ../../../doc
 
 manual.dvi: *.tex manual.bbl
