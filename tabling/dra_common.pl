@@ -767,11 +767,13 @@ query( Goals ) :-                                         % invoked by top_level
             solve( Goals, [], [], 0 ),
             print_statistics,
             setval( step_counter, 0 ),
-            setval( old_table_size, NAns )
+            getval( number_of_answers, NAns2 ),
+            setval( old_table_size, NAns2 )
         ;
             print_statistics,
             setval( step_counter, 0 ),
-            setval( old_table_size, NAns ),
+            getval( number_of_answers, NAns2 ),
+            setval( old_table_size, NAns2 ),
             fail
         ).
 
