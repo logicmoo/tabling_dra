@@ -486,7 +486,8 @@ version( 'DRA ((c) UTD 2009) version 0.9, 27 March 2009' ).
 :- ensure_loaded( [ '../general/top_level',
                     '../general/utilities',
                     dra_builtins,
-                    dra_coinductive_hypotheses
+                    dra_coinductive_hypotheses,
+                    dra_stack
                   ]
                 ).
 
@@ -828,6 +829,12 @@ plural( Output, N ) :-  N \= 1,  write( Output, 's' ).
 %%    clause  is the clause that is currently used by the goal (it has been
 %%               instantiated by matching with the goal in its original form,
 %%               but does not share variables with the goal).
+%%
+%% NOTE: The set of coinductive hypotheses and the stack of tabled ancestors
+%%       have been factored out (see files "dra_coinductive_hypotheses.pl" and
+%%       "dra_stack.pl").  The representations may have changed (to enable
+%%       faster access, so the comments in this file ("chain of ancestors" etc.)
+%%       might no longer be quite accurate.
 
 :- mode solve( +, +, +, + ).
 
@@ -1140,8 +1147,9 @@ solve( Goal, Stack, Hyp, Level ) :-
             NLevel is Level + 1,
             use_clause( Goal, Body ),
             copy_term( (Goal :- Body), ClauseCopy ),
+            push_tabled( OriginalGoal, Index, ClauseCopy, Stack, NStack ),
             solve( Body,
-                   [ triple( OriginalGoal, Index, ClauseCopy ) | Stack ],
+                   NStack,
                    NHyp,
                    NLevel
                  ),
@@ -1285,8 +1293,8 @@ compute_fixed_point_( Goal, Index, Stack, Hyp, Level, _ ) :-
         copy_term( Goal, OriginalGoal ),
 
         looping_alternative( Index, (Goal :- Body) ),      % i.e., iterate
-        Triple = triple( OriginalGoal, Index, (Goal :- Body) ),
-        solve( Body, [ Triple | Stack ], NHyp, NLevel ),
+        push_tabled(  OriginalGoal, Index, (Goal :- Body), Stack, NStack ),
+        solve( Body, NStack, NHyp, NLevel ),
         new_result_or_fail( Index, Goal ),
         memo( OriginalGoal, Goal, Level ).
 
@@ -1295,24 +1303,6 @@ compute_fixed_point_( Goal, Index, Stack, Hyp, Level, NAns ) :-
         NAnsNow \= NAns,                % i.e., fail if there are no new answers
         compute_fixed_point_( Goal, Index, Stack, Hyp, Level, NAnsNow ).
 
-
-
-%% is_variant_of_ancestor( + goal,
-%%                         + list of triples of goals, indices and clauses,
-%%                         - the triple with the variant ancestor,
-%%                         - prefix of the list (before the variant ancestor)
-%%                       )
-%% Succeeds if the goal is a variant of the goal in some member of the list.
-%% If successful, returns the first such member and the list of intervening
-%% triples.
-
-:- mode is_variant_of_ancestor( +, +, -, - ).
-
-is_variant_of_ancestor( Goal, Stack, AncestorTriple, Prefix ) :-
-        append( Prefix, [ AncestorTriple | _ ], Stack ),        % split the list
-        AncestorTriple = triple( G, _, _ ),
-        are_essences_variants( Goal, G ),
-        !.
 
 
 %% rescind_pioneer_status( + index ):
