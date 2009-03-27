@@ -126,6 +126,10 @@
                  - A separate user manual has been produced from the extended
                    comments.
 
+                 - The stack of tabled ancestors and the set of coinductive
+                   hypotheses have been factored out of "dra_common.pl" to allow
+                   a change to a more efficient representation.
+
                  - The program files have been prefixed with a standard
                    copyright notice and disclaimer.
 
