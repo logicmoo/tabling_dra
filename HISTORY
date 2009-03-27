@@ -121,11 +121,13 @@
                    factored out from the interpreters into separate files, to
                    facilitate extension.
 
-                 - The program files have been prefixed with a standard
-                   copyright notice and disclaimer.
+                 - "dra" prints out its version when loaded.
 
                  - A separate user manual has been produced from the extended
                    comments.
+
+                 - The program files have been prefixed with a standard
+                   copyright notice and disclaimer.
 
                  - We are now ready for a real public release, pending a review
                    and a sanity check by a second person.
