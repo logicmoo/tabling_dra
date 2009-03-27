@@ -264,16 +264,20 @@ set_print_depth( Strange ) :-
 
 
 prog( FileName ) :-
-        retractall( known( _ )   ),
-        retractall( support( _ ) ),
-        retractall( top( _ )     ),
-        erase_modules,
-        create_modules,
+        setup,
         initialise,                              % provided by a metainterpreter
         process_file( FileName ),
         check_general_consistency,
         program_loaded,                          % provided by a metainterpreter
         top.
+
+%
+setup :-
+        retractall( known( _ )   ),
+        retractall( support( _ ) ),
+        retractall( top( _ )     ),
+        erase_modules,
+        create_modules.
 
 
 
@@ -378,6 +382,12 @@ fill_interface_modules.
 :- mode process_file( + ).
 
 process_file( FileName ) :-
+        open_the_file( FileName, ProgStream ),
+        process_input( ProgStream ),
+        close( ProgStream ).
+
+%
+open_the_file( FileName, ProgStream ) :-
         ensure_filename_is_an_atom( FileName ),
         name_chars( FileName, FileNameChars ),
         (
@@ -389,11 +399,8 @@ process_file( FileName ) :-
         ),
         ensure_extension( FileNameChars, ExtChars, _, FullFileNameChars ),
         name_chars( FullFileName, FullFileNameChars ),
-        open( FullFileName, read, ProgStream ),
+        open( FullFileName, read, ProgStream ).
 
-        process_input( ProgStream ),
-
-        close( ProgStream ).
 
 
 %% process_input( + input stream ):

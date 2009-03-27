@@ -2,8 +2,7 @@
 \addcontentsline{toc}{chapter}{Summary of directives}
 
 
-Many of the directives take an argument specified as \patt{PredSpec}.  This can
-take three forms:
+An argument specified as \patt{PredSpec} can take three forms:
 \begin{LightEnumerate}
 \item
   A predicate specification written as \pred{name/arity}: for example
@@ -13,7 +12,8 @@ take three forms:
   A sequence of such specifications, separated by commas: for example
   \prog{p/2,~q/1,~r/3};
 \item
-  The word \prog{all}, which specifies all predicates.
+  The word \prog{all}, which specifies all predicates. (This cannot be used
+  for \prog{support} and \prog{dynamic}!)
 \end{LightEnumerate}
 If the same kind of directive occurs a number of times, specifying different
 predicates, the results are cumulative.  In particular, \prog{all} subsumes all

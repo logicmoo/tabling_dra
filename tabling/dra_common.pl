@@ -544,6 +544,7 @@ program_loaded :-                                         % invoked by top_level
 
 check_consistency :-
         tabled( Head ),
+        nonvar( Head ),
         functor( Head, P, K ),
         \+ current_predicate_in_module( interpreted, P / K ),
         warning( [ P/K, ' declared as tabled, but not defined' ] ),
@@ -551,21 +552,22 @@ check_consistency :-
 
 check_consistency :-
         coinductive( Head ),
+        nonvar( Head ),
         functor( Head, P, K ),
         \+ current_predicate_in_module( interpreted, P / K ),
         warning( [ P/K, ' declared as coinductive, but not defined' ] ),
         fail.
 
 check_consistency :-
-        tabled( Head ),
         support( Head ),
+        tabled( Head ),
         functor( Head, P, K ),
         warning( [ P/K, ' declared as both tabled and \"support\"' ] ),
         fail.
 
 check_consistency :-
-        coinductive( Head ),
         support( Head ),
+        coinductive( Head ),
         functor( Head, P, K ),
         warning( [ P/K, ' declared as both coinductive and \"support\"' ] ),
         fail.
@@ -614,6 +616,10 @@ legal_directive( answers         ).
 
 %% Check and process the legal directives (invoked by top_level)
 
+execute_directive( (tabled all) ) :-
+        !,
+        assert( tabled( _ ) ).
+
 execute_directive( (tabled PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
@@ -623,6 +629,10 @@ execute_directive( (tabled PredSpecs) ) :-
         ;
             true
         ).
+
+execute_directive( (coinductive all) ) :-
+        !,
+        assert( coinductive( _ ) ).
 
 execute_directive( (coinductive PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
@@ -659,9 +669,7 @@ execute_directive( (trace PredSpecs) ) :-
 execute_directive( (dynamic PredSpecs) ) :-
         dynamic_in_module( interpreted, PredSpecs).
 
-
 execute_directive( (multifile _) ).    % ignore
-
 
 execute_directive( answers( Goal, Pattern ) ) :-
         print_required_answers( Goal, Pattern ).
