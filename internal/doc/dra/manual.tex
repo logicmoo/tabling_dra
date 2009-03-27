@@ -4,7 +4,9 @@
 \usepackage{varioref}
 \usepackage[nottoc]{tocbibind} % Doesn't play well with package "index" :-(
 \usepackage{makeidx}
-\usepackage{index}  % prevents expansion in index entries, needed for progidx
+%\usepackage{index}  % prevents expansion in index entries, needed for progidx
+                     % Makes hyperref for index go awry, so decided to use
+                     % explicit protect instead: turned out not to be neeeded
 
 %\proofmodetrue      %  <<<< (index) suppress for the final copy <<<<<<
 
@@ -171,9 +173,9 @@ User Manual}
 \include{running}
 \include{directives}
 
+\newpage
 \bibliography{bibliography}
-\vfill\pagebreak    % <<----------<<  to get the right page number for Index
 
-\addcontentsline{toc}{chapter}{Index}
+\newpage
 \printindex
 \end{document}
