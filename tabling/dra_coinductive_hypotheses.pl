@@ -65,22 +65,45 @@
 % %%--------------  The minimal implementation:  --------------%%
 % %%
 % %% The set of coinductive hypotheses is just a list.
+%
+% :- mode empty_hypotheses( - ).
+%
+% empty_hypotheses( [] ).
+%
+%
+% :- mode push_coinductive( +, +, - ).
+%
+% push_coinductive( Goal, Hyp, [ Goal | Hyp ] ).
+%
+%
+% :- mode unify_with_coinductive_ancestor( +, + ).
+%
+% unify_with_coinductive_ancestor( Goal, Hyp ) :-
+%         once( essence_hook( Goal, Essence ) ),
+%         member( G, Hyp ),
+%         once( essence_hook( G, Essence ) ).
+
+
+%%--------------  An implementation that uses goal_table:  --------------%%
+
+:- ensure_loaded( '../general/goal_table_simple' ).
+
 
 :- mode empty_hypotheses( - ).
 
-empty_hypotheses( [] ).
+empty_hypotheses( Hyp ) :-
+        empty_goal_table( Hyp ).
 
 
 :- mode push_coinductive( +, +, - ).
 
-push_coinductive( Goal, Hyp, [ Goal | Hyp ] ).
+push_coinductive( Goal, Hyp, Hyp ) :-
+        goal_table_add( Hyp, Goal ).
 
 
 :- mode unify_with_coinductive_ancestor( +, + ).
 
 unify_with_coinductive_ancestor( Goal, Hyp ) :-
-        once( essence_hook( Goal, Essence ) ),
-        member( G, Hyp ),
-        once( essence_hook( G, Essence ) ).
+        goal_table_member( Goal, Hyp ).
 
 %-------------------------------------------------------------------------------
