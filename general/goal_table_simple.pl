@@ -53,7 +53,7 @@ empty_goal_table( Table ) :-
 
 goal_table_member( Goal, Table ) :-
         once( essence_hook( Goal, Essence ) ),
-        olist_member_reversed( G, OList ),
+        olist_member_reversed( G, Table ),
         once( essence_hook( G, Essence ) ).
 
 
