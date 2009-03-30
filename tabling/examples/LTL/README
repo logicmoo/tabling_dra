@@ -26,8 +26,13 @@ NOTE: 1. Each of the examples in this directory has three versions:
 
 This directory includes the following files:
 
-v.pl:
+coind_example.pl:
+coind_example.tlp:
+coind_example_v.pl:
+        A very simple example for the verifier. Tests proper working of
+        coinduction.
 
+v.pl:
         This is a straightforward Prolog program that attempts to emulate the
         functions of "verifier.tlp" with a completely different algorithm, by
         visiting each node once and appropriately simplifying the LTL formula
