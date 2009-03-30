@@ -79,29 +79,67 @@
 %%%         intervening triples.
 
 
-%%--------------  The minimal implementation:  --------------%%
+% %%--------------  The minimal implementation:  --------------%%
+% %%
+% %% The stack is just a list of triples.
+%
+% :- mode empty_stack( - ).
+%
+% empty_stack( [] ).
+%
+%
+% :- mode push_tabled( +, +, +, +, - ).
+%
+% push_tabled( Goal, Index, Clause, Stack,
+%              [ triple( Goal, Index, Clause ) | Stack ]
+%            ).
+%
+%
+% :- mode is_variant_of_ancestor( +, +, -, - ).
+%
+% is_variant_of_ancestor( Goal, Stack, AncestorTriple, Prefix ) :-
+%         append( Prefix, [ AncestorTriple | _ ], Stack ),      % split the list
+%         AncestorTriple = triple( G, _, _ ),
+%         are_essences_variants( Goal, G ),
+%         !.
+
+
+%%--------------  An implementation that uses goal_table:  --------------%%
 %%
-%% The stack is just a list of triples.
+%% The goal table is used to speed up the check whether there is a variant
+%% ancestor.  We still need a standard stack for getting the intermediate tabled
+%% goals.  So the "stack" is represented by
+%%    tstack( stack, goal table )
+
+
+:- ensure_loaded( '../general/goal_table_simple' ).
+
 
 :- mode empty_stack( - ).
 
-empty_stack( [] ).
+empty_stack( tstack( [], Table ) ) :-
+        empty_goal_table( Table ).
 
 
 :- mode push_tabled( +, +, +, +, - ).
 
-push_tabled( Goal, Index, Clause, Stack,
-             [ triple( Goal, Index, Clause ) | Stack ]
-           ).
+push_tabled( Goal, Index, Clause, tstack( Stack, Table ),
+             tstack( [ triple( Goal, Index, Clause ) | Stack ], Table )
+           ) :-
+        goal_table_add( Table, Goal ).
 
 
 :- mode is_variant_of_ancestor( +, +, -, - ).
 
-is_variant_of_ancestor( Goal, Stack, AncestorTriple, Prefix ) :-
-        append( Prefix, [ AncestorTriple | _ ], Stack ),        % split the list
+is_variant_of_ancestor( Goal,
+                        tstack( Stack, Table ),
+                        AncestorTriple,
+                        Prefix
+                      ) :-
+        is_a_variant_in_goal_table( Goal, Table ),           % preliminary check
+        append( Prefix, [ AncestorTriple | _ ], Stack ),     % split the list
         AncestorTriple = triple( G, _, _ ),
         are_essences_variants( Goal, G ),
         !.
 
 %-------------------------------------------------------------------------------
-
