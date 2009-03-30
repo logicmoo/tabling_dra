@@ -106,34 +106,36 @@
                  - Fixed several errors.
 
                  - The LTL verifier in straight Prolog has been rewritten.
-                   It now works on all examples, but there is no proof that the
-                   rewrite rules need no extension.  The program is
+                   It now works on all examples, but there is no proof that
+                   the rewrite rules need no extension.  The program is
                    tabling/examples/LTL/v.pl.
 
                  - A new directive added to "dra": the user can now inspect
                    the answer table.
 
                  - A minor extension of "dra": statistics about the number of
-                   steps and about the size and growth of the answer table are
-                   now produced after every query.
+                   steps and about the size and growth of the answer table
+                   are now produced after every query.
 
-                 - The declarations of allowed built-in predicates have been
-                   factored out from the interpreters into separate files, to
-                   facilitate extension.
-
-                 - "dra" prints out its version when loaded.
-
-                 - A separate user manual has been produced from the extended
-                   comments.
+                 - The declarations of allowed built-in predicates in "dra"
+                   have been factored out from the interpreters into separate
+                   files, to facilitate extension.  findall/3 has been added.
 
                  - The stack of tabled ancestors and the set of coinductive
-                   hypotheses have been factored out of "dra_common.pl" to allow
-                   a change to a more efficient representation.
+                   hypotheses have been factored out of "dra_common.pl" to
+                   allow a change to a more efficient representation.  The
+                   representation has been changed to open binary trees.  The
+                   hope is that this will make performance degradation more
+                   graceful as applications get larger.
 
                  - The program files have been prefixed with a standard
                    copyright notice and disclaimer.
 
-                 - We are now ready for a real public release, pending a review
-                   and a sanity check by a second person.
+                 - "dra" prints out its version when loaded.
+
+                 - A separate user manual for "dra" is now available.
+
+                 - We are now ready for a real public release, pending a
+                   review and a sanity check by a second person.
 
 -------------------------------------------------------------------------------
