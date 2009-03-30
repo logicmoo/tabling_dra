@@ -1,0 +1,16 @@
+%% A simple example of coinduction that also tests the "transparency" of
+%% findall.
+%% p( t, Y ) should instantiate Y to a variant of t for every t.
+
+:- coinductive p/2.
+
+p( _, Y ) :-  findall( T, once( q( T ) ), Bag ),  member( Y, Bag ).
+
+q( X ) :-  r( X ).
+
+r( X ) :-  p( X, _ ).
+
+
+:- top q/0.
+
+q :-  p( hoho, _ ).

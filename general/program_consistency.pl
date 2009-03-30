@@ -193,6 +193,22 @@ extract_called( Unary, OSetOfCalled ) :-
         !,
         extract_called( A, OSetOfCalled ).
 
+extract_called( Findall, OSetOfCalled ) :-
+        Findall = findall( _, Goal, _ ),
+        !,
+        (
+            % Sicstus prefixes the second argument of findall with the module
+            % name, but it does not do that for nested findall...
+            lp_system( sicstus ),
+            Goal = interpreted: G
+        ->
+            true
+        ;
+            G = Goal
+        ),
+        extract_called( G, OSetOfCalled ).
+
+
 extract_called( Predicate, OSetOfCalled ) :-
         callable( Predicate ),
         !,

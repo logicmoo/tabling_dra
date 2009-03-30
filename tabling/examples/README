@@ -14,6 +14,12 @@ bad9.tlp:
         Examples that test some of the diagnostics of the tabling
         interpreter and/or the top level.
 
+coind.tlp:
+        A trivial example that tests coinduction.
+
+coind2.tlp:
+        A trivial example that tests coinduction together with findall/3.
+
 comment_example.tlp:
 
         An example that demonstrates why tabled results must be annotated

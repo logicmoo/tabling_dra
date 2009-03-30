@@ -5,8 +5,10 @@
 %%% Every addition should be considered carefully: some built-ins might require
 %%% special treatment by the interpreter.
 
+%%  NOTE: findall/3 is not opaque to coinductive and tabled ancestors.
+
 %%  NOTE: Just adding "!" won't do the trick, the main interpreter would
-%%        have to be modified substantially.
+%%        have to be modified substantially (but first: what are the semantics?)
 
 builtin( (_ , _)            ).  % special treatment in solve/4
 builtin( (_ -> _)           ).  % special treatment in solve/4
@@ -26,6 +28,7 @@ builtin( atom( _ )          ).
 builtin( call( _ )          ).
 builtin( fail               ).
 builtin( false              ).
+builtin( findall( _, _, _ ) ).  % special treatment in solve/4
 builtin( member( _, _ )     ).
 builtin( nl                 ).
 builtin( once( _ )          ).  % special treatment in solve/4

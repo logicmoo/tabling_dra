@@ -35,3 +35,4 @@ path( A, B ) :-  path( A, C ), path( C, B ).
 ?- path( c, b ).      % expected:  yes
 ?- path( c, e ).      % expected:  no
 ?- path( _X, _Y ).    % expected:  see the picture
+?- findall( [ X, Y ], path( X, Y ), Bag ).

@@ -969,6 +969,24 @@ solve( retractall( C ), _, _, _ ) :-
         retractall_in_module( interpreted, C ).
 
 
+% findall/3: note that this is not opaque to coinductive and tabled ancestors!
+
+solve( findall( Template, Goal, Bag ), Stack, Hyp, Level ) :-
+        !,
+        NLevel is Level + 1,
+        (
+            % Sicstus prefixes the second argument of findall with the module
+            % name, but it does not do that for nested findall...
+            lp_system( sicstus ),
+            Goal = interpreted: G
+        ->
+            true
+        ;
+            G = Goal
+        ),
+        findall( Template, solve( G, Stack, Hyp, NLevel ), Bag ).
+
+
 % Some other supported built-in.
 
 solve( BuiltIn, _, _, _ ) :-
