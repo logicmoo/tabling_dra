@@ -26,7 +26,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 27 March 2009.                                             %%%
+%%%  Last update: 30 March 2009.                                             %%%
 %%%                                                                          %%%
 %%%  NOTE: This code runs on Sicstus and Eclipse.  It may require some       %%%
 %%%        tweaking for other Prolog systems.                                %%%
@@ -673,8 +673,13 @@ top :-
             true
         ),
         readvar( Input, Term, VarDict ),
-        % skip the rest of the line (a must for Sicstus):
-        getline( Input, _ ),
+        (
+            lp_system( sicstus )
+        ->
+            getline( Input, _ )                      % skip the rest of the line
+        ;
+            true
+        ),
         bare_to_query( Term, NTerm ),
         verify_program_item( NTerm, VarDict ),
         interactive_term( NTerm, VarDict ),
