@@ -112,7 +112,7 @@
 %%    tstack( stack, goal table )
 
 
-:- ensure_loaded( '../general/goal_table_simple' ).
+:- ensure_loaded( '../general/goal_table_in_tree' ).
 
 
 :- mode empty_stack( - ).

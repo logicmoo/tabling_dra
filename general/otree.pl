@@ -50,14 +50,14 @@ empty_otree( OT ) :-  var( OT ).
 
 
 %%------------------------------------------------------------------------------
-%% is_in_otree( + key, + comparison predicate, + open tree, - information ):
+%% is_in_otree( + open tree, + key, + comparison predicate, - information ):
 %% If the entry for this key is present in the tree, succeed and return the
 %% associated information; if it is not, fail.
 %% "comparison predicate" is a binary predicate that succeeds if the first
 %% argument is smaller than the second argument.  Any predicate that implements
 %% a total ordering will do.
 
-is_in_otree( Key, LessPred, Node, Info ) :-
+is_in_otree( Node, Key, LessPred, Info ) :-
         nonvar( Node ),
         Node = t( K, I, L, R ),
         (
@@ -67,9 +67,9 @@ is_in_otree( Key, LessPred, Node, Info ) :-
         ;
             apply( LessPred, [ Key, K ] )
         ->
-            is_in_otree( Key, LessPred, L, Info )
+            is_in_otree( L, Key, LessPred, Info )
         ;
-            is_in_otree( Key, LessPred, R, Info )
+            is_in_otree( R, Key, LessPred, Info )
         ).
 
 

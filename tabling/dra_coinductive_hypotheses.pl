@@ -86,7 +86,7 @@
 
 %%--------------  An implementation that uses goal_table:  --------------%%
 
-:- ensure_loaded( '../general/goal_table_simple' ).
+:- ensure_loaded( '../general/goal_table_in_tree' ).
 
 
 :- mode empty_hypotheses( - ).

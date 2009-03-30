@@ -86,7 +86,15 @@ is_a_variant_in_goal_table( Goal, Table ) :-
 
 goal_table_add( Table, Goal ) :-
         functor( Goal, P, K ),
-        otree( Table, P / K, pred_spec_less, olist_add ).
+        (
+            is_in_otree( Table, P / K, pred_spec_less, OList )
+        ->
+            olist_add( OList, Goal )
+        ;
+            empty_olist( OList ),
+            olist_add( OList, Goal ),
+            otree_add( Table, P / K, OList, pred_spec_less, olist_add )
+        ).
 
 
 %%------------------------------------------------------------------------------
