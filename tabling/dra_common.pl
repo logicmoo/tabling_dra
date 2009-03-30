@@ -789,7 +789,9 @@ query( Goals ) :-                                         % invoked by top_level
         setval( old_table_size,    NAns ),
         setval( step_counter,      0    ),
         (
-            solve( Goals, [], [], 0 ),
+            empty_hypotheses( Hyp ),
+            empty_stack( Stack ),
+            solve( Goals, Stack, Hyp, 0 ),
             print_statistics,
             setval( step_counter, 0 ),
             getval( number_of_answers, NAns2 ),

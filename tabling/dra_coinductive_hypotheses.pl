@@ -47,10 +47,13 @@
 %%%
 %%% The operations are:
 %%%
-%%%    push_coinductive( + goal, + stack, - new stack ):
+%%%    empty_hypotheses( - stack of hypotheses ):
+%%%         Create an empty stack for coinductive hypotheses.
+%%%
+%%%    push_coinductive( + goal, + stack of hypotheses , - new stack ):
 %%%         Push the coinductive goal onto the stack.
 %%%
-%%%    unify_with_coinductive_ancestor( + goal, + stack ):
+%%%    unify_with_coinductive_ancestor( + goal, + stack of hypotheses ):
 %%%         Fail if there is no unifiable coinductive ancestor on the stack. If
 %%%         there is one, succeed after performing the unification with the
 %%%         most recent such ancestor.  Upon failure undo the unification and
@@ -59,10 +62,14 @@
 %%%         exhausted.
 
 
+% %%--------------  The minimal implementation:  --------------%%
+% %%
+% %% The set of coinductive hypotheses is just a list.
 
-%%--------------  The minimal implementation:  --------------%%
-%%
-%% The set of coinductive hypotheses is just a list.
+:- mode empty_hypotheses( - ).
+
+empty_hypotheses( [] ).
+
 
 :- mode push_coinductive( +, +, - ).
 
@@ -72,8 +79,8 @@ push_coinductive( Goal, Hyp, [ Goal | Hyp ] ).
 :- mode unify_with_coinductive_ancestor( +, + ).
 
 unify_with_coinductive_ancestor( Goal, Hyp ) :-
-        essence_hook( Goal, Essence ),
+        once( essence_hook( Goal, Essence ) ),
         member( G, Hyp ),
-        essence_hook( G, Essence ).
+        once( essence_hook( G, Essence ) ).
 
 %-------------------------------------------------------------------------------

@@ -61,6 +61,9 @@
 %%%
 %%% The operations are:
 %%%
+%%%    empty_stack( - stack ):
+%%%            Create an empty stack.
+%%%
 %%%    push_tabled( + goal, + index, + clause, + stack, - new stack ):
 %%%            where the first three arguments are the constitutive elements of
 %%%            a triple.
@@ -79,6 +82,11 @@
 %%--------------  The minimal implementation:  --------------%%
 %%
 %% The stack is just a list of triples.
+
+:- mode empty_stack( - ).
+
+empty_stack( [] ).
+
 
 :- mode push_tabled( +, +, +, +, - ).
 
