@@ -53,22 +53,30 @@ empty_goal_table( Table ) :-
 %% Check whether any instantiations of the goal are in the table: if there are,
 %% unify the goal with the first one (backtracking will unify it with each of
 %% them in turn).
+%%
+%% NOTE: Use essence hook before comparison!
 
 goal_table_member( Goal, Table ) :-
         functor( Goal, P, K ),
         is_in_otree( Table, P / K, pred_spec_less, OList ),
-        olist_member_reversed( Goal, OList ).
+        once( essence_hook( Goal, Essence ) ),
+        olist_member_reversed( G, OList ),
+        once( essence_hook( G, Essence ) ).
 
 
 %%------------------------------------------------------------------------------
 %% is_a_variant_in_goal_table( + goal, + goal table ):
 %% Succeed iff a variant of this goal is present in the table.
 %% Do not modify the goal.
+%%
+%% NOTE: Use essence hook before comparison!
 
 is_a_variant_in_goal_table( Goal, Table ) :-
+        once( essence_hook( Goal, GoalEssence ) ),
         copy_term2( Goal, Copy ),
         goal_table_member( Copy, Table ),
-        are_variants( Copy, Goal ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        are_variants( CopyEssence, GoalEssence ),
         !.
 
 
