@@ -267,7 +267,8 @@ check_for_singleton_variables( Clause, Ctxt ) :-
         ->
             true
         ;
-            clause_warning( [ 'Singleton variables ', Singletons ], Ctxt )
+            Singletons = set( Vars ),
+            clause_warning( [ 'Singleton variables ', Vars ], Ctxt )
         ).
 
 %
