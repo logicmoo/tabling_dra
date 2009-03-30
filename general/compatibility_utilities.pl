@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February 2009)                       %%%
 %%%                                                                          %%%
-%%%  Last update: 18 March 2009.                                             %%%
+%%%  Last update: 30 March 2009.                                             %%%
 %%%                                                                          %%%
 
 :- ensure_loaded( higher_order ).
@@ -133,6 +133,15 @@ dynamic_in_module( _, _ ).
 
 compile_to_module( Module, FileName ) :-
         compile( Module : FileName ).
+
+
+%%------------------------------------------------------------------------------
+%% copy_term2( + term, - term ):
+%% Same as copy_term/2, but safe for cyclic terms.
+%% In the case of Sicstus there are no problems.
+
+copy_term2( Term, Copy ) :-
+        copy_term( Term, Copy ).
 
 
 %%------------------------------------------------------------------------------

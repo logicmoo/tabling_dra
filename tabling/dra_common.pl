@@ -26,9 +26,9 @@
 %%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 27 March 2009.                                             %%%
+%%%  Last update: 30 March 2009.                                             %%%
 %%%                                                                          %%%
-version( 'DRA ((c) UTD 2009) version 0.9, 27 March 2009' ).
+version( 'DRA ((c) UTD 2009) version 0.9, 30 March 2009' ).
 
 %%% NOTE:
 %%%
@@ -732,7 +732,7 @@ print_required_answers( Var, Pattern ) :-
         ).
 
 print_required_answers( Goal, Pattern ) :-
-        copy_term( Goal, OriginalGoal ),
+        copy_term2( Goal, OriginalGoal ),
         get_answer( Goal ),                            % iterate through answers
         Goal = Pattern,
         mk_variable_dictionary( OriginalGoal + Goal, VarDict ),
@@ -1102,7 +1102,7 @@ solve( Goal, Stack, Hyp, Level ) :-
         (
             coinductive( Goal )
         ->
-            copy_term( Goal, OriginalGoal ),
+            copy_term2( Goal, OriginalGoal ),
             (
                 get_tabled_if_old_first( Goal, Index,
                                          'variant (coinductive)', Level
@@ -1159,7 +1159,7 @@ solve( Goal, Stack, Hyp, Level ) :-
             NHyp = Hyp
         ),
         incval( step_counter ),
-        copy_term( Goal, OriginalGoal ),
+        copy_term2( Goal, OriginalGoal ),
         add_pioneer( Goal, Index ),
         trace_entry( pioneer, Goal, Index, Level ),
 
@@ -1169,7 +1169,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 
             NLevel is Level + 1,
             use_clause( Goal, Body ),
-            copy_term( (Goal :- Body), ClauseCopy ),
+            copy_term2( (Goal :- Body), ClauseCopy ),
             push_tabled( OriginalGoal, Index, ClauseCopy, Stack, NStack ),
             solve( Body,
                    NStack,
@@ -1313,7 +1313,7 @@ compute_fixed_point_( Goal, Index, Stack, Hyp, Level, _ ) :-
         ;
             NHyp = Hyp
         ),
-        copy_term( Goal, OriginalGoal ),
+        copy_term2( Goal, OriginalGoal ),
 
         looping_alternative( Index, (Goal :- Body) ),      % i.e., iterate
         push_tabled(  OriginalGoal, Index, (Goal :- Body), Stack, NStack ),
@@ -1383,7 +1383,7 @@ extract_goals( [ triple( G, _, _ ) | Ts ], [ G | Gs ] ) :-
 :- mode is_answer_known( +, + ).
 
 is_answer_known( Goal, Fact ) :-
-        copy_term( Goal, Copy ),
+        copy_term2( Goal, Copy ),
         answer( Copy, G, F ),
         are_essences_variants( G, Goal ),
         are_essences_variants( F, Fact ),
@@ -1404,7 +1404,7 @@ memo( Goal, Fact, _ ) :-
 memo( Goal, Fact, Level ) :-
         % \+ is_answer_known( Goal, Fact ),
         optional_trace( 'Storing answer: ', Goal, Fact, Level ),
-        copy_term( Goal, Copy ),
+        copy_term2( Goal, Copy ),
         assert( answer( Copy, Goal, Fact ) ),
         incval( number_of_answers ).
 
@@ -1417,7 +1417,7 @@ memo( Goal, Fact, Level ) :-
 
 get_answer( Goal ) :-
         once( essence_hook( Goal, EssenceOfGoal ) ),
-        copy_term( Goal, Copy ),
+        copy_term2( Goal, Copy ),
         answer( Copy, G, Ans ),
         once( essence_hook( G, EssenceOfG ) ),
         are_variants( EssenceOfGoal, EssenceOfG ),
@@ -1434,7 +1434,7 @@ get_answer( Goal ) :-
 :- mode is_completed( + ).
 
 is_completed( Goal ) :-
-        copy_term( Goal, Copy ),
+        copy_term2( Goal, Copy ),
         completed( Copy, G ),
         are_essences_variants( Goal, G ).
 
@@ -1450,7 +1450,7 @@ complete_goal( Goal, _ ) :-
 
 complete_goal( Goal, Level ) :-
         % \+ is_completed( Goal ),
-        copy_term( Goal, Copy ),
+        copy_term2( Goal, Copy ),
         trace_other( 'Completing', Goal, '?', Level ),
         assert( completed( Copy, Goal ) ).
 
@@ -1463,7 +1463,7 @@ complete_goal( Goal, Level ) :-
 :- mode is_a_variant_of_a_pioneer( +, - ).
 
 is_a_variant_of_a_pioneer( Goal, Index ) :-
-        copy_term( Goal, Copy ),
+        copy_term2( Goal, Copy ),
         pioneer( Copy, G, Index ),
         are_essences_variants( Goal, G ),
         !.
@@ -1475,7 +1475,7 @@ is_a_variant_of_a_pioneer( Goal, Index ) :-
 :- mode add_pioneer( +, - ).
 
 add_pioneer( Goal, Index ) :-
-        copy_term( Goal, Copy ),
+        copy_term2( Goal, Copy ),
         get_unique_index( Index ),
         assert( pioneer( Copy, Goal, Index ) ).
 

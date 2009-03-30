@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February 2009).                      %%%
 %%%                                                                          %%%
-%%%  Last update: 18 February 2009.                                          %%%
+%%%  Last update: 30 March 2009.                                             %%%
 %%%                                                                          %%%
 
 :- ensure_loaded( utilities ).
@@ -59,7 +59,7 @@ goal_table_member( Goal, Table ) :-
 %% Do not modify the goal.
 
 is_a_variant_in_goal_table( Goal, Table ) :-
-        copy_term( Goal, Copy ),
+        copy_term2( Goal, Copy ),
         olist_member( Copy, Table ),
         are_variants( Copy, Goal ),
         !.

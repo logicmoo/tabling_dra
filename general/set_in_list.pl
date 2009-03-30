@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February 2009).                      %%%
 %%%                                                                          %%%
-%%%  Last update: 20 February 2009.                                          %%%
+%%%  Last update: 30 March 2009.                                             %%%
 %%%                                                                          %%%
 %%%  NOTE: Different Prolog variables are treated as different items: this   %%%
 %%%        is so by design!                                                  %%%

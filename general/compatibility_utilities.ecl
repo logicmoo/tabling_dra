@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February 2009)                       %%%
 %%%                                                                          %%%
-%%%  Last update: 26 February 2009.                                          %%%
+%%%  Last update: 30 March 2009.                                             %%%
 %%%                                                                          %%%
 
 :- ensure_loaded( higher_order ).
@@ -166,6 +166,18 @@ dynamic_in_module( Module, PredSpec ) :-
 
 compile_to_module( Module, FileName ) :-
         compile( FileName ) @ Module.
+
+
+%%------------------------------------------------------------------------------
+%% copy_term2( + term, - term ):
+%% Same as copy_term/2, but safe for cyclic terms.
+%% In the case of Eclipse we have to resort to assert/retract.
+
+:- dynamic ' COPY_TERM'/1.
+
+copy_term2( Term, Copy ) :-
+        assert( ' COPY_TERM'( Term ) ),
+        retract( ' COPY_TERM'( Copy ) ).
 
 
 %%------------------------------------------------------------------------------
