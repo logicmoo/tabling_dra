@@ -817,7 +817,7 @@ print_statistics :-
         write(  Output, NSteps ),
         write(  Output, ' step' ),
         plural( Output, NSteps ),
-        write(  Output, ' ' ),
+        write(  Output, ', ' ),
         write(  Output, TableGrowth ),
         write(  Output, ' new answer' ),
         plural( Output, TableGrowth ),
