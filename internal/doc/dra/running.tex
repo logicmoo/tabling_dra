@@ -99,10 +99,14 @@ character) and immediately followed by a newline (i.e., you must press the
 \prog{ENTER} key).\footnote{
   You cannot input more than one term per line. On Sicstus all characters
   between the fullstop and the newline will be ignored.  On Eclipse, if the
-  answer to your query is ``\prog{Yes~~(more?)~:}'', the remainder of the
+  answer to your query is ``\prog{Yes~~(more?)~}'', the remainder of the
   previous line will be treated as your input and the interpreter will seem
   to cease responding.  To get out of this state type in a fullstop followed
   by a newline.}
+If a query succeeds, you will get a printout that looks like this:\\
+\ind\prog{Yes~~(more?)~}\\
+You should then type in a semicolon immediately followed by a newline (if you
+want more answers), or just a newline (if you don't).
 
 When you type in a term of the form ``\prog{:-~\patt{...}.}'', it will be
 treated as a directive\index{directive}; when you type in a term of the form
@@ -119,15 +123,13 @@ this will have nothing to do with the directive\\
 and the interpreter will try to invoke the predicate \pred{answers/2} in your
 program.  This may be a little confusing, but the good news is that you don't
 have to worry about potential conflicts between the names in your program and
-the names of the interpreter's directives.  (Neither do you have to worry
-about conflicts between your program and the interpreter itself.)\footnote{
-  The interpreted program is loaded into a separate module
-  called \progidx{interpreted}.  If there is a support layer, it is loaded
-  into the module \progidx{support}.  I mention these names, because the host
-  system may show them in error messages if something goes horribly wrong.
-}
+the names of the interpreter's directives.
 
-\vfill %<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+Neither do you have to worry about conflicts between your program and the
+interpreter itself. The interpreted program is loaded into a separate module
+called \progidx{interpreted}.  If there is a support layer, it is loaded into
+the module \progidx{support}.  I mention these names, because the host system
+may show them in error messages if something goes horribly wrong.
 
 
 %%%%
