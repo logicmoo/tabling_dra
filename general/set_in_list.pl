@@ -36,7 +36,6 @@
 %%%        etc.) is quadratic in the size of the sets.                       %%%
 %%%                                                                          %%%
 
-
 %%% Sets are represented as unordered lists.
 
 
@@ -44,170 +43,194 @@
 %% empty_set( +- set ) :
 %% Create an empty set, or check that the given set is empty.
 
-empty_set( [] ).
+empty_set( set( [] ) ).
+
+
+%%------------------------------------------------------------------------------
+%% same_set_element( + item, + item ):
+%% Succeeds iff the two items are identical
+%% when treated as elements of a set.
+
+same_set_element( A, B ) :-
+        (
+            ( var( A ) ; A \= set( _ )
+            ; var( B ) ; B \= set( _ )
+            )
+        ->
+            A == B
+        ;
+            equal_sets( A, B )
+        ).
+
+
+%%------------------------------------------------------------------------------
+%% is_in_set( + item, + set ):
+%% Is the item a member of the set?
+
+is_in_set( Item, set( List ) ) :-
+        once( is_in_set_( Item, List ) ).
+
+%
+is_in_set_( Item, [ H | _ ] ) :-
+        same_set_element( Item, H ).
+
+is_in_set_( Item, [ _H | T ] ) :-
+        % \+ same_element( Item, _H ),
+        is_in_set_( Item, T ).
+
+
+%%------------------------------------------------------------------------------
+%% from_set( + set, - member, - new set ):
+%% Remove an arbitrary member from the set;
+%% fail if the set is empty.
+
+from_set( set( [ H | T ] ),  H, set( T ) ).
+
+
+%%------------------------------------------------------------------------------
+%% remove_from_set( + item, + set, - new set ):
+%% Remove the given item from the set;
+%% fail if the item is not a member.
+
+remove_from_set( M, set( L ), set( NL ) ) :-
+        once( remove_from_set_( M, L, NL ) ).
+
+%
+remove_from_set_( M, [ H | T ], T ) :-
+        same_set_element( M, H ).
+
+remove_from_set_( M, [ H | T ], [ H | NT ] ) :-
+        % \+ same_set_element( M, H ).
+        remove_from_set_( M, T, NT ).
 
 
 %%------------------------------------------------------------------------------
 %% add_to_set( + item, + set, - new set ):
 %% Add the item to the set.
+%%
+%% WARNING: DO NOT INSTANTIATE THE ITEM WHILE IT IS IN SOME SET!
 
-:- mode add_to_set( ?, +, - ).
+add_to_set( Item, Set, NewSet ) :-
+        once( add_to_set_( Item, Set, NewSet ) ).
 
-add_to_set( Item, Set, Set ) :-
-        is_in_set( Item, Set ),
-        !.
+%
+add_to_set_( Item, Set, Set ) :-
+        is_in_set( Item, Set ).
 
-add_to_set( Item, Set, [ Item | Set ] ).
-
-
-%%------------------------------------------------------------------------------
-%% is_in_set( + item, + set ):
-%% Is the given item a member of the set?
-
-:- mode is_in_set( ?, + ).
-
-is_in_set( Item, [ H | _ ] ) :-
-        Item == H,
-        !.
-
-is_in_set( Item, [ _ | T ] ) :-
-        is_in_set( Item, T ).
+add_to_set_( Item, set( L ), set( [ Item | L ] ) ).
+        % \+ is_in_set( Item, set( L ) ).
 
 
 %%------------------------------------------------------------------------------
-%% generate_member_of_set( + set, - item ):
-%% Nondeterministically generate members of the set.
+%% sub_set( + set, + set ):
+%% Succeed iff the first set is a subset of the second set.
+%%
+%% NOTE: In Eclipse the name "subset" is reserved for a built-in.
 
-:- mode generate_member_of_set( +, ? ).
+sub_set( set( L1 ), Set2 ) :-
+        once( subset_( L1, Set2 ) ).
 
-generate_member_of_set( Item, Set ) :-
-        member( Item, Set ).
+%
+subset_( [], _ ).
 
-
-%%------------------------------------------------------------------------------
-%% from_set( + set, - item, - new set ):
-%% If the set is empty, fail;  otherwise return some element of the set, as well
-%% as the set without that element.
-
-:- mode from_set( +, -, - ).
-
-from_set( [ H | T ], H, T ).
+subset_( [ H | T ], Set ) :-
+        is_in_set( H, Set ),
+        subset_( T, Set ).
 
 
 %%------------------------------------------------------------------------------
 %% equal_sets( + set, + set ):
 %% Are the two sets equal?
 
-:- mode equal_sets( +, + ).
-
-equal_sets( S1, S2 ) :-
-        symmetric_set_difference( S1, S2, SD ),
-        empty_set( SD ).
+equal_sets( A, B ) :-
+        sub_set( A, B ),
+        sub_set( B, A ).
 
 
 %%------------------------------------------------------------------------------
 %% set_union( + set, + set, - the union ):
 %% Compute the union of two sets.
 
-:- mode set_union( +, +, - ).
+set_union( set( L1 ), S2, set( Union ) ) :-
+        once( set_union_( L1, S2, Union ) ).
 
-set_union( [], S, S ) :-
-        !.
+%
+set_union_( [], set( L ), L ).
 
-set_union( S, [], S ) :-
-        !.
-
-set_union( [ H | T ], S, NS ) :-
+set_union_( [ H | T ], S, NS ) :-
         is_in_set( H, S ),
-        !,
-        set_union( T, S, NS ).
+        set_union_( T, S, NS ).
 
-set_union( [ H | T ], S, [ H | NS ] ) :-
+set_union_( [ H | T ], S, [ H | NS ] ) :-
         % \+ is_in_set( H, S ),
-        set_union( T, S, NS ).
+        set_union_( T, S, NS ).
 
 
 %%------------------------------------------------------------------------------
 %% set_intersection( + set, + set, - the intersection ):
 %% Compute the intersection of two sets.
 
-:- mode set_intersection( +, +, - ).
+set_intersection( set( L1 ), S2, set( Intersection ) ) :-
+        once( set_intersection_( L1, S2, Intersection ) ).
 
-set_intersection( [], _, [] ) :-
-        !.
+%
+set_intersection_( [], _, [] ).
 
-set_intersection( _, [], [] ) :-
-        !.
+set_intersection_( [ H | T ], S, NS ) :-
+        \+ is_in_set( H, S ),
+        set_intersection_( T, S, NS ).
 
-set_intersection( [ H | T ], S, [ H | NS ] ) :-
-        is_in_set( H, S ),
-        !,
-        set_intersection( T, S, NS ).
-
-set_intersection( [ _ | T ], S, NS ) :-
-        % \+ is_in_set( H, S ),
-        set_intersection( T, S, NS ).
+set_intersection_( [ H | T ], S, [ H | NS ] ) :-
+        % is_in_set( H, S ),
+        set_intersection_( T, S, NS ).
 
 
 %%------------------------------------------------------------------------------
 %% set_difference( + set, + set, - the difference ):
 %% Subtract the second set from the first.
 
-:- mode set_difference( +, +, - ).
+set_difference( set( L1 ), S2, set( Difference ) ) :-
+        once( set_difference_( L1, S2, Difference ) ).
 
-set_difference( [], _, [] ) :-
-        !.
+%
+set_difference_( [], _, [] ).
 
-set_difference( S, [], S ) :-
-        !.
-
-set_difference( [ H | T ], S, NS ) :-
+set_difference_( [ H | T ], S, NS ) :-
         is_in_set( H, S ),
-        !,
-        set_difference( T, S, NS ).
+        set_difference_( T, S, NS ).
 
-set_difference( [ H | T ], S, [ H | NS ] ) :-
+set_difference_( [ H | T ], S, [ H | NS ] ) :-
         % \+ is_in_set( H, S ),
-        set_difference( T, S, NS ).
+        set_difference_( T, S, NS ).
 
 
 %%------------------------------------------------------------------------------
-%% symmetric_set_difference( + set, + set, - the symmetric difference ):
+%% symmetric_set_difference( + set, + set,
+%%                           - the symmetric difference
+%%                         ):
 %% Compute the symmetric difference of two sets.
 
-:- mode symmetric_set_difference( +, +, - ).
-
-symmetric_set_difference( S1, S2, NS ) :-
-        set_difference( S1, S2, Diff12 ),
-        set_difference( S2, S1, Diff21 ),
-        append( Diff12, Diff21, NS ).
-
-
-%%------------------------------------------------------------------------------
-%% set_to_list( + set, - list ):
-%% Create a list that contains all the elements of the set.
-
-:- mode set_to_list( +, - ).
-
-set_to_list( S, S ).
+symmetric_set_difference( A, B, SymmetricDiff ) :-
+        set_difference( A, B, DiffAB ),
+        set_difference( B, A, DiffBA ),
+        set_union( DiffAB, DiffBA, SymmetricDiff ).
 
 
 %%------------------------------------------------------------------------------
 %% list_to_set( + list, - set ):
-%% Create a set that contains all the elements from the list (without
-%% duplicates, of course).
+%% Form a set with all the elements of the list.
+%%
+%% WARNING: DO NOT INSTANTIATE THE ITEM WHILE IT IS IN SOME SET!
 
-:- mode list_to_set( +, - ).
-
-list_to_set( L, S ) :-
-        empty_set( S0 ),
-        list_to_set_( L, S0, S ).
+list_to_set( List, Set ) :-
+        empty_set( Empty ),
+        list_to_set_( List, Empty, Set ).
 
 %
-list_to_set_( [], S, S ).
+list_to_set_( []       , Set, Set  ).
 
-list_to_set_( [ H | T ], S, NS ) :-
-        add_to_set( H, S, S2 ),
-        list_to_set_( T, S2, NS ).
+list_to_set_( [ H | T ], Set, NSet ) :-
+        add_to_set( H, Set, Set2 ),
+        list_to_set_( T, Set2, NSet ).
 
 %%------------------------------------------------------------------------------
