@@ -88,7 +88,7 @@ q8  :- check( s2, g p ).                  % yes      loops     yes
 
 q9  :- check( s2, f g p ).                % yes      loops     yes
 
-q10  :- check( s2, f( q ^ z ) ).          % no       *         no
+q10 :- check( s2, f( q ^ z ) ).           % no       *         no
 
 q11 :- check( s2, f q ^ f z ).            % yes      yes       yes
 
