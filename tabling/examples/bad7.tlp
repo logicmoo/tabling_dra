@@ -1,3 +1,4 @@
+%% Testing detection of singleton variables.
 
 p( V, 'V' ).                  % singleton V
 
@@ -10,10 +11,10 @@ a(X) :- b(X, Y), (c( Y ); d( Y )).
 
 
 % Here Y should be a singleton.
-a :- \+ b( Y ), c( Y ).
+a( 1 ) :- \+ b( Y ), c( Y ).
 
 % Here Y should be a singleton in the first branch
-a :- (\+ b( Y ); c( Y )), d( Y ).
+a( 2 ) :- (\+ b( Y ); c( Y )), d( Y ).
 
 % Here Y should be a singleton in the first branch
 a(X) :-(b( Y ), fail ; c( X )), d( Y ).
@@ -25,11 +26,12 @@ a(X) :-(b( Y ), fail ; c( Y )), d( Y ).
 a(X) :-(b( Y ), fail ; c( Y ), fail), d( Y ).
 
 
-a :-  ( b( Y ), c( X )
-      ; b( Y ), fail        % Y is singleton here
-      ; \+ b( Z )           % Z is singleton here
-      ),
-      d( X, Y, Z ).
+a( 3 ) :-
+        ( b( Y ), c( X )
+        ; b( Y ), fail        % Y is singleton here
+        ; \+ b( Z )           % Z is singleton here
+        ),
+        d( X, Y, Z ).
 
 
 % Suppress uninteresting warnings:
@@ -38,4 +40,4 @@ b(a,a).
 c(a).
 d(a).
 d(a,a,a).
-:- top a/0, a/1, a/2, p/2.
+:- top a/1, a/2, p/2.  % Should get an error for a/0.

@@ -1,3 +1,5 @@
+% call( Y ) is not so good:
+
 head( Whatever ) :-
       (
           p( X, Y )

@@ -1,4 +1,4 @@
-% Declared, but not defined.
+% Declared, but not defined:
 
 :- top a/1, b/1.
 
