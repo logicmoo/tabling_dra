@@ -110,6 +110,10 @@
                    the rewrite rules need no extension.  The program is
                    tabling/examples/LTL/v.pl.
 
+                 - Improved the LTL coinductive/tabling verifier: no looping
+                   when printing counterexample, better consistency checking,
+                   less duplication of code.
+
                  - A new directive added to "dra": the user can now inspect
                    the answer table.
 
