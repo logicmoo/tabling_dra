@@ -61,7 +61,8 @@
 :- [ 'normalize.pl' ].
 
 
-:- top check/2.
+:- top check/2.  % The "entry point"
+
 
 %% Check whether the state satisfies the formula.
 %% This is done by checking that it does not satisfy the formula's negation.

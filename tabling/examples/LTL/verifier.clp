@@ -114,9 +114,10 @@ check( State, Formula ) :-
 
 % Check the consistency of the automaton's description.
 % NOTE: The dynamic declaration is necessary for Eclipse.
-%       On Sicstus we will see a warning, but things will work fine otherwise.
 
 :- dynamic automaton_error/0.
+
+automaton_error.  % Will be retracted: needed to suppress a warning from Sicstus
 
 check_consistency :-
         retractall( automaton_error ),
