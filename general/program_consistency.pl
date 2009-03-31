@@ -43,11 +43,16 @@
 %%  - is there a predicate that was declared as support, but not defined?
 
 check_general_consistency :-
-        findall( PredSpec,
-                 ( current_predicate_in_module( interpreted, PredSpec )
-                 , predspec_to_pattern( PredSpec, Pattern )
-                 , \+ builtin( Pattern )
-                 ),
+%        findall( PredSpec,
+%                 ( current_predicate_in_module( interpreted, PredSpec )
+%                 , predspec_to_pattern( PredSpec, Pattern )
+%                 , \+ builtin( Pattern )
+%                 ),
+%                 ListOfDefined
+%               ),
+        % The above can be made simpler, now that we have "defined/1":
+        findall( P / K,
+                 (defined( Pattern ), functor( Pattern, P, K )),
                  ListOfDefined
                ),
         findall( PredSpec,

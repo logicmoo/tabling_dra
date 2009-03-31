@@ -26,7 +26,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 30 March 2009.                                             %%%
+%%%  Last update: 31 March 2009.                                             %%%
 %%%                                                                          %%%
 %%%  NOTE: This code runs on Sicstus and Eclipse.  It may require some       %%%
 %%%        tweaking for other Prolog systems.                                %%%
@@ -145,7 +145,11 @@
 %%%       used in the metainterpreter (and the top level).  The metainterpreter
 %%%       must access them by using the predicate imported from
 %%%       "compatibility_utilties":
-%%%          clause_in_module( interpreted, ... )
+%%%           clause_in_module( interpreted, ... )
+%%%
+%%%       The predicates defined by these clauses are stored in the table
+%%%       defined/1, in the form of patterns, e.g.,
+%%%           defined( p( _, _ ) ).
 %%%
 %%%
 %%%    7. The top level notes "support" declarations in the table "support".
@@ -247,6 +251,7 @@
 
 :- dynamic support/1.
 :- dynamic top/1.
+:- dynamic defined/1.
 
 
 % If "p/k" has already been seen (and declared as dynamic), the fact is recorded
@@ -299,6 +304,7 @@ setup :-
         retractall( known( _ )   ),
         retractall( support( _ ) ),
         retractall( top( _ )     ),
+        retractall( defined( _ ) ),
         erase_modules,
         create_modules.
 
@@ -473,14 +479,16 @@ process_term( (?- Query), VarDict ) :-
 
 process_term( Clause, VarDict ) :-
         get_clause_head( Clause, Head ),
-        hook_predicate( Head ),              % metainterpreter's hook predicate
+        hook_predicate( Head ),               % metainterpreter's hook predicate
         !,
         check_not_builtin( Clause, VarDict ),      % fatal if redefining builtin
+        contiguity_check( Clause ),
         asserta( Clause ).
 
 process_term( Clause, VarDict ) :-
         check_not_builtin( Clause, VarDict ),      % fatal if redefining builtin
         ensure_dynamic( Clause ),
+        contiguity_check( Clause ),
         assertz_in_module( interpreted, Clause ).
 
 
@@ -495,6 +503,33 @@ include_files( List ) :-
         fail.
 
 include_files( _ ).
+
+
+%% contiguity_check( + clause ):
+%% Make sure that each predicate that is defined by a clause is stored in the
+%% table "defined/1".
+%% If the clause adds to the definition of a predicate that is present in
+%% the table but is not the most recent entry (i.e., is not the predicate
+%% defined by the previous clause), then issue a warning about non-contiguous
+%% definitions.
+
+contiguity_check( Clause ) :-
+        get_clause_head( Clause, Head ),
+        most_general_instance( Head, Pattern ),
+        (
+            once( defined( P ) ),  P = Pattern    % predicate as in last clause?
+        ->
+            true
+        ;
+            \+ defined( Pattern )
+        ->
+            asserta( defined( Pattern ) )
+        ;
+            functor( Pattern, P, K ),
+            warning( [ 'Non-contiguous declaration of ', P/K ] )
+        ).
+
+
 
 
 
