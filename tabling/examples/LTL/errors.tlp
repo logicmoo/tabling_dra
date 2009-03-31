@@ -35,7 +35,7 @@ proposition( ho( ho ) ).
 % state( s0 ).
 state( s1 ).
 state( s2 ).
-state( s3 )
+state( s3 ).
 
 
 trans( s0, s1 ).
@@ -52,6 +52,5 @@ holds( s1, p ).
 
 
 :- top q/0.
-%                                         Expected   Prolog    Tabling
 
-q :-  check( s0, g p ).             %     no         no        no
+q :-  check( s0, g p ).  % This is supposed to produce errors (inconsistency)

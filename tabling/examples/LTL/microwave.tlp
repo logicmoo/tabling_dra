@@ -90,10 +90,8 @@ holds( s7, heat  ).
 
 q1 :-  check( s1,   g(~ heat u close) ).   % yes       loops     yes
 
-q2 :-  check( s1, ~ g(~ heat u close) ).   % no        *         no
+q2 :-  check( s1, ~ g(~ heat u close) ).   % no        no        no
 
 q3 :-  check( s1, f( close ) ).            % yes       yes       yes
 
-q4 :-  check( s1, f( error ) ).            % no        *         no
-
-                                        % (*) loops when writing counterexample
+q4 :-  check( s1, f( error ) ).            % no        no        no

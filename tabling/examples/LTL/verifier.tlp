@@ -52,6 +52,7 @@
 
 :- [ 'operators.pl' ].
 :- [ 'normalize.pl' ].
+:- [ 'looping_prefix.pl' ].
 :- [ 'consistency_checker.pl' ].
 
 
@@ -90,8 +91,8 @@ check( State, Formula ) :-
             once( verify( State, NormalizedNegationOfFormula, Path ) )
         ->
             write( 'COUNTEREXAMPLE: ' ),
-            once( append( Path, [], ClosedPath ) ),
-            write( ClosedPath ),
+            looping_prefix( Path, Prefix ),
+            write( Prefix ),
             nl,
             fail
         ;
@@ -99,6 +100,8 @@ check( State, Formula ) :-
         ).
 
 
+
+%---------------  The verifier proper  ---------------
 
 %--- The formula is normalized: only propositions can be negated.
 

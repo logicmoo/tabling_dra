@@ -53,6 +53,10 @@ consistency_checker.pl:
         A program that checks whether the definition of an automaton is
         internally consitent.  Used by the verifier.
 
+looping_prefix.pl:
+        A program that cuts off a prefix suitable for presentation from a
+        path that is a counterexample.  Used by the verifier.
+
 normalize.pl:
         Simple normalization of LTL expressions, used by the verifier.
 

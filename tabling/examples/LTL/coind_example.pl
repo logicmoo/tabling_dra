@@ -12,6 +12,4 @@ holds( s0, q ).
 
 %                                         Expected   Prolog    Tabling
 
-q :- check( s0, f p ).                 %  no         *         no
-
-                                       % (*) loops when writing counterexample
+q :- check( s0, f p ).                 %  no         no        no

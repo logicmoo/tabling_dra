@@ -64,4 +64,3 @@ q4  :-  check( s3, f( p ^ q ) ).       %  yes        yes       yes
 q5  :-  check( s0, g p ).              %  no         loops     no
 
 q6  :-  check( s0, g( p v q ) ).       %  yes        loops     yes
-

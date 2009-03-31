@@ -49,8 +49,20 @@
 %% The formula will be normalized and negated by the program.
 
 
-:- [ 'operators.pl' ].
+% Must expand ":- [ 'operators.pl' ].", since the translator
+% wouldn't interpret that.
+
+:- op( 10,  fy , ~   ).   % not
+:- op( 20, xfy , ^   ).   % and
+:- op( 30, xfy , v   ).   % or
+:- op( 10,  fy , x   ).   % LTL: "next"
+:- op( 10,  fy , f   ).   % LTL: "eventually"
+:- op( 10,  fy , g   ).   % LTL: "always"
+:- op( 20, xfx , u   ).   % LTL: "until"
+:- op( 20, xfx , r   ).   % LTL: "release"
+
 :- [ 'normalize.pl' ].
+:- [ 'looping_prefix.pl' ].
 :- [ 'consistency_checker.pl' ].
 
 
@@ -59,6 +71,7 @@
 % Don't transform these:
 
 :- support holds/2, normalize/2, proposition/1, state/1, trans/2,
+   looping_prefix/2,
    automaton_error/0, check_consistency/0.
 
 
@@ -95,9 +108,8 @@ check( State, Formula ) :-
             once( verify( State, NormalizedNegationOfFormula, Path ) )
         ->
             write( 'COUNTEREXAMPLE: ' ),
-%            once( append( Path, [], ClosedPath ) ),  % no good for infinite
-%            write( ClosedPath ),
-            write( Path ),
+            looping_prefix( Path, Prefix ),
+            write( Prefix ),
             nl,
             fail
         ;
