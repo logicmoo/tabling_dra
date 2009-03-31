@@ -4,15 +4,9 @@ This directory includes the following files:
 
 bad.tlp:
 bad2.tlp:
-bad3.tlp:
-bad4.tlp:
-bad5.tlp:
-bad6.tlp:
-bad7.tlp:
-bad8.tlp:
-bad9.tlp:
-        Examples that test some of the diagnostics of the tabling
-        interpreter and/or the top level.
+etc.
+        Examples of wrong or suspect programs that test some of the diagnostic
+        capabilities of "dra" and/or the top level.
 
 coind.tlp:
         A trivial example that tests coinduction.
