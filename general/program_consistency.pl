@@ -27,7 +27,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 26 February 2009.                                          %%%
+%%%  Last update: 31 March 2009.                                             %%%
 %%%                                                                          %%%
 
 
@@ -52,7 +52,10 @@ check_general_consistency :-
 %               ),
         % The above can be made simpler, now that we have "defined/1":
         findall( P / K,
-                 (defined( Pattern ), functor( Pattern, P, K )),
+                 ( defined( Pattern )
+                 , \+ hook_predicate( Pattern )
+                 , functor( Pattern, P, K )
+                 ),
                  ListOfDefined
                ),
         findall( PredSpec,
