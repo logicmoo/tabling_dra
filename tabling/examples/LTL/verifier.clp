@@ -175,6 +175,4 @@ coverify( S, A r B, Path ) :-  verify( S, A ^ B,           Path ).
 
 coverify( S, A r B, Path ) :-  verify( S, B ^ x( A r B ),  Path ).
 
-
-% Disregard the path argument!
-essence_hook( coverify( A, B, _ ), coverify( A, B ) ).
+%-------------------------------------------------------------------------------
