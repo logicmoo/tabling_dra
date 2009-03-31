@@ -49,16 +49,9 @@
 %% The formula will be normalized and negated by the program.
 
 
-:- op( 10,  fy , ~   ).   % not
-:- op( 20, xfy , ^   ).   % and
-:- op( 30, xfy , v   ).   % or
-:- op( 10,  fy , x   ).   % LTL: "next"
-:- op( 10,  fy , f   ).   % LTL: "eventually"
-:- op( 10,  fy , g   ).   % LTL: "always"
-:- op( 20, xfx , u   ).   % LTL: "until"
-:- op( 20, xfx , r   ).   % LTL: "release"
-
+:- [ 'operators.pl' ].
 :- [ 'normalize.pl' ].
+:- [ 'consistency_checker.pl' ].
 
 
 :- top check/2.     % make check( S, F ) available in its original form
@@ -66,7 +59,7 @@
 % Don't transform these:
 
 :- support holds/2, normalize/2, proposition/1, state/1, trans/2,
-   automaton_error/0.
+   automaton_error/0, check_consistency/0.
 
 
 
@@ -111,95 +104,6 @@ check( State, Formula ) :-
             true
         ).
 
-
-% Check the consistency of the automaton's description.
-% NOTE: The dynamic declaration is necessary for Eclipse.
-
-:- dynamic automaton_error/0.
-
-automaton_error.  % Will be retracted: needed to suppress a warning from Sicstus
-
-check_consistency :-
-        retractall( automaton_error ),
-        check_propositions,
-        check_transitions,
-        (
-            automaton_error
-        ->
-            fail
-        ;
-            true
-        ).
-
-
-% Make sure propositions don't clash with operators.
-
-check_propositions :-
-        proposition( P ),
-        (
-            \+ atom( P )
-        ->
-            write( 'A proposition must be an atom: ' ),
-            write( '\"' ),
-            write( P ),
-            write( '\"' ),
-            nl,
-            assert( automaton_error )
-        ;
-            true
-        ),
-        (
-            member( P, [ 'v', 'x', 'f', 'g', 'u', 'r' ] )
-        ->
-            write( '\"v\", \"x\", \"f\", \"g\", \"u\" and \"r\" ' ),
-            write( 'cannot be propositions: ' ),
-            write( '\"' ),
-            write( P ),
-            write( '\"' ),
-            nl,
-            assert( automaton_error )
-        ;
-            true
-        ),
-        fail.
-
-check_propositions.
-
-
-% Make sure that there is no state with no outgoing transitions, and that all
-% transitions are between states.
-
-check_transitions :-
-        trans( S1, S2 ),
-        (
-            (var( S1 ) ;  var( S2 ) ; \+ state( S1 ) ; \+ state( S2 ))
-        ->
-            write( 'Transitions can only occur between states: ' ),
-            write( S1 ),
-            write( ' ---> ' ),
-            write( S2 ),
-            nl,
-            assert( automaton_error )
-        ;
-            true
-        ),
-        fail.
-
-check_transitions :-
-        state( S ),
-        (
-            (\+ trans( S, _Set ) ; trans( S, [] ))
-        ->
-            write( 'No transition out of state ' ),
-            write( S ),
-            nl,
-            assert( automaton_error )
-        ;
-            true
-        ),
-        fail.
-
-check_transitions.
 
 
 

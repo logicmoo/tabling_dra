@@ -26,18 +26,13 @@ NOTE: 1. Each of the examples in this directory has three versions:
 
 This directory includes the following files:
 
-coind_example.pl:
-coind_example.tlp:
-coind_example_v.pl:
-        A very simple example for the verifier. Tests proper working of
-        coinduction.
-
 v.pl:
         This is a straightforward Prolog program that attempts to emulate the
         functions of "verifier.tlp" with a completely different algorithm, by
         visiting each node once and appropriately simplifying the LTL formula
-        at each node.  This is still work in progress, not all the examples
-        will work
+        at each node.  It works on all our examples, but we have no proof of
+        correctness, and the simplification rules probably need some
+        extension.
 
 verifier.clp:
         A version of "verifier.tlp" (see below) that can be translated to
@@ -54,9 +49,21 @@ verifier.tlp:
         each predicate is either tabled or coinductive, not both). To execute
         it, just load an example that includes 'verifier.tlp" into "dra".
 
+consistency_checker.pl:
+        A program that checks whether the definition of an automaton is
+        internally consitent.  Used by the verifier.
+
 normalize.pl:
-        Simple normalization of LTL expressions, used by
-        "verifier.tlp".
+        Simple normalization of LTL expressions, used by the verifier.
+
+operators.pl:
+        Operator declarations, used by the verifier (and the normalizer).
+
+coind_example.pl:
+coind_example.tlp:
+coind_example_v.pl:
+        A very simple example for the verifier. Tests proper working of
+        coinduction.
 
 errors.tlp:
         A version of "example3.tlp" into which a number of errors have been
