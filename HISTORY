@@ -101,7 +101,7 @@
                  - Introduced an LTL verifier in straight Prolog (for
                    comparison). This is still experimental and incomplete.
 
-25 Mar 2009 :  Eleventh "internal public" release:
+31 Mar 2009 :  Eleventh "internal public" release:
 
                  - Fixed several errors.
 
@@ -143,6 +143,8 @@
                  - A separate user manual for "dra" is now available.
 
                  - We are now ready for a real public release, pending a
-                   review and a sanity check by a second person.
+                   review and a sanity check by a second person.  We also
+                   need more hefty examples of tabling programs from othe
+                   places.
 
 -------------------------------------------------------------------------------
