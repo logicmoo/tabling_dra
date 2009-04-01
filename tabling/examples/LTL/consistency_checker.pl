@@ -25,6 +25,11 @@
 %% A consistency checker for automata.  See "verifier.tlp".
 
 % Check the consistency of the automaton's description.
+
+:- [ 'partition_graph.pl' ].
+
+
+
 % NOTE: The dynamic declaration is necessary for Eclipse.
 
 :- dynamic automaton_error/0.
@@ -33,6 +38,7 @@ automaton_error.  % Will be retracted: needed to suppress a warning from Sicstus
 
 check_consistency :-
         retractall( automaton_error ),
+        check_connectedness,
         check_propositions,
         check_transitions,
         (
@@ -41,6 +47,24 @@ check_consistency :-
             fail
         ;
             true
+        ).
+
+
+% If the graph is not connected, print a warning.
+
+check_connectedness :-
+        partition( Components ),
+        length( Components, NumberOfComponents ),
+        (
+            NumberOfComponents =:= 1                                % connected
+        ->
+            true
+        ;
+            write( 'WARNING: The graph is not connected!' ),
+            nl,
+            write( 'The partitions are: ' ),
+            write( Components ),
+            nl
         ).
 
 
@@ -113,4 +137,4 @@ check_transitions :-
 
 check_transitions.
 
-%%%%%%%%%
+%-------------------------------------------------------------------------------

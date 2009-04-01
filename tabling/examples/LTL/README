@@ -47,7 +47,7 @@ verifier.tlp:
 
         The program contains both tabled and coinductive predicates (however,
         each predicate is either tabled or coinductive, not both). To execute
-        it, just load an example that includes 'verifier.tlp" into "dra".
+        it, just load an example that includes "verifier.tlp" into "dra".
 
 consistency_checker.pl:
         A program that checks whether the definition of an automaton is
@@ -63,6 +63,9 @@ normalize.pl:
 operators.pl:
         Operator declarations, used by the verifier (and the normalizer).
 
+partition_graph.pl:
+        Finds the partitions of a graph. Used by consistency_checker.pl.
+
 coind_example.pl:
 coind_example.tlp:
 coind_example_v.pl:
@@ -70,8 +73,9 @@ coind_example_v.pl:
         coinduction.
 
 errors.tlp:
-        A version of "example3.tlp" into which a number of errors have been
-        introduced to test the diagnostics of "verifier.tlp".
+errors.pl:
+        A version of "example3" into which a number of errors have been
+        introduced to test the diagnostics of the verifier.
 
 example.pl:
 example.tlp:
@@ -82,7 +86,7 @@ example_v.tlp:
 example2.pl:
 example2.tlp:
 example2_v.tlp:
-        A somewhat more complex example similar to "example.tlp".
+        A somewhat more complex example similar to "example".
 
 example3.pl:
 example3.tlp:
