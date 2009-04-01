@@ -17,7 +17,9 @@ builtin( (_ ; _)            ).  % special treatment in solve/4
 builtin( \+( _ )            ).  % special treatment in solve/4
 builtin( _ < _              ).
 builtin( _ = _              ).
+builtin( _ =:= _            ).
 builtin( _ =< _             ).
+builtin( _ =\= _            ).
 builtin( _ > _              ).
 builtin( _ >= _             ).
 builtin( _ \= _             ).
@@ -29,6 +31,7 @@ builtin( call( _ )          ).
 builtin( fail               ).
 builtin( false              ).
 builtin( findall( _, _, _ ) ).  % special treatment in solve/4
+builtin( length( _, _ )     ).
 builtin( member( _, _ )     ).
 builtin( nl                 ).
 builtin( once( _ )          ).  % special treatment in solve/4
