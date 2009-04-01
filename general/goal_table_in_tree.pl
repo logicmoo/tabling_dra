@@ -58,7 +58,7 @@ empty_goal_table( Table ) :-
 
 goal_table_member( Goal, Table ) :-
         functor( Goal, P, K ),
-        is_in_otree( Table, P / K, pred_spec_less, OList ),
+        is_in_otree( Table, P / K, '@<', OList ),
         once( essence_hook( Goal, Essence ) ),
         olist_member_reversed( G, OList ),
         once( essence_hook( G, Essence ) ).
@@ -87,27 +87,13 @@ is_a_variant_in_goal_table( Goal, Table ) :-
 goal_table_add( Table, Goal ) :-
         functor( Goal, P, K ),
         (
-            is_in_otree( Table, P / K, pred_spec_less, OList )
+            is_in_otree( Table, P / K, '@<', OList )
         ->
             olist_add( OList, Goal )
         ;
             empty_olist( OList ),
             olist_add( OList, Goal ),
-            otree_add( Table, P / K, OList, pred_spec_less, olist_add )
+            otree_add( Table, P / K, OList, '@<', olist_add )
         ).
-
-
-%%------------------------------------------------------------------------------
-%% pred_spec_less( + predicate specification, + predicate specification ):
-%% Succeed iff the first argument is smaller than the second.
-
-pred_spec_less( P1 / K1, P2 / K2 ) :-
-        (
-            P1 < P2
-        ;
-            P1 = P2,
-            K1 < K2
-        ),
-        !.
 
 %%------------------------------------------------------------------------------
