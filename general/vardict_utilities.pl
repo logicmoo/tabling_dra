@@ -25,8 +25,45 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 2 March 2009.                                              %%%
+%%%  Last update: 2 April 2009.                                              %%%
 %%%                                                                          %%%
+
+
+%%------------------------------------------------------------------------------
+%% expand_variable_dictionary( + term,
+%%                             + variable dictionary,
+%%                             - variable dictionary expanded as needed
+%%                           ):
+%% The variable dictionary is for the term in the form it was read in, but the
+%% term may have been expanded (in particular: it may have been a DCG rule).
+%% Make sure that all the variables are present in the dictionary.
+
+expand_variable_dictionary( ExpandedTerm, VarDict, ExpandedVarDict ) :-
+        ordered_term_variables( ExpandedTerm, Vars ),
+        retain_new_variables( Vars, VarDict, RetainedVars ),
+        mk_variable_dictionary( RetainedVars, NewVarDict ),
+        append( NewVarDict, VarDict, ExpandedVarDict ).
+
+%
+retain_new_variables( [], _, [] ).
+
+retain_new_variables( [ V | Vs ], VarDict, Retained ) :-
+        in_vardict( V, VarDict ),
+        !,
+        retain_new_variables( Vs, VarDict, Retained ).
+
+retain_new_variables( [ V | Vs ], VarDict, [ V | OtherRetained ] ) :-
+        \+ in_vardict( V, VarDict ),
+        !,
+        retain_new_variables( Vs, VarDict, OtherRetained ).
+
+%
+in_vardict( V, [ [ _ | V2 ] | _ ] ) :-
+        V == V2,
+        !.
+
+in_vardict( V, [ _ | RestOfVarDict ] ) :-
+        in_vardict( V, RestOfVarDict ).
 
 
 %%------------------------------------------------------------------------------
