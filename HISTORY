@@ -147,4 +147,16 @@
                    need more hefty examples of tabling programs from othe
                    places.
 
+2 Apr 2009 :  Twelfth "internal public" release:
+
+                 - Added copyright/disclaimer notice to "DRA User Manual".
+
+                 - Tweaked XSB examples.
+
+                 - Fixed two errors in program analysis.
+
+                 - Added term expansion to allow processing of DCG rules.
+
+                 - Added Gopal Gupta's mini-language example.
+
 -------------------------------------------------------------------------------
