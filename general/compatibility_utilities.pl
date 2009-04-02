@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February 2009)                       %%%
 %%%                                                                          %%%
-%%%  Last update: 30 March 2009.                                             %%%
+%%%  Last update: 2 April 2009.                                              %%%
 %%%                                                                          %%%
 
 :- ensure_loaded( higher_order ).
@@ -178,7 +178,8 @@ ordered_term_variables( Term, Variables ) :-
 
 readvar( InputStream, Term, EclipseVarDict ) :-
         read_term( InputStream, Term, [ variable_names( SicstusVarDict ) ] ),
-        map( translate_vardict_entry, SicstusVarDict, EclipseVarDict ).
+        map( translate_vardict_entry, SicstusVarDict, EclipseVarDict ),
+        !.
 
 %
 translate_vardict_entry( N = V, [ N | V ] ).
