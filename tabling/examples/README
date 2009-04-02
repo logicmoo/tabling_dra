@@ -48,6 +48,11 @@ LTL:
         A subdirectory with a version of Gopal Gupta's elegant interpreter
         for Linear Temporal Logic and a few example problems and queries.
 
+mini_language.tlp:
+        Gopal Gupta's parser/interpreter for a very small language, in a
+        version that is suitable for execution only with a tabling
+        implementation of Prolog.
+
 module.tlp:
         A wholly uninteresting example, designed to test that the
         predicate names in the interpreted program cannot conflict with
