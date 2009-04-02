@@ -326,7 +326,9 @@ cs( A, _, false, SeenFromFront, SeenFromBehind, Single ) :-
         empty_set( SeenFromBehind ),
         empty_set( Single         ).
 
-cs( ((A ; B) , C), Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ) :-
+cs( (Disj , C), Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ) :-
+        nonvar( Disj ),
+        Disj = (A ; B),
         !,
         cs_join( ((A ; B), C), Ctxt, MustFail,
                  SeenFromFront, SeenFromBehind, Single
