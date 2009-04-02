@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February 2009)                       %%%
 %%%                                                                          %%%
-%%%  Last update: 30 March 2009.                                             %%%
+%%%  Last update: 2 April 2009.                                              %%%
 %%%                                                                          %%%
 
 :- ensure_loaded( higher_order ).
@@ -206,6 +206,14 @@ is_builtin( Pred ) :-
 ordered_term_variables( Term, Variables ) :-
         term_variables( Term, Vs ),
         reverse( Vs, Variables ).
+
+
+%%------------------------------------------------------------------------------
+%% expand_term( + term, - expanded term ):
+%% In Eclipse this is called expand_clause/2.
+%% NOTE: No attempt to make hooks compatible, good enough for processing DCGs.
+
+expand_term( T, ET ) :-  expand_clause( T, ET ).
 
 
 %%------------------------------------------------------------------------------
