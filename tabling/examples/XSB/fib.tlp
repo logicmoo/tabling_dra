@@ -22,11 +22,15 @@
 **
 */
 
-% Modified by F.K. @ UTD
+% Adapted by F.K. @ UTD
+
+:- top demo/0.
+
+:- tabled fib0/3.
 
 
 demo :-
-        write('Enter N : '), read(N), nl,
+        write('Enter N : '), read(N),
         fib(N, Fib),
         write('Fib of '), write(N), write(' is '), writeln(Fib).
 
