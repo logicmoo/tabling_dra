@@ -26,7 +26,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 31 March 2009.                                             %%%
+%%%  Last update: 2 April 2009.                                              %%%
 %%%                                                                          %%%
 %%%  NOTE: This code runs on Sicstus and Eclipse.  It may require some       %%%
 %%%        tweaking for other Prolog systems.                                %%%
@@ -440,10 +440,16 @@ open_the_file( FileName, ProgStream ) :-
 process_input( ProgStream ) :-
         repeat,
         readvar( ProgStream, Term, VarDict ),
-        verify_program_item( Term, VarDict ),
-        process_term( Term, VarDict ),
-        Term = end_of_file,
+        preliminary_processing( Term, VarDict, NewTerm, NewVarDict ),
+        process_term( NewTerm, NewVarDict ),
+        NewTerm = end_of_file,              % i.e., normally fail to repeat
         !.
+
+%
+preliminary_processing( Term, VarDict, NewTerm, NewVarDict ) :-
+        expand_term( Term, NewTerm ),
+        expand_variable_dictionary( NewTerm, VarDict, NewVarDict ),
+        verify_program_item( NewTerm, NewVarDict ).
 
 
 
