@@ -38,6 +38,7 @@ builtin( once( _ )          ).  % special treatment in solve/4
 builtin( read( _ )          ).
 builtin( retractall( _ )    ).  % special treatment in solve/4
 builtin( set_flag( _, _ )   ).
+builtin( sort( _, _ )       ).
 builtin( true               ).
 builtin( var( _ )           ).
 builtin( write( _ )         ).
@@ -45,6 +46,3 @@ builtin( write_term( _, _ ) ).
 builtin( writeln( _ )       ).
 builtin( 'C'( _, _, _ )     ).  % for DCG's on some Prolog systems
 builtin( set_print_depth( _ ) ).          % not a real built-in, see "top_level"
-
-
-
