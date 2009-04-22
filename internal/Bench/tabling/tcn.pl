@@ -1,4 +1,4 @@
-:-table reach/2.
+:-tabled reach/2.
 
 go:-
     cputime(Start),
@@ -9,7 +9,7 @@ go:-
 
 main:-top.
 
-top:-  
+top:-
     reach(X,Y),
 %    write(r(X,Y)),nl,
     fail.
@@ -18,4 +18,4 @@ top.
 reach(X,Y):-edge(X,Y).
 reach(X,Y):-reach(X,Z),reach(Z,Y).
 
-:-include('edge.pl').
+:-['edge.pl'].

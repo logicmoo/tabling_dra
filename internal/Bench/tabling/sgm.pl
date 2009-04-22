@@ -1,4 +1,4 @@
-:-table sg/2,edge/2.
+:-tabled sg/2,edge/2.
 
 go:-
     cputime(Start),
@@ -22,4 +22,4 @@ test:-
 sg(X,X).
 sg(X,Y):-edge(X,XX),sg(XX,YY),edge(Y,YY).
 
-:-include('sg_edge.pl').
+:-['sg_edge.pl'].

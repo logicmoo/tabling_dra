@@ -1,10 +1,10 @@
-%%% file = bugtest.psm 
+%%% file = bugtest.psm
 %%%   This is compiled version of probabilistic dcg program
 %%%   (ATR_PDCG.psm) for ATR corpus. Leaning 10 sentences causes
 %%% by Shigeru Abe, Taisuke Sato and Neng-Fa Zhou, 2002
 
 %%% ATR_PDCG_values.psm : file for values declarations for PDCG parsing
-%%% created by mk_PDCG_values.pl from file ATR_LC_grammar.pl 
+%%% created by mk_PDCG_values.pl from file ATR_LC_grammar.pl
 
 go:-
     cputime(Start),
@@ -19,8 +19,8 @@ top:-
     write(succeed(No)),nl,
     fail.
 top.
-    
-:-mode values(+,-).
+
+%:-mode values(+,-).
 values(n_x_ka_kan,[[n_y_ka,n_suffix_quant_time]]).
 values(n_month_day,[[n_n_month,n_n_day]]).
 values(n_reservation,[[n_capacity],[n_capacity,n_aux,n_stay_date],[n_capacity,n_stay_date],[n_stay_date],[n_stay_date,n_aux,n_capacity]]).
@@ -209,8 +209,8 @@ pdcg(L) :- start_symbol(C),pdcg(C,L,[]).
 
 start_symbol(n_sent).
 
-:-table pdcg/3.
-:-mode pdcg(+,-,-).
+:-tabled pdcg/3.
+%:-mode pdcg(+,-,-).
 pdcg(n_x_ka_kan,_1728,_1729) :- fstck(n_x_ka_kan,_1728),msw(n_x_ka_kan,[n_y_ka,n_suffix_quant_time]),pdcg(n_y_ka,_1728,_1733),_1733=[n_suffix_quant_time|_1729].
 pdcg(n_month_day,_1728,_1729) :- fstck(n_month_day,_1728),msw(n_month_day,[n_n_month,n_n_day]),pdcg(n_n_month,_1728,_1733),pdcg(n_n_day,_1733,_1729).
 pdcg(n_reservation,_1728,_1729) :- fstck(n_reservation,_1728),msw(n_reservation,[n_capacity,n_stay_date]),_1728=[n_capacity|_1740],pdcg(n_stay_date,_1740,_1729).
@@ -1073,7 +1073,7 @@ pdcg(n_n_num_ichi,_1726,_1727) :- fstck(n_n_num_ichi,_1726),msw(n_n_num_ichi,[t_
 pdcg(n_n_num_ichi,_1726,_1727) :- fstck(n_n_num_ichi,_1726),msw(n_n_num_ichi,[t_num_kokono]),_1726=[t_num_kokono|_1727].
 pdcg(n_n_num_ichi,_1726,_1727) :- fstck(n_n_num_ichi,_1726),msw(n_n_num_ichi,[t_num_tou]),_1726=[t_num_tou|_1727].
 
-:-mode first(+,+).
+%:-mode first(+,+).
 first(n_addr,n_capacity).
 first(n_addr,n_n_name_jap_honor).
 first(n_addr,n_n_name_others_honor).
