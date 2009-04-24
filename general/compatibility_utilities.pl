@@ -31,6 +31,7 @@
 :- ensure_loaded( higher_order ).
 :- ensure_loaded( library( terms ) ). % A Sicstus library, for variant/2 and
                                       %   term_variables/2.
+:- ensure_loaded( library( lists ) ). % A Sicstus library, for reverse/2.
 
 
 %%------------------------------------------------------------------------------
