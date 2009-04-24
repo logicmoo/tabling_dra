@@ -68,9 +68,10 @@
 %%% This is transformed, and stored in the following form:
 %%%
 %%%     procedure( pair( p( H ), Anc ), Proc ) :-
-%%%         NAnc = [ goal( p( H ), L ) | Anc ]
-%%%         Proc = [ match( H, a ) : ( [ pair( b( a ), NAnc ) | E1 ] - E1),
-%%%                  match( H, X ) :
+%%%         NAnc = [ goal( p( H ), Proc ) | Anc ],
+%%%         Proc = [ match( p( H ), p( a ) ) :
+%%%                      ( [ pair( b( a ), NAnc ) | E1 ] - E1),
+%%%                  match( p( H ), p( X ) ) :
 %%%                      ( [ pair( q( X, Y ), NAnc ),
 %%%                          pair( r( Y ),    NAnc ] ) | E2 ] - E2)
 %%%                ].
@@ -96,8 +97,11 @@
 
 
 
-:- ensure_loaded( '../general/top_level.pl' ).
-:- ensure_loaded( '../general/compatibility_utilities' ).
+:- ensure_loaded( '../../general/top_level.pl' ).
+:- ensure_loaded( '../../general/compatibility_utilities' ).
+
+
+:- dynamic procedure/2.
 
 
 %%%%% Interface with the top level.  %%%%
@@ -107,14 +111,102 @@ default_extension( '.pl' ).                      % default file name extension
 
 %Built-in predicates:
 
-builtin( Goal ) :-  is_builtin( Goal ), Goal != '!'.
+builtin( Goal ) :-  is_builtin( Goal ), Goal \= '!'.
+
+hook_predicate( '' ).
 
 initialise.
 
-program_loaded.
+program_loaded :- precompile.
 
 query( _ ).
 
 
-
 %%%%% End of interface with the top level.  %%%%
+
+
+%% Do the "precompilation" described in the main comment.
+
+precompile :-
+        get_predicates( PredPatterns ),
+        member( Pattern, PredPatterns ),       % i.e., iterate over PredPatterns
+        get_clauses( Pattern, Clauses ),
+        show( Clauses, 100 ),
+        transform( Pattern, Clauses, Header, Procedure ),
+        show( Header, 100 ),
+        show( Procedure, 5 ),
+        assert( procedure( Header, Procedure ) ),
+        fail.
+
+precompile.
+
+
+%% Get predicate patterns for all the predicates defined in the program.
+
+get_predicates( Patterns ) :-
+        findall( Pattern,
+                 ( defined( Pattern )
+                 , \+ hook_predicate( Pattern )
+                 ),
+                 Patterns
+               ).
+
+
+%% get_clauses( + predicate specification, - list of clauses ):
+%% Get the clauses for this predicate.
+
+get_clauses( Pattern, Clauses ) :-
+        findall( (Pattern :- Body),
+                 clause_in_module( interpreted, Pattern, Body ),
+                 Clauses
+               ).
+
+
+%% transform( + predicate pattern, + clauses, - header, - procedure ):
+%% Given a list of clauses for this predicate, form a transformed procedure.
+
+transform( Pattern, Clauses, pair( Pattern, Anc ), Proc ) :-
+        NAnc = [ goal( Pattern, Proc ) | Anc ],
+        map( [ transform_clause, Pattern, NAnc ], Clauses, Proc ).
+
+
+%% transform_clause( + predicate pattern,
+%%                   + ancestor list pattern,
+%%                   + clause,
+%%                   - transformed clause
+%%                 ):
+
+transform_clause( Pattern, NAnc, (Head :- Body),
+                  match( Pattern, Head ) : TBody
+                ) :-
+        once( transform_body( Body, NAnc, TBody ) ).
+
+
+%% transform_body( + body, + ancestor list pattern, - transformed body ):
+%% Transform the body.
+
+transform_body( true, _NAnc, E-E ).
+
+transform_body( (Call , Calls), NAnc, [ TCall | TCalls ] ) :-
+        transform_call( Call, NAnc, TCall ),
+        transform_body( Calls, NAnc, TCalls ).
+
+transform_body( Call, NAnc, [ TCall | E ] - E ) :-
+        Call \= ( _, _ ),
+        Call \= true,
+        transform_call( NAnc, Call, TCall ).
+
+
+%% transform_call( + call, + ancestor list pattern, - transformed call ):
+%% Transform the call.
+
+transform_call( Call, NAnc, pair( Call, NAnc ) ).
+
+
+%% show( + term, + depth limit ):
+%% Write the term to standard output, with limited depth.
+
+show( T, N ) :-
+        std_output_stream( OStream ),
+        write_shallow( OStream, T, N ),
+        nl( OStream ).
