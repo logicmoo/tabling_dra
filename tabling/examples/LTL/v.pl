@@ -29,21 +29,15 @@
 %% We don't yet have a proof of correctness, but all the examples work.
 %%
 %% Written by Feliks Kluzniak at UTD (March 2009).
-%% Last update: 16 March 2009.
+%% Last update: 24 April 2009.
 
 
-%% The operators
-
-:- op( 10,  fy , ~   ).   % not
-:- op( 20, xfy , ^   ).   % and
-:- op( 30, xfy , v   ).   % or
-:- op( 10,  fy , x   ).   % LTL: "next"
-:- op( 10,  fy , f   ).   % LTL: "eventually"
-:- op( 10,  fy , g   ).   % LTL: "always"
-:- op( 20, xfx , u   ).   % LTL: "until"
-:- op( 20, xfx , r   ).   % LTL: "release"
-
+:- [ 'operators.pl' ].
 :- [ 'normalize.pl' ].
+:- [ 'looping_prefix.pl' ].
+:- [ 'consistency_checker.pl' ].
+:- [ '../../../general/higher_order.pl' ].
+:- [ '../../../general/compatibility_utilities' ]. % only for Sisctus reverse/2
 
 
 %% Check whether the state satisfies the formula.
@@ -83,95 +77,6 @@ check( State, Formula ) :-
         ).
 
 
-% Check the consistency of the automaton's description.
-% NOTE: The dynamic declaration is necessary for Eclipse.
-%       On Sicstus we will see a warning, but things will work fine otherwise.
-
-:- dynamic automaton_error/0.
-
-check_consistency :-
-        retractall( automaton_error ),
-        check_propositions,
-        check_transitions,
-        (
-            automaton_error
-        ->
-            fail
-        ;
-            true
-        ).
-
-
-% Make sure propositions don't clash with operators.
-
-check_propositions :-
-        proposition( P ),
-        (
-            \+ atom( P )
-        ->
-            write( 'A proposition must be an atom: ' ),
-            write( '\"' ),
-            write( P ),
-            write( '\"' ),
-            nl,
-            assert( automaton_error )
-        ;
-            true
-        ),
-        (
-            member( P, [ 'v', 'x', 'f', 'g', 'u', 'r' ] )
-        ->
-            write( '\"v\", \"x\", \"f\", \"g\", \"u\" and \"r\" ' ),
-            write( 'cannot be propositions: ' ),
-            write( '\"' ),
-            write( P ),
-            write( '\"' ),
-            nl,
-            assert( automaton_error )
-        ;
-            true
-        ),
-        fail.
-
-check_propositions.
-
-
-% Make sure that there is no state with no outgoing transitions, and that all
-% transitions are between states.
-
-check_transitions :-
-        trans( S1, S2 ),
-        (
-            (var( S1 ) ;  var( S2 ) ; \+ state( S1 ) ; \+ state( S2 ))
-        ->
-            write( 'Transitions can only occur between states: ' ),
-            write( S1 ),
-            write( ' ---> ' ),
-            write( S2 ),
-            nl,
-            assert( automaton_error )
-        ;
-            true
-        ),
-        fail.
-
-check_transitions :-
-        state( S ),
-        (
-            (\+ trans( S, _Set ) ; trans( S, [] ))
-        ->
-            write( 'No transition out of state ' ),
-            write( S ),
-            nl,
-            assert( automaton_error )
-        ;
-            true
-        ),
-        fail.
-
-check_transitions.
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -185,7 +90,7 @@ verify( S, F, Path ) :-
         (
             NF = true
         ->
-            true
+            show_path( Path )
         ;
             NF = false
         ->
@@ -197,7 +102,7 @@ verify( S, F, Path ) :-
                 (
                     disjunct( g _, F )
                 ->
-                    true
+                    show_path( Path )
                 ;
                     fail
                 )
@@ -207,6 +112,18 @@ verify( S, F, Path ) :-
                 verify( NS, NNF, [ pair( S, F ) | Path ] )
             )
         ).
+
+
+%
+show_path( Path ) :-
+        write( 'COUNTEREXAMPLE: ' ),
+        reverse( Path, RevPath ),
+        map( first, RevPath, TruePath ),
+        write( TruePath ),
+        nl.
+
+%
+first( pair( State, _ ), State ).
 
 
 
