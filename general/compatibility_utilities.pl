@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February 2009)                       %%%
 %%%                                                                          %%%
-%%%  Last update: 2 April 2009.                                              %%%
+%%%  Last update: 24 April 2009.                                             %%%
 %%%                                                                          %%%
 
 :- ensure_loaded( higher_order ).
@@ -154,8 +154,8 @@ write_shallow( OutputStream, Term, MaxDepth ) :-
 
 
 %%------------------------------------------------------------------------------
-%% is_built_in( + goal ):
-%% Does this goal call a built-in predicate?
+%% is_built_in( +- goal ):
+%% Does this goal call a built-in predicate?  Or generate a built-in goal.
 
 is_builtin( Pred ) :-
         predicate_property( Pred, built_in ).

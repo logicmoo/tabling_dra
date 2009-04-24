@@ -189,12 +189,19 @@ write_shallow( OutputStream, Term, MaxDepth ) :-
 
 
 %%------------------------------------------------------------------------------
-%% is_built_in( + goal ):
-%% Does this goal call a built-in predicate?
+%% is_built_in( +- goal ):
+%% Does this goal call a built-in predicate?  Or generate a built-in goal.
 
-is_builtin( Pred ) :-
-        functor( Pred, P, K ),
-        current_built_in( P/K ).
+is_builtin( Goal ) :-
+        (
+            nonvar( Goal )
+        ->
+            functor( Goal, P, K ),
+            current_built_in( P/K )
+        ;
+            current_built_in( P/K ),
+            functor( Goal, P, K )
+        ).
 
 
 %%------------------------------------------------------------------------------
