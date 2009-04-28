@@ -21,8 +21,8 @@
    %                                                                      %
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% This is the shell for Sicstus.  See dra_common.pl for documentation.
+%% This is the shell for Sicstus.  See dra2_common.pl for documentation.
 
 :- module( dra, [ prog/1, top/0 ] ).
 
-:- ensure_loaded( [ dra_common ] ).
+:- ensure_loaded( [ dra2_common ] ).

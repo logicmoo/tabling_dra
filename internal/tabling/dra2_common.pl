@@ -26,13 +26,13 @@
 %%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 30 March 2009.                                             %%%
+%%%  Last update: 28 April 2009.                                             %%%
 %%%                                                                          %%%
-version( 'DRA ((c) UTD 2009) version 0.9 (beta), 2 April 2009' ).
+version( 'DRA+ ((c) UTD 2009) version 0.1, 28 April 2009' ).
 
 %%% NOTE:
 %%%
-%%%    1. See ../general/top_level.ecl for a description of how to load
+%%%    1. See ../../general/top_level.ecl for a description of how to load
 %%%       and run programs.
 %%%       Please note that in Eclipse after loading this interpreter you
 %%%       should issue
@@ -120,7 +120,8 @@ version( 'DRA ((c) UTD 2009) version 0.9 (beta), 2 April 2009' ).
 %%%       administrative information and that may differ in two terms that are
 %%%       "semantically" equal or variants of each other. (Such, for example, is
 %%%       the argument that carries the set of coinductive hypotheses in a
-%%%       co-logic program translated into Prolog: see "../coind/translate_clp".
+%%%       co-logic program translated into Prolog: see
+%%%       "../../coind/translate_clp".
 %%%       Mind you, that translation need not be applied to programs executed by
 %%%       this interpreter).
 %%%
@@ -506,11 +507,11 @@ version( 'DRA ((c) UTD 2009) version 0.9 (beta), 2 April 2009' ).
 *******************************************************************************/
 
 
-:- ensure_loaded( [ '../general/top_level',
-                    '../general/utilities',
-                    dra_builtins,
-                    dra_coinductive_hypotheses,
-                    dra_stack
+:- ensure_loaded( [ '../../general/top_level',
+                    '../../general/utilities',
+                    dra2_builtins,
+                    dra2_coinductive_hypotheses,
+                    dra2_stack
                   ]
                 ).
 
