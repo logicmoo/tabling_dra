@@ -26,7 +26,7 @@
 %%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 30 March 2009.                                             %%%
+%%%  Last update: 28 April 2009.                                             %%%
 %%%                                                                          %%%
 version( 'DRA ((c) UTD 2009) version 0.9 (beta), 2 April 2009' ).
 
@@ -1097,16 +1097,8 @@ solve( Goal, Stack, Hyp, Level ) :-
         incval( step_counter ),
         get_unique_index( Index ),
         trace_entry( variant, Goal, Index, Level ),
-        (
-            % Rescind the status of intervening pioneers:
-            member( triple( M, MI, _ ), InterveningTriples ),
-            is_a_variant_of_a_pioneer( M, MI ),
-            trace_other( 'Removing pioneer', M, MI, Level ),
-            rescind_pioneer_status( MI ),
-            fail
-        ;
-            true
-        ),
+        % Rescind the status of intervening pioneers:
+        suppress_pioneers_on_list( InterveningTriples, Level ),
 
         (
             % Create looping alternative if the variant ancestor is a pioneer:
@@ -1262,7 +1254,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 get_tabled_if_old_first( Goal, Index, Label, Level ) :-
         old_first( Goal ),
         get_all_tabled_answers( Goal, Index, Label, Level ),
-        new_result_or_fail( Index, Goal ).  % i.e., make a note of the answer
+        new_result_or_fail( Index, Goal ).     % i.e., make a note of the answer
 
 
 %% get_all_tabled_answers( + goal, + goal index, + trace label, + trace level ):
@@ -1345,6 +1337,21 @@ compute_fixed_point_( Goal, Index, Stack, Hyp, Level, NAns ) :-
         getval( number_of_answers, NAnsNow ),
         NAnsNow \= NAns,                % i.e., fail if there are no new answers
         compute_fixed_point_( Goal, Index, Stack, Hyp, Level, NAnsNow ).
+
+
+
+%% suppress_pioneers_on_list( + list of triples, + level for tracing ):
+%% If any of the triples describe goals that are pioneers, make sure those goals
+%% cease to be pioneers.
+
+suppress_pioneers_on_list( Triples, Level ) :-
+        member( triple( M, MI, _ ), Triples ),
+        is_a_variant_of_a_pioneer( M, MI ),
+        trace_other( 'Removing pioneer', M, MI, Level ),
+        rescind_pioneer_status( MI ),
+        fail.
+
+suppress_pioneers_on_list( _ ).
 
 
 
