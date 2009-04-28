@@ -1167,7 +1167,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 % The pioneer (and all the goals in its cluster) will then be marked as
 % complete, and will cease to be a pioneer.
 %
-% (Note that a pioneer but also lose its status when some descendant goal finds
+% (Note that a pioneer may also lose its status when some descendant goal finds
 %  a variant ancestor that is also an ancestor of the pioneer.  See the case
 %  of "variant of ancestor" above.)
 
