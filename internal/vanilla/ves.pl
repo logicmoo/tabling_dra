@@ -97,7 +97,8 @@
 
 
 
-:- ensure_loaded( '../../general/top_level.pl' ).
+:- ensure_loaded( '../../general/top_level' ).
+:- ensure_loaded( '../../general/dlist' ).
 :- ensure_loaded( '../../general/compatibility_utilities' ).
 
 
@@ -119,13 +120,14 @@ initialise.
 
 program_loaded :- precompile.
 
-query( _ ).
+query( Query ) :-
+        transform_body( Query, [], TransformedQuery ),
+        query( TransformedQuery, [] ).
 
 
-%%%%% End of interface with the top level.  %%%%
 
 
-%% Do the "precompilation" described in the main comment.
+%%%%%  Program transformation (see the main comment).   %%%%%
 
 precompile :-
         get_predicates( PredPatterns ),
@@ -194,13 +196,70 @@ transform_body( (Call , Calls), NAnc, [ TCall | TCalls ] ) :-
 transform_body( Call, NAnc, [ TCall | E ] - E ) :-
         Call \= ( _, _ ),
         Call \= true,
-        transform_call( NAnc, Call, TCall ).
+        transform_call( Call, NAnc, TCall ).
 
 
 %% transform_call( + call, + ancestor list pattern, - transformed call ):
 %% Transform the call.
 
 transform_call( Call, NAnc, pair( Call, NAnc ) ).
+
+
+
+
+
+%%%%%  The meta-interpreter   %%%%%
+
+%% query( + resolvent, + stack ):
+%% Carry out resolution, succeed when the resolvent is empty, then backtrack and
+%% try to succeed again.
+
+query( Resolvent, Stack ) :-
+        show( query( Resolvent, Stack ), 15 ),
+        fail.
+
+query( Resolvent, _ ) :-
+        empty_dlist( Resolvent ).                                     % success!
+
+query( Resolvent, Stack ) :-
+        \+ empty_dlist( Resolvent ),
+        query_not_done( Resolvent, Stack ).
+
+
+%
+query_not_done( Resolvent, Stack ) :-
+        step( Resolvent, Stack, NewResolvent, NewStack ),
+        query( NewResolvent, NewStack ).
+
+% after backtracking:
+%  <<<<<
+
+
+%
+step( [ pair( Goal, _ ) | GoalPairs ] - End, Stack, GoalPairs - End, Stack ) :-
+        builtin( Goal ),
+        call( Goal ).
+
+step( [ pair( Goal, _ ) | GoalPairs ] - End, Stack,
+      NewResolvent, [ RemainingClauses | Stack ]
+    ) :-
+        \+ builtin( Goal ),
+        procedure( Goal, Proc ),
+        append( _, [ match( X, Y ) : Body | RemainingClauses ], Proc ),  % split
+        match( X, Y ),
+        dlist_conc( Body, GoalPairs - End, NewResolvent ).
+
+%
+match( X, X ).
+
+
+
+
+
+
+
+
+%%%%%  Auxiliaries   %%%%%
 
 
 %% show( + term, + depth limit ):
