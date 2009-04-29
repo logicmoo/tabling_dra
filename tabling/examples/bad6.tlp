@@ -5,4 +5,4 @@
 
 p( a, b ).
 
-q :- p( X, Y ).
+q :- p( X, Y ).   % singleton X, Y

@@ -1,4 +1,5 @@
 :- tabled p/2 .
+:- top p/2 .
 
 p( A, A ).
 p( a, a ).

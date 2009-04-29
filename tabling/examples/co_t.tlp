@@ -1,7 +1,5 @@
 %% A simple example of a predicate that is both coinductive and tabled.
 
-:- bottom num/1, drop/3 .
-
 % A number.
 num( 0 ).
 num( s( N ) ) :-  num( N ).
@@ -33,6 +31,8 @@ comember( X, L ) :-  drop( X, L, L1 ),  comember( X, L1 ).
 
 
 % Queries:
+
+:- top q1/0, q3/0.
 
 q1:-   X = [ 0, s( 0 ), s( s( 0 ) ) ],      comember( s( 0 ), X ).         % no
 
