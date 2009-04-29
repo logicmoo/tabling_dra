@@ -1123,7 +1123,6 @@ solve( Goal, Stack, Hyp, Level ) :-
             ;
                 % results from coinductive hypotheses:
                 unify_with_coinductive_ancestor( Goal, Hyp ),
-                member( Goal, Hyp ),
                 \+ is_answer_known( OriginalGoal, Goal ),    % postpone "old"
                 memo( OriginalGoal, Goal, Level ),
                 new_result_or_fail( Index, Goal ),           % i.e., note answer
