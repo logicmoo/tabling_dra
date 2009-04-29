@@ -26,9 +26,9 @@
 %%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 28 April 2009.                                             %%%
+%%%  Last update: 29 April 2009.                                             %%%
 %%%                                                                          %%%
-version( 'DRA ((c) UTD 2009) version 0.9 (beta), 2 April 2009' ).
+version( 'DRA ((c) UTD 2009) version 0.9 (beta), 29 April 2009' ).
 
 %%% NOTE:
 %%%
@@ -1064,12 +1064,13 @@ solve( Goal, _, _, Level ) :-
         ).
 
 
-% A tabled goal that has a variant among its ancestors.
+% A tabled goal that has a variant among its ancestors (and has not been
+% completed).
 % If the goal is not coinductive, only the existing (most likely incomplete)
 % results from "answer" are  returned before failure.
 % If the goal is also coinductive, return the results that arise from
 % coinductive hypotheses, then the remaining results from "answer".
-
+%
 % NOTE: 1. There can be only one variant ancestor, so the question of which one
 %          to use does not arise.
 %
@@ -1088,7 +1089,6 @@ solve( Goal, _, _, Level ) :-
 %       4. If this goal is coinductive, then we use "result" to avoid
 %          duplicating results.
 
-
 solve( Goal, Stack, Hyp, Level ) :-
         is_variant_of_ancestor( Goal, Stack,
                                 triple( G, I, C ), InterveningTriples
@@ -1100,8 +1100,8 @@ solve( Goal, Stack, Hyp, Level ) :-
         % Rescind the status of intervening pioneers:
         suppress_pioneers_on_list( InterveningTriples, Level ),
 
+        % Create a looping alternative if the variant ancestor is a pioneer:
         (
-            % Create looping alternative if the variant ancestor is a pioneer:
             is_a_variant_of_a_pioneer( G, I )
         ->
             extract_goals( InterveningTriples, InterveningGoals ),
@@ -1111,6 +1111,7 @@ solve( Goal, Stack, Hyp, Level ) :-
             true
         ),
 
+        % The main action:
         (
             coinductive( Goal )
         ->
@@ -1121,6 +1122,7 @@ solve( Goal, Stack, Hyp, Level ) :-
                                        )
             ;
                 % results from coinductive hypotheses:
+                unify_with_coinductive_ancestor( Goal, Hyp ),
                 member( Goal, Hyp ),
                 \+ is_answer_known( OriginalGoal, Goal ),    % postpone "old"
                 memo( OriginalGoal, Goal, Level ),
@@ -1158,9 +1160,14 @@ solve( Goal, Stack, Hyp, Level ) :-
 % The pioneer (and all the goals in its cluster) will then be marked as
 % complete, and will cease to be a pioneer.
 %
-% (Note that a pioneer may also lose its status when some descendant goal finds
-%  a variant ancestor that is also an ancestor of the pioneer.  See the case
-%  of "variant of ancestor" above.)
+% Note that a pioneer may also lose its status when some descendant goal finds
+% a variant ancestor that is also an ancestor of the pioneer.  See the case
+% of "variant of ancestor" above.
+%
+% Note also that a goal might become completed after it succeeded (because
+% another variant goal "on the right" has completed), so after backtracking it
+% might not be necessary to continue the computation with the remaining clauses:
+% the rest of the results should be picked up from the table, instead.
 
 solve( Goal, Stack, Hyp, Level ) :-
         (
@@ -1181,13 +1188,10 @@ solve( Goal, Stack, Hyp, Level ) :-
 
             NLevel is Level + 1,
             use_clause( Goal, Body ),
+            \+ is_completed( OriginalGoal ), % might well be, after backtracking
             copy_term2( (Goal :- Body), ClauseCopy ),
             push_tabled( OriginalGoal, Index, ClauseCopy, Stack, NStack ),
-            solve( Body,
-                   NStack,
-                   NHyp,
-                   NLevel
-                 ),
+            solve( Body, NStack, NHyp, NLevel ),
             \+ is_answer_known( OriginalGoal, Goal ),   % postpone "old" answers
             memo( OriginalGoal, Goal, Level ),
             new_result_or_fail( Index, Goal ),          % i.e., note the answer
