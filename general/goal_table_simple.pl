@@ -66,10 +66,9 @@ goal_table_member( Goal, Table ) :-
 
 is_a_variant_in_goal_table( Goal, Table ) :-
         once( essence_hook( Goal, GoalEssence ) ),
-        copy_term2( Goal, Copy ),
-        olist_member( Copy, Table ),
-        once( essence_hook( Copy, CopyEssence ) ),
-        are_variants( CopyEssence, GoalEssence ),
+        olist_member( Member, Table ),
+        once( essence_hook( Member, MemberEssence ) ),
+        are_variants( MemberEssence, GoalEssence ),
         !.
 
 
