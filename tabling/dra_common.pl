@@ -1354,7 +1354,7 @@ suppress_pioneers_on_list( Triples, Level ) :-
         rescind_pioneer_status( MI ),
         fail.
 
-suppress_pioneers_on_list( _ ).
+suppress_pioneers_on_list( _, _ ).
 
 
 
