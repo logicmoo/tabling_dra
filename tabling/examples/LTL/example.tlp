@@ -71,28 +71,36 @@ holds( s4, s ).
 :- top q1/0, q2/0, q3/0, q4/0,  q5/0,  q6/0,
        q7/0, q8/0, q9/0, q10/0, q11/0, q12/0.
 
-%                                         Expected   Prolog    Tabling
+%                                      Expected   Prolog    Tabling
 
-q1  :- check( s0, g p ).                  % no       no        no
+q1  :- check( s0, g p ).            % no       no        no
 
-q2  :- check( s0, f p ).                  % no       no        no
+q2  :- check( s0, f p ).            % no       no        no
 
-q3  :- check( s0, f p v f t ).            % yes      no        yes
+q3  :- check( s0, f p v f t ).      % yes      no        yes (*)
 
-q4  :- check( s0, f (p v t) ).            % yes      yes       yes
+q4  :- check( s0, f (p v t) ).      % yes      yes       yes
 
-q5  :- check( s1, g p ).                  % no       no        no
+q5  :- check( s1, g p ).            % no       no        no
 
-q6  :- check( s1, f p ).                  % no       no        no
+q6  :- check( s1, f p ).            % no       no        no
 
-q7  :- check( s0, f g p ).                % no       no        no
+q7  :- check( s0, f g p ).          % no       no        no
 
-q8  :- check( s2, g p ).                  % yes      loops     yes
+q8  :- check( s2, g p ).            % yes      loops     yes
 
-q9  :- check( s2, f g p ).                % yes      loops     yes
+q9  :- check( s2, f g p ).          % yes      loops     yes
 
-q10  :- check( s2, f( q ^ z ) ).          % no       no        no
+q10  :- check( s2, f( q ^ z ) ).    % no       no        no
 
-q11 :- check( s2, f q ^ f z ).            % yes      yes       yes
+q11 :- check( s2, f q ^ f z ).      % yes      yes       yes
 
-q12 :- check( s2, g f s ).                % yes      loops     yes
+q12 :- check( s2, g f s ).          % yes      loops     yes
+
+
+                                    % (*) Eclipse loops after the sequence
+                                    %     ?- q1. ?- q2.  ?- q3.
+                                    %     It does not loop if ?- q3. is issued
+                                    %     as the first query.  The looping is
+                                    %     caused by Eclipse's variant/2 not
+                                    %     being able to handle cyclic terms.
