@@ -97,7 +97,7 @@ is_digit_char( C ) :-
 
 
 %%------------------------------------------------------------------------------
-%% clause_in_module( + module name, +- clause head, clause body ):
+%% clause_in_module( + module name, +- clause head, - clause body ):
 %% Like clause/2, but from the named module.
 
 clause_in_module( ModuleName, Head, Body ) :-
