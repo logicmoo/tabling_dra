@@ -26,9 +26,76 @@
 %%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 29 April 2009.                                             %%%
+%%%  Last update: 4 May 2009.                                                %%%
 %%%                                                                          %%%
-version( 'DRA ((c) UTD 2009) version 0.9 (beta), 29 April 2009' ).
+version( 'DRA+ ((c) UTD 2009) version 0.1, 4 May 2009' ).
+
+%%%%% This is an experimental version, intended to explore Gopal Gupta's idea of
+%%%%% making DRA even more efficient by remembering not only the clause
+%%%%% that led from a pioneer to a variant, but the entire branch of the or-
+%%%%% tree between the pioneer and the variant.
+%%%%% What follows is a quick note about the differences introduced to this
+%%%%% version (with respect to the "regular" DRA interpreter).
+%%%%%
+%%%%% 1. Information about the "path" taken (i.e., the active clause) must be
+%%%%%    stored not only with tabled goals, but with all goals.
+%%%%%
+%%%%% 2. The information must give access not only to the clause, but also to
+%%%%%    its successors: it will therefore not be a copy of the clause, but the
+%%%%%    number of the clause (see below).
+%%%%%
+%%%%% 3. It must be possible to distinguish between similar goals in the body of
+%%%%%    the same instance of a clause, so the goals must have an additional
+%%%%%    identifier.
+%%%%%
+%%%%% 4. To make the information described above readily available, the
+%%%%%    interpreter begins by transforming the program clauses, as follows:
+%%%%%
+%%%%%     (a) The body is wrapped up into occurrences of goal/2: each occurrence
+%%%%%         associates a goal with its number (the number is unique in its
+%%%%%         clause).  For example, the body
+%%%%%            q(A, B ),  r( B ),  s( A ).
+%%%%%         will be transformed to
+%%%%%            goal( 1, q( A, B ) ),  goal( 2, r( B ) ),  goal( 3, s( A ) ).
+%%%%%
+%%%%%     (b) After transformation, each clause is stored in a clause of
+%%%%%         predicate rule/2, which associates the clause with its number.
+%%%%%         For example,
+%%%%%            p( A, B ) :- q(A, B ),  r( B ),  s( A ).
+%%%%%         might be stored as
+%%%%%            rule( 17, p( A, B ),
+%%%%%                      (goal( 1, q(A, B ) ),
+%%%%%                       goal( 2, r( B ) ),  goal( 3, s( A ) ))
+%%%%%                ).
+%%%%%
+%%%%%     (c) Each rule has a unique number.  The rules that contain the
+%%%%%         transformed clauses of a procedure have consecutive numbers.
+%%%%%         In order to speed up access, there is an additional set of facts
+%%%%%         that associates the most general pattern of a procedure invocation
+%%%%%         with the number of the rule for the first clause of the
+%%%%%         appropriate procedure. For example, in addition to the above we
+%%%%%         might also have
+%%%%%            index( p( _, _ ), 17 ).
+%%%%%
+%%%%% 5. The interpreter has been subjected to a straightforward modification
+%%%%%    that allows it to treat each instance of goal/2 as if it were the goal
+%%%%%    contained therein, and to access the rules as if they were clauses.
+%%%%%
+%%%%% 6. In alternative/2 we now keep not the clause, but the entire path, i.e.,
+%%%%%    a list of goal information items (goal, its number, the number of the
+%%%%%    rule it invoked).  The list is reversed, i.e., it begins with
+%%%%%    information about the pioneer and ends with the variant that caused it
+%%%%%    to be stored.
+%%%%%
+%%%%% 7. An additional argument has been added to solve/4 (thus making it
+%%%%%    solve/5).  This argument guides the interpreter in a "reconstruction"
+%%%%%    phase, when a "reordered alternative" (now: a branch of the or-tree) is
+%%%%%    being re-built.  In "reconstruction mode" the argument is the
+%%%%%    (remaining part of) the branch stored in alternative/2. In "normal
+%%%%%    mode" the argument is an uninstantiated variable.
+%%%%%
+%%%%% LIMITATIONS: the "support" feature is not available.
+
 
 %%% NOTE:
 %%%
