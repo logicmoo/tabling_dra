@@ -290,4 +290,32 @@ uc( 'M' ).  uc( 'N' ). uc( 'O' ).  uc( 'P' ).  uc( 'Q' ).  uc( 'R' ).
 uc( 'S' ).  uc( 'T' ). uc( 'U' ).  uc( 'V' ).  uc( 'W' ).  uc( 'X' ).
 uc( 'Y' ).  uc( 'Z' ).
 
+
+%%------------------------------------------------------------------------------
+%% between( + integer, +- integer, + integer ):
+%% Succeed if arg1 =< arg2 < arg3.
+%% If arg2 is a variable, generate the appropriate values
+
+between( A, V, B ) :-
+        integer( A ),
+        integer( B ),
+        (
+            integer( V )
+        ->
+            A =< V,  V < B
+        ;
+            var( V )
+        ->
+            between_generate( A, V, B )
+        ).
+
+%
+between_generate( A, A, B ) :-
+        A < B.
+
+between_generate( A, V, B ) :-
+        A < B,
+        NA is A + 1,
+        between_generate( NA, V, B ).
+
 %%------------------------------------------------------------------------------
