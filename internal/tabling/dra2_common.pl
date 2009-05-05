@@ -59,7 +59,7 @@ version( 'DRA+ ((c) UTD 2009) version 0.1, 4 May 2009' ).
 %%%%%            goal( 1, q( A, B ) ),  goal( 2, r( B ) ),  goal( 3, s( A ) ).
 %%%%%
 %%%%%     (b) After transformation, each clause is stored in a clause of
-%%%%%         predicate rule/2, which associates the clause with its number.
+%%%%%         predicate rule/3, which associates the clause with its number.
 %%%%%         For example,
 %%%%%            p( A, B ) :- q(A, B ),  r( B ),  s( A ).
 %%%%%         might be stored as
@@ -72,10 +72,10 @@ version( 'DRA+ ((c) UTD 2009) version 0.1, 4 May 2009' ).
 %%%%%         transformed clauses of a procedure have consecutive numbers.
 %%%%%         In order to speed up access, there is an additional set of facts
 %%%%%         that associates the most general pattern of a procedure invocation
-%%%%%         with the number of the rule for the first clause of the
-%%%%%         appropriate procedure. For example, in addition to the above we
-%%%%%         might also have
-%%%%%            index( p( _, _ ), 17 ).
+%%%%%         with the range of numbers that were assigned to the rules for the
+%%%%%         appropriate procedure. For example, if the above was the only
+%%%%%         clause for p/2, then we would also have
+%%%%%            index( p( _, _ ), 17, 18 ).
 %%%%%
 %%%%% 5. The interpreter has been subjected to a straightforward modification
 %%%%%    that allows it to treat each instance of goal/2 as if it were the goal
@@ -94,7 +94,10 @@ version( 'DRA+ ((c) UTD 2009) version 0.1, 4 May 2009' ).
 %%%%%    (remaining part of) the branch stored in alternative/2. In "normal
 %%%%%    mode" the argument is an uninstantiated variable.
 %%%%%
-%%%%% LIMITATIONS: the "support" feature is not available.
+%%%%% LIMITATIONS: 1. Queries in program files will not be treated correctly.
+%%%%%              2. The "support" feature is not available.
+%%%%%              3. call/1, assert/1, retractall/1, findall/3 are
+%%%%%                 not supported.
 
 
 %%% NOTE:
@@ -576,9 +579,9 @@ version( 'DRA+ ((c) UTD 2009) version 0.1, 4 May 2009' ).
 
 :- ensure_loaded( [ '../../general/top_level',
                     '../../general/utilities',
-                    dra_builtins,
-                    dra_coinductive_hypotheses,
-                    dra_stack
+                    dra2_builtins,
+                    dra2_coinductive_hypotheses,
+                    dra2_stack
                   ]
                 ).
 
@@ -627,7 +630,8 @@ initialise :-                                             % invoked by top_level
 %% Checking consistency:
 
 program_loaded :-                                         % invoked by top_level
-        check_consistency.
+        check_consistency,
+        transform.
 
 
 %% check_consistency:
@@ -666,6 +670,114 @@ check_consistency :-
         fail.
 
 check_consistency.
+
+
+
+
+%------- Transformation -------
+
+:- dynamic index/3, rule/3.
+
+
+%% transform:
+%% Transform the program clauses and repack them into rules, as described in the
+%% comment at the top of this file.
+
+transform :-
+        check_no_support,
+        findall( Proc, defined( Proc ), Procs ),
+        transform_procedures( Procs, 0 ),
+        show.
+%
+show :- index(A,B,C),  writeln(index(A,B,C)), fail.
+show :- rule(A,B,C), writeln(rule(A,B,C)), fail.
+show.
+
+
+%% check_no_support:
+%% Produce a fatal error if "support" has been used in this program.
+
+check_no_support :-
+        support( _ ),
+        error( 'Programs with "support" cannot be executed by this version' ).
+
+check_no_support.
+
+
+%% transform_procedures( + list of procedure patterns, + number of next rule ):
+%% Transform the clauses of these procedures.
+
+transform_procedures( [], _ ).
+
+transform_procedures( [ Proc | Procs ], FreeRuleNumber ) :-
+        findall( (Proc :- Body)
+               , clause_in_module( interpreted, Proc, Body )
+               , Clauses
+               ),
+        transform_clauses( Clauses, FreeRuleNumber, NextFreeRuleNumber ),
+        assertz( index( Proc, FreeRuleNumber, NextFreeRuleNumber ) ),
+        transform_procedures( Procs, NextFreeRuleNumber ).
+
+
+%% transform_clauses( + list of original clauses,
+%%                    + number of next rule, - number of next rule after ):
+%% Transform the clauses of a procedure, storing them in rules/2.
+
+transform_clauses( [], FreeRuleNumber, FreeRuleNumber ).
+
+transform_clauses( [ Clause | Clauses ], FreeRuleNumber, NextFreeRuleNumber ) :-
+        transform_clause( Clause, FreeRuleNumber, NewFreeRuleNumber ),
+        transform_clauses( Clauses, NewFreeRuleNumber, NextFreeRuleNumber ).
+
+%
+transform_clause( (Head :- Body), FreeRuleNumber, NewFreeRuleNumber ) :-
+        transform_body( Body, 1, NewBody, _ ),
+        assertz( rule( FreeRuleNumber, Head, NewBody ) ),
+        NewFreeRuleNumber is FreeRuleNumber + 1.
+
+
+%% transform_body( + body,              + next free goal number,
+%%                  - transformed body, - number of next free goal after
+%%               ):
+
+transform_body( \+ A, N, \+ NA, NN ) :-
+        !,
+        transform_body( A, N, NA, NN ).
+
+transform_body( once( A ), N, once( NA ), NN ) :-
+        !,
+        transform_body( A, N, NA, NN ).
+
+transform_body( (A -> B ; C), N, NewBody, NN ) :-
+        !,
+        transform_body( A, N , NA, N2 ),
+        transform_body( B, N2, NB, N3 ),
+        transform_body( C, N3, NC, NN ),
+        NewBody = (NA -> NB ; NC).
+
+transform_body( (A ; B), N, NewBody, NN ) :-
+        !,
+        transform_body( A, N , NA, N2 ),
+        transform_body( B, N2, NB, NN ),
+        NewBody = (NA ; NB).
+
+transform_body( (A , B), N, NewBody, NN ) :-
+        !,
+        transform_body( A, N , NA, N2 ),
+        transform_body( B, N2, NB, NN ),
+        NewBody = (NA , NB).
+
+transform_body( (A -> B), N, NewBody, NN ) :-
+        !,
+        transform_body( A, N , NA, N2 ),
+        transform_body( B, N2, NB, NN ),
+        NewBody = (NA -> NB).
+
+transform_body( Call, N, goal( N, Call ), NN ) :-
+        NN is N + 1.
+
+%------- End of transformation -------
+
 
 
 
@@ -848,18 +960,12 @@ remove_variants_( [ H | T ], Accumulator, RL ) :-
 :- mode query( + ).
 
 query( Goals ) :-                                         % invoked by top_level
-        retractall( pioneer( _, _, _ )          ),
-        retractall( result( _, _ )              ),
-        retractall( loop( _, _ )                ),
-        retractall( looping_alternative( _, _ ) ),
-        setval( unique_index,      0    ),
-        getval( number_of_answers, NAns ),
-        setval( old_table_size,    NAns ),
-        setval( step_counter,      0    ),
+        prepare_tables,
+        transform_body( Goals, 1, TransformedGoals, _ ),
         (
             empty_hypotheses( Hyp ),
             empty_stack( Stack ),
-            solve( Goals, Stack, Hyp, 0 ),
+            solve( TransformedGoals, Stack, Hyp, 0 ),
             print_statistics,
             setval( step_counter, 0 ),
             getval( number_of_answers, NAns2 ),
@@ -871,6 +977,18 @@ query( Goals ) :-                                         % invoked by top_level
             setval( old_table_size, NAns2 ),
             fail
         ).
+
+%
+prepare_tables :-
+        retractall( pioneer( _, _, _ )          ),
+        retractall( result( _, _ )              ),
+        retractall( loop( _, _ )                ),
+        retractall( looping_alternative( _, _ ) ),
+        setval( unique_index,      0    ),
+        getval( number_of_answers, NAns ),
+        setval( old_table_size,    NAns ),
+        setval( step_counter,      0    ).
+
 
 
 %% Print information about the number of steps and the answer table.
@@ -903,7 +1021,7 @@ plural( Output, N ) :-  N \= 1,  write( Output, 's' ).
 
 
 
-%% solve( + sequence of goals,
+%% solve( + sequence of (transformed) goals,
 %%        + stack,
 %%        + coinductive hypotheses,
 %%        + level
@@ -1002,80 +1120,40 @@ solve( (Goals1 , Goals2), Stack, Hyp, Level ) :-
 
 % call/1
 
-solve( call( Goal ), Stack, Hyp, Level ) :-
-        (
-            ( var( Goal )                          % e.g., Eclipse
-            ; Goal = interpreted : V,  var( V )    % e.g., Sicstus
-            )
-        ->
-            error( [ 'A variable meta-call: ', call( Goal ) ] )
-        ;
-            solve( Goal, Stack, Hyp, Level )
-        ).
+solve( goal( _, call( Goal ) ), _, _, _ ) :-
+        error( ['call/1 not supported: ', call( Goal ) ] ).
 
 
 % assert/1
 
-solve( assert( Clause ), _, _, _ ) :-
-        !,
-        (
-            \+ is_a_good_clause( Clause )
-        ->
-            error( [ 'Bad clause argument: ', assert( Clause ) ] )
-        ;
-            true
-        ),
-        incval( step_counter ),
-        assert_in_module( interpreted, Clause ).
+solve( goal( _, assert( Clause ) ), _, _, _ ) :-
+        error( ['assert/1 not supported: ', assert( Clause ) ] ).
 
 
 % retractall/1
 
-solve( retractall( C ), _, _, _ ) :-
-        !,
-        incval( step_counter ),
-        retractall_in_module( interpreted, C ).
+solve( goal( _, retractall( C ) ), _, _, _ ) :-
+        error( ['retractall/1 not supported: ', retractall( C ) ] ).
 
 
 % findall/3: note that this is not opaque to coinductive and tabled ancestors!
 
-solve( findall( Template, Goal, Bag ), Stack, Hyp, Level ) :-
-        !,
-        NLevel is Level + 1,
-        (
-            % Sicstus prefixes the second argument of findall with the module
-            % name, but it does not do that for nested findall...
-            lp_system( sicstus ),
-            Goal = interpreted: G
-        ->
-            true
-        ;
-            G = Goal
-        ),
-        findall( Template, solve( G, Stack, Hyp, NLevel ), Bag ).
+solve( goal( _, findall( Template, Goal, Bag ) ), _, _, _ ) :-
+        error( ['findall/3 not supported: ', findall( Template, Goal, Bag ) ] ).
 
 
 % Some other supported built-in.
 
-solve( BuiltIn, _, _, _ ) :-
+solve( goal( _, BuiltIn ), _, _, _ ) :-
         builtin( BuiltIn ),
         !,
         incval( step_counter ),
         call( BuiltIn ).
 
 
-% A "support" predicate
-
-solve( Goal, _, _, _ ) :-
-        support( Goal ),
-        !,
-        incval( step_counter ),
-        call_in_module( support, Goal ).
-
-
 % A "normal" goal (i.e., not tabled, not coinductive).
 
-solve( Goal, Stack, Hyp, Level ) :-
+solve( goal( _, Goal ), Stack, Hyp, Level ) :-
         \+ tabled( Goal ),
         \+ coinductive( Goal ),
         !,
@@ -1095,7 +1173,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 % A goal that is coinductive, but not tabled.
 % Apply the coinductive hypotheses first, then the clauses.
 
-solve( Goal, Stack, Hyp, Level ) :-
+solve( goal( _, Goal ), Stack, Hyp, Level ) :-
         \+ tabled( Goal ),
         coinductive( Goal ),
         !,
@@ -1119,7 +1197,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 
 % A tabled goal that has been completed: all the results are in "answer".
 
-solve( Goal, _, _, Level ) :-
+solve( goal( _, Goal ), _, _, Level ) :-
         is_completed( Goal ),
         !,
         incval( step_counter ),
@@ -1157,7 +1235,7 @@ solve( Goal, _, _, Level ) :-
 %       4. If this goal is coinductive, then we use "result" to avoid
 %          duplicating results.
 
-solve( Goal, Stack, Hyp, Level ) :-
+solve( goal( _, Goal ), Stack, Hyp, Level ) :-
         is_variant_of_ancestor( Goal, Stack,
                                 triple( G, I, C ), InterveningTriples
                               ),
@@ -1236,7 +1314,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 % might not be necessary to continue the computation with the remaining clauses:
 % the rest of the results should be picked up from the table, instead.
 
-solve( Goal, Stack, Hyp, Level ) :-
+solve( goal( _, Goal ), Stack, Hyp, Level ) :-
         (
             coinductive( Goal )
         ->
@@ -1362,10 +1440,10 @@ get_remaining_tabled_answers( Goal, Index, Label, Level ) :-
 
 use_clause( Goal, Body ) :-
         (
-            functor( Goal, P, K ),
-            current_predicate_in_module( interpreted, P/K )
+            index( Goal, M, N )
         ->
-            clause_in_module( interpreted, Goal, Body )
+            between( M, RuleNumber, N ),
+            rule( RuleNumber, Goal, Body )
         ;
             warning( [ 'Calling an undefined predicate: \"', Goal, '\"' ] ),
             fail
