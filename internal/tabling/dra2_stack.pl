@@ -123,9 +123,10 @@ empty_stack( tstack( [], Table ) ) :-
 
 :- mode push_tabled( +, +, +, +, - ).
 
-push_tabled( Goal, Index, Clause, tstack( Stack, Table ),
-             tstack( [ triple( Goal, Index, Clause ) | Stack ], Table )
+push_tabled( StackedGoal, Index, Clause, tstack( Stack, Table ),
+             tstack( [ triple( StackedGoal, Index, Clause ) | Stack ], Table )
            ) :-
+        StackedGoal = goal( _, Goal ),
         goal_table_add( Table, Goal ).
 
 
@@ -138,7 +139,7 @@ is_variant_of_ancestor( Goal,
                       ) :-
         is_a_variant_in_goal_table( Goal, Table ),           % preliminary check
         append( Prefix, [ AncestorTriple | _ ], Stack ),     % split the list
-        AncestorTriple = triple( G, _, _ ),
+        AncestorTriple = triple( goal( _, G ), _, _ ),
         are_essences_variants( Goal, G ),
         !.
 

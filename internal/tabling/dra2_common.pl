@@ -1314,7 +1314,8 @@ solve( goal( _, Goal ), Stack, Hyp, Level ) :-
 % might not be necessary to continue the computation with the remaining clauses:
 % the rest of the results should be picked up from the table, instead.
 
-solve( goal( _, Goal ), Stack, Hyp, Level ) :-
+solve( StackedGoal, Stack, Hyp, Level ) :-
+        StackedGoal = goal( GoalNumber, Goal ),
         (
             coinductive( Goal )
         ->
@@ -1335,7 +1336,8 @@ solve( goal( _, Goal ), Stack, Hyp, Level ) :-
             use_clause( Goal, Body ),
             \+ is_completed( OriginalGoal ), % might well be, after backtracking
             copy_term2( (Goal :- Body), ClauseCopy ),
-            push_tabled( OriginalGoal, Index, ClauseCopy, Stack, NStack ),
+            StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
+            push_tabled( StackedGoalCopy, Index, ClauseCopy, Stack, NStack ),
             solve( Body, NStack, NHyp, NLevel ),
             \+ is_answer_known( OriginalGoal, Goal ),   % postpone "old" answers
             memo( OriginalGoal, Goal, Level ),
@@ -1359,7 +1361,7 @@ solve( goal( _, Goal ), Stack, Hyp, Level ) :-
         ->
             (
                 trace_other( 'Computing fixed point for', Goal, Index, Level ),
-                compute_fixed_point( Goal, Index, Stack, Hyp, Level ),
+                compute_fixed_point( StackedGoal, Index, Stack, Hyp, Level ),
                 \+ new_result_or_fail( Index, Goal ),
                 trace_success( pioneer, Goal, Index, Level )
             ;
@@ -1458,14 +1460,15 @@ use_clause( Goal, Body ) :-
 
 :- mode compute_fixed_point( +, +, +, +, + ).
 
-compute_fixed_point( Goal, Index, Stack, Hyp, Level ) :-
+compute_fixed_point( StackedGoal, Index, Stack, Hyp, Level ) :-
         getval( number_of_answers, NAns ),
-        compute_fixed_point_( Goal, Index, Stack, Hyp, Level, NAns ).
+        compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level, NAns ).
 
 %
 :- mode compute_fixed_point_( +, +, +, +, +, + ).
 
-compute_fixed_point_( Goal, Index, Stack, Hyp, Level, _ ) :-
+compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level, _ ) :-
+        StackedGoal = goal( GoalNumber, Goal ),
         NLevel is Level + 1,
         (
             coinductive( Goal )
@@ -1476,16 +1479,17 @@ compute_fixed_point_( Goal, Index, Stack, Hyp, Level, _ ) :-
         ),
         copy_term2( Goal, OriginalGoal ),
 
+        StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
         looping_alternative( Index, (Goal :- Body) ),      % i.e., iterate
-        push_tabled(  OriginalGoal, Index, (Goal :- Body), Stack, NStack ),
+        push_tabled( StackedGoalCopy, Index, (Goal :- Body), Stack, NStack ),
         solve( Body, NStack, NHyp, NLevel ),
         new_result_or_fail( Index, Goal ),
         memo( OriginalGoal, Goal, Level ).
 
-compute_fixed_point_( Goal, Index, Stack, Hyp, Level, NAns ) :-
+compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level, NAns ) :-
         getval( number_of_answers, NAnsNow ),
         NAnsNow \= NAns,                % i.e., fail if there are no new answers
-        compute_fixed_point_( Goal, Index, Stack, Hyp, Level, NAnsNow ).
+        compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level, NAnsNow ).
 
 
 
@@ -1494,7 +1498,7 @@ compute_fixed_point_( Goal, Index, Stack, Hyp, Level, NAns ) :-
 %% cease to be pioneers.
 
 suppress_pioneers_on_list( Triples, Level ) :-
-        member( triple( M, MI, _ ), Triples ),
+        member( triple( goal( _, M ), MI, _ ), Triples ),
         is_a_variant_of_a_pioneer( M, MI ),
         trace_other( 'Removing pioneer', M, MI, Level ),
         rescind_pioneer_status( MI ),
