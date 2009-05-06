@@ -1153,7 +1153,7 @@ solve( goal( _, BuiltIn ), _, _, _ ) :-
 
 % A "normal" goal (i.e., not tabled, not coinductive).
 
-solve( goal( _, Goal ), Stack, Hyp, Level ) :-
+solve( goal( GoalNumber, Goal ), Stack, Hyp, Level ) :-
         \+ tabled( Goal ),
         \+ coinductive( Goal ),
         !,
@@ -1161,8 +1161,12 @@ solve( goal( _, Goal ), Stack, Hyp, Level ) :-
         trace_entry( normal, Goal, '?', Level ),
         (
             NLevel is Level + 1,
+            copy_term2( Goal, OriginalGoal ),
             use_clause( Goal, Body ),
-            solve( Body, Stack, Hyp, NLevel ),
+            copy_term2( (Goal :- Body), ClauseCopy ),
+            StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
+            push_tabled( StackedGoalCopy, -1, ClauseCopy, Stack, NStack ),
+            solve( Body, NStack, Hyp, NLevel ),
             trace_success( normal, Goal, '?', Level )
         ;
             trace_failure( normal, Goal, '?', Level ),
@@ -1250,7 +1254,7 @@ solve( goal( _, Goal ), Stack, Hyp, Level ) :-
         (
             is_a_variant_of_a_pioneer( G, I )
         ->
-            extract_goals( InterveningTriples, InterveningGoals ),
+            extract_tabled_goals( InterveningTriples, InterveningGoals ),
             add_loop( I, InterveningGoals ),
             add_looping_alternative( I, C )
         ;
@@ -1499,6 +1503,7 @@ compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level, NAns ) :-
 
 suppress_pioneers_on_list( Triples, Level ) :-
         member( triple( goal( _, M ), MI, _ ), Triples ),
+        tabled( M ),                                % just for quicker filtering
         is_a_variant_of_a_pioneer( M, MI ),
         trace_other( 'Removing pioneer', M, MI, Level ),
         rescind_pioneer_status( MI ),
@@ -1537,17 +1542,24 @@ complete_cluster( _, _ ).
 
 
 
-%% extract_goals( + list of triples of goals, indices and clauses,
-%%                - list of goals
-%%              ):
-%% Filter away the other info in each triple, return list of goals only.
+%% extract_tabled+goals( + list of triples of goals, indices and clauses,
+%%                       - list of tabled goals
+%%                     ):
+%% Filter away the other info in each triple, return the list of tabled goals
+%% only.
 
-:- mode extract_goals( +, - ).
+:- mode extract_tabled_goals( +, - ).
 
-extract_goals( [], [] ).
+extract_tabled_goals( [], [] ).
 
-extract_goals( [ triple( G, _, _ ) | Ts ], [ G | Gs ] ) :-
-        extract_goals( Ts, Gs ).
+extract_tabled_goals( [ triple( G, _, _ ) | Ts ], [ G | Gs ] ) :-
+        tabled( G ),
+        !,
+        extract_tabled_goals( Ts, Gs ).
+
+extract_tabled_goals( [ triple( _G, _, _ ) | Ts ], Gs ) :-
+        % \+ tabled( _G ),
+        extract_tabled_goals( Ts, Gs ).
 
 
 
