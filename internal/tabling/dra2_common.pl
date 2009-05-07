@@ -969,7 +969,7 @@ query( Goals ) :-                                         % invoked by top_level
         (
             empty_hypotheses( Hyp ),
             empty_stack( Stack ),
-            solve( TransformedGoals, Stack, Hyp, 0 ),
+            solve( TransformedGoals, Stack, Hyp, 0, nopath ),
             print_statistics,
             setval( step_counter, 0 ),
             getval( number_of_answers, NAns2 ),
@@ -1028,7 +1028,8 @@ plural( Output, N ) :-  N \= 1,  write( Output, 's' ).
 %% solve( + sequence of (transformed) goals,
 %%        + stack,
 %%        + coinductive hypotheses,
-%%        + level
+%%        + level,
+%%        + path guidance (a list of triples or 'nopath')
 %%      ):
 %% Solve the sequence of goals, maintaining information about the current chain
 %% of tabled ancestors (stack) and the chain of coinductive ancestors
@@ -1044,6 +1045,8 @@ plural( Output, N ) :-  N \= 1,  write( Output, 's' ).
 %%    clause  is the clause that is currently used by the goal (it has been
 %%               instantiated by matching with the goal in its original form,
 %%               but does not share variables with the goal).
+%%               NOTE: In this version the rule number is used instead of the
+%%               clause.
 %%
 %% NOTE: The set of coinductive hypotheses and the stack of tabled ancestors
 %%       have been factored out (see files "dra_coinductive_hypotheses.pl" and
@@ -1051,17 +1054,17 @@ plural( Output, N ) :-  N \= 1,  write( Output, 's' ).
 %%       faster access, so the comments in this file ("chain of ancestors" etc.)
 %%       might no longer be quite accurate.
 
-:- mode solve( +, +, +, + ).
+:- mode solve( +, +, +, +, + ).
 
 
 % A negation.
 
-solve( \+ Goal, Stack, Hyp, Level ) :-
+solve( \+ Goal, Stack, Hyp, Level, Path ) :-
         !,
         NLevel is Level + 1,
         trace_entry( normal, \+ Goal, '?', Level ),
         (
-            \+ solve( Goal, Stack, Hyp, NLevel ),
+            \+ solve( Goal, Stack, Hyp, NLevel, Path ),
             trace_success( normal, \+ Goal, '?', Level )
         ;
             trace_failure( normal, \+ Goal, '?', Level ),
@@ -1071,12 +1074,12 @@ solve( \+ Goal, Stack, Hyp, Level ) :-
 
 % One solution.
 
-solve( once( Goal ), Stack, Hyp, Level ) :-
+solve( once( Goal ), Stack, Hyp, Level, Path ) :-
         !,
         NLevel is Level + 1,
         trace_entry( normal, once( Goal ), '?', Level ),
         (
-            once( solve( Goal, Stack, Hyp, NLevel ) ),
+            once( solve( Goal, Stack, Hyp, NLevel, Path ) ),
             trace_success( normal, once( Goal ), '?', Level )
         ;
             trace_failure( normal, once( Goal ), '?', Level ),
@@ -1086,69 +1089,69 @@ solve( once( Goal ), Stack, Hyp, Level ) :-
 
 % A conditional with an else.
 
-solve( (Cond -> Then ; _Else), Stack, Hyp, Level ) :-
-        solve( Cond, Stack, Hyp, Level ),
+solve( (Cond -> Then ; _Else), Stack, Hyp, Level, Path ) :-
+        solve( Cond, Stack, Hyp, Level, Path ),
         !,
-        solve( Then, Stack, Hyp, Level ).
+        solve( Then, Stack, Hyp, Level, Path ).
 
-solve( (_Cond -> _Then ; Else), Stack, Hyp, Level ) :-
+solve( (_Cond -> _Then ; Else), Stack, Hyp, Level, Path ) :-
         !,
-        solve( Else, Stack, Hyp, Level ).
+        solve( Else, Stack, Hyp, Level, Path ).
 
 
 % A conditional without an else.
 
-solve( (Cond -> Then), Stack, Hyp, Level ) :-
-        solve( Cond, Stack, Hyp, Level ),
+solve( (Cond -> Then), Stack, Hyp, Level, Path ) :-
+        solve( Cond, Stack, Hyp, Level, Path ),
         !,
-        solve( Then, Stack, Hyp, Level ).
+        solve( Then, Stack, Hyp, Level, Path ).
 
 
 % A disjunction without a conditional.
 
-solve( (Goals ; _), Stack, Hyp, Level ) :-
-        solve( Goals, Stack, Hyp, Level ).
+solve( (Goals ; _), Stack, Hyp, Level, Path ) :-
+        solve( Goals, Stack, Hyp, Level, Path ).
 
-solve( (_ ; Goals), Stack, Hyp, Level ) :-
+solve( (_ ; Goals), Stack, Hyp, Level, Path ) :-
         !,
-        solve( Goals, Stack, Hyp, Level ).
+        solve( Goals, Stack, Hyp, Level, Path ).
 
 
 % A conjunction.
 
-solve( (Goals1 , Goals2), Stack, Hyp, Level ) :-
+solve( (Goals1 , Goals2), Stack, Hyp, Level, Path ) :-
         !,
-        solve( Goals1, Stack, Hyp, Level ),
-        solve( Goals2, Stack, Hyp, Level ).
+        solve( Goals1, Stack, Hyp, Level, Path ),
+        solve( Goals2, Stack, Hyp, Level, Path ).
 
 
 % call/1
 
-solve( goal( _, call( Goal ) ), _, _, _ ) :-
+solve( goal( _, call( Goal ) ), _, _, _, _) :-
         error( ['call/1 not supported: ', call( Goal ) ] ).
 
 
 % assert/1
 
-solve( goal( _, assert( Clause ) ), _, _, _ ) :-
+solve( goal( _, assert( Clause ) ), _, _, _, _ ) :-
         error( ['assert/1 not supported: ', assert( Clause ) ] ).
 
 
 % retractall/1
 
-solve( goal( _, retractall( C ) ), _, _, _ ) :-
+solve( goal( _, retractall( C ) ), _, _, _, _ ) :-
         error( ['retractall/1 not supported: ', retractall( C ) ] ).
 
 
 % findall/3: note that this is not opaque to coinductive and tabled ancestors!
 
-solve( goal( _, findall( Template, Goal, Bag ) ), _, _, _ ) :-
+solve( goal( _, findall( Template, Goal, Bag ) ), _, _, _, _ ) :-
         error( ['findall/3 not supported: ', findall( Template, Goal, Bag ) ] ).
 
 
 % Some other supported built-in.
 
-solve( goal( _, BuiltIn ), _, _, _ ) :-
+solve( goal( _, BuiltIn ), _, _, _, _ ) :-
         builtin( BuiltIn ),
         !,
         incval( step_counter ),
@@ -1157,7 +1160,7 @@ solve( goal( _, BuiltIn ), _, _, _ ) :-
 
 % A "normal" goal (i.e., not tabled, not coinductive).
 
-solve( goal( GoalNumber, Goal ), Stack, Hyp, Level ) :-
+solve( goal( GoalNumber, Goal ), Stack, Hyp, Level, Path ) :-
         \+ tabled( Goal ),
         \+ coinductive( Goal ),
         !,
@@ -1169,7 +1172,7 @@ solve( goal( GoalNumber, Goal ), Stack, Hyp, Level ) :-
             use_clause( Goal, Body, RuleNumber ),
             StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
             push_tabled( StackedGoalCopy, -1, RuleNumber, Stack, NStack ),
-            solve( Body, NStack, Hyp, NLevel ),
+            solve( Body, NStack, Hyp, NLevel, Path ),
             trace_success( normal, Goal, '?', Level )
         ;
             trace_failure( normal, Goal, '?', Level ),
@@ -1180,7 +1183,7 @@ solve( goal( GoalNumber, Goal ), Stack, Hyp, Level ) :-
 % A goal that is coinductive, but not tabled.
 % Apply the coinductive hypotheses first, then the clauses.
 
-solve( goal( GoalNumber, Goal ), Stack, Hyp, Level ) :-
+solve( goal( GoalNumber, Goal ), Stack, Hyp, Level, Path ) :-
         \+ tabled( Goal ),
         coinductive( Goal ),
         !,
@@ -1196,7 +1199,7 @@ solve( goal( GoalNumber, Goal ), Stack, Hyp, Level ) :-
             push_coinductive( Goal, Hyp, NHyp ),
             StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
             push_tabled( StackedGoalCopy, -1, RuleNumber, Stack, NStack ),
-            solve( Body, NStack, NHyp, NLevel ),
+            solve( Body, NStack, NHyp, NLevel, Path ),
             trace_success( 'coinductive (clause)', Goal, '?', Level )
         ;
             trace_failure( coinductive, Goal, '?', Level ),
@@ -1207,7 +1210,7 @@ solve( goal( GoalNumber, Goal ), Stack, Hyp, Level ) :-
 
 % A tabled goal that has been completed: all the results are in "answer".
 
-solve( goal( _, Goal ), _, _, Level ) :-
+solve( goal( _, Goal ), _, _, Level, _Path ) :-
         is_completed( Goal ),
         !,
         incval( step_counter ),
@@ -1245,7 +1248,7 @@ solve( goal( _, Goal ), _, _, Level ) :-
 %       4. If this goal is coinductive, then we use "result" to avoid
 %          duplicating results.
 
-solve( goal( _, Goal ), Stack, Hyp, Level ) :-
+solve( goal( _, Goal ), Stack, Hyp, Level, _Path ) :-
         is_variant_of_ancestor( Goal, Stack, AncTriple, InterveningTriples ),
         !,
         AncTriple = triple( AncGoal, AncIndex, _AncRN ),
@@ -1327,7 +1330,7 @@ solve( goal( _, Goal ), Stack, Hyp, Level ) :-
 % might not be necessary to continue the computation with the remaining clauses:
 % the rest of the results should be picked up from the table, instead.
 
-solve( StackedGoal, Stack, Hyp, Level ) :-
+solve( StackedGoal, Stack, Hyp, Level, Path ) :-
         StackedGoal = goal( GoalNumber, Goal ),
         (
             coinductive( Goal )
@@ -1350,7 +1353,7 @@ solve( StackedGoal, Stack, Hyp, Level ) :-
             \+ is_completed( OriginalGoal ), % might well be, after backtracking
             StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
             push_tabled( StackedGoalCopy, Index, RuleNumber, Stack, NStack ),
-            solve( Body, NStack, NHyp, NLevel ),
+            solve( Body, NStack, NHyp, NLevel, Path ),
             \+ is_answer_known( OriginalGoal, Goal ),   % postpone "old" answers
             memo( OriginalGoal, Goal, Level ),
             new_result_or_fail( Index, Goal ),          % i.e., note the answer
@@ -1373,7 +1376,9 @@ solve( StackedGoal, Stack, Hyp, Level ) :-
         ->
             (
                 trace_other( 'Computing fixed point for', Goal, Index, Level ),
-                compute_fixed_point( StackedGoal, Index, Stack, Hyp, Level ),
+                compute_fixed_point( StackedGoal, Index,
+                                     Stack, Hyp, Level, Path
+                                   ),
                 \+ new_result_or_fail( Index, Goal ),
                 trace_success( pioneer, Goal, Index, Level )
             ;
@@ -1468,21 +1473,29 @@ use_clause( Goal, Body, RuleNumber ) :-
 
 
 
-%% compute_fixed_point( + pioneer goal, + its index, + stack, + level ):
+%% compute_fixed_point( + pioneer goal,
+%%                      + its index,
+%%                      + stack,
+%%                      + coinductive hypotheses,
+%%                      + level,
+%%                      + path
+%%                    ):
 %% Solve the goal by associated rules from "looping_alternative", succeeding
 %% with each new answer (and tabling it).  Fail when all the possible results
 %% are exhausted.
 
-:- mode compute_fixed_point( +, +, +, +, + ).
+:- mode compute_fixed_point( +, +, +, +, +, + ).
 
-compute_fixed_point( StackedGoal, Index, Stack, Hyp, Level ) :-
+compute_fixed_point( StackedGoal, Index, Stack, Hyp, Level, Path ) :-
         getval( number_of_answers, NAns ),
-        compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level, NAns ).
+        compute_fixed_point_( StackedGoal, Index,
+                              Stack, Hyp, Level, Path, NAns
+                            ).
 
 %
-:- mode compute_fixed_point_( +, +, +, +, +, + ).
+:- mode compute_fixed_point_( +, +, +, +, +, +, + ).
 
-compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level, _ ) :-
+compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level, Path, _ ) :-
         StackedGoal = goal( GoalNumber, Goal ),
         NLevel is Level + 1,
         (
@@ -1499,14 +1512,16 @@ compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level, _ ) :-
         Path = [ triple( _, _, RuleNumber ) | _ ],
         use_clause( Goal, Body, RuleNumber ),
         push_tabled( StackedGoalCopy, Index, RuleNumber, Stack, NStack ),
-        solve( Body, NStack, NHyp, NLevel ),
+        solve( Body, NStack, NHyp, NLevel, Path ),
         new_result_or_fail( Index, Goal ),
         memo( OriginalGoal, Goal, Level ).
 
-compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level, NAns ) :-
+compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level, Path, NAns ) :-
         getval( number_of_answers, NAnsNow ),
         NAnsNow \= NAns,                % i.e., fail if there are no new answers
-        compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level, NAnsNow ).
+        compute_fixed_point_( StackedGoal, Index,
+                              Stack, Hyp, Level, Path, NAnsNow
+                            ).
 
 
 
