@@ -81,13 +81,17 @@ version( 'DRA+ ((c) UTD 2009) version 0.1, 4 May 2009' ).
 %%%%%    that allows it to treat each instance of goal/2 as if it were the goal
 %%%%%    contained therein, and to access the rules as if they were clauses.
 %%%%%
-%%%%% 6. In alternative/2 we now keep not the clause, but the entire path, i.e.,
+%%%%% 6. All goals that invoke a clause are now pushed onto the stack (i.e., not
+%%%%%    only tabled goals).  The "current clause" is replaced by the rule
+%%%%%    number (see 4 (c) above).
+%%%%%
+%%%%% 7. In alternative/2 we now keep not the clause, but the entire path, i.e.,
 %%%%%    a list of goal information items (goal, its number, the number of the
 %%%%%    rule it invoked).  The list is reversed, i.e., it begins with
 %%%%%    information about the pioneer and ends with the variant that caused it
 %%%%%    to be stored.
 %%%%%
-%%%%% 7. An additional argument has been added to solve/4 (thus making it
+%%%%% 6. An additional argument has been added to solve/4 (thus making it
 %%%%%    solve/5).  This argument guides the interpreter in a "reconstruction"
 %%%%%    phase, when a "reordered alternative" (now: a branch of the or-tree) is
 %%%%%    being re-built.  In "reconstruction mode" the argument is the
@@ -1162,10 +1166,9 @@ solve( goal( GoalNumber, Goal ), Stack, Hyp, Level ) :-
         (
             NLevel is Level + 1,
             copy_term2( Goal, OriginalGoal ),
-            use_clause( Goal, Body ),
-            copy_term2( (Goal :- Body), ClauseCopy ),
+            use_clause( Goal, Body, RuleNumber ),
             StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
-            push_tabled( StackedGoalCopy, -1, ClauseCopy, Stack, NStack ),
+            push_tabled( StackedGoalCopy, -1, RuleNumber, Stack, NStack ),
             solve( Body, NStack, Hyp, NLevel ),
             trace_success( normal, Goal, '?', Level )
         ;
@@ -1189,11 +1192,10 @@ solve( goal( GoalNumber, Goal ), Stack, Hyp, Level ) :-
         ;
             NLevel is Level + 1,
             copy_term2( Goal, OriginalGoal ),
-            use_clause( Goal, Body ),
-            copy_term2( (Goal :- Body), ClauseCopy ),
+            use_clause( Goal, Body, RuleNumber ),
             push_coinductive( Goal, Hyp, NHyp ),
             StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
-            push_tabled( StackedGoalCopy, -1, ClauseCopy, Stack, NStack ),
+            push_tabled( StackedGoalCopy, -1, RuleNumber, Stack, NStack ),
             solve( Body, NStack, NHyp, NLevel ),
             trace_success( 'coinductive (clause)', Goal, '?', Level )
         ;
@@ -1245,7 +1247,7 @@ solve( goal( _, Goal ), _, _, Level ) :-
 
 solve( goal( _, Goal ), Stack, Hyp, Level ) :-
         is_variant_of_ancestor( Goal, Stack,
-                                triple( G, I, C ), InterveningTriples
+                                triple( G, I, RN ), InterveningTriples
                               ),
         !,
         incval( step_counter ),
@@ -1261,7 +1263,7 @@ solve( goal( _, Goal ), Stack, Hyp, Level ) :-
             extract_goals( InterveningTriples, InterveningGoals ),
             extract_tabled( InterveningGoals, InterveningTabledGoals ),
             add_loop( I, InterveningTabledGoals ),
-            add_looping_alternative( I, C )
+            add_looping_alternative( I, RN )
         ;
             true
         ),
@@ -1342,11 +1344,10 @@ solve( StackedGoal, Stack, Hyp, Level ) :-
         ;
 
             NLevel is Level + 1,
-            use_clause( Goal, Body ),
+            use_clause( Goal, Body, RuleNumber ),
             \+ is_completed( OriginalGoal ), % might well be, after backtracking
-            copy_term2( (Goal :- Body), ClauseCopy ),
             StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
-            push_tabled( StackedGoalCopy, Index, ClauseCopy, Stack, NStack ),
+            push_tabled( StackedGoalCopy, Index, RuleNumber, Stack, NStack ),
             solve( Body, NStack, NHyp, NLevel ),
             \+ is_answer_known( OriginalGoal, Goal ),   % postpone "old" answers
             memo( OriginalGoal, Goal, Level ),
@@ -1444,12 +1445,15 @@ get_remaining_tabled_answers( Goal, Index, Label, Level ) :-
 
 
 
-%% use_clause( + goal, - body ):
+%% use_clause( + goal, - body, -+ rule number ):
 %% Warn and fail if the goal invokes a non-existing predicate.  Otherwise
 %% nondeterministically return the appropriately instantiated body of each
 %% clause whose head matches the goal.
+%% NOTE: In this version return also the rule number, or -- if the rule number
+%%       is not a variable --- use the rule number to constrain the choice of
+%%       the clause.
 
-use_clause( Goal, Body ) :-
+use_clause( Goal, Body, RuleNumber ) :-
         (
             index( Goal, M, N )
         ->
@@ -1489,8 +1493,9 @@ compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level, _ ) :-
         copy_term2( Goal, OriginalGoal ),
 
         StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
-        looping_alternative( Index, (Goal :- Body) ),      % i.e., iterate
-        push_tabled( StackedGoalCopy, Index, (Goal :- Body), Stack, NStack ),
+        looping_alternative( Index, RuleNumber ),      % i.e., iterate
+        use_clause( Goal, Body, RuleNumber ),
+        push_tabled( StackedGoalCopy, Index, RuleNumber, Stack, NStack ),
         solve( Body, NStack, NHyp, NLevel ),
         new_result_or_fail( Index, Goal ),
         memo( OriginalGoal, Goal, Level ).
