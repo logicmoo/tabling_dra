@@ -1246,10 +1246,9 @@ solve( goal( _, Goal ), _, _, Level ) :-
 %          duplicating results.
 
 solve( goal( _, Goal ), Stack, Hyp, Level ) :-
-        is_variant_of_ancestor( Goal, Stack,
-                                triple( G, I, RN ), InterveningTriples
-                              ),
+        is_variant_of_ancestor( Goal, Stack, AncTriple, InterveningTriples ),
         !,
+        AncTriple = triple( AncGoal, AncIndex, _AncRN ),
         incval( step_counter ),
         get_unique_index( Index ),
         trace_entry( variant, Goal, Index, Level ),
@@ -1258,12 +1257,15 @@ solve( goal( _, Goal ), Stack, Hyp, Level ) :-
 
         % Create a looping alternative if the variant ancestor is a pioneer:
         (
-            is_a_variant_of_a_pioneer( G, I )
+            is_a_variant_of_a_pioneer( AncGoal, AncIndex )
         ->
             extract_goals( InterveningTriples, InterveningGoals ),
             extract_tabled( InterveningGoals, InterveningTabledGoals ),
-            add_loop( I, InterveningTabledGoals ),
-            add_looping_alternative( I, RN )
+            add_loop( AncIndex, InterveningTabledGoals ),
+            reverse( InterveningTriples, ReversedInterveningTriples ),
+            add_looping_alternative( AncIndex,
+                                     [ AncTriple | ReversedInterveningTriples ]
+                                   )
         ;
             true
         ),
@@ -1493,7 +1495,8 @@ compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level, _ ) :-
         copy_term2( Goal, OriginalGoal ),
 
         StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
-        looping_alternative( Index, RuleNumber ),      % i.e., iterate
+        looping_alternative( Index, Path ),      % i.e., iterate
+        Path = [ triple( _, _, RuleNumber ) | _ ],
         use_clause( Goal, Body, RuleNumber ),
         push_tabled( StackedGoalCopy, Index, RuleNumber, Stack, NStack ),
         solve( Body, NStack, NHyp, NLevel ),
