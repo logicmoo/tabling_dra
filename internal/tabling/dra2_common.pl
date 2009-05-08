@@ -1200,7 +1200,7 @@ solve( goal( GoalNumber, Goal ),
             NLevel is Level + 1,
             copy_term2( Goal, OriginalGoal ),
             use_clause( Goal, Body, RuleNumber ),
-            NewPath = [ choice( GoalNumber, RuleNumber ) | PathIn ],
+            NewPath = [ choice( GoalNumber, r( RuleNumber ) ) | PathIn ],
             StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
             push_tabled( StackedGoalCopy, -1, NewPath, Stack, NStack ),
             solve( Body, NStack, Hyp, NLevel, NewPath, PathOut, PathGuide ),
@@ -1225,7 +1225,7 @@ solve( goal( GoalNumber, Goal ),
         (
             % NEED SOMETHING HERE TO GENERARATE THE NUMBER, 0 FOR NOW<<<<<<<<
             unify_with_coinductive_ancestor( Goal, Hyp ),
-            PathOut = [ choice( GoalNumber, 0 ) | PathIn ],
+            PathOut = [ choice( GoalNumber, c( 0 ) ) | PathIn ],
             trace_success( 'coinductive (hypothesis)', Goal, '?', Level )
         ;
             NLevel is Level + 1,
@@ -1233,7 +1233,7 @@ solve( goal( GoalNumber, Goal ),
             use_clause( Goal, Body, RuleNumber ),
             push_coinductive( Goal, Hyp, NHyp ),
             StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
-            NewPath = [ choice( GoalNumber, RuleNumber ) | PathIn ],
+            NewPath = [ choice( GoalNumber, r( RuleNumber ) ) | PathIn ],
             push_tabled( StackedGoalCopy, -1, NewPath, Stack, NStack ),
             solve( Body, NStack, NHyp, NLevel, NewPath, PathOut, PathGuide ),
             trace_success( 'coinductive (clause)', Goal, '?', Level )
@@ -1254,7 +1254,7 @@ solve( goal( GoalNumber, Goal ), _, _, Level, PathIn, PathOut, _PathGuide ) :-
         (
             % NEED SOMETHING HERE TO GENERARATE THE NUMBER, -1 FOR NOW<<<<<<<<
             get_all_tabled_answers( Goal, '?', completed, Level ),
-            PathOut = [ choice( GoalNumber, -1 ) | PathIn ]
+            PathOut = [ choice( GoalNumber, a( -1 ) ) | PathIn ]
         ;
             trace_failure( completed, Goal, '?', Level ),
             fail
@@ -1326,7 +1326,7 @@ solve( goal( GoalNumber, Goal ),
                 % results from coinductive hypotheses:
                 % NEED SOMETHING HERE TO GENERARATE THE NUMBER, -2 FOR NOW<<<<<<
                 unify_with_coinductive_ancestor( Goal, Hyp ),
-                PathOut = [ choice( GoalNumber, -2 ) | PathIn ],
+                PathOut = [ choice( GoalNumber, c( -2 ) ) | PathIn ],
                 \+ is_answer_known( OriginalGoal, Goal ),    % postpone "old"
                 memo( OriginalGoal, Goal, Level ),
                 new_result_or_fail( Index, Goal ),           % i.e., note answer
@@ -1335,7 +1335,7 @@ solve( goal( GoalNumber, Goal ),
                 % other tabled results
                 % NEED SOMETHING HERE TO GENERARATE THE NUMBER, -3 FOR NOW<<<<<<
                 get_remaining_tabled_answers( Goal, Index, variant, Level ),
-                PathOut = [ choice( GoalNumber, -3 ) | PathIn ]
+                PathOut = [ choice( GoalNumber, a( -3 ) ) | PathIn ]
             ;
                 % wrap it up
                 trace_failure( variant, Goal, Index, Level ),
@@ -1348,7 +1348,7 @@ solve( goal( GoalNumber, Goal ),
             (
                 % NEED SOMETHING HERE TO GENERARATE THE NUMBER, -4 FOR NOW<<<<<<
                 get_all_tabled_answers( Goal, Index, variant, Level ),
-                PathOut = [ choice( GoalNumber, -4 ) | PathIn ]
+                PathOut = [ choice( GoalNumber, a( -4 ) ) | PathIn ]
             ;
                 trace_failure( variant, Goal, Index, Level ),
                 retractall( result( Index, _ ) ),
@@ -1393,14 +1393,14 @@ solve( StackedGoal, Stack, Hyp, Level, PathIn, PathOut, PathGuide ) :-
         (
             % NEED SOMETHING HERE TO GENERARATE THE NUMBER, -5 FOR NOW<<<<<<
             get_tabled_if_old_first( Goal, Index, pioneer, Level ),
-            PathOut = [ choice( GoalNumber, -5 ) | PathIn ]
+            PathOut = [ choice( GoalNumber, a( -5 ) ) | PathIn ]
         ;
 
             NLevel is Level + 1,
             use_clause( Goal, Body, RuleNumber ),
             \+ is_completed( OriginalGoal ), % might well be, after backtracking
             StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
-            NewPath = [ choice( GoalNumber, RuleNumber ) | PathIn ],
+            NewPath = [ choice( GoalNumber, r( RuleNumber ) ) | PathIn ],
             push_tabled( StackedGoalCopy, Index, NewPath, Stack, NStack ),
             solve( Body, NStack, NHyp, NLevel, NewPath, PathOut, PathGuide ),
             \+ is_answer_known( OriginalGoal, Goal ),   % postpone "old" answers
@@ -1420,7 +1420,7 @@ solve( StackedGoal, Stack, Hyp, Level, PathIn, PathOut, PathGuide ) :-
             rescind_pioneer_status( Index ),
             % NEED SOMETHING HERE TO GENERARATE THE NUMBER, -6 FOR NOW<<<<<<
             get_remaining_tabled_answers( Goal, Index, 'completed now', Level ),
-            PathOut = [ choice( GoalNumber, -6 ) | PathIn ]
+            PathOut = [ choice( GoalNumber, a( -6 ) ) | PathIn ]
         ;
 
             is_a_variant_of_a_pioneer( Goal, Index )  % not lost pioneer status?
@@ -1445,7 +1445,7 @@ solve( StackedGoal, Stack, Hyp, Level, PathIn, PathOut, PathGuide ) :-
                 get_remaining_tabled_answers( Goal, Index,
                                               'completed now', Level
                                             ),
-                PathOut = [ choice( GoalNumber, -8 ) | PathIn ]
+                PathOut = [ choice( GoalNumber, a( -8 ) ) | PathIn ]
             ;
                 retractall( result( Index, _ ) ),
                 fail
@@ -1459,7 +1459,7 @@ solve( StackedGoal, Stack, Hyp, Level, PathIn, PathOut, PathGuide ) :-
                 get_remaining_tabled_answers( Goal, Index,
                                               '(no longer a pioneer)', Level
                                             ),
-                PathOut = [ choice( GoalNumber, -9 ) | PathIn ]
+                PathOut = [ choice( GoalNumber, a( -9 ) ) | PathIn ]
             ;
                 trace_failure( '(no longer a pioneer)', Goal, Index, Level ),
                 retractall( result( Index, _ ) ),
