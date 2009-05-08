@@ -1223,9 +1223,8 @@ solve( goal( GoalNumber, Goal ),
         incval( step_counter ),
         trace_entry( coinductive, Goal, '?', Level ),
         (
-            % NEED SOMETHING HERE TO GENERARATE THE NUMBER, 0 FOR NOW<<<<<<<<
-            unify_with_coinductive_ancestor( Goal, Hyp ),
-            PathOut = [ choice( GoalNumber, c( 0 ) ) | PathIn ],
+            unify_with_coinductive_ancestor( Goal, Hyp, AncNumber ),
+            PathOut = [ choice( GoalNumber, c( AncNumber ) ) | PathIn ],
             trace_success( 'coinductive (hypothesis)', Goal, '?', Level )
         ;
             NLevel is Level + 1,
@@ -1325,8 +1324,8 @@ solve( goal( GoalNumber, Goal ),
             ;
                 % results from coinductive hypotheses:
                 % NEED SOMETHING HERE TO GENERARATE THE NUMBER, -2 FOR NOW<<<<<<
-                unify_with_coinductive_ancestor( Goal, Hyp ),
-                PathOut = [ choice( GoalNumber, c( -2 ) ) | PathIn ],
+                unify_with_coinductive_ancestor( Goal, Hyp, AncNumber ),
+                PathOut = [ choice( GoalNumber, c( AncNumber ) ) | PathIn ],
                 \+ is_answer_known( OriginalGoal, Goal ),    % postpone "old"
                 memo( OriginalGoal, Goal, Level ),
                 new_result_or_fail( Index, Goal ),           % i.e., note answer

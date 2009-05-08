@@ -101,9 +101,27 @@ push_coinductive( Goal, Hyp, Hyp ) :-
         goal_table_add( Hyp, Goal ).
 
 
-:- mode unify_with_coinductive_ancestor( +, + ).
+%:- mode unify_with_coinductive_ancestor( +, + ).
+%
+%unify_with_coinductive_ancestor( Goal, Hyp ) :-
+%        goal_table_member( Goal, Hyp ).
 
-unify_with_coinductive_ancestor( Goal, Hyp ) :-
-        goal_table_member( Goal, Hyp ).
+
+%% Extended: each successful answer is accompanied by an unique number.
+%% By rights, a coinductive hypothesis should be stored together with its number
+%% ( the current stack level would make an adequate label), but this would
+%% require making a copy of 'goal_table_in_tree' and customizing it (which would
+%% have to include modifying its interface, for the original version of the
+%% module is still used to keep stacked goals).  So for the time being we make
+%% do with an additional counter of the number of generated answer.
+
+
+:- mode unify_with_coinductive_ancestor( +, +, - ).
+
+unify_with_coinductive_ancestor( Goal, Hyp, AncNumber ) :-
+        setval( ancNumberVar, 0 ),
+        goal_table_member( Goal, Hyp ),
+        getval( ancNumberVar, AncNumber ),
+        incval( ancNumberVar ).
 
 %-------------------------------------------------------------------------------
