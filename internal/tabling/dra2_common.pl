@@ -347,7 +347,7 @@ version( 'DRA+ ((c) UTD 2009) version 0.1, 4 May 2009' ).
            These tables are cleared only before reading in a new program.
 
 
-   -- answer( goal, fact )
+   -- answer( goal, fact, unique number )
 
            Used to store results computed for tabled goals encountered during a
            computation.  Once present, these results are also used during
@@ -359,7 +359,7 @@ version( 'DRA+ ((c) UTD 2009) version 0.1, 4 May 2009' ).
 
            (NOTE: In the actual implementation each fact in "answer" has the
                   form
-                     answer( cgoal, goal, fact )
+                     answer( cgoal, goal, fact, unique number )
                   where "cgoal" is a copy of "goal" (no shared variables).
                   This is done to facilitate more effective filtering (via
                   unification) before a check is made for whether "goal" is a
@@ -622,7 +622,7 @@ default_extension( '.tlp' ).                              % invoked by top_level
 :- dynamic coinductive/1 .
 :- dynamic tabled/1 .
 :- dynamic old_first/1 .
-:- dynamic answer/3 .
+:- dynamic answer/4 .
 :- dynamic pioneer/3 .
 :- dynamic result/2 .
 :- dynamic loop/2 .
@@ -637,7 +637,7 @@ initialise :-                                             % invoked by top_level
         retractall( coinductive( _ )            ),
         retractall( tabled( _ )                 ),
         retractall( old_first( _ )              ),
-        retractall( answer( _, _, _ )           ),
+        retractall( answer( _, _, _, _ )        ),
         retractall( pioneer( _, _, _ )          ),
         retractall( result( _, _ )              ),
         retractall( loop( _, _ )                ),
@@ -924,7 +924,7 @@ will_trace( _ ).
 print_required_answers( Var, Pattern ) :-
         var( Var ),
         !,
-        findall( Goal, answer( _, Goal, _ ), Goals ),
+        findall( Goal, answer( _, Goal, _, _ ), Goals ),
         remove_variants( Goals, DifferentGoals ),
         sort( DifferentGoals, SortedDifferentGoals ),
         (
@@ -938,7 +938,7 @@ print_required_answers( Var, Pattern ) :-
 
 print_required_answers( Goal, Pattern ) :-
         copy_term2( Goal, OriginalGoal ),
-        get_answer( Goal ),                            % iterate through answers
+        get_answer( Goal, _ ),                         % iterate through answers
         Goal = Pattern,
         mk_variable_dictionary( OriginalGoal + Goal, VarDict ),
         bind_variables_to_names( VarDict ),
@@ -1252,9 +1252,8 @@ solve( goal( GoalNumber, Goal ), _, _, Level, PathIn, PathOut, _PathGuide ) :-
         incval( step_counter ),
         trace_entry( completed, Goal, '?', Level ),
         (
-            % NEED SOMETHING HERE TO GENERARATE THE NUMBER, -1 FOR NOW<<<<<<<<
-            get_all_tabled_answers( Goal, '?', completed, Level ),
-            PathOut = [ choice( GoalNumber, a( -1 ) ) | PathIn ]
+            get_all_tabled_answers( Goal, '?', completed, Level, AnswerNumber ),
+            PathOut = [ choice( GoalNumber, a( AnswerNumber ) ) | PathIn ]
         ;
             trace_failure( completed, Goal, '?', Level ),
             fail
@@ -1319,9 +1318,10 @@ solve( goal( GoalNumber, Goal ),
         ->
             copy_term2( Goal, OriginalGoal ),
             (
-                get_tabled_if_old_first( Goal, Index,
-                                         'variant (coinductive)', Level
-                                       )
+                get_tabled_if_old_first( Goal, Index, 'variant (coinductive)',
+                                         Level, AnswerNumber
+                                       ),
+                PathOut = [ choice( GoalNumber, a( AnswerNumber ) ) | PathIn ]
             ;
                 % results from coinductive hypotheses:
                 % NEED SOMETHING HERE TO GENERARATE THE NUMBER, -2 FOR NOW<<<<<<
@@ -1333,9 +1333,10 @@ solve( goal( GoalNumber, Goal ),
                 trace_success( 'variant (coinductive)', Goal, Index, Level )
             ;
                 % other tabled results
-                % NEED SOMETHING HERE TO GENERARATE THE NUMBER, -3 FOR NOW<<<<<<
-                get_remaining_tabled_answers( Goal, Index, variant, Level ),
-                PathOut = [ choice( GoalNumber, a( -3 ) ) | PathIn ]
+                get_remaining_tabled_answers( Goal, Index, variant,
+                                              Level, AnswerNumber
+                                            ),
+                PathOut = [ choice( GoalNumber, a( AnswerNumber ) ) | PathIn ]
             ;
                 % wrap it up
                 trace_failure( variant, Goal, Index, Level ),
@@ -1346,9 +1347,10 @@ solve( goal( GoalNumber, Goal ),
 
             % Not coinductive, just sequence through tabled answers:
             (
-                % NEED SOMETHING HERE TO GENERARATE THE NUMBER, -4 FOR NOW<<<<<<
-                get_all_tabled_answers( Goal, Index, variant, Level ),
-                PathOut = [ choice( GoalNumber, a( -4 ) ) | PathIn ]
+                get_all_tabled_answers( Goal, Index,
+                                        variant, Level, AnswerNumber
+                                      ),
+                PathOut = [ choice( GoalNumber, a( AnswerNumber ) ) | PathIn ]
             ;
                 trace_failure( variant, Goal, Index, Level ),
                 retractall( result( Index, _ ) ),
@@ -1391,9 +1393,10 @@ solve( StackedGoal, Stack, Hyp, Level, PathIn, PathOut, PathGuide ) :-
         trace_entry( pioneer, Goal, Index, Level ),
 
         (
-            % NEED SOMETHING HERE TO GENERARATE THE NUMBER, -5 FOR NOW<<<<<<
-            get_tabled_if_old_first( Goal, Index, pioneer, Level ),
-            PathOut = [ choice( GoalNumber, a( -5 ) ) | PathIn ]
+            get_tabled_if_old_first( Goal, Index, pioneer,
+                                     Level, AnswerNumber
+                                   ),
+            PathOut = [ choice( GoalNumber, a( AnswerNumber ) ) | PathIn ]
         ;
 
             NLevel is Level + 1,
@@ -1418,9 +1421,10 @@ solve( StackedGoal, Stack, Hyp, Level, PathIn, PathOut, PathGuide ) :-
         ->
             trace_other( 'Removing completed pioneer', Goal, Index, Level ),
             rescind_pioneer_status( Index ),
-            % NEED SOMETHING HERE TO GENERARATE THE NUMBER, -6 FOR NOW<<<<<<
-            get_remaining_tabled_answers( Goal, Index, 'completed now', Level ),
-            PathOut = [ choice( GoalNumber, a( -6 ) ) | PathIn ]
+            get_remaining_tabled_answers( Goal, Index, 'completed now',
+                                          Level, AnswerNumber
+                                        ),
+            PathOut = [ choice( GoalNumber, a( AnswerNumber ) ) | PathIn ]
         ;
 
             is_a_variant_of_a_pioneer( Goal, Index )  % not lost pioneer status?
@@ -1441,11 +1445,10 @@ solve( StackedGoal, Stack, Hyp, Level, PathIn, PathOut, PathGuide ) :-
                 complete_cluster( Index, Level ),
                 trace_other( 'Removing pioneer', Goal, Index, Level ),
                 rescind_pioneer_status( Index ),
-                % NEED SOMETHING HERE TO GENERARATE THE NUMBER, -8 FOR NOW<<<<<<
-                get_remaining_tabled_answers( Goal, Index,
-                                              'completed now', Level
+                get_remaining_tabled_answers( Goal, Index, 'completed now',
+                                              Level, AnswerNumber
                                             ),
-                PathOut = [ choice( GoalNumber, a( -8 ) ) | PathIn ]
+                PathOut = [ choice( GoalNumber, a( AnswerNumber ) ) | PathIn ]
             ;
                 retractall( result( Index, _ ) ),
                 fail
@@ -1455,11 +1458,11 @@ solve( StackedGoal, Stack, Hyp, Level, PathIn, PathOut, PathGuide ) :-
             (
                 % No longer a pioneer and not completed, so just sequence
                 % through the remaining available tabled answers.
-                % NEED SOMETHING HERE TO GENERARATE THE NUMBER, -9 FOR NOW<<<<<<
                 get_remaining_tabled_answers( Goal, Index,
-                                              '(no longer a pioneer)', Level
+                                              '(no longer a pioneer)',
+                                              Level, AnswerNumber
                                             ),
-                PathOut = [ choice( GoalNumber, a( -9 ) ) | PathIn ]
+                PathOut = [ choice( GoalNumber, a( AnswerNumber ) ) | PathIn ]
             ;
                 trace_failure( '(no longer a pioneer)', Goal, Index, Level ),
                 retractall( result( Index, _ ) ),
@@ -1469,42 +1472,53 @@ solve( StackedGoal, Stack, Hyp, Level, PathIn, PathOut, PathGuide ) :-
 
 
 
-%% get_tabled_if_old_first( + goal, + goal index,
-%%                          + trace label, + trace level
+%% get_tabled_if_old_first( + goal,
+%%                          + goal index,
+%%                          + trace label,
+%%                          + trace level,
+%%                          - answer number
 %%                        ):
 %% If the goal has been declared as "old_first", produce all the tabled answers,
 %% remembering them in "result", then succeed; otherwise just fail.
 
-:- mode get_tabled_if_old_first( +, +, +, + ).
+:- mode get_tabled_if_old_first( +, +, +, +, - ).
 
-get_tabled_if_old_first( Goal, Index, Label, Level ) :-
+get_tabled_if_old_first( Goal, Index, Label, Level, AnswerNumber ) :-
         old_first( Goal ),
-        get_all_tabled_answers( Goal, Index, Label, Level ),
+        get_all_tabled_answers( Goal, Index, Label, Level, AnswerNumber ),
         new_result_or_fail( Index, Goal ).     % i.e., make a note of the answer
 
 
-%% get_all_tabled_answers( + goal, + goal index, + trace label, + trace level ):
+%% get_all_tabled_answers( + goal,
+%%                         + goal index,
+%%                         + trace label,
+%%                         + trace level,
+%%                         - answer number
+%%                       ):
 %% Return (one by one) all the answers that are currently tabled for this goal.
 %% (Each answer is returned by appropriately instantiating the goal.)
 
-:- mode get_all_tabled_answers( +, +, +, + ).
+:- mode get_all_tabled_answers( +, +, +, +, - ).
 
-get_all_tabled_answers( Goal, Index, Label, Level ) :-
-        get_answer( Goal ),
+get_all_tabled_answers( Goal, Index, Label, Level, AnswerNumber ) :-
+        get_answer( Goal, AnswerNumber ),
         trace_success( Label, Goal, Index, Level ).
 
 
-%% get_remaining_tabled_answers( + goal,        + goal index,
-%%                               + trace label, + trace level
+%% get_remaining_tabled_answers( + goal,
+%%                               + goal index,
+%%                               + trace label,
+%%                               + trace level,
+%%                               - answer number
 %%                             ):
 %% Return (one by one) all the answers that are currently tabled for this goal
 %% but are not present in its "result" entries.
 %% (Each answer is returned by appropriately instantiating the goal.)
 
-:- mode get_remaining_tabled_answers( +, +, +, + ).
+:- mode get_remaining_tabled_answers( +, +, +, +, - ).
 
-get_remaining_tabled_answers( Goal, Index, Label, Level ) :-
-        get_answer( Goal ),
+get_remaining_tabled_answers( Goal, Index, Label, Level, AnswerNumber ) :-
+        get_answer( Goal, AnswerNumber ),
         \+ is_result_known( Index, Goal ),
         trace_success( Label, Goal, Index, Level ).
 
@@ -1682,7 +1696,7 @@ extract_tabled( [ _G | Gs ], TGs ) :-
 
 is_answer_known( Goal, Fact ) :-
         copy_term2( Goal, Copy ),
-        answer( Copy, G, F ),
+        answer( Copy, G, F, _ ),
         are_essences_variants( G, Goal ),
         are_essences_variants( F, Fact ),
         !.
@@ -1703,20 +1717,21 @@ memo( Goal, Fact, Level ) :-
         % \+ is_answer_known( Goal, Fact ),
         optional_trace( 'Storing answer: ', Goal, Fact, Level ),
         copy_term2( Goal, Copy ),
-        assert( answer( Copy, Goal, Fact ) ),
+        getval( number_of_answers, Number ),
+        assert( answer( Copy, Goal, Fact, Number ) ),
         incval( number_of_answers ).
 
 
-%% get_answer( +- goal ):
+%% get_answer( +- goal, +- answer number ):
 %% Get an instantiation (if any) tabled in "answer" for variants of this goal.
 %% Sequence through all such instantiations on backtracking.
 
-:- mode get_answer( ? ).
+:- mode get_answer( ?, ? ).
 
-get_answer( Goal ) :-
+get_answer( Goal, AnswerNumber ) :-
         once( essence_hook( Goal, EssenceOfGoal ) ),
         copy_term2( Goal, Copy ),
-        answer( Copy, G, Ans ),
+        answer( Copy, G, Ans, AnswerNumber ),
         once( essence_hook( G, EssenceOfG ) ),
         are_variants( EssenceOfGoal, EssenceOfG ),
         EssenceOfGoal = EssenceOfG,     % make sure variables are the right ones
