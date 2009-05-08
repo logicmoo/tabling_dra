@@ -745,7 +745,9 @@ transform_procedures( [ Proc | Procs ], FreeRuleNumber ) :-
 
 
 %% transform_clauses( + list of original clauses,
-%%                    + number of next rule, - number of next rule after ):
+%%                    + number of next rule,
+%%                    - number of next rule after
+%%                  ):
 %% Transform the clauses of a procedure, storing them in rules/2.
 
 transform_clauses( [], FreeRuleNumber, FreeRuleNumber ).
