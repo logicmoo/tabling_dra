@@ -37,19 +37,19 @@ version( 'DRA+ ((c) UTD 2009) version 0.1, 4 May 2009' ).
 %%%%% What follows is a quick note about the differences introduced to this
 %%%%% version (with respect to the "regular" DRA interpreter).
 %%%%%
-%%%%% 1. Information about the "path" taken (i.e., the active clause) must be
-%%%%%    stored not only with tabled goals, but with all goals.
+%%%%%  1. Information about the "path" taken (i.e., the active clause) must be
+%%%%%     stored not only with tabled goals, but with all goals.
 %%%%%
-%%%%% 2. The information must give access not only to the clause, but also to
-%%%%%    its successors: it will therefore not be a copy of the clause, but the
-%%%%%    number of the clause (see below).
+%%%%%  2. The information must give access not only to the clause, but also to
+%%%%%     its successors: it will therefore not be a copy of the clause, but the
+%%%%%     number of the clause (see below).
 %%%%%
-%%%%% 3. It must be possible to distinguish between similar goals in the body of
-%%%%%    the same instance of a clause, so the goals must have an additional
-%%%%%    identifier.
+%%%%%  3. It must be possible to distinguish between similar goals in the body
+%%%%%     of the same instance of a clause, so the goals must have an additional
+%%%%%     identifier.
 %%%%%
-%%%%% 4. To make the information described above readily available, the
-%%%%%    interpreter begins by transforming the program clauses, as follows:
+%%%%%  4. To make the information described above readily available, the
+%%%%%     interpreter begins by transforming the program clauses, as follows:
 %%%%%
 %%%%%     (a) The body is wrapped up into occurrences of goal/2: each occurrence
 %%%%%         associates a goal with a number (the number is unique in its
@@ -78,38 +78,46 @@ version( 'DRA+ ((c) UTD 2009) version 0.1, 4 May 2009' ).
 %%%%%         clause for p/2, then we would also have
 %%%%%            index( p( _, _ ), 17, 18 ).
 %%%%%
-%%%%% 5. The interpreter has been subjected to a straightforward modification
-%%%%%    that allows it to treat each instance of goal/2 as if it were the goal
-%%%%%    contained therein, and to access the rules as if they were clauses.
+%%%%%  5. The interpreter has been subjected to a straightforward modification
+%%%%%     that allows it to treat each instance of goal/2 as if it were the goal
+%%%%%     contained therein, and to access the rules as if they were clauses.
 %%%%%
-%%%%% 6. All goals that invoke a clause are now pushed onto the stack (i.e., not
-%%%%%    only tabled goals).  The "current clause" is replaced by the rule
-%%%%%    number (see 4 (c) above).  For non-tabled goals the index is -1.
+%%%%%  6. All goals that invoke a clause are now pushed onto the stack (i.e.,
+%%%%%     not only tabled goals).  The "current clause" is replaced by the rule
+%%%%%     number (see 4 (c) above).  For non-tabled goals the index is -1.
 %%%%%
-%%%%% 7. A path (i.e., an or-branch) is represented as a list of pairs of the
-%%%%%    form
-%%%%%       choice( number of goal, number of rule ).
-%%%%%    The current goal is at the head of the list, the previous one is next
-%%%%%    and so on.
-%%%%%    For a goal that succeeds with a coinductive hypothesis the "number of
-%%%%%    rule" is negative (the first success is marked with -1, the second with
-%%%%%    -2 etc.)
-%%%%%    Each goal triple on the stack now has information about the path-upto-
-%%%%%    now (including its own choice of rule) instead of the current clause.
+%%%%%  7. A path (i.e., an or-branch) is represented as a list of pairs of the
+%%%%%     form
+%%%%%       choice( number of goal, choice information ).
+%%%%%     where choice information can take three forms:
+%%%%%       r( rule number )       - for activation of a clause
+%%%%%       c( hypothesis number ) - for unification with a coinductvie
+%%%%%                                hypothesis
+%%%%%       a( answer number )     - for an answer obtained from the table.
 %%%%%
-%%%%% 8. In alternative/2 we now keep not the clause, but the entire path. The
-%%%%%    list is reversed, i.e., it begins with information about the pioneer
-%%%%%    and ends with the variant that caused it to be stored.
+%%%%%     The current goal is at the head of the list, the previous one is next
+%%%%%     and so on.
 %%%%%
-%%%%% 9. Three additional arguments have been added to solve/4 (thus making it
-%%%%%    solve/7).
-%%%%%    The first two arguments carry the current path into and out of a call
-%%%%%    to solve/7 (i.e., in and out of a branch of the and-tree).
-%%%%%    The third argument guides the interpreter in a "reconstruction"
-%%%%%    phase, when a "reordered alternative" (now: a branch of the or-tree) is
-%%%%%    being re-built.  In "reconstruction mode" the argument is the
-%%%%%    (remaining part of) the branch stored in alternative/2. In "normal
-%%%%%    mode" the argument is 'nopath'.
+%%%%%  8. In order to make all choices uniquely numbered (so that they can be
+%%%%%     recorded in a path) we now have to associate unique numbers with
+%%%%%     tabled answers and with coinductive hypotheses.
+%%%%%
+%%%%%  9. Each goal triple on the stack now has information about the path-upto-
+%%%%%     now (including its own choice of rule) instead of the current clause.
+%%%%%
+%%%%% 10. In alternative/2 we now keep not the clause, but the entire path. The
+%%%%%     list is reversed, i.e., it begins with information about the pioneer
+%%%%%     and ends with the variant that caused it to be stored.
+%%%%%
+%%%%% 11. Three additional arguments have been added to solve/4 (thus making it
+%%%%%     solve/7).
+%%%%%     The first two arguments carry the current path into and out of a call
+%%%%%     to solve/7 (i.e., in and out of a branch of the and-tree).
+%%%%%     The third argument guides the interpreter in a "reconstruction"
+%%%%%     phase, when a "reordered alternative" (now: a branch of the or-tree)
+%%%%%     is being re-built.  In "reconstruction mode" the argument is the
+%%%%%     (remaining part of) the branch stored in alternative/2. In "normal
+%%%%%     mode" the argument is 'nopath'.
 %%%%%
 %%%%% LIMITATIONS: 1. Queries in program files will not be treated correctly.
 %%%%%              2. The "support" feature is not available.
