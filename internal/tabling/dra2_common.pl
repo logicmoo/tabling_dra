@@ -1293,7 +1293,7 @@ solve( goal( GoalNumber, Goal ),
      ) :-
         is_variant_of_ancestor( Goal, Stack, AncTriple, InterveningTriples ),
         !,
-        AncTriple = triple( AncGoal, AncIndex, _AncRN ),
+        AncTriple = triple( goal( _, AncGoal ), AncIndex, _AncRN ),
         incval( step_counter ),
         get_unique_index( Index ),
         trace_entry( variant, Goal, Index, Level ),
@@ -1308,10 +1308,6 @@ solve( goal( GoalNumber, Goal ),
             extract_tabled( InterveningGoals, InterveningTabledGoals ),
             add_loop( AncIndex, InterveningTabledGoals ),
             reverse( InterveningTriples, ReversedInterveningTriples ),
-            writeln(add_looping_alternative( AncIndex,
-                                      [ AncTriple | ReversedInterveningTriples ]
-                                           )
-                   ), %<<<<<<<<<<<<<<<<<<<<<<
             add_looping_alternative( AncIndex,
                                      [ AncTriple | ReversedInterveningTriples ]
                                    )
@@ -1592,9 +1588,9 @@ compute_fixed_point_( StackedGoal, Index,
         copy_term2( Goal, OriginalGoal ),
 
         StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
-        looping_alternative( Index, PathGuide ),      % i.e., iterate
-        writeln(looping_alternative( Index, PathGuide )), % <<<<<<<<<<<<
-        PathGuide = [ triple( _, _, RuleNumber ) | _ ],
+        looping_alternative( Index, Alternative ),      % i.e., iterate
+        writeln(looping_alternative( Index, Alternative )), % <<<<<<<<<<<<
+        Alternative = [ triple( _, _, [ choice( _, r( RuleNumber ) ) | _ ] ) | _ ],
         use_clause( Goal, Body, RuleNumber ),
         push_tabled( StackedGoalCopy, Index, PathIn, Stack, NStack ),
         solve( Body, NStack, NHyp, NLevel, PathIn, _PathOut, PathGuide ),
