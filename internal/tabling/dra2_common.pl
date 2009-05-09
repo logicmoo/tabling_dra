@@ -629,6 +629,9 @@ default_extension( '.tlp' ).                              % invoked by top_level
 :- dynamic looping_alternative/2 .
 :- dynamic completed/2 .
 :- dynamic tracing/1.
+:- dynamic index/3, rule/3.
+
+
 
 :- setval( number_of_answers, 0 ).
 :- setval( unique_index,      0 ).
@@ -644,6 +647,8 @@ initialise :-                                             % invoked by top_level
         retractall( looping_alternative( _, _ ) ),
         retractall( completed( _, _ )           ),
         retractall( tracing( _ )                ),
+        retractall( index( _, _, _ )            ),
+        retractall( rule( _, _, _ )             ),
         setval( number_of_answers, 0 ),
         setval( unique_index,      0 ),
         setval( step_counter,      0 ),
@@ -700,9 +705,6 @@ check_consistency.
 
 
 %------- Transformation -------
-
-:- dynamic index/3, rule/3.
-
 
 %% transform:
 %% Transform the program clauses and repack them into rules, as described in the
@@ -1306,6 +1308,10 @@ solve( goal( GoalNumber, Goal ),
             extract_tabled( InterveningGoals, InterveningTabledGoals ),
             add_loop( AncIndex, InterveningTabledGoals ),
             reverse( InterveningTriples, ReversedInterveningTriples ),
+            writeln(add_looping_alternative( AncIndex,
+                                      [ AncTriple | ReversedInterveningTriples ]
+                                           )
+                   ), %<<<<<<<<<<<<<<<<<<<<<<
             add_looping_alternative( AncIndex,
                                      [ AncTriple | ReversedInterveningTriples ]
                                    )
@@ -1587,6 +1593,7 @@ compute_fixed_point_( StackedGoal, Index,
 
         StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
         looping_alternative( Index, PathGuide ),      % i.e., iterate
+        writeln(looping_alternative( Index, PathGuide )), % <<<<<<<<<<<<
         PathGuide = [ triple( _, _, RuleNumber ) | _ ],
         use_clause( Goal, Body, RuleNumber ),
         push_tabled( StackedGoalCopy, Index, PathIn, Stack, NStack ),
