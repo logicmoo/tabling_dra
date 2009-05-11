@@ -26,9 +26,9 @@
 %%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 29 April 2009.                                             %%%
+%%%  Last update: 11 May 2009.                                               %%%
 %%%                                                                          %%%
-version( 'DRA ((c) UTD 2009) version 0.9 (beta), 29 April 2009' ).
+version( 'DRA ((c) UTD 2009) version 0.9 (beta), 11 May 2009' ).
 
 %%% NOTE:
 %%%
@@ -45,8 +45,13 @@ version( 'DRA ((c) UTD 2009) version 0.9 (beta), 29 April 2009' ).
 %%%
 %%%       a) Tabled and coinductive predicates should be declared as such in
 %%%          the program file, e.g.,
-%%%              :- tabled      ancestor/2.
-%%%              :- coinductive comember/2.
+%%%              :- tabled       ancestor/2.
+%%%              :- coinductive  comember/2.
+%%%              :- coinductive2 comember/2.
+%%%
+%%%          "coinductive2" means that even if there are coinductive hypotheses
+%%%          with which a goal unifies, the usual clauses should be tried after
+%%%          the hypotheses are exhausted.
 %%%
 %%%       b) To include files use the usual Prolog syntax:
 %%%              :- [ file1, file2, ... ].
@@ -238,6 +243,7 @@ version( 'DRA ((c) UTD 2009) version 0.9 (beta), 29 April 2009' ).
 
 
    -- coinductive( generic head )
+   -- coinductive2( generic head )
    -- tabled( generic head )
    -- old_first( generic head )
 
@@ -247,6 +253,10 @@ version( 'DRA ((c) UTD 2009) version 0.9 (beta), 29 April 2009' ).
                :- coinductive p/2 .
            it stores the fact
                coinductive( p( _, _ ) ).
+
+           A "coinductive2" declaration is deemed to supersede "coinductive",
+           and information about a predicate that has been so declared is stored
+           both in coinductive/1 and coinductive2.
 
            These tables are cleared only before reading in a new program.
 
@@ -524,6 +534,7 @@ default_extension( '.tlp' ).                              % invoked by top_level
 %% Initialization of tables:
 
 :- dynamic coinductive/1 .
+:- dynamic coinductive2/1 .
 :- dynamic tabled/1 .
 :- dynamic old_first/1 .
 :- dynamic answer/3 .
@@ -539,6 +550,7 @@ default_extension( '.tlp' ).                              % invoked by top_level
 
 initialise :-                                             % invoked by top_level
         retractall( coinductive( _ )            ),
+        retractall( coinductive2( _ )           ),
         retractall( tabled( _ )                 ),
         retractall( old_first( _ )              ),
         retractall( answer( _, _, _ )           ),
@@ -619,24 +631,26 @@ essence_hook( T, T ).    % default, may be overridden by the interpreted program
 
 %%%%%  Administration  %%%%%
 
-:- op( 1000, fy, coinductive ).    % allow  ":- coinductive p/k ."
-:- op( 1000, fy, tabled      ).    % allow  ":- tabled p/k ."
-:- op( 1000, fy, old_first   ).    % allow  ":- old_first p/k ."
-:- op( 1000, fy, trace       ).    % allow  ":- trace  p/k ."
-:- op( 1000, fy, multifile   ).    % allow  ":- multifile  p/k ." (for Eclipse)
+:- op( 1000, fy, coinductive  ).    % allow  ":- coinductive p/k ."
+:- op( 1000, fy, coinductive2 ).    % allow  ":- coinductive2 p/k ."
+:- op( 1000, fy, tabled       ).    % allow  ":- tabled p/k ."
+:- op( 1000, fy, old_first    ).    % allow  ":- old_first p/k ."
+:- op( 1000, fy, trace        ).    % allow  ":- trace  p/k ."
+:- op( 1000, fy, multifile    ).    % allow  ":- multifile  p/k ." (for Eclipse)
 
 
 
 %% The legal directives (check external form only).  (Used by the top level.)
 
-legal_directive( (coinductive _) ).
-legal_directive( (tabled _)      ).
-legal_directive( (trace _)       ).
-legal_directive( (dynamic _)     ).
-legal_directive( (old_first _)   ).
-legal_directive( (multifile _)   ).
-legal_directive( answers( _, _ ) ).
-legal_directive( answers         ).
+legal_directive( (coinductive _)  ).
+legal_directive( (coinductive2 _) ).
+legal_directive( (tabled _)       ).
+legal_directive( (trace _)        ).
+legal_directive( (dynamic _)      ).
+legal_directive( (old_first _)    ).
+legal_directive( (multifile _)    ).
+legal_directive( answers( _, _ )  ).
+legal_directive( answers          ).
 
 
 %% Check and process the legal directives (invoked by top_level)
@@ -663,6 +677,22 @@ execute_directive( (coinductive PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
             member( Pattern, Patterns ),
+            assert( coinductive( Pattern ) ),
+            fail
+        ;
+            true
+        ).
+
+execute_directive( (coinductive2 all) ) :-
+        !,
+        assert( coinductive2( _ ) ),
+        assert( coinductive( _ ) ).
+
+execute_directive( (coinductive2 PredSpecs) ) :-
+        predspecs_to_patterns( PredSpecs, Patterns ),
+        (
+            member( Pattern, Patterns ),
+            assert( coinductive2( Pattern ) ),
             assert( coinductive( Pattern ) ),
             fail
         ;
@@ -1026,6 +1056,12 @@ solve( Goal, Stack, Hyp, Level ) :-
 
 % A goal that is coinductive, but not tabled.
 % Apply the coinductive hypotheses first, then the clauses.
+%
+% NOTE: Now that we have both "coinductive" and "coinductive2" the logic gets a
+%       little tricky.  If a goal is not "coinductive2", then it should activate
+%       its clauses only if there are no unifiable ancestors (hypotheses). What
+%       follows is an attempt to avoid too much duplication of code and
+%       redundant invocations of the costly check for unifiable ancestors.
 
 solve( Goal, Stack, Hyp, Level ) :-
         \+ tabled( Goal ),
@@ -1034,17 +1070,31 @@ solve( Goal, Stack, Hyp, Level ) :-
         incval( step_counter ),
         trace_entry( coinductive, Goal, '?', Level ),
         (
-            unify_with_coinductive_ancestor( Goal, Hyp ),
-            trace_success( 'coinductive (hypothesis)', Goal, '?', Level )
+            \+ coinductive2( Goal ),
+            unify_with_coinductive_ancestor( Goal, Hyp )
+        ->
+            (
+                trace_success( 'coinductive (hypothesis)', Goal, '?', Level )
+            ;
+                trace_failure( coinductive, Goal, '?', Level ),
+                fail
+            )
         ;
-            NLevel is Level + 1,
-            use_clause( Goal, Body ),
-            push_coinductive( Goal, Hyp, NHyp ),
-            solve( Body, Stack, NHyp, NLevel ),
-            trace_success( 'coinductive (clause)', Goal, '?', Level )
-        ;
-            trace_failure( coinductive, Goal, '?', Level ),
-            fail
+            % coinductive2, or no unifiable ancestors
+            (
+                coinductive2( Goal ),
+                unify_with_coinductive_ancestor( Goal, Hyp ),
+                trace_success( 'coinductive (hypothesis)', Goal, '?', Level )
+            ;
+                NLevel is Level + 1,
+                use_clause( Goal, Body ),
+                push_coinductive( Goal, Hyp, NHyp ),
+                solve( Body, Stack, NHyp, NLevel ),
+                trace_success( 'coinductive (clause)', Goal, '?', Level )
+            ;
+                trace_failure( coinductive, Goal, '?', Level ),
+                fail
+            )
         ).
 
 
