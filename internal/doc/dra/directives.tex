@@ -2,6 +2,7 @@
 \addcontentsline{toc}{chapter}{Summary of directives}
 
 
+{\small
 An argument specified as \patt{PredSpec} can take three forms:
 \begin{LightEnumerate}
 \item
@@ -34,7 +35,13 @@ other predicate specifications.
 
 \prog{:-~coinductive~\patt{PredSpec}.}
                    & \parbox[t]{\DescWidth}{
-                       predicate is coinductive (\Pageref{dir:coinductive})}\\
+                       predicate is coinductive (new style)
+                       (\Pageref{dir:coinductive})}\\
+
+\prog{:-~coinductive2~\patt{PredSpec}.}
+                   & \parbox[t]{\DescWidth}{
+                       predicate is coinductive (old style)
+                       (\Pageref{dir:coinductive2})}\\
 
 \prog{:-~dynamic~\patt{PredSpec}.}
                   & \parbox[t]{\DescWidth}{
@@ -67,3 +74,4 @@ other predicate specifications.
                   & \parbox[t]{\DescWidth}{
                         trace the predicate (\Pageref{dir:trace})}
 \end{tabular}
+} % small

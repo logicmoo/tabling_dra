@@ -119,12 +119,17 @@ manual.
 \index{coinductive predicate}%
 \index{predicate!coinductive}
 
-If you want a predicate (\pred{p/2}, say) to be treated as a coinductive
-predicate, you must put an appropriate declaring directive in your
-program:\\
-\ind\prog{:-~coinductive~p/2.}\label{dir:coinductive}\progidxonly{coinductive}
+The interpreter supports ``old style'' coinduction (see \cite{coinductive}
+and \cite{co-LP}), as well as ``new style'' coinduction
+\cite{gupta-coinductive-personal}.
 
-When you declare a predicate as coinductive, there is only one effect:
+If you want a predicate (\pred{p/2}, say) to be treated as an ``old style''
+coinductive predicate, you must put the following declaring directive in your
+program:\\
+\ind\prog{:-~coinductive2~p/2.}%
+\label{dir:coinductive2}\progidxonly{coinductive2}
+
+Such a declaration has one effect:
 \begin{Itemize}
   \item
     If a goal that invokes a coinductive predicate is found to be unifiable
@@ -138,7 +143,23 @@ When you declare a predicate as coinductive, there is only one effect:
     using clauses) only when all the unifiable ancestors have been taken
     advantage of in this manner.
 \end{Itemize}
-This gives the predicate a radically new meaning, which is often the
-appropriate one for operations on ``infinite'' terms (represented by cyclic
-terms).  Again, further discussion of the concept is outside the scope of
+
+If you want \pred{p/2} to be treated as a ``new style'' coinductive predicate,
+use the declaration:\\
+\ind\prog{:-~coinductive~p/2.}%
+\label{dir:coinductive}\progidxonly{coinductive}\\
+This causes the predicate to be treated as above, except that clauses are used
+only when there are no unifiable ancestors.\footnote{%
+  The mnemonic value of our particular convention is that the ``old style''
+  predicates are ``coinductive too'', or that there are two ways to satisfy a
+  goal.}
+
+The declaration \prog{:-~coinductive2~p/2.} subsumes \prog{:-~coinductive~p/2.}
+if both are present in the same program.  If a predicate is declared as both
+coinductive in the new style and tabled, then tabled answers are used even for
+goals that have unifiable ancestors.
+
+Declaring a predicate as coinductive gives it a radically new meaning, which is
+often the appropriate one for operations on ``infinite'' terms (represented by
+cyclic terms).  Again, further discussion of the concept is outside the scope of
 this document.
