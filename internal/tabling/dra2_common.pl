@@ -26,9 +26,9 @@
 %%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 4 May 2009.                                                %%%
+%%%  Last update: 11 May 2009.                                               %%%
 %%%                                                                          %%%
-version( 'DRA+ ((c) UTD 2009) version 0.1, 4 May 2009' ).
+version( 'DRA+ ((c) UTD 2009) version 0.1, 11 May 2009' ).
 
 %%%%% This is an experimental version, intended to explore Gopal Gupta's idea of
 %%%%% making DRA even more efficient by remembering not only the clause
@@ -1590,7 +1590,9 @@ compute_fixed_point_( StackedGoal, Index,
         StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
         looping_alternative( Index, Alternative ),      % i.e., iterate
         writeln(looping_alternative( Index, Alternative )), % <<<<<<<<<<<<
-        Alternative = [ triple( _, _, [ choice( _, r( RuleNumber ) ) | _ ] ) | _ ],
+        Alternative = [ triple( _, _, [ choice( _, r( RuleNumber ) ) | _ ] )
+                      | _
+                      ],
         use_clause( Goal, Body, RuleNumber ),
         push_tabled( StackedGoalCopy, Index, PathIn, Stack, NStack ),
         solve( Body, NStack, NHyp, NLevel, PathIn, _PathOut, PathGuide ),
