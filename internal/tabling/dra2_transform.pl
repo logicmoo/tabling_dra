@@ -34,7 +34,7 @@
 
 %% transform:
 %% Transform the program clauses and repack them into rules, as described in the
-%% comment at the top of this file.
+%% comment at the top of file dra2_common.pl.
 
 transform :-
         check_no_support,
@@ -86,49 +86,52 @@ transform_clauses( [ Clause | Clauses ], FreeRuleNumber, NextFreeRuleNumber ) :-
 
 %
 transform_clause( (Head :- Body), FreeRuleNumber, NewFreeRuleNumber ) :-
-        transform_body( Body, 1, NewBody, _ ),
+        transform_body( Body, FreeRuleNumber, 1, NewBody, _ ),
         assertz( rule( FreeRuleNumber, Head, NewBody ) ),
         NewFreeRuleNumber is FreeRuleNumber + 1.
 
 
-%% transform_body( + body,              + next free goal number,
-%%                  - transformed body, - number of next free goal after
+%% transform_body( + body,
+%%                 + the number of this rule,
+%%                 + next free goal number,
+%%                 - transformed body,
+%%                 - number of next free goal after
 %%               ):
 
-transform_body( \+ A, N, \+ NA, NN ) :-
+transform_body( \+ A, RN, GN, \+ NA, NGN ) :-
         !,
-        transform_body( A, N, NA, NN ).
+        transform_body( A, RN, GN, NA, NGN ).
 
-transform_body( once( A ), N, once( NA ), NN ) :-
+transform_body( once( A ), RN, GN, once( NA ), NGN ) :-
         !,
-        transform_body( A, N, NA, NN ).
+        transform_body( A, RN, GN, NA, NGN ).
 
-transform_body( (A -> B ; C), N, NewBody, NN ) :-
+transform_body( (A -> B ; C), RN, GN, NewBody, NGN ) :-
         !,
-        transform_body( A, N , NA, N2 ),
-        transform_body( B, N2, NB, N3 ),
-        transform_body( C, N3, NC, NN ),
+        transform_body( A, RN, GN , NA, GN2 ),
+        transform_body( B, RN, GN2, NB, GN3 ),
+        transform_body( C, RN, GN3, NC, NGN ),
         NewBody = (NA -> NB ; NC).
 
-transform_body( (A ; B), N, NewBody, NN ) :-
+transform_body( (A ; B), RN, GN, NewBody, NGN ) :-
         !,
-        transform_body( A, N , NA, N2 ),
-        transform_body( B, N2, NB, NN ),
+        transform_body( A, RN, GN , NA, GN2 ),
+        transform_body( B, RN, GN2, NB, NGN ),
         NewBody = (NA ; NB).
 
-transform_body( (A , B), N, NewBody, NN ) :-
+transform_body( (A , B), RN, GN, NewBody, NGN ) :-
         !,
-        transform_body( A, N , NA, N2 ),
-        transform_body( B, N2, NB, NN ),
+        transform_body( A, RN, GN , NA, GN2 ),
+        transform_body( B, RN, GN2, NB, NGN ),
         NewBody = (NA , NB).
 
-transform_body( (A -> B), N, NewBody, NN ) :-
+transform_body( (A -> B), RN, GN, NewBody, NGN ) :-
         !,
-        transform_body( A, N , NA, N2 ),
-        transform_body( B, N2, NB, NN ),
+        transform_body( A, RN, GN , NA, GN2 ),
+        transform_body( B, RN, GN2, NB, NGN ),
         NewBody = (NA -> NB).
 
-transform_body( Call, N, goal( N, Call ), NN ) :-
-        NN is N + 1.
+transform_body( Call, RN, GN, goal( RN, GN, Call ), NGN ) :-
+        NGN is GN + 1.
 
 %------- End of transformation -------

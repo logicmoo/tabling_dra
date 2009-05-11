@@ -93,7 +93,7 @@ version( 'DRA+ ((c) UTD 2009) version 0.1, 11 May 2009' ).
 %%%%%
 %%%%%  7. A path (i.e., an or-branch) is represented as a list of pairs of the
 %%%%%     form
-%%%%%       choice( number of goal, choice information ).
+%%%%%       choice( number of rule, number of goal, choice information ).
 %%%%%     where choice information can take three forms:
 %%%%%       r( rule number )       - for activation of a clause
 %%%%%       c( hypothesis number ) - for unification with a coinductvie
@@ -889,7 +889,7 @@ remove_variants_( [ H | T ], Accumulator, RL ) :-
 
 query( Goals ) :-                                         % invoked by top_level
         prepare_tables,
-        transform_body( Goals, 1, TransformedGoals, _ ),
+        transform_body( Goals, 0, 1, TransformedGoals, _ ),
         (
             empty_hypotheses( Hyp ),
             empty_stack( Stack ),
@@ -1058,31 +1058,31 @@ solve( (Goals1 , Goals2), Stack, Hyp, Level, PathIn, PathOut, PathGuide ) :-
 
 % call/1
 
-solve( goal( _, call( Goal ) ), _, _, _, _, _, _) :-
+solve( goal( _, _, call( Goal ) ), _, _, _, _, _, _) :-
         error( ['call/1 not supported: ', call( Goal ) ] ).
 
 
 % assert/1
 
-solve( goal( _, assert( Clause ) ), _, _, _, _, _, _ ) :-
+solve( goal( _, _, assert( Clause ) ), _, _, _, _, _, _ ) :-
         error( ['assert/1 not supported: ', assert( Clause ) ] ).
 
 
 % retractall/1
 
-solve( goal( _, retractall( C ) ), _, _, _, _, _, _ ) :-
+solve( goal( _, _, retractall( C ) ), _, _, _, _, _, _ ) :-
         error( ['retractall/1 not supported: ', retractall( C ) ] ).
 
 
 % findall/3: note that this is not opaque to coinductive and tabled ancestors!
 
-solve( goal( _, findall( Template, Goal, Bag ) ), _, _, _, _, _, _ ) :-
+solve( goal( _, _, findall( Template, Goal, Bag ) ), _, _, _, _, _, _ ) :-
         error( ['findall/3 not supported: ', findall( Template, Goal, Bag ) ] ).
 
 
 % Some other supported built-in.
 
-solve( goal( _, BuiltIn ), _, _, _, PathIn, PathIn, _ ) :-
+solve( goal( _, _, BuiltIn ), _, _, _, PathIn, PathIn, _ ) :-
         builtin( BuiltIn ),
         !,
         incval( step_counter ),
@@ -1091,7 +1091,7 @@ solve( goal( _, BuiltIn ), _, _, _, PathIn, PathIn, _ ) :-
 
 % A "normal" goal (i.e., not tabled, not coinductive).
 
-solve( goal( GoalNumber, Goal ),
+solve( goal( RN, GoalNumber, Goal ),
        Stack, Hyp, Level, PathIn, PathOut, PathGuide
      ) :-
         \+ tabled( Goal ),
@@ -1103,8 +1103,8 @@ solve( goal( GoalNumber, Goal ),
             NLevel is Level + 1,
             copy_term2( Goal, OriginalGoal ),
             use_clause( Goal, Body, RuleNumber ),
-            NewPath = [ choice( GoalNumber, r( RuleNumber ) ) | PathIn ],
-            StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
+            NewPath = [ choice( RN, GoalNumber, r( RuleNumber ) ) | PathIn ],
+            StackedGoalCopy = goal( RN, GoalNumber, OriginalGoal ),
             push_tabled( StackedGoalCopy, -1, NewPath, Stack, NStack ),
             solve( Body, NStack, Hyp, NLevel, NewPath, PathOut, PathGuide ),
             trace_success( normal, Goal, '?', Level )
@@ -1117,7 +1117,7 @@ solve( goal( GoalNumber, Goal ),
 % A goal that is coinductive, but not tabled.
 % Apply the coinductive hypotheses first, then the clauses.
 
-solve( goal( GoalNumber, Goal ),
+solve( goal( RN, GoalNumber, Goal ),
        Stack, Hyp, Level, PathIn, PathOut, PathGuide
      ) :-
         \+ tabled( Goal ),
@@ -1127,15 +1127,15 @@ solve( goal( GoalNumber, Goal ),
         trace_entry( coinductive, Goal, '?', Level ),
         (
             unify_with_coinductive_ancestor( Goal, Hyp, AncNumber ),
-            PathOut = [ choice( GoalNumber, c( AncNumber ) ) | PathIn ],
+            PathOut = [ choice( RN, GoalNumber, c( AncNumber ) ) | PathIn ],
             trace_success( 'coinductive (hypothesis)', Goal, '?', Level )
         ;
             NLevel is Level + 1,
             copy_term2( Goal, OriginalGoal ),
             use_clause( Goal, Body, RuleNumber ),
             push_coinductive( Goal, Hyp, NHyp ),
-            StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
-            NewPath = [ choice( GoalNumber, r( RuleNumber ) ) | PathIn ],
+            StackedGoalCopy = goal( RN, GoalNumber, OriginalGoal ),
+            NewPath = [ choice( RN, GoalNumber, r( RuleNumber ) ) | PathIn ],
             push_tabled( StackedGoalCopy, -1, NewPath, Stack, NStack ),
             solve( Body, NStack, NHyp, NLevel, NewPath, PathOut, PathGuide ),
             trace_success( 'coinductive (clause)', Goal, '?', Level )
@@ -1148,14 +1148,16 @@ solve( goal( GoalNumber, Goal ),
 
 % A tabled goal that has been completed: all the results are in "answer".
 
-solve( goal( GoalNumber, Goal ), _, _, Level, PathIn, PathOut, _PathGuide ) :-
+solve( goal( RN, GoalNumber, Goal ),
+       _, _, Level, PathIn, PathOut, _PathGuide
+     ) :-
         is_completed( Goal ),
         !,
         incval( step_counter ),
         trace_entry( completed, Goal, '?', Level ),
         (
             get_all_tabled_answers( Goal, '?', completed, Level, AnswerNumber ),
-            PathOut = [ choice( GoalNumber, a( AnswerNumber ) ) | PathIn ]
+            PathOut = [ choice( RN, GoalNumber, a( AnswerNumber ) ) | PathIn ]
         ;
             trace_failure( completed, Goal, '?', Level ),
             fail
@@ -1187,12 +1189,12 @@ solve( goal( GoalNumber, Goal ), _, _, Level, PathIn, PathOut, _PathGuide ) :-
 %       4. If this goal is coinductive, then we use "result" to avoid
 %          duplicating results.
 
-solve( goal( GoalNumber, Goal ),
+solve( goal( RN, GoalNumber, Goal ),
        Stack, Hyp, Level, PathIn, PathOut, _PathGuide
      ) :-
         is_variant_of_ancestor( Goal, Stack, AncTriple, InterveningTriples ),
         !,
-        AncTriple = triple( goal( _, AncGoal ), AncIndex, _AncRN ),
+        AncTriple = triple( goal( _, _, AncGoal ), AncIndex, _AncRN ),
         incval( step_counter ),
         get_unique_index( Index ),
         trace_entry( variant, Goal, Index, Level ),
@@ -1223,12 +1225,13 @@ solve( goal( GoalNumber, Goal ),
                 get_tabled_if_old_first( Goal, Index, 'variant (coinductive)',
                                          Level, AnswerNumber
                                        ),
-                PathOut = [ choice( GoalNumber, a( AnswerNumber ) ) | PathIn ]
+                PathOut =
+                        [ choice( RN, GoalNumber, a( AnswerNumber ) ) | PathIn ]
             ;
                 % results from coinductive hypotheses:
                 % NEED SOMETHING HERE TO GENERARATE THE NUMBER, -2 FOR NOW<<<<<<
                 unify_with_coinductive_ancestor( Goal, Hyp, AncNumber ),
-                PathOut = [ choice( GoalNumber, c( AncNumber ) ) | PathIn ],
+                PathOut = [ choice( RN, GoalNumber, c( AncNumber ) ) | PathIn ],
                 \+ is_answer_known( OriginalGoal, Goal ),    % postpone "old"
                 memo( OriginalGoal, Goal, Level ),
                 new_result_or_fail( Index, Goal ),           % i.e., note answer
@@ -1238,7 +1241,8 @@ solve( goal( GoalNumber, Goal ),
                 get_remaining_tabled_answers( Goal, Index, variant,
                                               Level, AnswerNumber
                                             ),
-                PathOut = [ choice( GoalNumber, a( AnswerNumber ) ) | PathIn ]
+                PathOut =
+                        [ choice( RN, GoalNumber, a( AnswerNumber ) ) | PathIn ]
             ;
                 % wrap it up
                 trace_failure( variant, Goal, Index, Level ),
@@ -1252,7 +1256,8 @@ solve( goal( GoalNumber, Goal ),
                 get_all_tabled_answers( Goal, Index,
                                         variant, Level, AnswerNumber
                                       ),
-                PathOut = [ choice( GoalNumber, a( AnswerNumber ) ) | PathIn ]
+                PathOut =
+                        [ choice( RN, GoalNumber, a( AnswerNumber ) ) | PathIn ]
             ;
                 trace_failure( variant, Goal, Index, Level ),
                 retractall( result( Index, _ ) ),
@@ -1281,7 +1286,7 @@ solve( goal( GoalNumber, Goal ),
 % the rest of the results should be picked up from the table, instead.
 
 solve( StackedGoal, Stack, Hyp, Level, PathIn, PathOut, PathGuide ) :-
-        StackedGoal = goal( GoalNumber, Goal ),
+        StackedGoal = goal( RN, GoalNumber, Goal ),
         (
             coinductive( Goal )
         ->
@@ -1298,14 +1303,14 @@ solve( StackedGoal, Stack, Hyp, Level, PathIn, PathOut, PathGuide ) :-
             get_tabled_if_old_first( Goal, Index, pioneer,
                                      Level, AnswerNumber
                                    ),
-            PathOut = [ choice( GoalNumber, a( AnswerNumber ) ) | PathIn ]
+            PathOut = [ choice( RN, GoalNumber, a( AnswerNumber ) ) | PathIn ]
         ;
 
             NLevel is Level + 1,
             use_clause( Goal, Body, RuleNumber ),
             \+ is_completed( OriginalGoal ), % might well be, after backtracking
-            StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
-            NewPath = [ choice( GoalNumber, r( RuleNumber ) ) | PathIn ],
+            StackedGoalCopy = goal( RN, GoalNumber, OriginalGoal ),
+            NewPath = [ choice( RN, GoalNumber, r( RuleNumber ) ) | PathIn ],
             push_tabled( StackedGoalCopy, Index, NewPath, Stack, NStack ),
             solve( Body, NStack, NHyp, NLevel, NewPath, PathOut, PathGuide ),
             \+ is_answer_known( OriginalGoal, Goal ),   % postpone "old" answers
@@ -1326,14 +1331,13 @@ solve( StackedGoal, Stack, Hyp, Level, PathIn, PathOut, PathGuide ) :-
             get_remaining_tabled_answers( Goal, Index, 'completed now',
                                           Level, AnswerNumber
                                         ),
-            PathOut = [ choice( GoalNumber, a( AnswerNumber ) ) | PathIn ]
+            PathOut = [ choice( RN, GoalNumber, a( AnswerNumber ) ) | PathIn ]
         ;
 
             is_a_variant_of_a_pioneer( Goal, Index )  % not lost pioneer status?
         ->
             (
                 trace_other( 'Computing fixed point for', Goal, Index, Level ),
-                NewPath = [ choice( GoalNumber, -7 ) | PathIn ],
                 compute_fixed_point( StackedGoal, Index, Stack, Hyp, Level,
                                      PathIn, PathOut, PathGuide
                                    ),
@@ -1348,7 +1352,8 @@ solve( StackedGoal, Stack, Hyp, Level, PathIn, PathOut, PathGuide ) :-
                 get_remaining_tabled_answers( Goal, Index, 'completed now',
                                               Level, AnswerNumber
                                             ),
-                PathOut = [ choice( GoalNumber, a( AnswerNumber ) ) | PathIn ]
+                PathOut =
+                        [ choice( RN, GoalNumber, a( AnswerNumber ) ) | PathIn ]
             ;
                 retractall( result( Index, _ ) ),
                 fail
@@ -1362,7 +1367,8 @@ solve( StackedGoal, Stack, Hyp, Level, PathIn, PathOut, PathGuide ) :-
                                               '(no longer a pioneer)',
                                               Level, AnswerNumber
                                             ),
-                PathOut = [ choice( GoalNumber, a( AnswerNumber ) ) | PathIn ]
+                PathOut =
+                        [ choice( RN, GoalNumber, a( AnswerNumber ) ) | PathIn ]
             ;
                 trace_failure( '(no longer a pioneer)', Goal, Index, Level ),
                 retractall( result( Index, _ ) ),
@@ -1474,7 +1480,7 @@ compute_fixed_point( StackedGoal, Index,
 compute_fixed_point_( StackedGoal, Index,
                       Stack, Hyp, Level, PathIn, PathOut, PathGuide, _
                     ) :-
-        StackedGoal = goal( GoalNumber, Goal ),
+        StackedGoal = goal( RN, GoalNumber, Goal ),
         NLevel is Level + 1,
         (
             coinductive( Goal )
@@ -1485,14 +1491,14 @@ compute_fixed_point_( StackedGoal, Index,
         ),
         copy_term2( Goal, OriginalGoal ),
 
-        StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
+        StackedGoalCopy = goal( RN, GoalNumber, OriginalGoal ),
         looping_alternative( Index, Alternative ),               % i.e., iterate
         writeln(looping_alternative( Index, Alternative )), % <<<<<<<<<<<<<<<<<
-        Alternative = [ triple( _, _, [ choice( _, r( RuleNumber ) ) | _ ] )
+        Alternative = [ triple( _, _, [ choice( _, _, r( RuleNumber ) ) | _ ] )
                       | _
                       ],
         use_clause( Goal, Body, RuleNumber ),
-        NewPath = [ choice( GoalNumber, r( RuleNumber ) ) | PathIn ],
+        NewPath = [ choice( RN, GoalNumber, r( RuleNumber ) ) | PathIn ],
         push_tabled( StackedGoalCopy, Index, NewPath, Stack, NStack ),
         solve( Body, NStack, NHyp, NLevel, PathIn, PathOut, PathGuide ),
         new_result_or_fail( Index, Goal ),
@@ -1514,7 +1520,7 @@ compute_fixed_point_( StackedGoal, Index,
 %% cease to be pioneers.
 
 suppress_pioneers_on_list( Triples, Level ) :-
-        member( triple( goal( _, M ), MI, _ ), Triples ),
+        member( triple( goal( _, _, M ), MI, _ ), Triples ),
         tabled( M ),                                % just for quicker filtering
         is_a_variant_of_a_pioneer( M, MI ),
         trace_other( 'Removing pioneer', M, MI, Level ),
