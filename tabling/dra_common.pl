@@ -51,7 +51,7 @@ version( 'DRA ((c) UTD 2009) version 0.9 (beta), 11 May 2009' ).
 %%%
 %%%          "coinductive2" means that even if there are coinductive hypotheses
 %%%          with which a goal unifies, the usual clauses should be tried after
-%%%          the hypotheses are exhausted.
+%%%          the hypotheses are exhausted (this is "old style" coinduction).
 %%%
 %%%       b) To include files use the usual Prolog syntax:
 %%%              :- [ file1, file2, ... ].
@@ -215,6 +215,7 @@ version( 'DRA ((c) UTD 2009) version 0.9 (beta), 11 May 2009' ).
    another kind of directive, e.g.,
 
        :- coinductive p/2 .
+       :- coinductive2 q/3 .
 
    Calls and goals that refer to a coinductive predicate will also be called
    "coinductive".
@@ -256,7 +257,7 @@ version( 'DRA ((c) UTD 2009) version 0.9 (beta), 11 May 2009' ).
 
            A "coinductive2" declaration is deemed to supersede "coinductive",
            and information about a predicate that has been so declared is stored
-           both in coinductive/1 and coinductive2.
+           both in coinductive/1 and coinductive2/1.
 
            These tables are cleared only before reading in a new program.
 
@@ -1182,7 +1183,7 @@ solve( Goal, Stack, Hyp, Level ) :-
                 get_remaining_tabled_answers( Goal, Index, variant, Level )
             ;
                 % wrap it up
-                trace_failure( variant, Goal, Index, Level ),
+                trace_failure( 'variant (coinductive)', Goal, Index, Level ),
                 retractall( result( Index, _ ) ),
                 fail
             )
