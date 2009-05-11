@@ -1434,12 +1434,10 @@ solve( StackedGoal, Stack, Hyp, Level, PathIn, PathOut, PathGuide ) :-
         ->
             (
                 trace_other( 'Computing fixed point for', Goal, Index, Level ),
-                % NEED SOMETHING HERE TO GENERARATE THE NUMBER, -7 FOR NOW<<<<<<
                 NewPath = [ choice( GoalNumber, -7 ) | PathIn ],
-                compute_fixed_point( StackedGoal, Index,
-                                     Stack, Hyp, Level, NewPath, PathGuide
+                compute_fixed_point( StackedGoal, Index, Stack, Hyp, Level,
+                                     PathIn, PathOut, PathGuide
                                    ),
-                PathOut = [ choice( GoalNumber, -7 ) | PathIn ],
                 \+ new_result_or_fail( Index, Goal ),
                 trace_success( pioneer, Goal, Index, Level )
             ;
@@ -1554,27 +1552,28 @@ use_clause( Goal, Body, RuleNumber ) :-
 %%                      + coinductive hypotheses,
 %%                      + level,
 %%                      + path upto the pioneer,
-%%                      + path
+%%                      + path after success,
+%%                      + path guidance
 %%                    ):
 %% Solve the goal by associated rules from "looping_alternative", succeeding
 %% with each new answer (and tabling it).  Fail when all the possible results
 %% are exhausted.
 
-:- mode compute_fixed_point( +, +, +, +, +, +, + ).
+:- mode compute_fixed_point( +, +, +, +, +, +, -, + ).
 
 compute_fixed_point( StackedGoal, Index,
-                     Stack, Hyp, Level, PathIn, PathGuide
+                     Stack, Hyp, Level, PathIn, PathOut, PathGuide
                    ) :-
         getval( number_of_answers, NAns ),
-        compute_fixed_point_( StackedGoal, Index,
-                              Stack, Hyp, Level, PathIn, PathGuide, NAns
+        compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level,
+                              PathIn, PathOut, PathGuide, NAns
                             ).
 
 %
-:- mode compute_fixed_point_( +, +, +, +, +, +, +, + ).
+:- mode compute_fixed_point_( +, +, +, +, +, +, -, +, + ).
 
 compute_fixed_point_( StackedGoal, Index,
-                      Stack, Hyp, Level, PathIn, PathGuide, _
+                      Stack, Hyp, Level, PathIn, PathOut, PathGuide, _
                     ) :-
         StackedGoal = goal( GoalNumber, Goal ),
         NLevel is Level + 1,
@@ -1588,24 +1587,25 @@ compute_fixed_point_( StackedGoal, Index,
         copy_term2( Goal, OriginalGoal ),
 
         StackedGoalCopy = goal( GoalNumber, OriginalGoal ),
-        looping_alternative( Index, Alternative ),      % i.e., iterate
-        writeln(looping_alternative( Index, Alternative )), % <<<<<<<<<<<<
+        looping_alternative( Index, Alternative ),               % i.e., iterate
+        writeln(looping_alternative( Index, Alternative )), % <<<<<<<<<<<<<<<<<
         Alternative = [ triple( _, _, [ choice( _, r( RuleNumber ) ) | _ ] )
                       | _
                       ],
         use_clause( Goal, Body, RuleNumber ),
-        push_tabled( StackedGoalCopy, Index, PathIn, Stack, NStack ),
-        solve( Body, NStack, NHyp, NLevel, PathIn, _PathOut, PathGuide ),
+        NewPath = [ choice( GoalNumber, r( RuleNumber ) ) | PathIn ],
+        push_tabled( StackedGoalCopy, Index, NewPath, Stack, NStack ),
+        solve( Body, NStack, NHyp, NLevel, PathIn, PathOut, PathGuide ),
         new_result_or_fail( Index, Goal ),
         memo( OriginalGoal, Goal, Level ).
 
 compute_fixed_point_( StackedGoal, Index,
-                      Stack, Hyp, Level, PathIn, PathGuide, NAns
+                      Stack, Hyp, Level, PathIn, PathOut, PathGuide, NAns
                     ) :-
         getval( number_of_answers, NAnsNow ),
         NAnsNow \= NAns,                % i.e., fail if there are no new answers
-        compute_fixed_point_( StackedGoal, Index,
-                              Stack, Hyp, Level, PathIn, PathGuide, NAnsNow
+        compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level,
+                              PathIn, PathOut, PathGuide, NAnsNow
                             ).
 
 
