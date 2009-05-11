@@ -51,12 +51,17 @@ version( 'DRA+ ((c) UTD 2009) version 0.1, 11 May 2009' ).
 %%%%%  4. To make the information described above readily available, the
 %%%%%     interpreter begins by transforming the program clauses, as follows:
 %%%%%
-%%%%%     (a) The body is wrapped up into occurrences of goal/2: each occurrence
-%%%%%         associates a goal with a number (the number is unique in its
-%%%%%         clause).  For example, the body
+%%%%%     (a) The body is wrapped up into occurrences of goal/3: each occurrence
+%%%%%         associates a goal with the number of its clause and the number of
+%%%%%         the goal (the number is unique in its clause).  For example,
+%%%%%         the body
 %%%%%            q(A, B ),  r( B ),  s( A ).
-%%%%%         will be transformed to
-%%%%%            goal( 1, q( A, B ) ),  goal( 2, r( B ) ),  goal( 3, s( A ) ).
+%%%%%         might be transformed to
+%%%%%            goal( 17, 1, q( A, B ) ),
+%%%%%              goal( 17, 2, r( B ) ), goal( 17, 3, s( A ) ).
+%%%%%         (assuming that this will be the 17th clause).
+%%%%%         The numbers are used primarily for sanity checks during
+%%%%%         development: they might be removed in a later version.
 %%%%%
 %%%%%     (b) After transformation, each clause is stored in a clause of
 %%%%%         predicate rule/3, which associates the clause with its number.
@@ -64,8 +69,8 @@ version( 'DRA+ ((c) UTD 2009) version 0.1, 11 May 2009' ).
 %%%%%            p( A, B ) :- q(A, B ),  r( B ),  s( A ).
 %%%%%         might be stored as
 %%%%%            rule( 17, p( A, B ),
-%%%%%                      (goal( 1, q(A, B ) ),
-%%%%%                       goal( 2, r( B ) ),  goal( 3, s( A ) )
+%%%%%                      (goal( 17, 1, q(A, B ) ),
+%%%%%                       goal( 17, 2, r( B ) ),  goal( 17, 3, s( A ) )
 %%%%%                      )
 %%%%%                ).
 %%%%%
@@ -606,7 +611,8 @@ version( 'DRA+ ((c) UTD 2009) version 0.1, 11 May 2009' ).
                     '../../general/utilities',
                     dra2_builtins,
                     dra2_coinductive_hypotheses,
-                    dra2_stack
+                    dra2_stack,
+                    dra2_transform
                   ]
                 ).
 
@@ -700,113 +706,6 @@ check_consistency :-
         fail.
 
 check_consistency.
-
-
-
-
-%------- Transformation -------
-
-%% transform:
-%% Transform the program clauses and repack them into rules, as described in the
-%% comment at the top of this file.
-
-transform :-
-        check_no_support,
-        findall( Proc, defined( Proc ), Procs ),
-        transform_procedures( Procs, 0 ),
-        show.
-%
-show :- index(A,B,C),  writeln(index(A,B,C)), fail.
-show :- rule(A,B,C), writeln(rule(A,B,C)), fail.
-show.
-
-
-%% check_no_support:
-%% Produce a fatal error if "support" has been used in this program.
-
-check_no_support :-
-        support( _ ),
-        error( 'Programs with "support" cannot be executed by this version' ).
-
-check_no_support.
-
-
-%% transform_procedures( + list of procedure patterns, + number of next rule ):
-%% Transform the clauses of these procedures.
-
-transform_procedures( [], _ ).
-
-transform_procedures( [ Proc | Procs ], FreeRuleNumber ) :-
-        findall( (Proc :- Body)
-               , clause_in_module( interpreted, Proc, Body )
-               , Clauses
-               ),
-        transform_clauses( Clauses, FreeRuleNumber, NextFreeRuleNumber ),
-        assertz( index( Proc, FreeRuleNumber, NextFreeRuleNumber ) ),
-        transform_procedures( Procs, NextFreeRuleNumber ).
-
-
-%% transform_clauses( + list of original clauses,
-%%                    + number of next rule,
-%%                    - number of next rule after
-%%                  ):
-%% Transform the clauses of a procedure, storing them in rules/2.
-
-transform_clauses( [], FreeRuleNumber, FreeRuleNumber ).
-
-transform_clauses( [ Clause | Clauses ], FreeRuleNumber, NextFreeRuleNumber ) :-
-        transform_clause( Clause, FreeRuleNumber, NewFreeRuleNumber ),
-        transform_clauses( Clauses, NewFreeRuleNumber, NextFreeRuleNumber ).
-
-%
-transform_clause( (Head :- Body), FreeRuleNumber, NewFreeRuleNumber ) :-
-        transform_body( Body, 1, NewBody, _ ),
-        assertz( rule( FreeRuleNumber, Head, NewBody ) ),
-        NewFreeRuleNumber is FreeRuleNumber + 1.
-
-
-%% transform_body( + body,              + next free goal number,
-%%                  - transformed body, - number of next free goal after
-%%               ):
-
-transform_body( \+ A, N, \+ NA, NN ) :-
-        !,
-        transform_body( A, N, NA, NN ).
-
-transform_body( once( A ), N, once( NA ), NN ) :-
-        !,
-        transform_body( A, N, NA, NN ).
-
-transform_body( (A -> B ; C), N, NewBody, NN ) :-
-        !,
-        transform_body( A, N , NA, N2 ),
-        transform_body( B, N2, NB, N3 ),
-        transform_body( C, N3, NC, NN ),
-        NewBody = (NA -> NB ; NC).
-
-transform_body( (A ; B), N, NewBody, NN ) :-
-        !,
-        transform_body( A, N , NA, N2 ),
-        transform_body( B, N2, NB, NN ),
-        NewBody = (NA ; NB).
-
-transform_body( (A , B), N, NewBody, NN ) :-
-        !,
-        transform_body( A, N , NA, N2 ),
-        transform_body( B, N2, NB, NN ),
-        NewBody = (NA , NB).
-
-transform_body( (A -> B), N, NewBody, NN ) :-
-        !,
-        transform_body( A, N , NA, N2 ),
-        transform_body( B, N2, NB, NN ),
-        NewBody = (NA -> NB).
-
-transform_body( Call, N, goal( N, Call ), NN ) :-
-        NN is N + 1.
-
-%------- End of transformation -------
-
 
 
 
