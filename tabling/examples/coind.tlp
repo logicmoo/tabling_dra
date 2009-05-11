@@ -1,6 +1,5 @@
-%% A very simple example of coinduction:
-%% p( t ) should succeed for every term t, but the number of answers is
-%% infinite.
+%% A very simple example of "new style" coinduction:
+%% p( t ) should succeed for every term t, and give only one answer.
 
 :- coinductive p/1.
 

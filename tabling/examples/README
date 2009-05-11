@@ -9,10 +9,14 @@ etc.
         capabilities of "dra" and/or the top level.
 
 coind.tlp:
-        A trivial example that tests coinduction.
-
 coind2.tlp:
-        A trivial example that tests coinduction together with findall/3.
+        A pair of trivial examples that show the difference between "new style"
+        and "old style" coinduction.
+
+coind_all.tlp:
+coind2_all.tlp:
+        A trivial example that tests coinduction together with findall/3, comes
+        in both styles of coinduction.
 
 comment_example.tlp:
 

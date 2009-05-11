@@ -2,11 +2,11 @@
 %% findall.
 %% p( t, Y ) should instantiate Y to a variant of t for every t.
 
-%% We don't need once/1, because we are using "new style" coinduction.
+%% We need once/1, because we are using "old style" coinduction.
 
-:- coinductive p/2.
+:- coinductive2 p/2.
 
-p( _, Y ) :-  findall( T, s( T ), Bag ),  member( Y, Bag ).
+p( _, Y ) :-  findall( T, once( s( T ) ), Bag ),  member( Y, Bag ).
 
 s( X ) :-  r( X ).
 
