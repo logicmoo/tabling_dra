@@ -23,6 +23,8 @@ edge( d, e ).
 edge( d, a ).
 
 
+:-tabled path/2.
+
 path( A, B ) :-  edge( A, B ).
 
 path( A, B ) :-  path( A, C ), path( C, B ).
@@ -35,4 +37,4 @@ q3 :-  path( c, c ).      % expected:  yes
 q4 :-  path( c, b ).      % expected:  yes
 q5 :-  path( c, e ).      % expected:  no
 q6 :-  path( _X, _Y ),    % expected:  see the picture
-       writeln( _X -> _Y ).
+       writeln( (_X -> _Y) ).
