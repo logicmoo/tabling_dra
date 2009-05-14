@@ -26,9 +26,9 @@
 %%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 11 May 2009.                                               %%%
+%%%  Last update: 14 May 2009.                                               %%%
 %%%                                                                          %%%
-version( 'DRA+ ((c) UTD 2009) version 0.1, 11 May 2009' ).
+version( 'DRA+ ((C) UTD 2009) version 0.1, 14 May 2009' ).
 
 %%%%% This is an experimental version, intended to explore Gopal Gupta's idea of
 %%%%% making DRA even more efficient by remembering not only the clause
