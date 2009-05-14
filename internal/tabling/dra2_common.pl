@@ -93,8 +93,10 @@ version( 'DRA+ ((c) UTD 2009) version 0.1, 11 May 2009' ).
 %%%%%
 %%%%%  7. A path (i.e., an or-branch) is represented as a list of pairs of the
 %%%%%     form
-%%%%%       choice( number of rule, number of goal, choice information ).
-%%%%%     where choice information can take three forms:
+%%%%%       choice( number of rule, number of goal, stack level,
+%%%%%               information about choice
+%%%%%             ).
+%%%%%     where information about choice can take three forms:
 %%%%%       r( rule number )       - for activation of a clause
 %%%%%       s( direction )         - for semicolon (direction is left or right)
 %%%%%       c( hypothesis number ) - for unification with a coinductvie
@@ -108,8 +110,9 @@ version( 'DRA+ ((c) UTD 2009) version 0.1, 11 May 2009' ).
 %%%%%     recorded in a path) we now have to associate unique numbers with
 %%%%%     tabled answers and with coinductive hypotheses.
 %%%%%
-%%%%%  9. Each goal triple on the stack now has information about the path-upto-
-%%%%%     now (including its own choice of rule) instead of the current clause.
+%%%%%  9. Each goal triple on the stack now has information about its level
+%%%%%     on the stack instead of the current clause: the information about
+%%%%%     choice of clause (or other source of a result) is kept in the path.
 %%%%%
 %%%%% 10. In alternative/2 we now keep not the clause, but the entire path. The
 %%%%%     list is reversed, i.e., it begins with information about the pioneer
@@ -976,7 +979,8 @@ plural( Output, N ) :-  N \= 1,  write( Output, 's' ).
 %%    clause  is the clause that is currently used by the goal (it has been
 %%               instantiated by matching with the goal in its original form,
 %%               but does not share variables with the goal).
-%%               NOTE: In this version the path is used instead of the clause.
+%%               NOTE: In this version the current stack level is used instead
+%%                     of the clause.
 %%
 %% NOTE: The set of coinductive hypotheses and the stack of tabled ancestors
 %%       have been factored out (see files "dra_coinductive_hypotheses.pl" and
@@ -1036,12 +1040,12 @@ solve( (Cond -> Then ; Else), Stack, Hyp, Level,
        PathIn, PathOut, PathGuide, PathGuideTail
      ) :-
         !,
-        get_guidance( PathGuide, 0, 0, Guidance, PathGuide2 ),
+        get_guidance( PathGuide, 0, 0, Level, Guidance, PathGuide2 ),
         check_guidance( Guidance, s( Direction ) ),
         (
             Direction \== right,                      % i.e., left or a variable
             solve( Cond, Stack, Hyp, Level,
-                   [ choice( 0, 0, s( left ) ) | PathIn ], PathOutCond,
+                   [ choice( 0, 0, Level, s( left ) ) | PathIn ], PathOutCond,
                    PathGuide2, PathGuide3
                  )
         ->
@@ -1057,7 +1061,7 @@ solve( (Cond -> Then ; Else), Stack, Hyp, Level,
                 PathGuide3 = PathGuide2
             ),
             solve( Else, Stack, Hyp, Level,
-                   [ choice( 0, 0, s( right ) ) | PathIn ], PathOut,
+                   [ choice( 0, 0, Level, s( right ) ) | PathIn ], PathOut,
                    PathGuide3, PathGuideTail
                  )
         ).
@@ -1082,12 +1086,12 @@ solve( (Goals1 ; Goals2), Stack, Hyp, Level,
        PathIn, PathOut, PathGuide, PathGuideTail
      ) :-
         !,
-        get_guidance( PathGuide, 0, 0, Guidance, PathGuide2 ),
+        get_guidance( PathGuide, 0, 0, Level, Guidance, PathGuide2 ),
         check_guidance( Guidance, s( Direction ) ),
         (
             Direction \== right,                      % i.e., left or a variable
             solve( Goals1, Stack, Hyp, Level,
-                   [ choice( 0, 0, s( left ) ) | PathIn ], PathOut,
+                   [ choice( 0, 0, Level, s( left ) ) | PathIn ], PathOut,
                    PathGuide2, PathGuideTail
                  )
         ;
@@ -1100,7 +1104,7 @@ solve( (Goals1 ; Goals2), Stack, Hyp, Level,
             ),
 
             solve( Goals2, Stack, Hyp, Level,
-                   [ choice( 0, 0, s( right ) ) | PathIn ], PathOut,
+                   [ choice( 0, 0, Level, s( right ) ) | PathIn ], PathOut,
                    PathGuide3, PathGuideTail
                  )
         ).
@@ -1166,16 +1170,19 @@ solve( goal( RN, GoalNumber, Goal ), Stack, Hyp, Level,
         (
             NLevel is Level + 1,
             copy_term2( Goal, OriginalGoal ),
-            get_guidance( PathGuide, RN, GoalNumber, Guidance, PathGuide2 ),
+            get_guidance( PathGuide, RN, GoalNumber, Level,
+                          Guidance, PathGuide2
+                        ),
             check_guidance( Guidance, r( SmallestAllowedRuleNumber ) ),
             use_clause( Goal, Body, RuleNumber ),
             not_smaller_than( RuleNumber, SmallestAllowedRuleNumber ),
             adjust_guide( RuleNumber, SmallestAllowedRuleNumber,
                           PathGuide2, PathGuide3
                         ),
-            NewPath = [ choice( RN, GoalNumber, r( RuleNumber ) ) | PathIn ],
+            Choice  = choice( RN, GoalNumber, Level, r( RuleNumber ) ),
+            NewPath = [ Choice | PathIn ],
             StackedGoalCopy = goal( RN, GoalNumber, OriginalGoal ),
-            push_tabled( StackedGoalCopy, -1, NewPath, Stack, NStack ),
+            push_tabled( StackedGoalCopy, -1, Level, Stack, NStack ),
             solve( Body, NStack, Hyp, NLevel,
                    NewPath, PathOut, PathGuide3, PathGuideTail
                  ),
@@ -1197,7 +1204,7 @@ solve( goal( RN, GoalNumber, Goal ), Stack, Hyp, Level,
         !,
         incval( step_counter ),
         trace_entry( coinductive, Goal, '?', Level ),
-        get_guidance( PathGuide, RN, GoalNumber, Guidance, PathGuide2 ),
+        get_guidance( PathGuide, RN, GoalNumber, Level, Guidance, PathGuide2 ),
         (
             Guidance = c( SmallestAllowedAncNumber ),
             unify_with_coinductive_ancestor( Goal, Hyp, AncNumber ),
@@ -1205,7 +1212,8 @@ solve( goal( RN, GoalNumber, Goal ), Stack, Hyp, Level,
             adjust_guide( AncNumber, SmallestAllowedAncNumber,
                           PathGuide2, PathGuide3
                         ),
-            PathOut = [ choice( RN, GoalNumber, c( AncNumber ) ) | PathIn ],
+            Choice  = choice( RN, GoalNumber, Level, c( AncNumber ) ),
+            PathOut = [ Choice | PathIn ],
             PathGuideTail = PathGuide3,
             trace_success( 'coinductive (hypothesis)', Goal, '?', Level )
         ;
@@ -1231,8 +1239,9 @@ solve( goal( RN, GoalNumber, Goal ), Stack, Hyp, Level,
                         ),
             push_coinductive( Goal, Hyp, NHyp ),
             StackedGoalCopy = goal( RN, GoalNumber, OriginalGoal ),
-            NewPath = [ choice( RN, GoalNumber, r( RuleNumber ) ) | PathIn ],
-            push_tabled( StackedGoalCopy, -1, NewPath, Stack, NStack ),
+            Choice  = choice( RN, GoalNumber, Level, r( RuleNumber ) ),
+            NewPath = [ Choice | PathIn ],
+            push_tabled( StackedGoalCopy, -1, Level, Stack, NStack ),
             solve( Body, NStack, NHyp, NLevel,
                    NewPath, PathOut, PathGuide3, PathGuideTail
                  ),
@@ -1254,7 +1263,9 @@ solve( goal( RN, GoalNumber, Goal ), _, _, Level,
      ) :-
         is_completed( Goal ),
         ( PathGuide == nopath, PathGuide2 = nopath
-        ; get_guidance( PathGuide, RN, GoalNumber, Guidance, PathGuide2 ),
+        ; get_guidance( PathGuide, RN, GoalNumber, Level,
+                        Guidance, PathGuide2
+                      ),
           Guidance = a( SmallestAllowedAnswerNumber )
         ),
         !,
@@ -1266,7 +1277,8 @@ solve( goal( RN, GoalNumber, Goal ), _, _, Level,
             adjust_guide( AnswerNumber, SmallestAllowedAnswerNumber,
                           PathGuide2, PathGuideTail
                         ),
-            PathOut = [ choice( RN, GoalNumber, a( AnswerNumber ) ) | PathIn ]
+            Choice  = choice( RN, GoalNumber, Level, a( AnswerNumber ) ),
+            PathOut = [ Choice | PathIn ]
         ;
             trace_failure( completed, Goal, '?', Level ),
             fail
@@ -1294,6 +1306,10 @@ solve( goal( RN, GoalNumber, Goal ), _, _, Level,
 %             - a copy of the current clause invoked by the ancestor (which can
 %               be found together with the ancestor on the stack) is added to
 %               "looping_alternative" entries for that ancestor.
+%               NOTE: In this version instead of the current clause we store
+%                     the path from the ancestor (inclusive) to the current goal
+%                     (not inclusive). The path is reversed, i.e., information
+%                     about the ancestor is at the front.
 %
 %       4. If this goal is coinductive, then we use "result" to avoid
 %          duplicating results.
@@ -1303,7 +1319,9 @@ solve( goal( RN, GoalNumber, Goal ), Stack, Hyp, Level,
      ) :-
         is_variant_of_ancestor( Goal, Stack, AncTriple, InterveningTriples ),
         !,
-        AncTriple = triple( goal( _, _, AncGoal ), AncIndex, _AncRN ),
+        AncTriple = triple( goal( AncRuleNumber, AncGoalNumber, AncGoal ),
+                            AncIndex, AncLevel
+                          ),
         incval( step_counter ),
         get_unique_index( Index ),
         trace_entry( variant, Goal, Index, Level ),
@@ -1324,22 +1342,29 @@ solve( goal( RN, GoalNumber, Goal ), Stack, Hyp, Level,
                 extract_goals( InterveningTriples, InterveningGoals ),
                 extract_tabled( InterveningGoals, InterveningTabledGoals ),
                 add_loop( AncIndex, InterveningTabledGoals ),
-                reverse( InterveningTriples, ReversedInterveningTriples ),
-                LoopInfo = [ AncTriple | ReversedInterveningTriples ],
+                % get the path between ancestor and current
+                AncChoice = choice( AncRuleNumber, AncGoalNumber, AncLevel, _ ),
+                append( PathBetween, [ AncChoice | _ ], PathIn ),
+                reverse( PathBetween, ReversedPathBetween ),
+                LoopInfo = [ AncChoice | ReversedPathBetween ],
+                writeln('storing alternative'(LoopInfo)), %<<<<<<<<<<<<<<
                 add_looping_alternative( AncIndex, LoopInfo )
             ;
                 true
             )
+        ;
+            true
         ),
 
         % The main action:
-        get_guidance( PathGuide, RN, GoalNumber, Guidance, PathGuide2 ),
         (
-            PathGuide2 == []      % this is the goal that saved the looping path
+            PathGuide == []      % this is the goal that saved the looping path
         ->
-            PathGuide3 = nopath
+            PathGuide2 = nopath
         ;
-            PathGuide3 = PathGuide2
+            get_guidance( PathGuide, RN, GoalNumber, Level,
+                          Guidance, PathGuide2
+                        )
         ),
         (
             coinductive( Goal )
@@ -1352,10 +1377,10 @@ solve( goal( RN, GoalNumber, Goal ), Stack, Hyp, Level,
                                        ),
                 not_smaller_than( AnswerNumber, SmallestAllowedAnswerNumber ),
                 adjust_guide(AnswerNumber, SmallestAllowedAnswerNumber,
-                             PathGuide3, PathGuideTail
+                             PathGuide2, PathGuideTail
                             ),
-                PathOut =
-                        [ choice( RN, GoalNumber, a( AnswerNumber ) ) | PathIn ]
+                Choice  = choice( RN, GoalNumber, Level, a( AnswerNumber ) ),
+                PathOut = [ Choice | PathIn ]
             ;
                 % Results from coinductive hypotheses:
 
@@ -1373,9 +1398,10 @@ solve( goal( RN, GoalNumber, Goal ), Stack, Hyp, Level,
                 unify_with_coinductive_ancestor( Goal, Hyp, AncNumber ),
                 not_smaller_than( AncNumber, SmallestAllowedAncNumber ),
                 adjust_guide(AncNumber, SmallestAllowedAncNumber,
-                             PathGuide3, PathGuideTail
+                             PathGuide2, PathGuideTail
                             ),
-                PathOut = [ choice( RN, GoalNumber, c( AncNumber ) ) | PathIn ],
+                Choice  = choice( RN, GoalNumber, Level, c( AncNumber ) ),
+                PathOut = [ Choice | PathIn ],
                 \+ is_answer_known( OriginalGoal, Goal ),    % postpone "old"
                 memo( OriginalGoal, Goal, Level ),
                 new_result_or_fail( Index, Goal ),           % i.e., note answer
@@ -1394,10 +1420,10 @@ solve( goal( RN, GoalNumber, Goal ), Stack, Hyp, Level,
                                             ),
                 not_smaller_than( AnswerNumber, SmallestAllowedAnswerNumber ),
                 adjust_guide(AnswerNumber, SmallestAllowedAnswerNumber,
-                             PathGuide3, PathGuideTail
+                             PathGuide2, PathGuideTail
                             ),
-                PathOut =
-                        [ choice( RN, GoalNumber, a( AnswerNumber ) ) | PathIn ]
+                Choice  = choice( RN, GoalNumber, Level, a( AnswerNumber ) ),
+                PathOut = [ Choice | PathIn ]
             ;
                 % wrap it up
                 trace_failure( variant, Goal, Index, Level ),
@@ -1414,10 +1440,10 @@ solve( goal( RN, GoalNumber, Goal ), Stack, Hyp, Level,
                                       ),
                 not_smaller_than( AnswerNumber, SmallestAllowedAnswerNumber ),
                 adjust_guide(AnswerNumber, SmallestAllowedAnswerNumber,
-                             PathGuide3, PathGuideTail
+                             PathGuide2, PathGuideTail
                             ),
-                PathOut =
-                        [ choice( RN, GoalNumber, a( AnswerNumber ) ) | PathIn ]
+                Choice  = choice( RN, GoalNumber, Level, a( AnswerNumber ) ),
+                PathOut = [ Choice | PathIn ]
             ;
                 trace_failure( variant, Goal, Index, Level ),
                 retractall( result( Index, _ ) ),
@@ -1455,7 +1481,7 @@ solve( StackedGoal, Stack, Hyp, Level,
             Msg = 'Reached pioneer case of solve with non-empty PathGuide:',
             error( lines( [ Msg, PathGuide, StackedGoal ] ) )
         ;
-            true
+            PathGuideTail = nopath
         ),
         (
             coinductive( Goal )
@@ -1473,18 +1499,19 @@ solve( StackedGoal, Stack, Hyp, Level,
             get_tabled_if_old_first( Goal, Index, pioneer,
                                      Level, AnswerNumber
                                    ),
-            PathOut = [ choice( RN, GoalNumber, a( AnswerNumber ) ) | PathIn ],
-            PathGuideTail = PathGuide
+            Choice  = choice( RN, GoalNumber, Level, a( AnswerNumber ) ),
+            PathOut = [ Choice | PathIn ]
         ;
 
             NLevel is Level + 1,
             use_clause( Goal, Body, RuleNumber ),
             \+ is_completed( OriginalGoal ), % might well be, after backtracking
             StackedGoalCopy = goal( RN, GoalNumber, OriginalGoal ),
-            NewPath = [ choice( RN, GoalNumber, r( RuleNumber ) ) | PathIn ],
-            push_tabled( StackedGoalCopy, Index, NewPath, Stack, NStack ),
+            Choice  = choice( RN, GoalNumber, Level, r( RuleNumber ) ),
+            NewPath = [ Choice | PathIn ],
+            push_tabled( StackedGoalCopy, Index, Level, Stack, NStack ),
             solve( Body, NStack, NHyp, NLevel,
-                   NewPath, PathOut, PathGuide, PathGuideTail
+                   NewPath, PathOut, nopath, nopath
                  ),
             \+ is_answer_known( OriginalGoal, Goal ),   % postpone "old" answers
             memo( OriginalGoal, Goal, Level ),
@@ -1504,8 +1531,8 @@ solve( StackedGoal, Stack, Hyp, Level,
             get_remaining_tabled_answers( Goal, Index, 'completed now',
                                           Level, AnswerNumber
                                         ),
-            PathOut = [ choice( RN, GoalNumber, a( AnswerNumber ) ) | PathIn ],
-            PathGuideTail = PathGuide
+            Choice  = choice( RN, GoalNumber, Level, a( AnswerNumber ) ),
+            PathOut = [ Choice | PathIn ]
         ;
 
             is_a_variant_of_a_pioneer( Goal, Index )  % not lost pioneer status?
@@ -1513,7 +1540,7 @@ solve( StackedGoal, Stack, Hyp, Level,
             (
                 trace_other( 'Computing fixed point for', Goal, Index, Level ),
                 compute_fixed_point( StackedGoal, Index, Stack, Hyp, Level,
-                                     PathIn, PathOut, PathGuide
+                                     PathIn, PathOut
                                    ),
                 \+ new_result_or_fail( Index, Goal ),
                 PathGuideTail = PathGuide,
@@ -1528,8 +1555,8 @@ solve( StackedGoal, Stack, Hyp, Level,
                                               Level, AnswerNumber
                                             ),
                 PathGuideTail = PathGuide,
-                PathOut =
-                        [ choice( RN, GoalNumber, a( AnswerNumber ) ) | PathIn ]
+                Choice  = choice( RN, GoalNumber, Level, a( AnswerNumber ) ),
+                PathOut = [ Choice | PathIn ]
             ;
                 retractall( result( Index, _ ) ),
                 fail
@@ -1543,8 +1570,8 @@ solve( StackedGoal, Stack, Hyp, Level,
                                               '(no longer a pioneer)',
                                               Level, AnswerNumber
                                             ),
-                PathOut =
-                        [ choice( RN, GoalNumber, a( AnswerNumber ) ) | PathIn ]
+                Choice  = choice( RN, GoalNumber, Level, a( AnswerNumber ) ),
+                PathOut = [ Choice | PathIn ]
             ;
                 trace_failure( '(no longer a pioneer)', Goal, Index, Level ),
                 retractall( result( Index, _ ) ),
@@ -1653,28 +1680,25 @@ adjust_guide( _,  _,   _, nopath ).
 %%                      + coinductive hypotheses,
 %%                      + level,
 %%                      + path upto the pioneer,
-%%                      + path after success,
-%%                      + path guidance
+%%                      + path after success
 %%                    ):
 %% Solve the goal by associated rules from "looping_alternative", succeeding
 %% with each new answer (and tabling it).  Fail when all the possible results
 %% are exhausted.
 
-:- mode compute_fixed_point( +, +, +, +, +, +, -, + ).
+:- mode compute_fixed_point( +, +, +, +, +, +, - ).
 
-compute_fixed_point( StackedGoal, Index,
-                     Stack, Hyp, Level, PathIn, PathOut, PathGuide
-                   ) :-
+compute_fixed_point( StackedGoal, Index, Stack, Hyp, Level, PathIn, PathOut ) :-
         getval( number_of_answers, NAns ),
         compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level,
-                              PathIn, PathOut, PathGuide, NAns
+                              PathIn, PathOut, NAns
                             ).
 
 %
-:- mode compute_fixed_point_( +, +, +, +, +, +, -, +, + ).
+:- mode compute_fixed_point_( +, +, +, +, +, +, -, + ).
 
 compute_fixed_point_( StackedGoal, Index,
-                      Stack, Hyp, Level, PathIn, PathOut, PathGuide, _
+                      Stack, Hyp, Level, PathIn, PathOut, _
                     ) :-
         StackedGoal = goal( RN, GoalNumber, Goal ),
         NLevel is Level + 1,
@@ -1688,28 +1712,31 @@ compute_fixed_point_( StackedGoal, Index,
         copy_term2( Goal, OriginalGoal ),
 
         StackedGoalCopy = goal( RN, GoalNumber, OriginalGoal ),
-        looping_alternative( Index, Alternative ),               % i.e., iterate
-        writeln(looping_alternative( Index, Alternative )), % <<<<<<<<<<<<<<<<<
-        Alternative = [ triple( _, _, [ choice( _, _, r( RuleNumber ) ) | _ ] )
-                      | _
-                      ],
+        looping_alternative( Index, PathGuide ),               % i.e., iterate
+        writeln(looping_alternative( Index, PathGuide )), % <<<<<<<<<<<<<<<<<
+        get_guidance( PathGuide, RN, GoalNumber, Level, Guidance, PathGuide2 ),
+        check_guidance( Guidance, r( SmallestAllowedRuleNumber ) ),
         use_clause( Goal, Body, RuleNumber ),
-        NewPath = [ choice( RN, GoalNumber, r( RuleNumber ) ) | PathIn ],
-        push_tabled( StackedGoalCopy, Index, NewPath, Stack, NStack ),
+        not_smaller_than( RuleNumber, SmallestAllowedRuleNumber ),
+        adjust_guide( RuleNumber, SmallestAllowedRuleNumber,
+                      PathGuide2, PathGuide3
+                    ),
+        NewPath = [ choice( RN, GoalNumber, Level, r( RuleNumber ) ) | PathIn ],
+        push_tabled( StackedGoalCopy, Index, Level, Stack, NStack ),
         solve( Body, NStack, NHyp, NLevel,
-               PathIn, PathOut, PathGuide, PathGuideTail
+               NewPath, PathOut, PathGuide3, PathGuideTail
              ),
         check_end_pathguide( PathGuideTail ),
         new_result_or_fail( Index, Goal ),
         memo( OriginalGoal, Goal, Level ).
 
 compute_fixed_point_( StackedGoal, Index,
-                      Stack, Hyp, Level, PathIn, PathOut, PathGuide, NAns
+                      Stack, Hyp, Level, PathIn, PathOut, NAns
                     ) :-
         getval( number_of_answers, NAnsNow ),
         NAnsNow \= NAns,                % i.e., fail if there are no new answers
         compute_fixed_point_( StackedGoal, Index, Stack, Hyp, Level,
-                              PathIn, PathOut, PathGuide, NAnsNow
+                              PathIn, PathOut, NAnsNow
                             ).
 
 
@@ -1796,6 +1823,7 @@ extract_tabled( [ _G | Gs ], TGs ) :-
 %% get_guidance( + path guidance,
 %%               + rule number,
 %%               + goal number,
+%%               + stack level,
 %%               - guidance,
 %%               - popped path guidance
 %%             ):
@@ -1803,23 +1831,27 @@ extract_tabled( [ _G | Gs ], TGs ) :-
 %% and unpack an item, check whether we are on track, and if things are OK
 %% return the guidance.
 
-get_guidance( nopath, _, _, _, nopath ) :-  !.
+get_guidance( nopath, _, _, _, _, nopath ) :-  !.
 
-get_guidance( [ choice( RN, GN, Guidance ) | Tail ], RuleNumber, GoalNumber,
-              Guidance, Tail
+get_guidance( [ choice( RN, GN, SL, Guidance ) | Tail ],
+              RuleNumber, GoalNumber, StackLevel, Guidance, Tail
             ) :-
-        on_track( RuleNumber, GoalNumber, RN, GN ).
+        on_track( RuleNumber, GoalNumber, StackLevel, RN, GN, SL ).
 
 
-%% on_track( + rule number,          + goal number,
-%%           + expected rule number, + expected goal number
+%% on_track( + rule number,
+%%           + goal number,
+%%           + stack level,
+%%           + expected rule number,
+%%           + expected goal number,
+%%           + expected stack level
 %%         ):
 %% Check that we are on track, or raise a fatal error.
 
-on_track( RN, GN, RN, GN ) :-  !.
+on_track( RN, GN, SL, RN, GN, SL  ) :-  !.
 
-on_track( RN, GN, ERN, EGN ) :-
-        error( [ 'Not on track: ', RN+GN \= ERN+EGN ] ).
+on_track( RN, GN, SL, ERN, EGN, ESL ) :-
+        error( [ 'Not on track: ', RN+GN+SL \= ERN+EGN+ESL ] ).
 
 
 %% check_guidance( + guidance, +- guidance pattern ):
