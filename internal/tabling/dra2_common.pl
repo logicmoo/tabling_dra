@@ -1223,19 +1223,19 @@ solve( goal( RN, GoalNumber, Goal ), Stack, Hyp, Level,
                 % choice of clause.
                 Guidance = r( SmallestAllowedRuleNumber )
             ->
-                true
+                PathGuide3 = PathGuide2
             ;
                 % Guidance was c( _ ), but we have exhausted the coinductive
                 % hypotheses and are now backtracking to clauses:
                 % SmallestAllowedRuleNumber is just an uninstantiated variable
-                Guidance = c( _ )
+                Guidance = c( _ ), PathGuide3 = nopath
             ),
             NLevel is Level + 1,
             copy_term2( Goal, OriginalGoal ),
             use_clause( Goal, Body, RuleNumber ),
             not_smaller_than( RuleNumber, SmallestAllowedRuleNumber ),
             adjust_guide( RuleNumber, SmallestAllowedRuleNumber,
-                          PathGuide2, PathGuide3
+                          PathGuide3, PathGuide4
                         ),
             push_coinductive( Goal, Hyp, NHyp ),
             StackedGoalCopy = goal( RN, GoalNumber, OriginalGoal ),
@@ -1243,7 +1243,7 @@ solve( goal( RN, GoalNumber, Goal ), Stack, Hyp, Level,
             NewPath = [ Choice | PathIn ],
             push_tabled( StackedGoalCopy, -1, Level, Stack, NStack ),
             solve( Body, NStack, NHyp, NLevel,
-                   NewPath, PathOut, PathGuide3, PathGuideTail
+                   NewPath, PathOut, PathGuide4, PathGuideTail
                  ),
             trace_success( 'coinductive (clause)', Goal, '?', Level )
         ;
@@ -1388,17 +1388,18 @@ solve( goal( RN, GoalNumber, Goal ), Stack, Hyp, Level,
                     % hypothesis:
                     Guidance = c( SmallestAllowedAncNumber )
                 ->
-                    true
+                    PathGuide3 = PathGuide2
                 ;
                     % Guidance records a tabled answer, and old_first is chosen
                     % for this predicate, so we are backtracking from the tabled
                     % answers above:
-                    Guidance = a( _ ), old_first( Goal )
+                    Guidance = a( _ ), old_first( Goal ),
+                    PathGuide3 = nopath    % SmallestAllowedAncNumber a variable
                 ),
                 unify_with_coinductive_ancestor( Goal, Hyp, AncNumber ),
                 not_smaller_than( AncNumber, SmallestAllowedAncNumber ),
                 adjust_guide(AncNumber, SmallestAllowedAncNumber,
-                             PathGuide2, PathGuideTail
+                             PathGuide3, PathGuideTail
                             ),
                 Choice  = choice( RN, GoalNumber, Level, c( AncNumber ) ),
                 PathOut = [ Choice | PathIn ],
@@ -1408,19 +1409,22 @@ solve( goal( RN, GoalNumber, Goal ), Stack, Hyp, Level,
                 trace_success( 'variant (coinductive)', Goal, Index, Level )
             ;
                 % other tabled results
-                (
+                (   % Guidance is a variable, or records a tabled answer:
                     Guidance = a( SmallestAllowedAnswerNumber )
                 ->
-                    true
+                    PathGuide3 = PathGuide2
                 ;
-                    Guidance = c( _ )
+                    % Guidance records a coinductive hypothesis, so we are
+                    % backtracking from the coinductive answers above:
+                    Guidance = c( _ ),
+                    PathGuide3 = nopath % SmallestAllowedAnswerNumber a variable
                 ),
                 get_remaining_tabled_answers( Goal, Index, variant,
                                               Level, AnswerNumber
                                             ),
                 not_smaller_than( AnswerNumber, SmallestAllowedAnswerNumber ),
                 adjust_guide(AnswerNumber, SmallestAllowedAnswerNumber,
-                             PathGuide2, PathGuideTail
+                             PathGuide3, PathGuideTail
                             ),
                 Choice  = choice( RN, GoalNumber, Level, a( AnswerNumber ) ),
                 PathOut = [ Choice | PathIn ]
@@ -1476,14 +1480,6 @@ solve( StackedGoal, Stack, Hyp, Level,
      ) :-
         StackedGoal = goal( RN, GoalNumber, Goal ),
         (
-            PathGuide \== nopath
-        ->
-            Msg = 'Reached pioneer case of solve with non-empty PathGuide:',
-            error( lines( [ Msg, PathGuide, StackedGoal ] ) )
-        ;
-            PathGuideTail = nopath
-        ),
-        (
             coinductive( Goal )
         ->
             push_coinductive( Goal, Hyp, NHyp )
@@ -1494,24 +1490,53 @@ solve( StackedGoal, Stack, Hyp, Level,
         copy_term2( Goal, OriginalGoal ),
         add_pioneer( Goal, Index ),
         trace_entry( pioneer, Goal, Index, Level ),
-
+        get_guidance( PathGuide, RN, GoalNumber, Level, Guidance, PathGuide2 ),
         (
+            Guidance = a( SmallestAllowedAnswerNumber ),
             get_tabled_if_old_first( Goal, Index, pioneer,
                                      Level, AnswerNumber
                                    ),
+            not_smaller_than( AnswerNumber, SmallestAllowedAnswerNumber ),
+            adjust_guide(AnswerNumber, SmallestAllowedAnswerNumber,
+                         PathGuide2, PathGuideTail
+                        ),
             Choice  = choice( RN, GoalNumber, Level, a( AnswerNumber ) ),
             PathOut = [ Choice | PathIn ]
         ;
 
+            (
+                % Guidance is a variable, and SmallestAllowedRuleNumber is just
+                % an uninstantiated variable, or Guidance does actually record a
+                % choice of clause.
+                Guidance = r( SmallestAllowedRuleNumber )
+            ->
+                PathGuide3 = PathGuide2
+            ;
+                % Guidance records a tabled answer, and old_first is chosen
+                % for this predicate, so we are backtracking from the tabled
+                % answers above:
+                Guidance = a( _ ), old_first( Goal ),
+                PathGuide3 = nopath       % SmallestAllowedRuleNumber a variable
+            ),
             NLevel is Level + 1,
             use_clause( Goal, Body, RuleNumber ),
-            \+ is_completed( OriginalGoal ), % might well be, after backtracking
+            not_smaller_than( RuleNumber, SmallestAllowedRuleNumber ),
+            adjust_guide( RuleNumber, SmallestAllowedRuleNumber,
+                          PathGuide3, PathGuide4
+                        ),
+
+            % This goal might well turn out to be completed now, if we have
+            % succeeded, completed via another variant, and backtracked here.
+            % But if we did that, then PathGuide is now nopath, so there is no
+            % fear of the following call breaking the reconstruction of a
+            % branch.
+            \+ is_completed( OriginalGoal ),
             StackedGoalCopy = goal( RN, GoalNumber, OriginalGoal ),
             Choice  = choice( RN, GoalNumber, Level, r( RuleNumber ) ),
             NewPath = [ Choice | PathIn ],
             push_tabled( StackedGoalCopy, Index, Level, Stack, NStack ),
             solve( Body, NStack, NHyp, NLevel,
-                   NewPath, PathOut, nopath, nopath
+                   NewPath, PathOut, PathGuide4, PathGuideTail
                  ),
             \+ is_answer_known( OriginalGoal, Goal ),   % postpone "old" answers
             memo( OriginalGoal, Goal, Level ),
@@ -1520,62 +1545,101 @@ solve( StackedGoal, Stack, Hyp, Level,
         ;
 
             % All the clauses have been exhausted, except for looping
-            % alternatives (if any).  However, the goal may have become
-            % completed (by a later variant), or it might have lost its pioneer
-            % status (because it belongs to a larger loop).
-
-            is_completed( Goal )                      % a variant has completed?
-        ->
-            trace_other( 'Removing completed pioneer', Goal, Index, Level ),
-            rescind_pioneer_status( Index ),
-            get_remaining_tabled_answers( Goal, Index, 'completed now',
-                                          Level, AnswerNumber
-                                        ),
-            Choice  = choice( RN, GoalNumber, Level, a( AnswerNumber ) ),
-            PathOut = [ Choice | PathIn ]
-        ;
-
-            is_a_variant_of_a_pioneer( Goal, Index )  % not lost pioneer status?
-        ->
+            % alternatives (if any).
             (
-                trace_other( 'Computing fixed point for', Goal, Index, Level ),
-                compute_fixed_point( StackedGoal, Index, Stack, Hyp, Level,
-                                     PathIn, PathOut
-                                   ),
-                \+ new_result_or_fail( Index, Goal ),
-                PathGuideTail = PathGuide,
-                trace_success( pioneer, Goal, Index, Level )
+                % Guidance is a variable, and SmallestAllowedAnswerNumber is
+                % just an uninstantiated variable, or Guidance does actually
+                % record a choice of a tabled answer.
+                Guidance = a( SmallestAllowedAnswerNumber )
+            ->
+                PathGuide3 = PathGuide2
             ;
-                trace_other( 'Fixed point computed', Goal, Index, Level ),
-                complete_goal( Goal, Level ),
-                complete_cluster( Index, Level ),
-                trace_other( 'Removing pioneer', Goal, Index, Level ),
+                % Guidance records a clause choice, so we are backtracking from
+                % the tabled answers above:
+                Guidance = r( _ ),
+                PathGuide3 = nopath     % SmallestAllowedAnswerNumber a variable
+            ),
+
+            (
+                % The goal may have become completed (by a later variant), or it
+                % might have lost its pioneer status (because it belongs to a
+                % larger loop).
+                is_completed( Goal )                  % a variant has completed?
+            ->
+                trace_other( 'Removing completed pioneer', Goal, Index, Level ),
                 rescind_pioneer_status( Index ),
                 get_remaining_tabled_answers( Goal, Index, 'completed now',
                                               Level, AnswerNumber
                                             ),
-                PathGuideTail = PathGuide,
+                not_smaller_than( AnswerNumber, SmallestAllowedAnswerNumber ),
+                adjust_guide(AnswerNumber, SmallestAllowedAnswerNumber,
+                             PathGuide3, PathGuideTail
+                            ),
                 Choice  = choice( RN, GoalNumber, Level, a( AnswerNumber ) ),
                 PathOut = [ Choice | PathIn ]
             ;
-                retractall( result( Index, _ ) ),
-                fail
-            )
-        ;
 
-            (
-                % No longer a pioneer and not completed, so just sequence
-                % through the remaining available tabled answers.
-                get_remaining_tabled_answers( Goal, Index,
-                                              '(no longer a pioneer)',
-                                              Level, AnswerNumber
-                                            ),
-                Choice  = choice( RN, GoalNumber, Level, a( AnswerNumber ) ),
-                PathOut = [ Choice | PathIn ]
+                is_a_variant_of_a_pioneer( Goal, Index )      % still a pioneer?
+            ->
+                (
+                    (
+                        PathGuide3 \== nopath
+                    ->
+                        Msg = 'Pioneer fixed-point with non-empty PathGuide:',
+                        error( lines( [ Msg, PathGuide, Stack ] ) )
+                    ;
+                        PathGuideTail = nopath
+                    ),
+
+                    trace_other( 'Computing fixed point for',
+                                 Goal, Index, Level
+                               ),
+                    compute_fixed_point( StackedGoal, Index, Stack, Hyp, Level,
+                                         PathIn, PathOut
+                                       ),
+                    \+ new_result_or_fail( Index, Goal ),
+                    trace_success( pioneer, Goal, Index, Level )
+                ;
+                    trace_other( 'Fixed point computed', Goal, Index, Level ),
+                    complete_goal( Goal, Level ),
+                    complete_cluster( Index, Level ),
+                    trace_other( 'Removing pioneer', Goal, Index, Level ),
+                    rescind_pioneer_status( Index ),
+                    PathGuideTail = nopath,
+                    get_remaining_tabled_answers( Goal, Index, 'completed now',
+                                                  Level, AnswerNumber
+                                                ),
+                    not_smaller_than( AnswerNumber,
+                                      SmallestAllowedAnswerNumber
+                                    ),
+                    adjust_guide(AnswerNumber, SmallestAllowedAnswerNumber,
+                                 PathGuide3, PathGuideTail
+                                ),
+                    Choice = choice( RN, GoalNumber, Level, a( AnswerNumber ) ),
+                    PathOut = [ Choice | PathIn ]
+                ;
+                    retractall( result( Index, _ ) ),
+                    fail
+                )
             ;
-                trace_failure( '(no longer a pioneer)', Goal, Index, Level ),
-                retractall( result( Index, _ ) ),
-                fail
+
+                (
+                    % No longer a pioneer and not completed, so just sequence
+                    % through the remaining available tabled answers.
+                    PathGuideTail = nopath,
+                    get_remaining_tabled_answers( Goal, Index,
+                                                  '(no longer a pioneer)',
+                                                  Level, AnswerNumber
+                                                ),
+                    Choice = choice( RN, GoalNumber, Level, a( AnswerNumber ) ),
+                    PathOut = [ Choice | PathIn ]
+                ;
+                    trace_failure( '(no longer a pioneer)',
+                                   Goal, Index, Level
+                                 ),
+                    retractall( result( Index, _ ) ),
+                    fail
+                )
             )
         ).
 
