@@ -26,9 +26,9 @@
 %%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 14 May 2009.                                               %%%
+%%%  Last update: 15 May 2009.                                               %%%
 %%%                                                                          %%%
-version( 'DRA+ ((C) UTD 2009) version 0.1, 14 May 2009' ).
+version( 'DRA+ ((C) UTD 2009) version 0.1, 15 May 2009' ).
 
 %%%%% This is an experimental version, intended to explore Gopal Gupta's idea of
 %%%%% making DRA even more efficient by remembering not only the clause
@@ -887,8 +887,8 @@ query( Goals ) :-                                         % invoked by top_level
         (
             empty_hypotheses( Hyp ),
             empty_stack( Stack ),
-            solve( TransformedGoals, Stack, Hyp, 0, [], PathOut, nopath,  _ ),
-            %writeln(PathOut),  %<<<<<<<<
+            solve( TransformedGoals, Stack, Hyp, 0, [], _PathOut, nopath,  _ ),
+            %writeln(_PathOut),  %<<<<<<<<
             print_statistics,
             setval( step_counter, 0 ),
             getval( number_of_answers, NAns2 ),
@@ -2097,7 +2097,8 @@ add_loop( Index, Goals ) :-
 
 add_looping_alternative( Index, Clause ) :-          % duplicates are not stored
         looping_alternative( Index, C ),
-        are_variants( Clause, C ),
+        Clause = [ Head | _ ],
+        C      = [ Head | _ ],
         !.
 
 add_looping_alternative( Index, Clause ) :-
