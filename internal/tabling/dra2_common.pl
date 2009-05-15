@@ -888,7 +888,7 @@ query( Goals ) :-                                         % invoked by top_level
             empty_hypotheses( Hyp ),
             empty_stack( Stack ),
             solve( TransformedGoals, Stack, Hyp, 0, [], PathOut, nopath,  _ ),
-            writeln(PathOut),
+            %writeln(PathOut),  %<<<<<<<<
             print_statistics,
             setval( step_counter, 0 ),
             getval( number_of_answers, NAns2 ),
@@ -1329,7 +1329,7 @@ solve( goal( RN, GoalNumber, Goal ), Stack, Hyp, Level,
                 append( PathBetween, [ AncChoice | _ ], PathIn ),
                 reverse( PathBetween, ReversedPathBetween ),
                 LoopInfo = [ AncChoice | ReversedPathBetween ],
-                writeln('storing alternative'(LoopInfo)), %<<<<<<<<<<<<<<
+                %writeln('storing alternative'(LoopInfo)), %<<<<<<<<<<<<<<
                 add_looping_alternative( AncIndex, LoopInfo )
             ;
                 true
@@ -1759,7 +1759,7 @@ compute_fixed_point_( StackedGoal, Index,
 
         StackedGoalCopy = goal( RN, GoalNumber, OriginalGoal ),
         looping_alternative( Index, PathGuide ),               % i.e., iterate
-        writeln(looping_alternative( Index, PathGuide )), % <<<<<<<<<<<<<<<<<
+        %writeln(looping_alternative( Index, PathGuide )), % <<<<<<<<<<<<<<<<<
         get_guidance( PathGuide, RN, GoalNumber, Level, Guidance, PathGuide2 ),
         check_guidance( Guidance, r( SmallestAllowedRuleNumber ) ),
         use_clause( Goal, Body, RuleNumber ),

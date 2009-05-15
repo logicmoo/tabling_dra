@@ -39,8 +39,8 @@
 transform :-
         check_no_support,
         findall( Proc, defined( Proc ), Procs ),
-        transform_procedures( Procs, 1 ),
-        show.
+        transform_procedures( Procs, 1 ).
+
 %
 show :- index(A,B,C),  writeln(index(A,B,C)), fail.
 show :- rule(A,B,C), writeln(rule(A,B,C)), fail.
