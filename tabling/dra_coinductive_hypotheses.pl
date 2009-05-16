@@ -97,8 +97,8 @@ empty_hypotheses( Hyp ) :-
 
 :- mode push_coinductive( +, +, - ).
 
-push_coinductive( Goal, Hyp, Hyp ) :-
-        goal_table_add( Hyp, Goal ).
+push_coinductive( Goal, Hyp, NewHyp ) :-
+        goal_table_add( Hyp, Goal, NewHyp ).
 
 
 :- mode unify_with_coinductive_ancestor( +, + ).

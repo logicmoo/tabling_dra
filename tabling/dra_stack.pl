@@ -124,9 +124,9 @@ empty_stack( tstack( [], Table ) ) :-
 :- mode push_tabled( +, +, +, +, - ).
 
 push_tabled( Goal, Index, Clause, tstack( Stack, Table ),
-             tstack( [ triple( Goal, Index, Clause ) | Stack ], Table )
+             tstack( [ triple( Goal, Index, Clause ) | Stack ], NewTable )
            ) :-
-        goal_table_add( Table, Goal ).
+        goal_table_add( Table, Goal, NewTable ).
 
 
 :- mode is_variant_of_ancestor( +, +, -, - ).

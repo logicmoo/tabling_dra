@@ -21,21 +21,22 @@
    %                                                                      %
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%  A goal table implemented by a binary tree with lists.                   %%%
+%%%  A goal table implemented by an open binary tree with open lists.        %%%
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February 2009).                      %%%
 %%%                                                                          %%%
-%%%  Last update: 16 May 2009.                                               %%%
+%%%  Last update: 30 March 2009.                                             %%%
 %%%                                                                          %%%
 
 :- ensure_loaded( utilities ).
 :- ensure_loaded( higher_order ).
-:- ensure_loaded( tree ).
+:- ensure_loaded( olist ).
+:- ensure_loaded( otree ).
 
 
-%%% In this implementation the goal table is a binary tree.
+%%% In this implementation the goal table is an open binary tree.
 %%% Each key is a predicate specification.
-%%% The information associated with a key is a list of goals
+%%% The information associated with a key is an open list of goals
 %%% that invoke the predicate specified by the key.
 
 
@@ -44,7 +45,7 @@
 %% Create an empty goal table, or check that the provided table is empty.
 
 empty_goal_table( Table ) :-
-        empty_tree( Table ).
+        empty_otree( Table ).
 
 
 %%------------------------------------------------------------------------------
@@ -53,13 +54,13 @@ empty_goal_table( Table ) :-
 %% unify the goal with the first one (backtracking will unify it with each of
 %% them in turn).
 %%
-%% NOTE: Using essence hook before comparison!
+%% NOTE: Use essence hook before comparison!
 
 goal_table_member( Goal, Table ) :-
         functor( Goal, P, K ),
-        is_in_tree( Table, P / K, '@<', List ),
+        is_in_otree( Table, P / K, '@<', OList ),
         once( essence_hook( Goal, Essence ) ),
-        member_reversed( G, List ),
+        olist_member_reversed( G, OList ),
         once( essence_hook( G, Essence ) ).
 
 
@@ -68,27 +69,32 @@ goal_table_member( Goal, Table ) :-
 %% Succeed iff a variant of this goal is present in the table.
 %% Do not modify the goal.
 %%
-%% NOTE: Using essence hook before comparison!
+%% NOTE: Use essence hook before comparison!
 
 is_a_variant_in_goal_table( Goal, Table ) :-
         once( essence_hook( Goal, GoalEssence ) ),
         functor( Goal, P, K ),
-        is_in_tree( Table, P / K, '@<', List ),
-        member_reversed( Member, List ),
+        is_in_otree( Table, P / K, '@<', OList ),
+        olist_member( Member, OList ),
         once( essence_hook( Member, MemberEssence ) ),
         are_variants( MemberEssence, GoalEssence ),
         !.
 
 
 %%------------------------------------------------------------------------------
-%% goal_table_add( + goal table, + goal, - new goal table ):
+%% goal_table_add( + goal table, + goal ):
 %% Add this goal to the table.
 
-goal_table_add( Table, Goal, NewTable ) :-
+goal_table_add( Table, Goal ) :-
         functor( Goal, P, K ),
-        tree_add( Table, P / K, Goal, '@<', add_to_list, NewTable ).
-
-%
-add_to_list( List, Item, [ Item | List ] ).
+        (
+            is_in_otree( Table, P / K, '@<', OList )
+        ->
+            olist_add( OList, Goal )
+        ;
+            empty_olist( OList ),
+            olist_add( OList, Goal ),
+            otree_add( Table, P / K, OList, '@<', olist_add )
+        ).
 
 %%------------------------------------------------------------------------------

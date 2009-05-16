@@ -6,4 +6,9 @@
 
 11 Apr 2009:   "New style" coinduction.
 
+16 Apr 2009:   - "New style" coinduction should not be the default, so instead
+                 of ":- coinductive." and ":- coinductive2." we now have
+                 ":- coinductive1." and ":- coinductive.", respectively.
+               - Corrected a major error in the choice of data structures.
+
 -------------------------------------------------------------------------------
