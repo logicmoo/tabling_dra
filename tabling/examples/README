@@ -18,6 +18,11 @@ coind2_all.tlp:
         A trivial example that tests coinduction together with findall/3, comes
         in both styles of coinduction.
 
+coind_new.tlp:
+coind_old.tlp:
+        A trivial example that shows the inadequacies of both styles of
+        coinduction.
+
 comment_example.tlp:
 
         An example that demonstrates why tabled results must be annotated
