@@ -65,24 +65,17 @@ trans( s6, s7 ).    %  warm up
 trans( s7, s4 ).    %  start cooking
 
 
-holds( s2, start ).
-holds( s2, error ).
+holds( s2, start ).  holds( s2, error ).
 
 holds( s3, close ).
 
-holds( s4, close ).
-holds( s4, heat  ).
+holds( s4, close ).  holds( s4, heat  ).
 
-holds( s5, start ).
-holds( s5, close ).
-holds( s5, error ).
+holds( s5, start ).  holds( s5, close ).  holds( s5, error ).
 
-holds( s6, start ).
-holds( s6, close ).
+holds( s6, start ).  holds( s6, close ).
 
-holds( s7, start ).
-holds( s7, close ).
-holds( s7, heat  ).
+holds( s7, start ).  holds( s7, close ).  holds( s7, heat  ).
 
 
 :- top q1/0, q2/0, q3/0, q4/0.
