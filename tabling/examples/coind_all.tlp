@@ -1,5 +1,5 @@
 %% A simple example of coinduction that also tests the "transparency" of
-%% findall.
+%% findall/3.
 %% p( t, Y ) should instantiate Y to a variant of t for every t.
 
 %% We don't need once/1, because we are using "new style" coinduction.
@@ -15,4 +15,4 @@ r( X ) :-  p( X, _ ).
 
 :- top q/1.
 
-q( X ) :-  p( hoho, X ).
+q( X ) :-  p( hoho, X ).   % Expected: hoho
