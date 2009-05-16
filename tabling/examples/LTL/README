@@ -49,6 +49,10 @@ verifier.tlp:
         each predicate is either tabled or coinductive, not both). To execute
         it, just load an example that includes "verifier.tlp" into "dra".
 
+verifier2.tlp:
+        A version of verifier.tlp that does not use assert/retract and negation.
+        (NOTE: This is just for testing, there is no consistency checking.)
+
 consistency_checker.pl:
         A program that checks whether the definition of an automaton is
         internally consitent.  Used by the verifier.
@@ -111,5 +115,10 @@ microwave.tlp:
 microwave_v.tlp:
         Another example in the same spirit.  This one is actually a
         (somewhat simplified) model of a microwave oven.
+
+microwave2.tlp:
+        A version of microwave.tlp that uses verifier2.tlp instead of
+        verifier.tlp.  Since negation is not allowed, explicit "notholds"
+        facts have been added.
 
 --------------------------------------------------------------------------------
