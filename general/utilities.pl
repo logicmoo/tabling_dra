@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 3 March 2009.                                              %%%
+%%%  Last update: 16 May 2009.                                               %%%
 %%%                                                                          %%%
 
 
@@ -317,5 +317,14 @@ between_generate( A, V, B ) :-
         A < B,
         NA is A + 1,
         between_generate( NA, V, B ).
+
+
+%%------------------------------------------------------------------------------
+%% member_reversed( +- item, + list of items ):
+%% Like member/2, but the order of searching/generation is reversed.
+
+member_reversed( M, [ _ | L ] ) :-
+        member_reversed( M, L ).
+member_reversed( M, [ M | _ ] ).
 
 %%------------------------------------------------------------------------------
