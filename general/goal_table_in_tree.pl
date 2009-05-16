@@ -86,9 +86,9 @@ is_a_variant_in_goal_table( Goal, Table ) :-
 
 goal_table_add( Table, Goal, NewTable ) :-
         functor( Goal, P, K ),
-        tree_add( Table, P / K, Goal, '@<', add_to_list, NewTable ).
+        tree_add( Table, P / K, [ Goal ], '@<', add_to_list, NewTable ).
 
 %
-add_to_list( List, Item, [ Item | List ] ).
+add_to_list( List, [ Item ], [ Item | List ] ).
 
 %%------------------------------------------------------------------------------
