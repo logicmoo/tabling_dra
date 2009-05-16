@@ -11,4 +11,4 @@ q( b ).
 :- old_first all.
 :- trace all.
 
-?- p( X, Y ).  % expected:  p( b, b ),  p( a, a ),  p( a, b ),  p( b, a )
+?- p( X, Y ).  % expected:  p( a, b ),  p( a, a ),  p( b, b ),   p( b, a )

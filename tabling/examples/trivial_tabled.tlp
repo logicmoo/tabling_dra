@@ -1,3 +1,4 @@
+:- top p/1.
 :- tabled p/1 .
 
 p( a ).
