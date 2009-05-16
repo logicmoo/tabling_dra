@@ -1,7 +1,7 @@
 %% A very simple example of "new style" coinduction:
 %% p( t ) should succeed for every term t, and give only one answer.
 
-:- coinductive p/1.
+:- coinductive1 p/1.
 
 p( X ) :-  q( X ).
 

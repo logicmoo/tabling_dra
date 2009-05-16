@@ -126,8 +126,8 @@ and \cite{co-LP}), as well as ``new style'' coinduction
 If you want a predicate (\pred{p/2}, say) to be treated as an ``old style''
 coinductive predicate, you must put the following declaring directive in your
 program:\\
-\ind\prog{:-~coinductive2~p/2.}%
-\label{dir:coinductive2}\progidxonly{coinductive2}
+\ind\prog{:-~coinductive~p/2.}%
+\label{dir:coinductive}\progidxonly{coinductive}
 
 Such a declaration has one effect:
 \begin{Itemize}
@@ -146,15 +146,14 @@ Such a declaration has one effect:
 
 If you want \pred{p/2} to be treated as a ``new style'' coinductive predicate,
 use the declaration:\\
-\ind\prog{:-~coinductive~p/2.}%
-\label{dir:coinductive}\progidxonly{coinductive}\\
+\ind\prog{:-~coinductive1~p/2.}%
+\label{dir:coinductive1}\progidxonly{coinductive1}\\
 This causes the predicate to be treated as above, except that clauses are used
 only when there are no unifiable ancestors.\footnote{%
-  The mnemonic value of our particular convention is that the ``old style''
-  predicates are ``coinductive too'', or that there are two ways to satisfy a
-  goal.}
+  The mnemonic value of our particular convention is that the ``new style''
+  coinductive predicates give you only one way to satisfy a goal.}
 
-The declaration \prog{:-~coinductive2~p/2.} subsumes \prog{:-~coinductive~p/2.}
+The declaration \prog{:-~coinductive~p/2.} subsumes \prog{:-~coinductive1~p/2.}
 if both are present in the same program.  If a predicate is declared as both
 coinductive in the new style and tabled, then tabled answers are used even for
 goals that have unifiable ancestors.

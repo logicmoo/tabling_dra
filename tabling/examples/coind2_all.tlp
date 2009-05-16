@@ -4,7 +4,7 @@
 
 %% We need once/1, because we are using "old style" coinduction.
 
-:- coinductive2 p/2.
+:- coinductive p/2.
 
 p( _, Y ) :-  findall( T, once( s( T ) ), Bag ),  member( Y, Bag ).
 

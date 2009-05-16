@@ -2,7 +2,7 @@
 %% p( t ) should succeed for every term t, but the number of answers is
 %% infinite.
 
-:- coinductive2 p/1.
+:- coinductive p/1.
 
 p( X ) :-  q( X ).
 
