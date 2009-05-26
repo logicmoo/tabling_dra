@@ -36,23 +36,21 @@ effort. The main difficulties are:
 is freely available from  http://www.eclipse-clp.org .)
 
 
-Most of the code has then been (somewhat hastily) converted to Sicstus
-Prolog.  Conversion to other Prolog systems may require some work.  In
-particular, Sicstus Prolog's module facility is used to store
-interpreted programs (watch for the prefix "interpreted :" in the code).
-If you don't have access to such a facility, you will either have to
-live with the possibility of name clashes (not recommended!), or just
-store the interpreted clauses as facts of a dynamic predicate, say
-rule/2 (i.e., access via "rule( Head, Body )" instead of via
-"clause( Head, Body )"), which might mean a slight decrease in
-efficiency due to loss of indexing on the first argument of a clause
-head.
+Most of the code has then been (somewhat hastily) converted to Sicstus Prolog
+(version 4.0).  Conversion to other Prolog systems may require some work.  In
+particular, Sicstus Prolog's module facility is used to store interpreted
+programs (watch for the prefix "interpreted :" in the code).  If you don't
+have access to such a facility, you will either have to live with the
+possibility of name clashes (not recommended!), or just store the interpreted
+clauses as facts of a dynamic predicate, say rule/2 (i.e., access via
+"rule( Head, Body )" instead of via "clause( Head, Body )"), which might mean
+a slight decrease in efficiency due to loss of indexing on the first argument
+of a clause head.
 
 NOTE: At the time of this writing Eclipse tends to behave quite
       unreasonably when presented with cyclic terms.  It is therefore
       advisable to use the Sicstus version for coinductive programs,
-      especially when they are coupled with tabling.  Predicates that
-      are both coinductive and tabled cannot be run at all.
+      especially when they are coupled with tabling.
 
 
 
