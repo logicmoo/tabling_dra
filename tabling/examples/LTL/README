@@ -47,7 +47,8 @@ verifier.tlp:
 
         The program contains both tabled and coinductive predicates (however,
         each predicate is either tabled or coinductive, not both). To execute
-        it, just load an example that includes "verifier.tlp" into "dra".
+        it, just load an example that includes "verifier.tlp" into
+        "dra". (See "../../README" for more information.)
 
 verifier2.tlp:
         A version of verifier.tlp that does not use assert/retract and negation.

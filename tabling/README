@@ -21,8 +21,8 @@ dra_common.pl:
         that use not only tabling, but also co-logic programming (even when
         the same predicate is both coinductive and tabled).
 
-        Just load 'dra' into Eclipse or Sicstus!  The head comment
-        explains how to use it.
+        Just load 'dra' into Eclipse or Sicstus!  The head comment (better
+        yet, the manual in "../doc/manual.pdf") explains how to use it.
 
 examples:
         Some examples of tabled programs, all with the extension
