@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 12 March 2009.                                             %%%
+%%%  Last update: 11 June 2009.                                              %%%
 %%%                                                                          %%%
 
 :- ensure_loaded( compatibility_utilities ).
@@ -416,8 +416,8 @@ cs_join( ((A ; B) , C), Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single
        ) :-
         cs( C, Ctxt, MustFailC, SeenFromFrontC, SeenFromBehindC, SingleC ),
         unfold_disjunction( (A ; B), Disjunctions ),
-        map( [ cs2, Ctxt ], Disjunctions, Results ),
-        map( [ cs_adjust, SeenFromFrontC ], Results, Adjusted ),
+        map( cs2( Ctxt ), Disjunctions, Results ),
+        map( cs_adjust( SeenFromFrontC ), Results, Adjusted ),
         map( result1, Adjusted, ListMustFail   ),
         map( result2, Adjusted, ListFromFront  ),
         map( result3, Adjusted, ListFromBehind ),

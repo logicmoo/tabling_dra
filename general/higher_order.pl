@@ -22,10 +22,10 @@
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%  Some "higher order" predicates for Prolog.                              %%%
-%%%  This particular version                                                 %%%
-%%%   written by Feliks Kluzniak at UTD (February 2009).                     %%%
+%%%  This particular version was                                             %%%
+%%%  written by Feliks Kluzniak at UTD (February 2009).                      %%%
 %%%                                                                          %%%
-%%%  Last update: 18 February 2009.                                          %%%
+%%%  Last update: 11 June 2009.                                              %%%
 %%%                                                                          %%%
 
 %%% NOTE: Throughout the file "predicate name" will be used either for
@@ -34,26 +34,19 @@
 
 
 %%------------------------------------------------------------------------------
-%% apply( + predicate name, + list of arguments ):
-%% apply( + list,           + list of arguments ):
-%% For the first form: apply this predicate to the arguments.
-%% For the second form: the list represents a partially-applied predicate,
-%% i.e., it should consist of a predicate name and the first few actual
-%% arguments. The list of arguments should then be just enough for the remaining
-%% arguments.
+%% apply( + predicate name (possibly with arguments), + list of arguments ):
+%% Extend the list of arguments of the first argument with the second argument
+%% and invoke the result.
 %% For example, if we have
 %%     sum( A, B, C ) :-  C is A + B.
 %% then
-%%     map( [ sum, 5 ], [ 1, 2, 3 ], Result )
+%%     map( sum(5 ), [ 1, 2, 3 ], Result )
 %% will bind Result to [ 6, 7, 8 ].
 
-apply( [ PredName | InitialArguments ], RemainingArguments ) :-
-        !,
-        append( InitialArguments, RemainingArguments, AllArguments ),
-        apply( PredName, AllArguments ).
-
-apply( PredName, Arguments ) :-
-        Literal =.. [ PredName | Arguments ],
+apply( PredNameArgs, Arguments ) :-
+        PredNameArgs =.. [ PredName | Args ],
+        append( Args, Arguments, AllArgs ),
+        Literal =.. [ PredName | AllArgs ],
         call( Literal ).
 
 
@@ -69,7 +62,7 @@ apply( PredName, Arguments ) :-
 %% Example:
 %%          square( M, N ) :-  N is M * M.
 %%
-%%          ?- map( square/2, [ 1, 2, 3 ], Ans ).
+%%          ?- map( square, [ 1, 2, 3 ], Ans ).
 %%
 %%          Ans = [ 1, 4, 9 ].
 
@@ -114,7 +107,7 @@ filter( PredName, [ H | T ], NL ) :-
 fold( _, Initial, [], Initial ).
 
 fold( PredName, Initial, [ H | T ], Result ) :-
-        apply( PredName, [Initial, H, R ] ),
+        apply( PredName, [ Initial, H, R ] ),
         fold( PredName, R, T, Result ).
 
 %%------------------------------------------------------------------------------

@@ -27,7 +27,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 31 March 2009.                                             %%%
+%%%  Last update: 11 June 2009.                                              %%%
 %%%                                                                          %%%
 
 
@@ -143,7 +143,7 @@ get_called_predicates( OSetOfPredicates, OSetOfDefined, OSetOfCalled ) :-
 %
 sets_of_called( OsetOfPredicates, OSetOfDefined, ListOfSetsOfCalled ) :-
         oset_to_list( OsetOfPredicates, ListOfPredicates ),
-        map( [ set_of_called, OSetOfDefined ],
+        map( set_of_called( OSetOfDefined ),
              ListOfPredicates, ListOfSetsOfCalled
            ).
 
