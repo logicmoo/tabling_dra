@@ -29,8 +29,8 @@
 %%%                                                                          %%%
 
 %%% NOTE: Throughout the file "predicate name" will be used either for
-%%        the name of a predicate, or for a list representing a partially
-%%        applied predicate (see apply/2).
+%%        the name of a predicate, or for a predicate with an incomplete
+%%        list of arguments (a partially applied predicate): see apply/2.
 
 
 %%------------------------------------------------------------------------------
