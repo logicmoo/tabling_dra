@@ -26,7 +26,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 2 April 2009.                                              %%%
+%%%  Last update: 12 June 2009.                                              %%%
 %%%                                                                          %%%
 %%%  NOTE: This code runs on Sicstus and Eclipse.  It may require some       %%%
 %%%        tweaking for other Prolog systems.                                %%%
@@ -408,7 +408,7 @@ fill_interface_modules.
 %% process_file( + file name ):
 %% Load a program from this file, processing directives and queries.
 
-:- mode process_file( + ).
+% :- mode process_file( + ).
 
 process_file( FileName ) :-
         open_the_file( FileName, ProgStream ),
@@ -435,7 +435,7 @@ open_the_file( FileName, ProgStream ) :-
 %% process_input( + input stream ):
 %% Read the stream, processing directives and queries and storing clauses.
 
-:- mode process_input( + ).
+% :- mode process_input( + ).
 
 process_input( ProgStream ) :-
         repeat,
@@ -462,7 +462,7 @@ preliminary_processing( Term, VarDict, NewTerm, NewVarDict ) :-
 %% NOTE: The superficial correctness of this term as a program item has already
 %%       been verified by "verify_program_item/2".
 
-:- mode process_term( +, + ).
+% :- mode process_term( +, + ).
 
 process_term( end_of_file, _ ) :-  !.            % just ignore this
 
@@ -501,7 +501,7 @@ process_term( Clause, VarDict ) :-
 %% include_files( + list of file names ):
 %% Process the files whose names are in the list.
 
-:- mode include_files( + ).
+% :- mode include_files( + ).
 
 include_files( List ) :-
         member( FileName, List ),
@@ -544,7 +544,7 @@ contiguity_check( Clause ) :-
 %% known/1 is used to avoid multiple declarations.
 %% (NOTE: This is specific to Eclipse.)
 
-:- mode ensure_dynamic( + ).
+% :- mode ensure_dynamic( + ).
 
 ensure_dynamic( Clause ) :-
         lp_system( eclipse ),
@@ -563,7 +563,7 @@ ensure_dynamic( _ ).
 %% process_directive( + directive ):
 %% Process a directive.
 
-:- mode process_directive( + ).
+% :- mode process_directive( + ).
 
 process_directive( (top all) ) :-
         !,
@@ -610,7 +610,7 @@ process_directive( Directive ) :-                % unsupported directive
 %% Process a query, i.e., produce and display solutions until
 %% no more can be found.
 
-:- mode process_query( +, + ).
+% :- mode process_query( +, + ).
 
 process_query( Query, VarDict ) :-
         std_output_stream( Output ),
@@ -623,7 +623,7 @@ process_query( Query, VarDict ) :-
         Result = no.                             % i.e., backtrack if 'yes'.
 
 %
-:- mode execute_query( +, + ).
+% :- mode execute_query( +, + ).
 
 execute_query( Query, yes ) :-
         query( Query ).                          % provided by a metainterpreter
@@ -635,7 +635,7 @@ execute_query( _, no ).
 %% Write the bindings and "Yes", or just "No".
 %% NOTE: the newline is not written here, as it is not wanted in top/0.
 
-:- mode show_result( +, + ).
+% :- mode show_result( +, + ).
 
 show_result( yes, VarDict ) :-
         !,
@@ -652,7 +652,7 @@ show_result( no, _ ) :-
 %% Use the variable dictionary to show the results of a query.
 %% (Recall that the variable dictionary is in Eclipse format.)
 
-:- mode show_bindings( + ).
+% :- mode show_bindings( + ).
 
 show_bindings( Dict ) :-
         std_output_stream( Output ),
@@ -752,7 +752,7 @@ bare_to_query( Bare, (?- Bare) ).
 %% Process a term in interactive mode.
 %% The variable dictionary is used for printing out the results of a query.
 
-:- mode interactive_term( +, + ).
+% :- mode interactive_term( +, + ).
 
 interactive_term( end_of_file, _ ) :-  !.              % just ignore this
 
@@ -777,7 +777,7 @@ interactive_term( (?- Query), VarDict ) :-             % query
 %% satisfied_with_query( + answer ):
 %% Give the user a chance to type ";" if the answer is "yes".
 
-:- mode satisfied_with_query( + ).
+% :- mode satisfied_with_query( + ).
 
 satisfied_with_query( yes ) :-
         std_output_stream( Output ),

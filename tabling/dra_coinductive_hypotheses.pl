@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (March 2009)           .              %%%
 %%%                                                                          %%%
-%%%  Last update: 27 March 2009.                                             %%%
+%%%  Last update: 12 June 2009.                                              %%%
 %%%                                                                          %%%
 
 %%% The "set of coinductive hypotheses" contains those ancestors of the current
@@ -66,17 +66,17 @@
 % %%
 % %% The set of coinductive hypotheses is just a list.
 %
-% :- mode empty_hypotheses( - ).
+% % :- mode empty_hypotheses( - ).
 %
 % empty_hypotheses( [] ).
 %
 %
-% :- mode push_coinductive( +, +, - ).
+% % :- mode push_coinductive( +, +, - ).
 %
 % push_coinductive( Goal, Hyp, [ Goal | Hyp ] ).
 %
 %
-% :- mode unify_with_coinductive_ancestor( +, + ).
+% % :- mode unify_with_coinductive_ancestor( +, + ).
 %
 % unify_with_coinductive_ancestor( Goal, Hyp ) :-
 %         once( essence_hook( Goal, Essence ) ),
@@ -89,19 +89,19 @@
 :- ensure_loaded( '../general/goal_table_in_tree' ).
 
 
-:- mode empty_hypotheses( - ).
+% :- mode empty_hypotheses( - ).
 
 empty_hypotheses( Hyp ) :-
         empty_goal_table( Hyp ).
 
 
-:- mode push_coinductive( +, +, - ).
+% :- mode push_coinductive( +, +, - ).
 
 push_coinductive( Goal, Hyp, NewHyp ) :-
         goal_table_add( Hyp, Goal, NewHyp ).
 
 
-:- mode unify_with_coinductive_ancestor( +, + ).
+% :- mode unify_with_coinductive_ancestor( +, + ).
 
 unify_with_coinductive_ancestor( Goal, Hyp ) :-
         goal_table_member( Goal, Hyp ).

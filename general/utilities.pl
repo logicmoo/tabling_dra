@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 16 May 2009.                                               %%%
+%%%  Last update: 12 June 2009.                                              %%%
 %%%                                                                          %%%
 
 
@@ -44,7 +44,7 @@
 %%    Succeeds iff goal succeeds, but without instantiating any variables
 %%    (side-effects may appear, though).
 
-:- mode check( + ).
+% :- mode check( + ).
 
 check( Goal ) :-  \+ \+ Goal .
 
@@ -60,12 +60,12 @@ check( Goal ) :-  \+ \+ Goal .
 %%           on Prolog systems that support numbervars/3.
 %%    )
 
-:- mode mk_ground( ? ).
+% :- mode mk_ground( ? ).
 
 mk_ground( T ) :-  mk_ground_aux( T, 0, _ ).
 
 %
-:- mode mk_ground_aux( ?, +, - ).
+% :- mode mk_ground_aux( ?, +, - ).
 
 mk_ground_aux( V, N, N1 ) :-
         var( V ),
@@ -86,7 +86,7 @@ mk_ground_aux( T, N, N1 ) :-
         mk_ground_auxs( Args, N, N1 ).
 
 %
-:- mode mk_ground_auxs( +, +, - ).
+% :- mode mk_ground_auxs( +, +, - ).
 
 mk_ground_auxs( []        , N, N  ).
 mk_ground_auxs( [ T | Ts ], N, N2 ) :-
@@ -111,7 +111,7 @@ is_ground_var( T ) :-
 %% (Note that the term may be a subset of a larger term grounded by mk_ground/1,
 %%  so the variable numbers need not be contiguous.)
 
-:- mode ground_term_variables( +, - ).
+% :- mode ground_term_variables( +, - ).
 
 ground_term_variables( T, S ) :-
         empty_set( S0 ),
@@ -122,7 +122,7 @@ ground_term_variables( T, _ ) :-
         error( [ 'Bad call to ground_term_variables (term not ground): ', T ] ).
 
 %
-:- mode gtv_( +, +, - ).
+% :- mode gtv_( +, +, - ).
 
 gtv_( V, _, _ ) :-
         var( V ),
@@ -182,7 +182,7 @@ are_variants( T1, T2 ) :-  variant( T1, T2 ).                 % use the built-in
 %%           )
 %% Given p/k, produce p( _, _, ... _ )  (of arity k)
 
-:- mode mk_pattern( +, +, - ).
+% :- mode mk_pattern( +, +, - ).
 
 mk_pattern( P, K, Pattern ) :-
         length( Args, K ),                            % Args = K fresh variables
@@ -195,7 +195,7 @@ mk_pattern( P, K, Pattern ) :-
 %%                      ):
 %% E.g., p( a, q( X, Y ) )  is transformed to  p( _, _ ).
 
-:- mode most_general_instance( +, - ).
+% :- mode most_general_instance( +, - ).
 
 most_general_instance( Term, Pattern ) :-
         functor( Term, P, K ),

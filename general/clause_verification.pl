@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 11 June 2009.                                              %%%
+%%%  Last update: 12 June 2009.                                              %%%
 %%%                                                                          %%%
 
 :- ensure_loaded( compatibility_utilities ).
@@ -40,7 +40,7 @@
 %% of pairs (pair( term, variable dictionary for the term)), i.e., we can use
 %% information about original variable names.
 
-:- mode verify_program_with_vars( + ).
+% :- mode verify_program_with_vars( + ).
 
 verify_program_with_vars( Pairs ) :-
         member( Pair, Pairs ),
@@ -58,7 +58,7 @@ verify_program_with_vars( _ ).
 %% raise an error if any of the terms is obviously incorrect.
 %% See also verify_program_with_vars/1 above.
 
-:- mode verify_program( + ).
+% :- mode verify_program( + ).
 
 verify_program( Terms ) :-
         member( Term, Terms ),
@@ -132,7 +132,7 @@ is_a_good_clause( T, VarDict ) :-
 %% get_clause_head( + term, - head ):
 %% Treat this non-variable term as a clause, get its head.
 
-:-mode get_clause_head( +, - ).
+% :- mode get_clause_head( +, - ).
 
 get_clause_head( (H :- _), H ) :-  !.
 get_clause_head( H       , H ).
@@ -169,7 +169,7 @@ is_a_good_clause_head( Hd ) :-
 %% a structure that holds the entire clause and the variable dictionary, and
 %% we use it to produce better diagnostics.
 
-:- mode has_a_good_clause_body( ?, + ).
+% :- mode has_a_good_clause_body( ?, + ).
 
 has_a_good_clause_body( Clause, VarDict ) :-
         has_a_good_clause_body_( Clause, ctxt( VarDict, Clause ) ).

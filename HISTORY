@@ -11,4 +11,14 @@
                  ":- coinductive1." and ":- coinductive.", respectively.
                - Corrected a major error in the choice of data structures.
 
+April-June 2009:
+               - Various minor corrections, mostly cosmetic.
+
+12 June 2009:
+               - Making things acceptable to SWI Prolog:
+                  1) Made the convention for partial application (see
+                  general/higher_order/apply/2) compatible with that of SWI
+                  Prolog.
+                  2) Commented out mode declarations.
+
 -------------------------------------------------------------------------------

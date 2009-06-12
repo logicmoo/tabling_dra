@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 3 March 2009.                                              %%%
+%%%  Last update: 12 June 2009.                                              %%%
 %%%                                                                          %%%
 
 
@@ -58,7 +58,7 @@ ensure_filename_is_an_atom( FileName ) :-
 %% root name; if the file name has an extension, don't change it, but extract
 %% the root name.
 
-:- mode ensure_extension( +, +, -, - ).
+% :- mode ensure_extension( +, +, -, - ).
 
 ensure_extension( FileNameChars, _, RootFileNameChars, FileNameChars ) :-
         name_chars( '.', [ Dot ] ),
@@ -80,7 +80,7 @@ ensure_extension( FileNameChars, ExtChars,
 %% the form "pair( term, variable dictionary )", where the variable dictionary
 %% is of the format returned by readvar.
 
-:- mode read_terms_with_vars( +, - ).
+% :- mode read_terms_with_vars( +, - ).
 
 read_terms_with_vars( InputStream, Terms ) :-
         readvar( InputStream, Term, VarDict ),
@@ -114,7 +114,7 @@ process_if_op_directive( _ ).
 %%       output.
 %%       See also read_terms_with_vars/2 above.
 
-:- mode read_terms( +, - ).
+% :- mode read_terms( +, - ).
 
 read_terms( InputStream, Terms ) :-
         read( InputStream, Term ),
@@ -137,7 +137,7 @@ read_terms_( InputStream, Term, [ Term | Terms ] ) :-
 %% Given an open output stream, write onto it all the terms from the list,
 %% one per line but without any other pretty-printing.
 
-:- mode write_terms( +, + ).
+% :- mode write_terms( +, + ).
 
 write_terms( Terms, OutputStream ) :-
         member( Term, Terms ),
@@ -152,7 +152,7 @@ write_terms( _, _ ).
 %% write_clauses( + list of clauses, + output stream ):
 %% Given an open output stream, write onto it all the clauses from the list.
 
-:- mode write_clauses( +, + ).
+% :- mode write_clauses( +, + ).
 
 write_clauses( Clauses, OutputStream ) :-
         member( Clause, Clauses ),
@@ -202,14 +202,14 @@ write_list( S, NotAList ) :-
 %%    newline.  The newline is not included in the list of characters that is
 %%    returned.
 
-:- mode getline( +, - ).
+% :- mode getline( +, - ).
 
 getline( InputStream, Line ) :-
         getchar( InputStream, C ),
         getline_( InputStream, C, Line ).
 
 %
-:- mode getline_( +, +, - ).
+% :- mode getline_( +, +, - ).
 
 getline_( _InputStream, '\n', [] ) :-  !.
 
@@ -222,7 +222,7 @@ getline_( InputStream, C   , [ C | Cs ] ) :-
 %% putline( + output stream, + list of character strings ) :
 %%    Writes the characters to this stream and follows them with a newline.
 
-:- mode putline( +, + ).
+% :- mode putline( +, + ).
 
 putline( OutputStream, Cs ) :-
         putchars( OutputStream, Cs ),
@@ -233,7 +233,7 @@ putline( OutputStream, Cs ) :-
 %% putchars( + output stream, + list of character strings ) :
 %%    Writes the characters to the current output stream.
 
-:- mode putchars( +, + ).
+% :- mode putchars( +, + ).
 
 putchars( _OutputStream, [] ).
 

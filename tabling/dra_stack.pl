@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (March 2009)           .              %%%
 %%%                                                                          %%%
-%%%  Last update: 27 March 2009.                                             %%%
+%%%  Last update: 12 June 2009.                                              %%%
 %%%                                                                          %%%
 
 %%% The "stack" is the chain of tabled ancestors used by solve/4.  It is
@@ -83,19 +83,19 @@
 % %%
 % %% The stack is just a list of triples.
 %
-% :- mode empty_stack( - ).
+% % :- mode empty_stack( - ).
 %
 % empty_stack( [] ).
 %
 %
-% :- mode push_tabled( +, +, +, +, - ).
+% % :- mode push_tabled( +, +, +, +, - ).
 %
 % push_tabled( Goal, Index, Clause, Stack,
 %              [ triple( Goal, Index, Clause ) | Stack ]
 %            ).
 %
 %
-% :- mode is_variant_of_ancestor( +, +, -, - ).
+% % :- mode is_variant_of_ancestor( +, +, -, - ).
 %
 % is_variant_of_ancestor( Goal, Stack, AncestorTriple, Prefix ) :-
 %         append( Prefix, [ AncestorTriple | _ ], Stack ),      % split the list
@@ -115,13 +115,13 @@
 :- ensure_loaded( '../general/goal_table_in_tree' ).
 
 
-:- mode empty_stack( - ).
+% :- mode empty_stack( - ).
 
 empty_stack( tstack( [], Table ) ) :-
         empty_goal_table( Table ).
 
 
-:- mode push_tabled( +, +, +, +, - ).
+% :- mode push_tabled( +, +, +, +, - ).
 
 push_tabled( Goal, Index, Clause, tstack( Stack, Table ),
              tstack( [ triple( Goal, Index, Clause ) | Stack ], NewTable )
@@ -129,7 +129,7 @@ push_tabled( Goal, Index, Clause, tstack( Stack, Table ),
         goal_table_add( Table, Goal, NewTable ).
 
 
-:- mode is_variant_of_ancestor( +, +, -, - ).
+% :- mode is_variant_of_ancestor( +, +, -, - ).
 
 is_variant_of_ancestor( Goal,
                         tstack( Stack, Table ),

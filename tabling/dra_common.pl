@@ -26,7 +26,7 @@
 %%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 16 May 2009.                                               %%%
+%%%  Last update: 12 June 2009.                                              %%%
 %%%                                                                          %%%
 version( 'DRA ((c) UTD 2009) version 0.91 (beta), 16 May 2009' ).
 
@@ -809,7 +809,7 @@ remove_variants_( [ H | T ], Accumulator, RL ) :-
 
 %% Execute a query.
 
-:- mode query( + ).
+% :- mode query( + ).
 
 query( Goals ) :-                                         % invoked by top_level
         retractall( pioneer( _, _, _ )          ),
@@ -893,7 +893,7 @@ plural( Output, N ) :-  N \= 1,  write( Output, 's' ).
 %%       faster access, so the comments in this file ("chain of ancestors" etc.)
 %%       might no longer be quite accurate.
 
-:- mode solve( +, +, +, + ).
+% :- mode solve( +, +, +, + ).
 
 
 % A negation.
@@ -1304,7 +1304,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 %% If the goal has been declared as "old_first", produce all the tabled answers,
 %% remembering them in "result", then succeed; otherwise just fail.
 
-:- mode get_tabled_if_old_first( +, +, +, + ).
+% :- mode get_tabled_if_old_first( +, +, +, + ).
 
 get_tabled_if_old_first( Goal, Index, Label, Level ) :-
         old_first( Goal ),
@@ -1316,7 +1316,7 @@ get_tabled_if_old_first( Goal, Index, Label, Level ) :-
 %% Return (one by one) all the answers that are currently tabled for this goal.
 %% (Each answer is returned by appropriately instantiating the goal.)
 
-:- mode get_all_tabled_answers( +, +, +, + ).
+% :- mode get_all_tabled_answers( +, +, +, + ).
 
 get_all_tabled_answers( Goal, Index, Label, Level ) :-
         get_answer( Goal ),
@@ -1330,7 +1330,7 @@ get_all_tabled_answers( Goal, Index, Label, Level ) :-
 %% but are not present in its "result" entries.
 %% (Each answer is returned by appropriately instantiating the goal.)
 
-:- mode get_remaining_tabled_answers( +, +, +, + ).
+% :- mode get_remaining_tabled_answers( +, +, +, + ).
 
 get_remaining_tabled_answers( Goal, Index, Label, Level ) :-
         get_answer( Goal ),
@@ -1362,14 +1362,14 @@ use_clause( Goal, Body ) :-
 %% with each new answer (and tabling it).  Fail when all the possible results
 %% are exhausted.
 
-:- mode compute_fixed_point( +, +, +, +, + ).
+% :- mode compute_fixed_point( +, +, +, +, + ).
 
 compute_fixed_point( Goal, Index, Stack, Hyp, Level ) :-
         getval( number_of_answers, NAns ),
         compute_fixed_point_( Goal, Index, Stack, Hyp, Level, NAns ).
 
 %
-:- mode compute_fixed_point_( +, +, +, +, +, + ).
+% :- mode compute_fixed_point_( +, +, +, +, +, + ).
 
 compute_fixed_point_( Goal, Index, Stack, Hyp, Level, _ ) :-
         NLevel is Level + 1,
@@ -1414,7 +1414,7 @@ suppress_pioneers_on_list( _, _ ).
 %% Remove auxiliary table entries for the pioneer with this index.
 %% Specifically, clean up "pioneer", "loop" and "looping_alternative".
 
-:- mode rescind_pioneer_status( + ).
+% :- mode rescind_pioneer_status( + ).
 
 rescind_pioneer_status( Index ) :-
         retract(    pioneer( _, _, Index )          ),
@@ -1427,7 +1427,7 @@ rescind_pioneer_status( Index ) :-
 %% are marked as completed.
 %% Recall that a cluster may consist of a number of "loops".
 
-:- mode complete_cluster( +, + ).
+% :- mode complete_cluster( +, + ).
 
 complete_cluster( Index, Level ) :-
         loop( Index, Gs ),                     % iterate over loops
@@ -1444,7 +1444,7 @@ complete_cluster( _, _ ).
 %%              ):
 %% Filter away the other info in each triple, return list of goals only.
 
-:- mode extract_goals( +, - ).
+% :- mode extract_goals( +, - ).
 
 extract_goals( [], [] ).
 
@@ -1462,7 +1462,7 @@ extract_goals( [ triple( G, _, _ ) | Ts ], [ G | Gs ] ) :-
 %% Does the table "answer" contain a variant of this fact paired with a variant
 %% of this goal?
 
-:- mode is_answer_known( +, + ).
+% :- mode is_answer_known( +, + ).
 
 is_answer_known( Goal, Fact ) :-
         copy_term2( Goal, Copy ),
@@ -1477,7 +1477,7 @@ is_answer_known( Goal, Fact ) :-
 %% a variant of this goal, then add the pair to the table, increasing
 %% "number_of_answers".
 
-:- mode memo( +, +, + ).
+% :- mode memo( +, +, + ).
 
 memo( Goal, Fact, _ ) :-
         is_answer_known( Goal, Fact ),
@@ -1495,7 +1495,7 @@ memo( Goal, Fact, Level ) :-
 %% Get an instantiation (if any) tabled in "answer" for variants of this goal.
 %% Sequence through all such instantiations on backtracking.
 
-:- mode get_answer( ? ).
+% :- mode get_answer( ? ).
 
 get_answer( Goal ) :-
         once( essence_hook( Goal, EssenceOfGoal ) ),
@@ -1513,7 +1513,7 @@ get_answer( Goal ) :-
 %% Succeeds iff the goal is a variant of a goal that has been stored in
 %% the table "completed".
 
-:- mode is_completed( + ).
+% :- mode is_completed( + ).
 
 is_completed( Goal ) :-
         copy_term2( Goal, Copy ),
@@ -1524,7 +1524,7 @@ is_completed( Goal ) :-
 %% complete_goal( + goal, + index for tracing ):
 %% Make sure the goal is marked as completed.
 
-:- mode complete_goal( +, + ).
+% :- mode complete_goal( +, + ).
 
 complete_goal( Goal, _ ) :-
         is_completed( Goal ),
@@ -1542,7 +1542,7 @@ complete_goal( Goal, Level ) :-
 %% Succeeds if the goal is a variant of a goal that is tabled in "pioneer";
 %% returns the index of the relevant entry in table "pioneer".
 
-:- mode is_a_variant_of_a_pioneer( +, - ).
+% :- mode is_a_variant_of_a_pioneer( +, - ).
 
 is_a_variant_of_a_pioneer( Goal, Index ) :-
         copy_term2( Goal, Copy ),
@@ -1554,7 +1554,7 @@ is_a_variant_of_a_pioneer( Goal, Index ) :-
 %% add_pioneer( + goal, - index ):
 %% Add an entry for this goal to "pioneer", return the unique index.
 
-:- mode add_pioneer( +, - ).
+% :- mode add_pioneer( +, - ).
 
 add_pioneer( Goal, Index ) :-
         copy_term2( Goal, Copy ),
@@ -1566,7 +1566,7 @@ add_pioneer( Goal, Index ) :-
 %% get_unique_index( - ):
 %% Produce a new unique index.
 
-:- mode get_unique_index( - ).
+% :- mode get_unique_index( - ).
 
 get_unique_index( Index ) :-
         getval( unique_index, Index ),
@@ -1578,7 +1578,7 @@ get_unique_index( Index ) :-
 %% Does the table "result" contain a variant of this fact associated with this
 %% index?
 
-:- mode is_result_known( +, + ).
+% :- mode is_result_known( +, + ).
 
 is_result_known( Index, Fact ) :-
         result( Index, F ),
@@ -1590,7 +1590,7 @@ is_result_known( Index, Fact ) :-
 %% If the table "result" already contains a variant of this fact associated with
 %% this index, then fail.  Otherwise record the fact in the table and succeed.
 
-:- mode new_result_or_fail( +, + ).
+% :- mode new_result_or_fail( +, + ).
 
 new_result_or_fail( Index, Fact ) :-
         \+ is_result_known( Index, Fact ),
@@ -1601,7 +1601,7 @@ new_result_or_fail( Index, Fact ) :-
 %% add_loop( + index, + list of goals ):
 %% Add an entry to "loop".
 
-:- mode add_loop( +, + ).
+% :- mode add_loop( +, + ).
 
 add_loop( _, [] ) :-                                % empty loops are not stored
         !.
@@ -1619,7 +1619,7 @@ add_loop( Index, Goals ) :-
 %% add_looping_alternative( + index, + Clause ):
 %% Add and entry to "looping_alternative".
 
-:- mode add_looping_alternative( +, + ).
+% :- mode add_looping_alternative( +, + ).
 
 add_looping_alternative( Index, Clause ) :-          % duplicates are not stored
         looping_alternative( Index, C ),
@@ -1640,7 +1640,7 @@ add_looping_alternative( Index, Clause ) :-
 %% Are both the terms variants of each other after filtering through
 %% essence_hook?
 
-:- mode are_essences_variants( +, + ).
+% :- mode are_essences_variants( +, + ).
 
 are_essences_variants( T1, T2 ) :-
         once( essence_hook( T1, ET1 ) ),
@@ -1777,7 +1777,7 @@ optional_trace( _, _, _, _ ).
 %% fatal_error( + message, + stack ):
 %% Display the message and stack, then abort.
 
-:- mode fatal_error( +, + ).
+% :- mode fatal_error( +, + ).
 
 fatal_error( Message, Stack ) :-
         begin_error,
