@@ -217,20 +217,20 @@ symmetric_set_difference( A, B, SymmetricDiff ) :-
 
 
 %%------------------------------------------------------------------------------
-%% list_to_set( + list, - set ):
+%% set_from_list( + list, - set ):
 %% Form a set with all the elements of the list.
 %%
 %% WARNING: DO NOT INSTANTIATE THE ITEM WHILE IT IS IN SOME SET!
 
-list_to_set( List, Set ) :-
+set_from_list( List, Set ) :-
         empty_set( Empty ),
-        list_to_set_( List, Empty, Set ).
+        set_from_list_( List, Empty, Set ).
 
 %
-list_to_set_( []       , Set, Set  ).
+set_from_list_( []       , Set, Set  ).
 
-list_to_set_( [ H | T ], Set, NSet ) :-
+set_from_list_( [ H | T ], Set, NSet ) :-
         add_to_set( H, Set, Set2 ),
-        list_to_set_( T, Set2, NSet ).
+        set_from_list_( T, Set2, NSet ).
 
 %%------------------------------------------------------------------------------

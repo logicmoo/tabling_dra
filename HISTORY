@@ -16,9 +16,10 @@ April-June 2009:
 
 12 June 2009:
                - Making things acceptable to SWI Prolog:
-                  1) Made the convention for partial application (see
-                  general/higher_order/apply/2) compatible with that of SWI
-                  Prolog.
+                  1) Made the convention for partial application (as an
+                     argument to apply/2) compatible with that of SWI Prolog,
+                     which has apply/2 as a built-in.
                   2) Commented out mode declarations.
+                  3) Renamed set_to_list/2 to list_from_set/2.
 
 -------------------------------------------------------------------------------

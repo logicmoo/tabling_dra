@@ -178,7 +178,7 @@ has_a_good_clause_body_( Clause, Ctxt ) :-
         Clause = (Head :- Body),
         !,
         ordered_term_variables( Head, HeadVars ),
-        % HeadVars has no duplicates, so we need not call list_to_set/2
+        % HeadVars has no duplicates, so we need not call set_from_list/2
         check_for_variable_calls( Body, set( HeadVars ), Ctxt ),
         check_for_singleton_variables( Clause, Ctxt ).
 
@@ -210,7 +210,7 @@ check_for_variable_calls( (A , B), Vars, Ctxt ) :-
         !,
         check_for_variable_calls( A, Vars, Ctxt ),
         ordered_term_variables( A, AVars ),
-        list_to_set( AVars, AVarSet ),
+        set_from_list( AVars, AVarSet ),
         set_union( AVarSet, Vars, NVars ),
         check_for_variable_calls( B, NVars, Ctxt ).
 
