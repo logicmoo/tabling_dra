@@ -249,9 +249,9 @@
 :- op( 1000, fy, support      ).     % allow  ":- support p/k ."
 :- op( 1000, fy, load_support ).     % allow  ":- load_support filename ."
 
-:- dynamic support/1.
-:- dynamic top/1.
-:- dynamic defined/1.
+:- dynamic (support)/1.
+:- dynamic (top)/1.
+:- dynamic (defined)/1.
 
 
 % If "p/k" has already been seen (and declared as dynamic), the fact is recorded
@@ -702,7 +702,7 @@ check_not_builtin( _, _ ).
 %%       reading the term the rest of the line is ignored, to facilitate
 %%       interaction with the user when asking whether more answers are needed.
 
-top :-
+(top) :-
         std_input_stream( Input ),
         std_output_stream( Output ),
         repeat,

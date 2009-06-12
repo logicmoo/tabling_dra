@@ -535,10 +535,10 @@ default_extension( '.tlp' ).                              % invoked by top_level
 
 %% Initialization of tables:
 
-:- dynamic coinductive/1 .
-:- dynamic coinductive1/1 .
-:- dynamic tabled/1 .
-:- dynamic old_first/1 .
+:- dynamic (coinductive)/1 .
+:- dynamic (coinductive1)/1 .
+:- dynamic (tabled)/1 .
+:- dynamic (old_first)/1 .
 :- dynamic answer/3 .
 :- dynamic pioneer/3 .
 :- dynamic result/2 .

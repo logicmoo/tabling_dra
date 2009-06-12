@@ -21,5 +21,6 @@ April-June 2009:
                      which has apply/2 as a built-in.
                   2) Commented out mode declarations.
                   3) Renamed set_to_list/2 to list_from_set/2.
+                  4) Some operators had to be put between parentheses.
 
 -------------------------------------------------------------------------------
