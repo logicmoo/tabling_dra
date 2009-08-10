@@ -28,7 +28,7 @@
 %%%                                                                          %%%
 %%%  Last update: 12 June 2009.                                              %%%
 %%%                                                                          %%%
-version( 'DRA ((c) UTD 2009) version 0.91 (beta), 16 May 2009' ).
+version( 'DRA ((c) UTD 2009) version 0.92 (beta), 12 June 2009' ).
 
 %%% NOTE:
 %%%
