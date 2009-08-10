@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (March 2009)           .              %%%
 %%%                                                                          %%%
-%%%  Last update: 27 March 2009.                                             %%%
+%%%  Last update: 10 August 2009.                                            %%%
 %%%                                                                          %%%
 
 %%% The "set of coinductive hypotheses" contains those ancestors of the current
@@ -97,8 +97,8 @@ empty_hypotheses( Hyp ) :-
 
 :- mode push_coinductive( +, +, - ).
 
-push_coinductive( Goal, Hyp, Hyp ) :-
-        goal_table_add( Hyp, Goal ).
+push_coinductive( Goal, Hyp, NewHyp ) :-
+        goal_table_add( Hyp, Goal, NewHyp ).
 
 
 %:- mode unify_with_coinductive_ancestor( +, + ).
