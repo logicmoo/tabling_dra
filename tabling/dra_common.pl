@@ -1365,13 +1365,6 @@ use_clause( Goal, Body ) :-
 % :- mode compute_fixed_point( +, +, +, +, + ).
 
 compute_fixed_point( Goal, Index, Stack, Hyp, Level ) :-
-        getval( number_of_answers, NAns ),
-        compute_fixed_point_( Goal, Index, Stack, Hyp, Level, NAns ).
-
-%
-% :- mode compute_fixed_point_( +, +, +, +, +, + ).
-
-compute_fixed_point_( Goal, Index, Stack, Hyp, Level, _ ) :-
         NLevel is Level + 1,
         (
             coinductive1( Goal )
@@ -1380,11 +1373,17 @@ compute_fixed_point_( Goal, Index, Stack, Hyp, Level, _ ) :-
         ;
             NHyp = Hyp
         ),
-        copy_term2( Goal, OriginalGoal ),
+        getval( number_of_answers, NAns ),
+        compute_fixed_point_( Goal, Index, Stack, NHyp, NLevel, NAns ).
 
+%
+% :- mode compute_fixed_point_( +, +, +, +, +, + ).
+
+compute_fixed_point_( Goal, Index, Stack, Hyp, Level, _ ) :-
+        copy_term2( Goal, OriginalGoal ),
         looping_alternative( Index, (Goal :- Body) ),      % i.e., iterate
-        push_tabled(  OriginalGoal, Index, (Goal :- Body), Stack, NStack ),
-        solve( Body, NStack, NHyp, NLevel ),
+        push_tabled( OriginalGoal, Index, (Goal :- Body), Stack, NStack ),
+        solve( Body, NStack, Hyp, Level ),
         new_result_or_fail( Index, Goal ),
         memo( OriginalGoal, Goal, Level ).
 
