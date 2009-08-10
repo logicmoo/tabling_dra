@@ -24,6 +24,11 @@ dra_common.pl:
         Just load 'dra' into Eclipse or Sicstus!  The head comment (better
         yet, the manual in "../doc/manual.pdf") explains how to use it.
 
+ex.tlp
+ex2.tlp:
+        Two trivial prototypical examples.  See how ex.tlp gives only one
+        answer, because of the combination of coinduction with tabling.
+
 examples:
         Some examples of tabled programs, all with the extension
         ".tlp".
