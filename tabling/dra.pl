@@ -25,4 +25,5 @@
 
 :- module( dra, [ prog/1, top/0 ] ).
 
+:- ensure_loaded( '../general/compatibility_utilities_sicstus' ).
 :- ensure_loaded( [ dra_common ] ).

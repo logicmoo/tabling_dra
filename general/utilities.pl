@@ -31,7 +31,6 @@
 
 :- ensure_loaded( set_in_list ).
 :- ensure_loaded( higher_order ).
-:- ensure_loaded( compatibility_utilities ).
 :- ensure_loaded( vardict_utilities ).
 :- ensure_loaded( clause_verification ).
 :- ensure_loaded( io_utilities ).

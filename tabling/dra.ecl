@@ -27,4 +27,5 @@
 
 :- export prog/1, top/0 .
 
+:- ensure_loaded( '../general/compatibility_utilities_eclipse' ).
 :- ensure_loaded( [ dra_common ] ).

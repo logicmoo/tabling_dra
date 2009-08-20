@@ -28,10 +28,10 @@
 %%%  Last update: 12 June 2009.                                              %%%
 %%%                                                                          %%%
 
-:- ensure_loaded( compatibility_utilities ).
 :- ensure_loaded( boolean_operations ).
 :- ensure_loaded( vardict_utilities ).
 :- ensure_loaded( errors_and_warnings ).
+%% NOTE: requires proper compatibility_utilities_....
 
 
 %%------------------------------------------------------------------------------

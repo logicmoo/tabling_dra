@@ -144,7 +144,7 @@
 %%%       "interpreted".  This is done to avoid conflicts with predicates
 %%%       used in the metainterpreter (and the top level).  The metainterpreter
 %%%       must access them by using the predicate imported from
-%%%       "compatibility_utilties":
+%%%       "compatibility_utilties_...":
 %%%           clause_in_module( interpreted, ... )
 %%%
 %%%       The predicates defined by these clauses are stored in the table

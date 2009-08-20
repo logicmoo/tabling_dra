@@ -29,7 +29,7 @@
 %%%                                                                          %%%
 
 
-:- ensure_loaded( compatibility_utilities ).
+%% NOTE: requires proper compatibility_utilities_....
 
 
 %%------------------------------------------------------------------------------
