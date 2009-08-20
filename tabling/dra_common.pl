@@ -642,12 +642,12 @@ essence_hook( T, T ).    % default, may be overridden by the interpreted program
 
 %%%%%  Administration  %%%%%
 
-:- op( 1000, fy, coinductive  ).    % allow  ":- coinductive p/k ."
-:- op( 1000, fy, coinductive1 ).    % allow  ":- coinductive1 p/k ."
-:- op( 1000, fy, tabled       ).    % allow  ":- tabled p/k ."
-:- op( 1000, fy, old_first    ).    % allow  ":- old_first p/k ."
-:- op( 1000, fy, trace        ).    % allow  ":- trace  p/k ."
-:- op( 1000, fy, multifile    ).    % allow  ":- multifile  p/k ." (for Eclipse)
+:- op( 1010, fy, coinductive  ).    % allow  ":- coinductive p/k ."
+:- op( 1010, fy, coinductive1 ).    % allow  ":- coinductive1 p/k ."
+:- op( 1010, fy, tabled       ).    % allow  ":- tabled p/k ."
+:- op( 1010, fy, old_first    ).    % allow  ":- old_first p/k ."
+:- op( 1010, fy, trace        ).    % allow  ":- trace  p/k ."
+:- op( 1010, fy, multifile    ).    % allow  ":- multifile  p/k ." (for Eclipse)
 
 
 
