@@ -28,7 +28,16 @@
 %%%                                                                          %%%
 %%%  Last update: 12 June 2009.                                              %%%
 %%%                                                                          %%%
-version( 'DRA ((c) UTD 2009) version 0.92 (beta), 12 June 2009' ).
+version( Version ) :-
+        name_chars( 'DRA ((c) UTD 2009) version 0.93 (beta), 20 August 2009 (',
+                    VCodes
+                  ),
+        lp_system( Sys ),
+        name_chars( Sys, SysCode ),
+        name_chars( ')', RParCode ),
+        append( SysCode, RParCode, SPar ),
+        append( VCodes, SPar, VersionCodes ),
+        name_chars( Version, VersionCodes ).
 
 %%% NOTE:
 %%%
