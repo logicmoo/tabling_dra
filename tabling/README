@@ -8,6 +8,9 @@ dra.ecl:
 dra.pl:
         A wrapping of dra_common.pl for Sicstus.
 
+drap.pl:
+        A wrapping of dra_common.pl for SWI Prolog.
+
 dra_builtins.pl:
         This file contains declarations of built-in predicates that are
         allowed by the "dra" interpreter.  Support for many new predicates
@@ -24,7 +27,15 @@ dra_common.pl:
         Just load 'dra' into Eclipse or Sicstus!  The head comment (better
         yet, the manual in "../doc/manual.pdf") explains how to use it.
 
-ex.tlp
+dra_table_assert.pl:
+        An implementation of the table of answers for DRA: answers are stored as
+        clauses.
+
+dra_table_record.pl:
+        An implementation of the table of answers for DRA: answers are stored in
+        the internal database.
+
+ex.tlp:
 ex2.tlp:
         Two trivial prototypical examples.  See how ex.tlp gives only one
         answer, because of the combination of coinduction with tabling.

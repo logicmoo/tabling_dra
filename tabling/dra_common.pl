@@ -282,13 +282,19 @@ version( Version ) :-
            has no solutions, it will have no entry in "answer", even though it
            may have an entry in "completed" (see below).
 
-           (NOTE: In the actual implementation each fact in "answer" has the
+           (NOTE:
+               1. In the actual implementation each fact in "answer" has the
                   form
                      answer( cgoal, goal, fact )
                   where "cgoal" is a copy of "goal" (no shared variables).
                   This is done to facilitate more effective filtering (via
                   unification) before a check is made for whether "goal" is a
                   variant of the goal for which we are seeking a tabled answer.
+
+               2. This stuff has been removed to file dra_table_assert.pl
+                  or dra_table_record.pl (only one of them is used,
+                  depending on the logic programming system: see the main file
+                  used to load the program.
            )
 
            This table is not cleared before the evaluation of a new query.
@@ -548,7 +554,6 @@ default_extension( '.tlp' ).                              % invoked by top_level
 :- dynamic (coinductive1)/1 .
 :- dynamic (tabled)/1 .
 :- dynamic (old_first)/1 .
-:- dynamic answer/3 .
 :- dynamic pioneer/3 .
 :- dynamic result/2 .
 :- dynamic loop/2 .
@@ -560,11 +565,11 @@ default_extension( '.tlp' ).                              % invoked by top_level
 :- setval( unique_index,      0 ).
 
 initialise :-                                             % invoked by top_level
+        reinitialise_answers,
         retractall( coinductive( _ )            ),
         retractall( coinductive1( _ )           ),
         retractall( tabled( _ )                 ),
         retractall( old_first( _ )              ),
-        retractall( answer( _, _, _ )           ),
         retractall( pioneer( _, _, _ )          ),
         retractall( result( _, _ )              ),
         retractall( loop( _, _ )                ),
@@ -1464,57 +1469,6 @@ extract_goals( [ triple( G, _, _ ) | Ts ], [ G | Gs ] ) :-
 
 
 %%-----  The tables: access and modification  -----
-
-
-%% is_answer_known( + goal, + fact ):
-%% Does the table "answer" contain a variant of this fact paired with a variant
-%% of this goal?
-
-% :- mode is_answer_known( +, + ).
-
-is_answer_known( Goal, Fact ) :-
-        copy_term2( Goal, Copy ),
-        answer( Copy, G, F ),
-        are_essences_variants( G, Goal ),
-        are_essences_variants( F, Fact ),
-        !.
-
-
-%% memo( + goal, + fact, + level for tracing ):
-%% If the table "answer" does not contain a variant of this fact paired with
-%% a variant of this goal, then add the pair to the table, increasing
-%% "number_of_answers".
-
-% :- mode memo( +, +, + ).
-
-memo( Goal, Fact, _ ) :-
-        is_answer_known( Goal, Fact ),
-        !.
-
-memo( Goal, Fact, Level ) :-
-        % \+ is_answer_known( Goal, Fact ),
-        optional_trace( 'Storing answer: ', Goal, Fact, Level ),
-        copy_term2( Goal, Copy ),
-        assert( answer( Copy, Goal, Fact ) ),
-        incval( number_of_answers ).
-
-
-%% get_answer( +- goal ):
-%% Get an instantiation (if any) tabled in "answer" for variants of this goal.
-%% Sequence through all such instantiations on backtracking.
-
-% :- mode get_answer( ? ).
-
-get_answer( Goal ) :-
-        once( essence_hook( Goal, EssenceOfGoal ) ),
-        copy_term2( Goal, Copy ),
-        answer( Copy, G, Ans ),
-        once( essence_hook( G, EssenceOfG ) ),
-        are_variants( EssenceOfGoal, EssenceOfG ),
-        EssenceOfGoal = EssenceOfG,     % make sure variables are the right ones
-        once( essence_hook( Ans, EssenceOfAns ) ),
-        EssenceOfGoal = EssenceOfAns .  % instantiate
-
 
 
 %% is_completed( + goal ):
