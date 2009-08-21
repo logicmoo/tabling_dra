@@ -107,7 +107,7 @@ check( State, Formula ) :-
 
 verify( S, g A,   Path ) :-  once( coverify( S, g A,   Path ) ).
 verify( S, A r B, Path ) :-  once( coverify( S, A r B, Path ) ).
-verify( S, A,     Path ) :-  A \= g _,  a \= _ r _,  tverify( S, A, Path ).
+verify( S, A,     Path ) :-  A \= g _,  A \= _ r _,  tverify( S, A, Path ).
 
 
 :- tabled tverify/3.
