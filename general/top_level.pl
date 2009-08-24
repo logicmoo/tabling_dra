@@ -245,9 +245,9 @@
 :- ensure_loaded( utilities ).
 :- ensure_loaded( program_consistency ).
 
-:- op( 1000, fy, top          ).     % allow  ":- top p/k ."
-:- op( 1000, fy, support      ).     % allow  ":- support p/k ."
-:- op( 1000, fy, load_support ).     % allow  ":- load_support filename ."
+:- op( 1010, fy, top          ).     % allow  ":- top p/k ."
+:- op( 1010, fy, support      ).     % allow  ":- support p/k ."
+:- op( 1010, fy, load_support ).     % allow  ":- load_support filename ."
 
 :- dynamic (support)/1.
 :- dynamic (top)/1.
