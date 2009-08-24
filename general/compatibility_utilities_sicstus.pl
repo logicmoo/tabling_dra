@@ -59,11 +59,13 @@ getchar( Stream, Atom ) :-
 
 
 %%------------------------------------------------------------------------------
-%% name_chars( +- atom or number, -+ list of characters that form its name ):
+%% name_chars( +- atom or number,
+%%             -+ list of characters (codes) that form its name
+%%           ):
 %% Used because Eclipse complains about name/2 being obsolete.
 
-name_chars( Atomic, NameChars ) :-
-        name( Atomic, NameChars ).
+name_chars( Atomic, NameCharCodes ) :-
+        name( Atomic, NameCharCodes ).
 
 
 %%------------------------------------------------------------------------------
