@@ -8,4 +8,4 @@ p( b, a ).
 
 ?- r( a, Y ).    % expected: r( a, a ), r( a, b )
 
-?- r( b, Y ).    % expected: r( b, b ), r( b, a )
+?- r( b, Y ).    % expected: r( b, a ), r( b, b )

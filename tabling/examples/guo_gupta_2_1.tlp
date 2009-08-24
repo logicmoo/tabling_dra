@@ -10,7 +10,7 @@ p( b, c ).
 q( b ).
 q( c ).
 
-?- r( a, Y ).    % expected: r( a, c ), r( a, b )
+?- r( a, Y ).    % expected: r( a, b ), r( a, c )
 
 ?- r( b, Y ).    % expected: r( b, c )
 
