@@ -175,7 +175,7 @@ ordered_term_variables( Term, Variables ) :-
 
 %%------------------------------------------------------------------------------
 %% readvar( + input stream, - term, - variable dictionary  ):
-%% Simulates Eclipse's readvar/3.  The variable dictionay will be in the format
+%% Simulates Eclipse's readvar/3.  The variable dictionary will be in the format
 %% used by Eclipse, not by Sicstus (i.e., an entry has the form
 %% "[ name | Variable ]" rather than "name = variable".
 
