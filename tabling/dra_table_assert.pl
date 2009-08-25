@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (March 2009)           .              %%%
 %%%                                                                          %%%
-%%%  Last update: 20 August 2009.                                            %%%
+%%%  Last update: 24 August 2009.                                            %%%
 %%%                                                                          %%%
 
 %% The tables are normally kept in asserted clauses, but for some systems this
