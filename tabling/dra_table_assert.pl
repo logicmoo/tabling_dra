@@ -28,8 +28,8 @@
 %%%  Last update: 20 August 2009.                                            %%%
 %%%                                                                          %%%
 
-%% The table is normally kept in asserted clauses, but for some systems this is
-%% not convenient, because asserted clauses are compiled.
+%% The tables are normally kept in asserted clauses, but for some systems this
+%% is  not convenient, because asserted clauses are compiled.
 %% For example, this is so in SWI Prolog, which in addition does not assert
 %% cyclic terms, so  for that system the "recorded" database is more
 %% appropriate.
@@ -45,7 +45,7 @@
 
 %% Clear all known answers.
 
-reinitialise_answers :-
+reinitialise_answer :-
         retractall( answer( _, _, _ ) ).
 
 
@@ -97,5 +97,168 @@ get_answer( Goal ) :-
         EssenceOfGoal = EssenceOfG,     % make sure variables are the right ones
         once( essence_hook( Ans, EssenceOfAns ) ),
         EssenceOfGoal = EssenceOfAns .  % instantiate
+
+
+%% get_all_tabled_goals( - list of goals ):
+%% Get all the goals that were tabled together with their answers.
+
+get_all_tabled_goals( Goals ) :-
+        findall( Goal, answer( _, Goal, _ ), Goals ).
+
+
+
+%------------------------------------------------------------------------------
+
+%% reinitialise_result:
+%% Clear the table of results.
+
+reinitialise_result :-
+        retractall( result( _, _ ) ).
+
+
+%% is_result_known( + index, + fact ):
+%% Does the table "result" contain a variant of this fact associated with this
+%% index?
+
+% :- mode is_result_known( +, + ).
+
+is_result_known( Index, Fact ) :-
+        result( Index, F ),
+        are_essences_variants( F, Fact ),
+        !.
+
+
+%% new_result_or_fail( + index, + fact ):
+%% If the table "result" already contains a variant of this fact associated with
+%% this index, then fail.  Otherwise record the fact in the table and succeed.
+
+% :- mode new_result_or_fail( +, + ).
+
+new_result_or_fail( Index, Fact ) :-
+        \+ is_result_known( Index, Fact ),
+        assert( result( Index, Fact ) ).
+
+
+
+%-------------------------------------------------------------------------------
+
+%% reinitialise_pioneer:
+%% Clear the table of pioneers.
+
+reinitialise_pioneer :-
+        retractall( pioneer( _, _, _ ) ).
+
+%% is_a_variant_of_a_pioneer( + goal, - index ):
+%% Succeeds if the goal is a variant of a goal that is tabled in "pioneer";
+%% returns the index of the relevant entry in table "pioneer".
+
+% :- mode is_a_variant_of_a_pioneer( +, - ).
+
+is_a_variant_of_a_pioneer( Goal, Index ) :-
+        copy_term2( Goal, Copy ),
+        pioneer( Copy, G, Index ),
+        are_essences_variants( Goal, G ),
+        !.
+
+
+%% add_pioneer( + goal, - index ):
+%% Add an entry for this goal to "pioneer", return the unique index.
+
+% :- mode add_pioneer( +, - ).
+
+add_pioneer( Goal, Index ) :-
+        copy_term2( Goal, Copy ),
+        get_unique_index( Index ),
+        assert( pioneer( Copy, Goal, Index ) ).
+
+
+%% delete_pioneer( + index ):
+%% Remove the entry in "pioneer" associated with this index.
+
+% :- mode delete_pioneer( + ).
+
+delete_pioneer( Index ) :-
+        retract( pioneer( _, _, Index )).
+
+
+
+%-------------------------------------------------------------------------------
+
+%% reinitialise_loop:
+%% Clear the table of pioneers.
+
+reinitialise_loop :-
+        retractall( loop( _, _ ) ).
+
+
+%% add_loop( + index, + list of goals ):
+%% Add an entry to "loop".
+
+% :- mode add_loop( +, + ).
+
+add_loop( _, [] ) :-                                % empty loops are not stored
+        !.
+
+add_loop( Index, Goals ) :-                         % neither are duplicates
+        loop( Index, Gs ),
+        are_variants( Goals, Gs ),
+        !.
+
+add_loop( Index, Goals ) :-
+        assert( loop( Index, Goals ) ).
+
+
+%% delete_loops( + index ):
+%% Remove all the entries in "loop" that are associated with this index.
+
+delete_loops( Index ) :-
+        retractall( loop( Index, _ ) ).
+
+
+%% get_loop( + index, - Goals ):
+%% Get an entry from table "loop" that is associated with this index;
+%% another such entry (if it exists) on backtracking etc.
+
+get_loop( Index, Gs ) :-
+        loop( Index, Gs ).
+
+
+
+%-------------------------------------------------------------------------------
+
+%% reinitialise_looping_alternative:
+%% Clear the table of pioneers.
+
+reinitialise_looping_alternative :-
+        retractall( looping_alternative( _, _ ) ).
+
+
+%% add_looping_alternative( + index, + Clause ):
+%% Add and entry to "looping_alternative".
+
+% :- mode add_looping_alternative( +, + ).
+
+add_looping_alternative( Index, Clause ) :-          % duplicates are not stored
+        looping_alternative( Index, C ),
+        are_variants( Clause, C ),
+        !.
+
+add_looping_alternative( Index, Clause ) :-
+        assert( looping_alternative( Index, Clause ) ).
+
+
+%% delete_looping_alternatives( + index ):
+%% Remove all the entries in "loop" that are associated with this index.
+
+delete_looping_alternatives( Index ) :-
+        retractall( looping_alternative( Index, _ ) ).
+
+
+%% get_looping_alternative( + index, - clause ):
+%% Get an entry from table "looping_alternative" that is associated with this
+%% index; another such entry (if it exists) on backtracking etc.
+
+get_looping_alternative( Index, Clause ) :-
+        looping_alternative( Index, Clause ).
 
 %-------------------------------------------------------------------------------

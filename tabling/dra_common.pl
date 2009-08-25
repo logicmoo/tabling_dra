@@ -565,17 +565,17 @@ default_extension( '.tlp' ).                              % invoked by top_level
 :- setval( unique_index,      0 ).
 
 initialise :-                                             % invoked by top_level
-        reinitialise_answers,
-        retractall( coinductive( _ )            ),
-        retractall( coinductive1( _ )           ),
-        retractall( tabled( _ )                 ),
-        retractall( old_first( _ )              ),
-        retractall( pioneer( _, _, _ )          ),
-        retractall( result( _, _ )              ),
-        retractall( loop( _, _ )                ),
-        retractall( looping_alternative( _, _ ) ),
-        retractall( completed( _, _ )           ),
-        retractall( tracing( _ )                ),
+        reinitialise_answer,
+        reinitialise_result,
+        reinitialise_pioneer,
+        reinitialise_loop,
+        reinitialise_looping_alternative,
+        retractall( coinductive( _ )  ),
+        retractall( coinductive1( _ ) ),
+        retractall( tabled( _ )       ),
+        retractall( old_first( _ )    ),
+        retractall( completed( _, _ ) ),
+        retractall( tracing( _ )      ),
         setval( number_of_answers, 0 ),
         setval( unique_index,      0 ),
         setval( step_counter,      0 ),
@@ -765,7 +765,7 @@ will_trace( _ ).
 print_required_answers( Var, Pattern ) :-
         var( Var ),
         !,
-        findall( Goal, answer( _, Goal, _ ), Goals ),
+        get_all_tabled_goals( Goals ),
         remove_variants( Goals, DifferentGoals ),
         sort( DifferentGoals, SortedDifferentGoals ),
         (
@@ -826,10 +826,10 @@ remove_variants_( [ H | T ], Accumulator, RL ) :-
 % :- mode query( + ).
 
 query( Goals ) :-                                         % invoked by top_level
-        retractall( pioneer( _, _, _ )          ),
-        retractall( result( _, _ )              ),
-        retractall( loop( _, _ )                ),
-        retractall( looping_alternative( _, _ ) ),
+        reinitialise_pioneer,
+        reinitialise_result,
+        reinitialise_loop,
+        reinitialise_looping_alternative,
         setval( unique_index,      0    ),
         getval( number_of_answers, NAns ),
         setval( old_table_size,    NAns ),
@@ -1395,7 +1395,7 @@ compute_fixed_point( Goal, Index, Stack, Hyp, Level ) :-
 
 compute_fixed_point_( Goal, Index, Stack, Hyp, Level, _ ) :-
         copy_term2( Goal, OriginalGoal ),
-        looping_alternative( Index, (Goal :- Body) ),      % i.e., iterate
+        get_looping_alternative( Index, (Goal :- Body) ),        % i.e., iterate
         push_tabled( OriginalGoal, Index, (Goal :- Body), Stack, NStack ),
         solve( Body, NStack, Hyp, Level ),
         new_result_or_fail( Index, Goal ),
@@ -1430,9 +1430,9 @@ suppress_pioneers_on_list( _, _ ).
 % :- mode rescind_pioneer_status( + ).
 
 rescind_pioneer_status( Index ) :-
-        retract(    pioneer( _, _, Index )          ),
-        retractall( loop( Index, _ )                ),
-        retractall( looping_alternative( Index, _ ) ).
+        delete_pioneer( Index ),
+        delete_loops( Index ),
+        delete_looping_alternatives( Index ).
 
 
 %% complete_cluster( + index of a pioneer goal, + level for tracing ):
@@ -1443,8 +1443,8 @@ rescind_pioneer_status( Index ) :-
 % :- mode complete_cluster( +, + ).
 
 complete_cluster( Index, Level ) :-
-        loop( Index, Gs ),                     % iterate over loops
-        member( G, Gs ),                       % iterate over members of a loop
+        get_loop( Index, Gs ),                  % iterate over loops
+        member( G, Gs ),                        % iterate over members of a loop
         complete_goal( G, Level ),
         fail.
 
@@ -1469,6 +1469,10 @@ extract_goals( [ triple( G, _, _ ) | Ts ], [ G | Gs ] ) :-
 
 
 %%-----  The tables: access and modification  -----
+
+%% NOTE: See file dra_table_assert.pl or dra_table_record.pl for manipulation of
+%%       the tables "answer", "result", "pioneer", "loop" and
+%%       "looping_alternative".
 
 
 %% is_completed( + goal ):
@@ -1500,31 +1504,6 @@ complete_goal( Goal, Level ) :-
 
 
 
-%% is_a_variant_of_a_pioneer( + goal, -index ):
-%% Succeeds if the goal is a variant of a goal that is tabled in "pioneer";
-%% returns the index of the relevant entry in table "pioneer".
-
-% :- mode is_a_variant_of_a_pioneer( +, - ).
-
-is_a_variant_of_a_pioneer( Goal, Index ) :-
-        copy_term2( Goal, Copy ),
-        pioneer( Copy, G, Index ),
-        are_essences_variants( Goal, G ),
-        !.
-
-
-%% add_pioneer( + goal, - index ):
-%% Add an entry for this goal to "pioneer", return the unique index.
-
-% :- mode add_pioneer( +, - ).
-
-add_pioneer( Goal, Index ) :-
-        copy_term2( Goal, Copy ),
-        get_unique_index( Index ),
-        assert( pioneer( Copy, Goal, Index ) ).
-
-
-
 %% get_unique_index( - ):
 %% Produce a new unique index.
 
@@ -1533,63 +1512,6 @@ add_pioneer( Goal, Index ) :-
 get_unique_index( Index ) :-
         getval( unique_index, Index ),
         incval( unique_index ).
-
-
-
-%% is_result_known( + index, + fact ):
-%% Does the table "result" contain a variant of this fact associated with this
-%% index?
-
-% :- mode is_result_known( +, + ).
-
-is_result_known( Index, Fact ) :-
-        result( Index, F ),
-        are_essences_variants( F, Fact ),
-        !.
-
-
-%% new_result_or_fail( + index, + fact ):
-%% If the table "result" already contains a variant of this fact associated with
-%% this index, then fail.  Otherwise record the fact in the table and succeed.
-
-% :- mode new_result_or_fail( +, + ).
-
-new_result_or_fail( Index, Fact ) :-
-        \+ is_result_known( Index, Fact ),
-        assert( result( Index, Fact ) ).
-
-
-
-%% add_loop( + index, + list of goals ):
-%% Add an entry to "loop".
-
-% :- mode add_loop( +, + ).
-
-add_loop( _, [] ) :-                                % empty loops are not stored
-        !.
-
-add_loop( Index, Goals ) :-                         % neither are duplicates
-        loop( Index, Gs ),
-        are_variants( Goals, Gs ),
-        !.
-
-add_loop( Index, Goals ) :-
-        assert( loop( Index, Goals ) ).
-
-
-
-%% add_looping_alternative( + index, + Clause ):
-%% Add and entry to "looping_alternative".
-
-% :- mode add_looping_alternative( +, + ).
-
-add_looping_alternative( Index, Clause ) :-          % duplicates are not stored
-        looping_alternative( Index, C ),
-        are_variants( Clause, C ),
-        !.
-
-add_looping_alternative( Index, Clause ) :-
-        assert( looping_alternative( Index, Clause ) ).
 
 
 
