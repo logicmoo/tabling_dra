@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February 2009)                       %%%
 %%%                                                                          %%%
-%%%  Last update: 24 April 2009.                                             %%%
+%%%  Last update: 24 August 2009.                                            %%%
 %%%                                                                          %%%
 
 :- ensure_loaded( higher_order ).
