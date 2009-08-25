@@ -5,18 +5,18 @@ This directory includes the following files:
 bad.tlp:
 bad2.tlp:
 etc.
-        Examples of wrong or suspect programs that test some of the diagnostic
-        capabilities of "dra" and/or the top level.
+        Examples of wrong or suspect programs that test some of the
+        diagnostic capabilities of "dra" and/or the top level.
 
 coind.tlp:
 coind2.tlp:
-        A pair of trivial examples that show the difference between "new style"
-        and "old style" coinduction.
+        A pair of trivial examples that show the difference between "new
+        style" and "old style" coinduction.
 
 coind_all.tlp:
 coind2_all.tlp:
-        A trivial example that tests coinduction together with findall/3, comes
-        in both styles of coinduction.
+        A trivial example that tests coinduction together with findall/3,
+        comes in both styles of coinduction.
 
 coind_new.tlp:
 coind_old.tlp:
@@ -26,15 +26,13 @@ coind_old.tlp:
 comment_example.tlp:
 
         An example that demonstrates why tabled results must be annotated
-        with the corresponding goals.
-
-small_comment_example.tlp:
-        A minimal example that demonstrates why tabled results must be
-        annotated with the corresponding goals.
+        with the corresponding goals.  (See also
+        "small_comment_example.tlp".)
 
 co_t.tlp:
         A very simple example of a predicate that is both tabled and
         coinductive.
+        NOTE: Eclipse loops on queries q2 and q3, Sicstus does not loop.
 
 conditional.tlp:
         A wholly uninteresting example, designed to test that the
@@ -90,6 +88,11 @@ simple1_old_first.tlp:
         to show that there is a difference in the order in which the
         solutions are produced.  In this example the discipline of producing
         old goals first results in a shorter computation.
+
+small_comment_example.tlp:
+        A minimal example that demonstrates why tabled results must be
+        annotated with the corresponding goals. (See also
+        "comment_example.tlp".)
 
 support.pl:
 supported.tlp:
