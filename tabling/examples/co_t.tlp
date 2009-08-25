@@ -30,7 +30,8 @@ drop( H, [ _ | T ] , T1 ) :-  drop( H, T, T1 ).
 comember( X, L ) :-  drop( X, L, L1 ),  comember( X, L1 ).
 
 
-% Queries:
+
+% Queries:  (CAUTION: Eclipse loops on q2 and q3)
 
 :- top q1/0, q3/0.
 
