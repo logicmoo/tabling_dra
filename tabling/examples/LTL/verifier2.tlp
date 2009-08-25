@@ -26,6 +26,9 @@
 %% This is a version of verifier.tlp that has been extended to produce a
 %% counterexample.
 %%
+%% NOTE: This version loops for certain queries, because the treatment of paths
+%%       is too naive. (Discovered by Brian W. DeVries.)
+%%
 %% Include with the definition of an automaton, which should specify
 %% the following predicates:
 %%      proposition/1   - succeeds only if the argument is a proposition,
