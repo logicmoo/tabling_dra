@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (March 2009)           .              %%%
 %%%                                                                          %%%
-%%%  Last update: 24 August 2009.                                            %%%
+%%%  Last update: 25 August 2009.                                            %%%
 %%%                                                                          %%%
 
 %% The tables are normally kept in asserted clauses, but for some systems this
@@ -260,5 +260,43 @@ delete_looping_alternatives( Index ) :-
 
 get_looping_alternative( Index, Clause ) :-
         looping_alternative( Index, Clause ).
+
+
+
+%-------------------------------------------------------------------------------
+
+%% reinitialise_completed:
+%% Clear the table of completed goals.
+
+reinitialise_completed :-
+        retractall( completed( _, _ ) ).
+
+
+%% is_completed( + goal ):
+%% Succeeds iff the goal is a variant of a goal that has been stored in
+%% the table "completed".
+
+% :- mode is_completed( + ).
+
+is_completed( Goal ) :-
+        copy_term2( Goal, Copy ),
+        completed( Copy, G ),
+        are_essences_variants( Goal, G ).
+
+
+%% complete_goal( + goal, + index for tracing ):
+%% Make sure the goal is marked as completed.
+
+% :- mode complete_goal( +, + ).
+
+complete_goal( Goal, _ ) :-
+        is_completed( Goal ),
+        !.
+
+complete_goal( Goal, Level ) :-
+        % \+ is_completed( Goal ),
+        copy_term2( Goal, Copy ),
+        trace_other( 'Completing', Goal, '?', Level ),
+        assert( completed( Copy, Goal ) ).
 
 %-------------------------------------------------------------------------------

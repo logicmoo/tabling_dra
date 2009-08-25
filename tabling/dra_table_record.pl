@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (March 2009)           .              %%%
 %%%                                                                          %%%
-%%%  Last update: 24 August 2009.                                            %%%
+%%%  Last update: 25 August 2009.                                            %%%
 %%%                                                                          %%%
 
 %% The tables are normally kept in asserted clauses, but for some systems this
@@ -370,6 +370,63 @@ delete_looping_alternatives( _ ).
 
 get_looping_alternative( Index, Clause ) :-
         recorded( Index, looping_alternative( Clause ) ).
+
+
+
+%-------------------------------------------------------------------------------
+
+%% Each item recorded for table "completed" is of the form
+%% "completed( Goal )".
+%% The item is recorded under the key "Goal" , i.e., effectively the key is the
+%% principal functor of the goal).  The functor of the goal is additionally
+%% recorded under the key "completed_key".
+
+
+%% reinitialise_completed:
+%% Clear the table of completed goals.
+
+reinitialise_completed :-
+        recorded( completed_key, Index, RefIndex ),
+        erase( RefIndex ),
+        recorded( Index, completed( _, _ ), RefResult ),
+        erase( RefResult ),
+        fail.
+
+reinitialise_completed.
+
+
+%% is_completed( + goal ):
+%% Succeeds iff the goal is a variant of a goal that has been stored in
+%% the table "completed".
+
+% :- mode is_completed( + ).
+
+is_completed( Goal ) :-
+        recorded( Goal, completed( G ) ),
+        are_essences_variants( Goal, G ).
+
+
+%% complete_goal( + goal, + index for tracing ):
+%% Make sure the goal is marked as completed.
+
+% :- mode complete_goal( +, + ).
+
+complete_goal( Goal, _ ) :-
+        is_completed( Goal ),
+        !.
+
+complete_goal( Goal, Level ) :-
+        % \+ is_completed( Goal ),
+        trace_other( 'Completing', Goal, '?', Level ),
+        recordz( Goal, completed( Goal ) ),
+        functor( Goal, GoalFunctor, GoalArity ),
+        (
+            recorded( completed_key, GoalFunctor / GoalArity )
+        ->
+            true
+        ;
+            recordz( completed_key, GoalFunctor / GoalArity )
+        ).
 
 %-------------------------------------------------------------------------------
 

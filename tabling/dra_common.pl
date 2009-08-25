@@ -570,11 +570,11 @@ initialise :-                                             % invoked by top_level
         reinitialise_pioneer,
         reinitialise_loop,
         reinitialise_looping_alternative,
+        reinitialise_completed,
         retractall( coinductive( _ )  ),
         retractall( coinductive1( _ ) ),
         retractall( tabled( _ )       ),
         retractall( old_first( _ )    ),
-        retractall( completed( _, _ ) ),
         retractall( tracing( _ )      ),
         setval( number_of_answers, 0 ),
         setval( unique_index,      0 ),
@@ -1471,37 +1471,8 @@ extract_goals( [ triple( G, _, _ ) | Ts ], [ G | Gs ] ) :-
 %%-----  The tables: access and modification  -----
 
 %% NOTE: See file dra_table_assert.pl or dra_table_record.pl for manipulation of
-%%       the tables "answer", "result", "pioneer", "loop" and
-%%       "looping_alternative".
-
-
-%% is_completed( + goal ):
-%% Succeeds iff the goal is a variant of a goal that has been stored in
-%% the table "completed".
-
-% :- mode is_completed( + ).
-
-is_completed( Goal ) :-
-        copy_term2( Goal, Copy ),
-        completed( Copy, G ),
-        are_essences_variants( Goal, G ).
-
-
-%% complete_goal( + goal, + index for tracing ):
-%% Make sure the goal is marked as completed.
-
-% :- mode complete_goal( +, + ).
-
-complete_goal( Goal, _ ) :-
-        is_completed( Goal ),
-        !.
-
-complete_goal( Goal, Level ) :-
-        % \+ is_completed( Goal ),
-        copy_term2( Goal, Copy ),
-        trace_other( 'Completing', Goal, '?', Level ),
-        assert( completed( Copy, Goal ) ).
-
+%%       the tables "answer", "result", "pioneer", "loop",
+%%       "looping_alternative" and "completed".
 
 
 %% get_unique_index( - ):
