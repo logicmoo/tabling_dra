@@ -11,26 +11,30 @@ form.%
 %  Please see the ``README'' files in the distribution tree: they will help you
 %  find your way around.}
 
-The interpreter is known to run on Eclipse 6.0 and Sicstus 4.0.  If you plan
-to run programs that take advantage of coinductive programming, you might
-prefer to use Sicstus, which has much better support for cyclic terms.
+The interpreter is known to run on \Eclipse{}~6.0, \Sicstus{}~4.0 and
+SWI~Prolog~5~7.  If you plan to run programs that take advantage of
+coinductive programming, you might prefer to avoid \Eclipse{}, which has
+somewhat inadequate support for cyclic terms.
 
 For both these systems, the simplest way to proceed is to:
 \begin{Enumerate}
 \item
   start your logic programming system;
 \item
-  type in the following directive:\\
+  If you are using \Eclipse{} or \Sicstus{}, type in the following directive:\\
   \ind\prog{:-~[~'\patt{Path}/tabling/dra'~].}\\
   where \about{Path} is the path to the root of the distribution
   tree.\footnote{
     This will just load the interpreter, but you will still be interacting
     with the host logic programming system.  \Secref{sec:loading-prog}
     describes how to start the interpreter.}
+  If you are using SWI Prolog, the directive is:\\
+  \ind\prog{:-~[~'\patt{Path}/tabling/drap'~].}
 \end{Enumerate}
 
-The interpreter is encapsulated in its own module, called \about{dra}.  So if
-you are running Eclipse, you will probably find it more convenient to import
+The interpreter is encapsulated in its own module, called \about{dra} (or
+\about{drap} in the case of SWI Prolog).  So if
+you are running \Eclipse{}, you will probably find it more convenient to import
 the module by writing\\
 \ind\prog{:- import dra.}\label{import-dra}\progidxonly{import}\\
 immediately after loading the interpreter.
@@ -51,7 +55,7 @@ may want to load and run a program in the interpreter. This is done by
 writing\\
 \ind\prog{prog(~\patt{filename}~).}\progidxonly{prog}%
 \footnote{
-  If you are running in Eclipse, and have not imported the module \about{dra}
+  If you are running in \Eclipse{}, and have not imported the module \about{dra}
   (as explained on \Pageref{import-dra}), you must write \prog{dra:prog}
   instead of \prog{prog}.
 }\\
@@ -97,8 +101,8 @@ In the interactive mode the interpreter will read your input and act on it.
 Input consists of a term, terminated by a fullstop (i.e., the period
 character) and immediately followed by a newline (i.e., you must press the
 \prog{ENTER} key).\footnote{
-  You cannot input more than one term per line. On Sicstus all characters
-  between the fullstop and the newline will be ignored.  On Eclipse, if the
+  You cannot input more than one term per line. On \Sicstus{} all characters
+  between the fullstop and the newline will be ignored.  On \Eclipse{}, if the
   answer to your query is ``\prog{Yes~~(more?)~}'', the remainder of the
   previous line will be treated as your input and the interpreter will seem
   to cease responding.  To get out of this state type in a fullstop followed
@@ -138,7 +142,7 @@ may show them in error messages if something goes horribly wrong.
 
 To just enter interactive mode (without loading a new program)
 invoke\footnote{
-  Again, \prog{dra:top} in Eclipse, if you have not imported\about{dra}.}\\
+  Again, \prog{dra:top} in \Eclipse{}, if you have not imported\about{dra}.}\\
 \ind\prog{top.}\progidxonly{top}
 
 The interpreter does not allow you to input clauses directly from your
@@ -202,7 +206,7 @@ programs).
 Note also that the foregoing does not apply to invocations of built-in
 predicates in the interpreted program.  It is up to the user to apply the
 built-in that is appropriate for the host logic programming system.  For
-example, in the case of Sicstus, use
+example, in the case of \Sicstus{}, use
 \prog{write\_term(~T,~[~max\_depth(~10~)~]~)}, rather than just \prog{write(
   T )}, if you expect the instantiation of \prog{T} to be cyclic.
 
