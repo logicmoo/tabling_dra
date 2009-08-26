@@ -120,7 +120,7 @@ current_predicate_in_module( ModuleName, PredSpec ) :-
 %% Like assert/1, but into this module.
 
 assert_in_module( Module, Clause ) :-
-        assert( Clause ) @ Module .
+        assertz_in_module( Module, Clause ).
 
 
 %%------------------------------------------------------------------------------
