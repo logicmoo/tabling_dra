@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 12 June 2009.                                              %%%
+%%%  Last update: 26 August 2009.                                            %%%
 %%%                                                                          %%%
 
 
@@ -183,9 +183,12 @@ are_variants( T1, T2 ) :-  variant( T1, T2 ).                 % use the built-in
 
 % :- mode mk_pattern( +, +, - ).
 
+% mk_pattern( P, K, Pattern ) :-
+%        length( Args, K ),                           % Args = K fresh variables
+%        Pattern =.. [ P | Args ].
+
 mk_pattern( P, K, Pattern ) :-
-        length( Args, K ),                            % Args = K fresh variables
-        Pattern =.. [ P | Args ].
+        functor( Pattern, P, K ).
 
 
 %%------------------------------------------------------------------------------
