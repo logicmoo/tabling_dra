@@ -25,11 +25,12 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February, August 2009)               %%%
 %%%                                                                          %%%
-%%%  Last update: 25 August 2009.                                            %%%
+%%%  Last update: 26 August 2009.                                            %%%
 %%%                                                                          %%%
 
 :- ensure_loaded( higher_order ).
 :- ensure_loaded( library( lists ) ). % An SWI library, for reverse/2.
+:- ensure_loaded( utilities ).
 
 
 %%------------------------------------------------------------------------------
@@ -193,6 +194,9 @@ translate_vardict_entry( N = V, [ N | V ] ).
 
 erase_module( Module ) :-
         current_predicate( Module : PredSpec ),
+        PredSpec = PredName / PredArity,
+        mk_pattern( PredName, PredArity, PredPattern ),
+        \+ predicate_property( Module : PredPattern, built_in ),
         abolish( Module : PredSpec ),
         fail.
 
