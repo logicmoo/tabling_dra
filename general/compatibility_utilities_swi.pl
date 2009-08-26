@@ -70,6 +70,18 @@ name_chars( Atomic, NameCharCodes ) :-
 %%------------------------------------------------------------------------------
 %% clause_in_module( + module name, +- clause head, - clause body ):
 %% Like clause/2, but from the named module.
+%%
+%% NOTE: For the module 'interpreted' we provide special treatment.  Instead of
+%%       asserting clauses, we record them in the database, to avoid the
+%%       overhead of decompilation.
+%%       "Head :- Body" is recorded as "interpreted_clause( Head, Body )"
+%%       under the key "Head" (i.e., effectively under the name and arity of the
+%%       predicate). The effective key is also recorded, under the key
+%%       "interpreted_clause_key".
+
+clause_in_module( interpreted, Head, Body ) :-
+        !,
+        recorded( Head, interpreted_clause( Head, Body ) ).
 
 clause_in_module( ModuleName, Head, Body ) :-
         clause( ModuleName : Head, Body ).
@@ -78,6 +90,12 @@ clause_in_module( ModuleName, Head, Body ) :-
 %%------------------------------------------------------------------------------
 %% current_predicate_in_module( + module name, +- predicate specification ):
 %% Like current_predicate/2, but from the named module.
+%%
+%% NOTE: See the note to clause_in_module/3 above.
+
+current_predicate_in_module( interpreted, PredSpec ) :-
+        !,
+        recorded( interpreted_clause_key, PredSpec ).
 
 current_predicate_in_module( ModuleName, PredSpec ) :-
         current_predicate( ModuleName : PredSpec ).
@@ -86,14 +104,38 @@ current_predicate_in_module( ModuleName, PredSpec ) :-
 %%------------------------------------------------------------------------------
 %% assert_in_module( + module name, + clause ):
 %% Like assert/1, but into this module.
+%%
+%% NOTE: See the note to clause_in_module/3 above.
 
 assert_in_module( Module, Clause ) :-
-        assert( Module : Clause ).
+        assertz_in_module( Module, Clause ).
 
 
 %%------------------------------------------------------------------------------
 %% assertz_in_module( + module name, + clause ):
 %% Like assertz/1, but into this module.
+%%
+%% NOTE: See the note to clause_in_module/3 above.
+
+assertz_in_module( interpreted, Clause ) :-
+        !,
+        (
+            Clause = (Head :- Body)
+        ->
+            true
+        ;
+            Head = Clause,
+            Body = true
+        ),
+        recordz( Head, interpreted_clause( Head, Body ) ),
+        functor( Head, Name, Arity ),
+        (
+            recorded( interpreted_clause_key, Name / Arity )
+        ->
+            true
+        ;
+            recordz( interpreted_clause_key, Name / Arity )
+        ).
 
 assertz_in_module( Module, Clause ) :-
         assertz( Module : Clause ).
@@ -102,6 +144,16 @@ assertz_in_module( Module, Clause ) :-
 %%------------------------------------------------------------------------------
 %% retractall_in_module( + module name, + head pattern ):
 %% Like retractall/1, but into this module.
+%%
+%% NOTE: See the note to clause_in_module/3 above.
+
+retractall_in_module( interpreted, Head ) :-
+        recorded( Head, interpreted_clause( Head, _ ), RefClause ),
+        erase( RefClause ),
+        fail.
+
+retractall_in_module( interpreted, _ ) :-
+        !.
 
 retractall_in_module( Module, Head ) :-
         retractall( Module : Head ).
@@ -191,6 +243,19 @@ translate_vardict_entry( N = V, [ N | V ] ).
 %%------------------------------------------------------------------------------
 %% erase_module( + module name ):
 %% Simulates Eclipse's erase_module/1.
+%%
+%% NOTE: See the note to clause_in_module/3 above.
+
+erase_module( interpreted ) :-
+        recorded( interpreted_clause_key,  Name / Arity, RefKey ),
+        erase( RefKey ),
+        functor( Key, Name, Arity ),
+        recorded( Key, interpreted_clause( _, _ ), RefClause ),
+        erase( RefClause ),
+        fail.
+
+erase_module( interpreted ) :-
+        !.
 
 erase_module( Module ) :-
         current_predicate( Module : PredSpec ),
