@@ -11,10 +11,8 @@
                  ":- coinductive1." and ":- coinductive.", respectively.
                - Corrected a major error in the choice of data structures.
 
-April-June 2009:
+26 August 2009 (version 0.93 (beta)):
                - Various minor corrections, mostly cosmetic.
-
-12 June 2009:
                - Making things acceptable to SWI Prolog:
                   1) Made the convention for partial application (as an
                      argument to apply/2) compatible with that of SWI Prolog,
@@ -22,5 +20,12 @@ April-June 2009:
                   2) Commented out mode declarations.
                   3) Renamed set_to_list/2 to list_from_set/2.
                   4) Some operators had to be put between parentheses.
+                - Refactoring DRA files in order to facilitate porting to
+                  SWI Prolog.
+                - A version of DRA for SWI Prolog ("drap.pl").  The manual
+                  was updated accordingly.
+                - Addition of three examples by Brian W. DeVries. The
+                  examples bring to light shortcomings of the current simple
+                  LTL verifier.
 
 -------------------------------------------------------------------------------
