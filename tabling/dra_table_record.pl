@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (March 2009)           .              %%%
 %%%                                                                          %%%
-%%%  Last update: 25 August 2009.                                            %%%
+%%%  Last update: 26 August 2009.                                            %%%
 %%%                                                                          %%%
 
 %% The tables are normally kept in asserted clauses, but for some systems this
@@ -49,9 +49,9 @@
 %% Clear all known answers (and keys).
 
 reinitialise_answer :-
-        recorded( answer_key, KeyFunctor / KeyArity, RefKey ),
+        recorded( answer_key, Name / Arity, RefKey ),
         erase( RefKey ),
-        functor( Key, KeyFunctor, KeyArity ),
+        functor( Key, Name, Arity ),
         recorded( Key, answer( _, _ ), RefAnswer ),
         erase( RefAnswer ),
         fail.
@@ -87,13 +87,13 @@ memo( Goal, Fact, Level ) :-
         % \+ is_answer_known( Goal, Fact ),
         optional_trace( 'Storing answer: ', Goal, Fact, Level ),
         recordz( Goal, answer( Goal, Fact ) ),
-        functor( Goal, GoalFunctor, GoalArity ),
+        functor( Goal, Name, Arity ),
         (
-            recorded( answer_key, GoalFunctor / GoalArity )
+            recorded( answer_key, Name / Arity )
         ->
             true
         ;
-            recordz( answer_key, GoalFunctor / GoalArity )
+            recordz( answer_key, Name / Arity )
         ),
         incval( number_of_answers ).
 
@@ -119,8 +119,8 @@ get_answer( Goal ) :-
 
 get_all_tabled_goals( Goals ) :-
         findall( Goal,
-                 (recorded( answer_key, KeyFunctor / KeyArity ),
-                  functor( Key, KeyFunctor, KeyArity ),
+                 (recorded( answer_key, Name / Arity ),
+                  functor( Key, Name, Arity ),
                   recorded( Key, answer( Goal, _ ) )
                  ),
                  Goals
@@ -219,13 +219,13 @@ is_a_variant_of_a_pioneer( Goal, Index ) :-
 add_pioneer( Goal, Index ) :-
         get_unique_index( Index ),
         recordz( Goal, pioneer( Goal, Index ) ),
-        functor( Goal, GoalFunctor, GoalArity ),
+        functor( Goal, Name, Arity ),
         (
-            recorded( pioneer_key, GoalFunctor / GoalArity )
+            recorded( pioneer_key, Name / Arity )
         ->
             true
         ;
-            recordz( pioneer_key, GoalFunctor / GoalArity )
+            recordz( pioneer_key, Name / Arity )
         ).
 
 
@@ -235,8 +235,8 @@ add_pioneer( Goal, Index ) :-
 % :- mode delete_pioneer( + ).
 
 delete_pioneer( Index ) :-
-        recorded( pioneer_key, KeyFunctor / KeyArity ),
-        functor( Key, KeyFunctor, KeyArity ),
+        recorded( pioneer_key, Name / Arity ),
+        functor( Key, Name, Arity ),
         recorded( Key, pioneer( _, Index ), RefPioneer ),
         erase( RefPioneer ).
 
@@ -419,13 +419,13 @@ complete_goal( Goal, Level ) :-
         % \+ is_completed( Goal ),
         trace_other( 'Completing', Goal, '?', Level ),
         recordz( Goal, completed( Goal ) ),
-        functor( Goal, GoalFunctor, GoalArity ),
+        functor( Goal, Name, Arity ),
         (
-            recorded( completed_key, GoalFunctor / GoalArity )
+            recorded( completed_key, Name / Arity )
         ->
             true
         ;
-            recordz( completed_key, GoalFunctor / GoalArity )
+            recordz( completed_key, Name / Arity )
         ).
 
 %-------------------------------------------------------------------------------
