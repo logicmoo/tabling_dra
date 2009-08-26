@@ -386,9 +386,10 @@ get_looping_alternative( Index, Clause ) :-
 %% Clear the table of completed goals.
 
 reinitialise_completed :-
-        recorded( completed_key, Index, RefIndex ),
+        recorded( completed_key,  Name / Arity , RefIndex ),
         erase( RefIndex ),
-        recorded( Index, completed( _, _ ), RefResult ),
+        functor( Key, Name, Arity ),
+        recorded( Key, completed( _ ), RefResult ),
         erase( RefResult ),
         fail.
 
@@ -429,4 +430,3 @@ complete_goal( Goal, Level ) :-
         ).
 
 %-------------------------------------------------------------------------------
-
