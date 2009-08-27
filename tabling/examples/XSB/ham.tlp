@@ -40,7 +40,7 @@ demo.
 
 cycle_ham( [X|Y], [X, T|L] ):-
         chain_ham( [X|Y], [], [T|L] ),
-        edge( T, X ).		%  the last connect_ion
+        edge( T, X ).		%  the last connection
 
 chain_ham( [X|Y], K, L ):-
         delete( Z, Y, T ),
