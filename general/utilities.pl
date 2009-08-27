@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 26 August 2009.                                            %%%
+%%%  Last update: 27 August 2009.                                            %%%
 %%%                                                                          %%%
 
 
@@ -169,7 +169,7 @@ is_an_instance( T1, T2 ) :-  instance( T1, T2 ).              % use the built-in
 %         is_an_instance( T1, T2 ),
 %         is_an_instance( T2, T1 ).
 
-are_variants( T1, T2 ) :-  variant( T1, T2 ).                 % use the built-in
+are_variants( T1, T2 ) :-  variant2( T1, T2 ).                % use the built-in
 
 
 
@@ -191,6 +191,7 @@ mk_pattern( P, K, Pattern ) :-
         functor( Pattern, P, K ).
 
 
+
 %%------------------------------------------------------------------------------
 %% most_general_instance( + a term,
 %%                        - a most general instance with the same main functor
@@ -200,8 +201,8 @@ mk_pattern( P, K, Pattern ) :-
 % :- mode most_general_instance( +, - ).
 
 most_general_instance( Term, Pattern ) :-
-        functor( Term, P, K ),
-        mk_pattern( P, K, Pattern ).
+        functor( Term, Name, Arity ),
+        functor( Pattern, Name, Arity ).
 
 
 
