@@ -186,10 +186,12 @@ new_result_or_fail( Index, Fact ) :-
 %-------------------------------------------------------------------------------
 
 %% Each item recorded for table "pioneer" is of the form
-%% "pioneer( Goal, Index )".
+%% "pioneer( Goal, Index )" (where "Index" is unique).
 %% The item is recorded under the key "Goal" , i.e., effectively the key is the
 %% principal functor of the goal.  A most general instance of the goal is
 %% additionally  recorded under the key "pioneer_key".
+%% Moreover, to speed up delete_pioneer/1, the key is recorded also as
+%% "pioneer_goal( Key )" under the key "Index".
 
 
 %% reinitialise_pioneer:
@@ -226,7 +228,8 @@ add_pioneer( Goal, Index ) :-
         get_unique_index( Index ),
         recordz( Goal, pioneer( Goal, Index ) ),
         most_general_instance( Goal, Key ),
-        ensure_recorded( pioneer_key, Key ).
+        ensure_recorded( pioneer_key, Key ),
+        recordz( Index, pioneer_goal( Key ) ).
 
 
 %% delete_pioneer( + index ):
@@ -235,7 +238,8 @@ add_pioneer( Goal, Index ) :-
 % :- mode delete_pioneer( + ).
 
 delete_pioneer( Index ) :-
-        recorded( pioneer_key, Key ),
+        recorded( Index, pioneer_goal( Key ), RefIndex ),
+        erase( RefIndex ),
         recorded( Key, pioneer( _, Index ), RefPioneer ),
         erase( RefPioneer ).
 
