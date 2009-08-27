@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (March 2009)           .              %%%
 %%%                                                                          %%%
-%%%  Last update: 26 August 2009.                                            %%%
+%%%  Last update: 27 August 2009.                                            %%%
 %%%                                                                          %%%
 
 %% The tables are normally kept in asserted clauses, but for some systems this
@@ -40,18 +40,37 @@
 
 %% >>>>>>>>>  This version for systems that use the recorded database. <<<<<<<<<
 
+
+%------------------------------------------------------------------------------
+
+%% ensure_recorded( + key, + item ):
+%% Make sure that the item is recorded in the database.
+
+ensure_recorded( Key, Item ) :-
+        (
+            recorded( Key, Item )
+        ->
+            true
+        ;
+            recordz( Key, Item )
+        ).
+
+
+
+
+%------------------------------------------------------------------------------
+
 %% Each item recorded for table "answer" is of the form "answer( Goal, Fact )".
 %% The item is recorded under the key "Goal" , i.e., effectively the key is the
-%% principal functor of the goal).  The functor of the goal is additionally
-%% recorded under the key "answer_key".
+%% principal functor of the goal.  A most general instance of the goal is
+%% additionally recorded under the key "answer_key".
 
 
 %% Clear all known answers (and keys).
 
 reinitialise_answer :-
-        recorded( answer_key, Name / Arity, RefKey ),
+        recorded( answer_key, Key, RefKey ),
         erase( RefKey ),
-        functor( Key, Name, Arity ),
         recorded( Key, answer( _, _ ), RefAnswer ),
         erase( RefAnswer ),
         fail.
@@ -87,14 +106,8 @@ memo( Goal, Fact, Level ) :-
         % \+ is_answer_known( Goal, Fact ),
         optional_trace( 'Storing answer: ', Goal, Fact, Level ),
         recordz( Goal, answer( Goal, Fact ) ),
-        functor( Goal, Name, Arity ),
-        (
-            recorded( answer_key, Name / Arity )
-        ->
-            true
-        ;
-            recordz( answer_key, Name / Arity )
-        ),
+        most_general_instance( Goal, Key ),
+        ensure_recorded( answer_key, Key ),
         incval( number_of_answers ).
 
 
@@ -119,8 +132,7 @@ get_answer( Goal ) :-
 
 get_all_tabled_goals( Goals ) :-
         findall( Goal,
-                 (recorded( answer_key, Name / Arity ),
-                  functor( Key, Name, Arity ),
+                 (recorded( answer_key, Key ),
                   recorded( Key, answer( Goal, _ ) )
                  ),
                  Goals
@@ -167,32 +179,26 @@ is_result_known( Index, Fact ) :-
 new_result_or_fail( Index, Fact ) :-
         \+ is_result_known( Index, Fact ),
         recordz( Index, result( Fact ) ),
-        (
-            recorded( result_key, Index )
-        ->
-            true
-        ;
-            recordz( result_key, Index )
-        ).
+        ensure_recorded( result_key, Index ).
 
 
 
 %-------------------------------------------------------------------------------
 
-%% Each item recorded for table "answer" is of the form
+%% Each item recorded for table "pioneer" is of the form
 %% "pioneer( Goal, Index )".
 %% The item is recorded under the key "Goal" , i.e., effectively the key is the
-%% principal functor of the goal).  The functor of the goal is additionally
-%% recorded under the key "pioneer_key".
+%% principal functor of the goal.  A most general instance of the goal is
+%% additionally  recorded under the key "pioneer_key".
 
 
 %% reinitialise_pioneer:
 %% Clear the table of pioneers.
 
 reinitialise_pioneer :-
-        recorded( pioneer_key, Index, RefIndex ),
+        recorded( pioneer_key, Key, RefIndex ),
         erase( RefIndex ),
-        recorded( Index, pioneer( _, _ ), RefResult ),
+        recorded( Key, pioneer( _, _ ), RefResult ),
         erase( RefResult ),
         fail.
 
@@ -219,14 +225,8 @@ is_a_variant_of_a_pioneer( Goal, Index ) :-
 add_pioneer( Goal, Index ) :-
         get_unique_index( Index ),
         recordz( Goal, pioneer( Goal, Index ) ),
-        functor( Goal, Name, Arity ),
-        (
-            recorded( pioneer_key, Name / Arity )
-        ->
-            true
-        ;
-            recordz( pioneer_key, Name / Arity )
-        ).
+        most_general_instance( Goal, Key ),
+        ensure_recorded( pioneer_key, Key ).
 
 
 %% delete_pioneer( + index ):
@@ -235,8 +235,7 @@ add_pioneer( Goal, Index ) :-
 % :- mode delete_pioneer( + ).
 
 delete_pioneer( Index ) :-
-        recorded( pioneer_key, Name / Arity ),
-        functor( Key, Name, Arity ),
+        recorded( pioneer_key, Key ),
         recorded( Key, pioneer( _, Index ), RefPioneer ),
         erase( RefPioneer ).
 
@@ -256,11 +255,21 @@ delete_pioneer( Index ) :-
 reinitialise_loop :-
         recorded( loop_key, Index, RefIndex ),
         erase( RefIndex ),
-        recorded( Index, loop( _ ), RefResult ),
-        erase( RefResult ),
+        delete_loops( Index ),
         fail.
 
 reinitialise_loop.
+
+
+%% delete_loops( + index ):
+%% Remove all the entries in "loop" that are associated with this index.
+
+delete_loops( Index ) :-
+        recorded( Index, loop( _ ), RefLoop ),
+        erase( RefLoop ),
+        fail.
+
+delete_loops( _ ).
 
 
 %% add_loop( + index, + list of goals ):
@@ -278,24 +287,7 @@ add_loop( Index, Goals ) :-                         % neither are duplicates
 
 add_loop( Index, Goals ) :-
         recordz( Index, loop( Goals ) ),
-        (
-            recorded( loop_key, Index )
-        ->
-            true
-        ;
-            recordz( loop_key, Index )
-        ).
-
-
-%% delete_loops( + index ):
-%% Remove all the entries in "loop" that are associated with this index.
-
-delete_loops( Index ) :-
-        recorded( Index, loop( _ ), RefLoop ),
-        erase( RefLoop ),
-        fail.
-
-delete_loops( _ ).
+        ensure_recorded( loop_key, Index ).
 
 
 %% get_loop( + index, - Goals ):
@@ -304,6 +296,7 @@ delete_loops( _ ).
 
 get_loop( Index, Gs ) :-
         recorded( Index, loop( Gs ) ).
+
 
 
 %-------------------------------------------------------------------------------
@@ -318,18 +311,24 @@ get_loop( Index, Gs ) :-
 %% reinitialise_looping_alternative:
 %% Clear the table of pioneers.
 
-
-%% reinitialise_loop:
-%% Clear the table of pioneers.
-
 reinitialise_looping_alternative :-
         recorded( looping_alternative_key, Index, RefIndex ),
         erase( RefIndex ),
-        recorded( Index, looping_alternative( _ ), RefResult ),
-        erase( RefResult ),
+        delete_looping_alternatives( Index ),
         fail.
 
 reinitialise_looping_alternative.
+
+
+%% delete_looping_alternatives( + index ):
+%% Remove all the entries in "loop" that are associated with this index.
+
+delete_looping_alternatives( Index ) :-
+        recorded( Index, looping_alternative( _ ), RefLoop ),
+        erase( RefLoop ),
+        fail.
+
+delete_looping_alternatives( _ ).
 
 
 %% add_looping_alternative( + index, + Clause ):
@@ -344,24 +343,7 @@ add_looping_alternative( Index, Clause ) :-          % duplicates are not stored
 
 add_looping_alternative( Index, Clause ) :-
         recordz( Index, looping_alternative( Clause ) ),
-        (
-            recorded( looping_alternative_key, Index )
-        ->
-            true
-        ;
-            recordz( looping_alternative_key, Index )
-        ).
-
-
-%% delete_looping_alternatives( + index ):
-%% Remove all the entries in "loop" that are associated with this index.
-
-delete_looping_alternatives( Index ) :-
-        recorded( Index, looping_alternative( _ ), RefLoop ),
-        erase( RefLoop ),
-        fail.
-
-delete_looping_alternatives( _ ).
+        ensure_recorded( looping_alternative_key, Index ).
 
 
 %% get_looping_alternative( + index, - clause ):
@@ -378,17 +360,16 @@ get_looping_alternative( Index, Clause ) :-
 %% Each item recorded for table "completed" is of the form
 %% "completed( Goal )".
 %% The item is recorded under the key "Goal" , i.e., effectively the key is the
-%% principal functor of the goal).  The functor of the goal is additionally
-%% recorded under the key "completed_key".
+%% principal functor of the goal.  A most general instance of the goal is
+%% additionally recorded under the key "completed_key".
 
 
 %% reinitialise_completed:
 %% Clear the table of completed goals.
 
 reinitialise_completed :-
-        recorded( completed_key,  Name / Arity , RefIndex ),
+        recorded( completed_key, Key , RefIndex ),
         erase( RefIndex ),
-        functor( Key, Name, Arity ),
         recorded( Key, completed( _ ), RefResult ),
         erase( RefResult ),
         fail.
@@ -420,13 +401,7 @@ complete_goal( Goal, Level ) :-
         % \+ is_completed( Goal ),
         trace_other( 'Completing', Goal, '?', Level ),
         recordz( Goal, completed( Goal ) ),
-        functor( Goal, Name, Arity ),
-        (
-            recorded( completed_key, Name / Arity )
-        ->
-            true
-        ;
-            recordz( completed_key, Name / Arity )
-        ).
+        most_general_instance( Goal, Key ),
+        ensure_recorded( completed_key, Key ).
 
 %-------------------------------------------------------------------------------
