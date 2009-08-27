@@ -47,6 +47,14 @@ std_warning_stream( warning_output ).
 
 
 %%------------------------------------------------------------------------------
+%% variant2( + term, + term ):
+%% Check whether the two terms are variants of each other.
+%% Defined here, because SWI Prolog's version of the built-in is faulty.
+
+variant2( A, B ) :-  variant( A, B ).
+
+
+%%------------------------------------------------------------------------------
 %% getchar( + input stream, - character in the form of an atom ):
 %% This is introduced because the built-in get_char/2 returns strings on
 %% Eclipse and atoms on Sicstus.
