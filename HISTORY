@@ -6,9 +6,9 @@
 
 11 Apr 2009:   "New style" coinduction.
 
-16 Apr 2009:   - "New style" coinduction should not be the default, so instead
-                 of ":- coinductive." and ":- coinductive2." we now have
-                 ":- coinductive1." and ":- coinductive.", respectively.
+16 Apr 2009:   - "New style" coinduction should not be the default, so
+                 instead of ":- coinductive." and ":- coinductive2." we now
+                 have ":- coinductive1." and ":- coinductive.", respectively.
                - Corrected a major error in the choice of data structures.
 
 26 August 2009 (version 0.93 (beta)):
@@ -24,6 +24,10 @@
                   SWI Prolog.
                 - A version of DRA for SWI Prolog ("drap.pl").  The manual
                   was updated accordingly.
+                - The process of porting to SWI Prolog uncovered an error in
+                  DRA that did not manifest itself before only because both
+                  Sicstus and Eclipse provide logical update semantics for
+                  assert/1. The error is now fixed.
                 - Addition of three examples by Brian W. DeVries. The
                   examples bring to light shortcomings of the current simple
                   LTL verifier.

@@ -1395,8 +1395,11 @@ compute_fixed_point( Goal, Index, Stack, Hyp, Level ) :-
 
 compute_fixed_point_( Goal, Index, Stack, Hyp, Level, _ ) :-
         copy_term2( Goal, OriginalGoal ),
-        get_looping_alternative( Index, (Goal :- Body) ),        % i.e., iterate
-        push_tabled( OriginalGoal, Index, (Goal :- Body), Stack, NStack ),
+        get_looping_alternative( Index, (G :- Body) ),        % i.e., iterate
+        \+ \+ G = Goal,
+        copy_term2( (G :- Body), ClauseCopy ),
+        G = Goal,
+        push_tabled( OriginalGoal, Index, ClauseCopy, Stack, NStack ),
         solve( Body, NStack, Hyp, Level ),
         new_result_or_fail( Index, Goal ),
         memo( OriginalGoal, Goal, Level ).
