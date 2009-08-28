@@ -51,9 +51,9 @@ check( Goal ) :-  \+ \+ Goal .
 
 %%------------------------------------------------------------------------------
 %% mk_ground( +- term ) :
-%%    Instantiates all the unbound variables in the term as constants of
-%%    the form ' V0', ' V1'. ' V2' etc.
-%%    (Note: This is mainly for "safety". If the strange names of the constants
+%%    Instantiates all the unbound variables in the term as terms of
+%%    the form ' V'( 0 ), ' V'( 0 ). ' V'( 0 ) etc.
+%%    (Note: This is mainly for "safety". If the strange names of the functors
 %%           are not needed, consider using:
 %%              mk_ground( T ) :- numbervars( T, 0, _ ).
 %%           on Prolog systems that support numbervars/3.
@@ -69,11 +69,8 @@ mk_ground( T ) :-  mk_ground_aux( T, 0, _ ).
 mk_ground_aux( V, N, N1 ) :-
         var( V ),
         !,
-        name_chars( N, CharsOfN ),
-        N1 is N + 1,
-        name_chars( ' V', CharsOfV ),
-        append( CharsOfV, CharsOfN, CharsOfVN ),
-        name_chars( V, CharsOfVN ).
+        V = ' V'( N ),
+        N1 is N + 1.
 
 mk_ground_aux( T, N, N ) :-
         atomic( T ),
@@ -97,10 +94,13 @@ mk_ground_auxs( [ T | Ts ], N, N2 ) :-
 %% is_ground_var( + term ):
 %% Is this term a variable that was ground by mk_ground/1?
 
-is_ground_var( T ) :-
-        atom( T ),
-        atom_string( T, S ),
-        substring( S, " V", 1 ).
+is_ground_var( Var ) :-
+        var( Var ),
+        !,
+        fail.
+
+is_ground_var( ' V'( N ) ) :-
+        integer( N ).
 
 
 %%------------------------------------------------------------------------------
@@ -153,10 +153,8 @@ gtv_( T, S, NS ) :-
 %%    Succeeds iff arg1 is an instance of arg2, but does not instantiate any
 %%    variables.
 
-% is_an_instance( T1, T2 ) :-
-%         check( (mk_ground( T1 ) , T1 = T2) ).
-
-is_an_instance( T1, T2 ) :-  instance( T1, T2 ).              % use the built-in
+is_an_instance( T1, T2 ) :-
+        check( (mk_ground( T1 ) , T1 = T2) ).
 
 
 %%------------------------------------------------------------------------------
@@ -164,12 +162,10 @@ is_an_instance( T1, T2 ) :-  instance( T1, T2 ).              % use the built-in
 %%    Succeeds only if both arguments are variants of each other.
 %%    Does not instantiate any variables.
 
-% are_variants( T1, T2 ) :-
-%         check( T1 = T2 ),              % to weed out obvious "misfits" cheaply
-%         is_an_instance( T1, T2 ),
-%         is_an_instance( T2, T1 ).
-
-are_variants( T1, T2 ) :-  variant( T1, T2 ).                 % use the built-in
+are_variants( T1, T2 ) :-
+        check( T1 = T2 ),                % to weed out obvious "misfits" cheaply
+        is_an_instance( T1, T2 ),
+        is_an_instance( T2, T1 ).
 
 
 
