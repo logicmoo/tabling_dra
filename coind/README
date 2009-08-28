@@ -22,7 +22,16 @@ colp_builtins.pl:
         special support from the interpreter.  In particular, addition of the
         cut would be non-trivial (and probably ill-advised).
 
+translate_colp.ecl:
+        Load this to run translate_colp_common.pl with Eclipse.
+
 translate_colp.pl:
+        Load this to run translate_colp_common.pl with Sicstus.
+
+translate_colpp.pl:
+        Load this to run translate_colp_common.pl with SWI Prolog.
+
+translate_colp_common.pl:
         A translator that converts "co-logic programming" programs into
         straightforward logic programs.  The head comment explains how to use
         it.
