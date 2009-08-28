@@ -11,7 +11,12 @@ holds(s0, p).
 
 trans(s0, s0).
 
+
 :- top q/0, q2/0.
+
+q :- check(s0, ~ (x g p)).
+q2 :- check(s0, ~ (g p)).
+
 
 % A simple example to show why the X operator should *not* be tabled. In the
 % case of the above transition system, X G p and G p should both hold, because
@@ -44,6 +49,3 @@ trans(s0, s0).
 % necessary if we define the expansions for G and R in terms of the regular
 % operators, to prevent the tabling  semantics from squishing the coinductive
 % semantics.
-
-q :- check(s0, ~ (x g p)).
-q2 :- check(s0, ~ (g p)).
