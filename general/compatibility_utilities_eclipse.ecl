@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February 2009)                       %%%
 %%%                                                                          %%%
-%%%  Last update: 24 August 2009.                                            %%%
+%%%  Last update: 28 August 2009.                                            %%%
 %%%                                                                          %%%
 
 :- ensure_loaded( higher_order ).
@@ -44,14 +44,6 @@ std_input_stream(   input          ).
 std_output_stream(  output         ).
 std_error_stream(   error          ).
 std_warning_stream( warning_output ).
-
-
-%%------------------------------------------------------------------------------
-%% variant2( + term, + term ):
-%% Check whether the two terms are variants of each other.
-%% Defined here, because SWI Prolog's version of the built-in is faulty.
-
-variant2( A, B ) :-  variant( A, B ).
 
 
 %%------------------------------------------------------------------------------

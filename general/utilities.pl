@@ -25,7 +25,7 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 27 August 2009.                                            %%%
+%%%  Last update: 28 August 2009.                                            %%%
 %%%                                                                          %%%
 
 
@@ -169,7 +169,7 @@ is_an_instance( T1, T2 ) :-  instance( T1, T2 ).              % use the built-in
 %         is_an_instance( T1, T2 ),
 %         is_an_instance( T2, T1 ).
 
-are_variants( T1, T2 ) :-  variant2( T1, T2 ).                % use the built-in
+are_variants( T1, T2 ) :-  variant( T1, T2 ).                 % use the built-in
 
 
 
