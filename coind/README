@@ -2,9 +2,18 @@
 
 This directory includes the following files:
 
+colp.ecl:
+        Load this to run colp_common.pl with Eclipse.
+
 colp.pl:
-        A metainterpreter of "co-logic programming".  Just load it into
-        Eclipse or Sicstus!  The head comment explains how to use it.
+        Load this to run colp_common.pl with Sicstus.
+
+colpp.pl:
+        Load this to run colp_common.pl with SWI Prolog.
+
+colp_common.pl:
+        A metainterpreter of "co-logic programming".
+        The head comment explains how to use it.
 
 colp_builtins.pl:
         This file contains declarations of built-in predicates that are

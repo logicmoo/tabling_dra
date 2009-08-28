@@ -21,7 +21,7 @@
    %                                                                      %
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% This is the shell for Sicstus.  See colp_common.pl for documentation.
+%% This is the shell for Eclipse.  See colp_common.pl for documentation.
 
-:- ensure_loaded( '../general/compatibility_utilities_sicstus' ).
+:- ensure_loaded( '../general/compatibility_utilities_eclipse' ).
 :- ensure_loaded( [ colp_common ] ).
