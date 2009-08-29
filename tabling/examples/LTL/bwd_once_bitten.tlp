@@ -26,10 +26,13 @@ trans(s1, s1).
 trans(s2, s2).
 
 
-
 :- top q/0.
 :- top q_gq/0.
 :- top q_gp/0.
+
+q :- check(s0, ~ (g p ^ g q)).
+q_gq :- check(s0, ~ g q).
+q_gp :- check(s0, ~ g p).
 
 
 % If the transition s0 -> s1 is tried before the transition s0 -> s2, then G p
@@ -45,9 +48,12 @@ trans(s2, s2).
 % path s0 -> s2 in the former case, causing an erroneous success (meaning that
 % the transition system does not violate the formula).
 %
-% * If s0 -> s2 is tried first, the verifier will loop.
-
-q :- check(s0, ~ (g p ^ g q)).
-q_gq :- check(s0, ~ g q).
-q_gp :- check(s0, ~ g p).
-
+% * If s0 -> s2 is tried first, the verifier will loop for the query q. It will
+%   not loop for q_gq or q_gp if it is the first query to be executed, but may
+%   loop later: for example:
+%      ?- g_qp.   % succeeds
+%      ?- g_qq.   % succeeds
+%      ?- g_qp.   % loops
+%
+% * If s0 -> s1 is tried first, each query may loop or not loop, depending on
+%   whether it was the first query to be executed.
