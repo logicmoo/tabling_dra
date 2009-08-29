@@ -16,8 +16,11 @@ trans(s0, s1).
 trans(s1, s0).
 
 
-
 :- top q/0.
+
+% Infinite Loop! Wheeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+q :- check(s0, ~(f p ^ q)).
+
 
 % When verifying F p ^ q, we first call `tverify(s0, f p, Path1)`. Since `p`
 % does not hold in s0, we transition to s1 and call `tverify(s1, f p, Path2)`.
@@ -67,6 +70,3 @@ trans(s1, s0).
 % engine will see these paths as being unique solutions, tabling both of them
 % rather than concluding that the table has been filled with all available
 % solutions for the call and failing.
-
-% Infinite Loop! Wheeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-q :- check(s0, ~(f p ^ q)).
