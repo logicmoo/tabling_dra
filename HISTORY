@@ -11,7 +11,7 @@
                  have ":- coinductive1." and ":- coinductive.", respectively.
                - Corrected a major error in the choice of data structures.
 
-26 August 2009 (version 0.93 (beta)):
+31 August 2009 (version 0.93 (beta)):
                - Various minor corrections, mostly cosmetic.
                - Making things acceptable to SWI Prolog:
                   1) Made the convention for partial application (as an
@@ -28,8 +28,13 @@
                   DRA that did not manifest itself before only because both
                   Sicstus and Eclipse provide logical update semantics for
                   assert/1. The error is now fixed.
+                - Avoided potential errors due to inadequate implementations
+                  of variant/2 in the three Prolog systems (results are
+                  undefined if the arguments share variables).
                 - Addition of three examples by Brian W. DeVries. The
                   examples bring to light shortcomings of the current simple
                   LTL verifier.
+                - Modified the LTL verifier to take care of one of these
+                  examples (modification suggested by Brian W. DeVries).
 
 -------------------------------------------------------------------------------
