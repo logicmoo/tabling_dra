@@ -21,7 +21,8 @@
    %                                                                      %
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Gopal Gupta's LTL interpreter (modified by F.K.).
+%% Gopal Gupta's LTL interpreter, modified by Feliks Kluzniak and amended
+%% according to suggestions by Brian W. DeVries.
 %%
 %% This is a version of verifier.tlp that has been extended to produce a
 %% counterexample.
@@ -108,50 +109,50 @@ check( State, Formula ) :-
 
 %--- The formula is normalized: only propositions can be negated.
 
-verify( S, g A,   Path ) :-  once( coverify( S, g A,   Path ) ).
-verify( S, A r B, Path ) :-  once( coverify( S, A r B, Path ) ).
-verify( S, A,     Path ) :-  A \= g _,  A \= _ r _,  tverify( S, A, Path ).
-
-
-:- tabled tverify/3.
-
 % NOTE:  The rule for conjunction imposes restrictions on paths,
 %        so results might be different than for the version without paths.
 %        The restriction is that the path for one conjunct must be a prefix
 %        of the path for the other.
 
-tverify( S, A,     [ S ]     ) :-  proposition( A ),    holds( S, A ).
+verify( S, g A,   Path      ) :-  once( coverify( S, g A,   Path ) ).
+verify( S, A r B, Path      ) :-  once( coverify( S, A r B, Path ) ).
+verify( S, f A,   Path      ) :-  tverify( S, f A,   Path ).
+verify( S, A u B, Path      ) :-  tverify( S, A u B, Path ).
 
-tverify( S, ~ A,   [ S ]     ) :-  proposition( A ), \+ holds( S, A ).
+verify( S, A,     [ S ]     ) :-  proposition( A ),    holds( S, A ).
+verify( S, ~ A,   [ S ]     ) :-  proposition( A ), \+ holds( S, A ).
 
-tverify( S, A ^ B, Path      ) :-  verify( S, A, PathA ), verify( S, B, PathB ),
-                                   (
-                                       append( PathA, _, PathB )       % prefix?
-                                   ->
-                                       Path = PathB
-                                   ;
-                                       append( PathB, _, PathA )       % prefix?
-                                   ->
-                                       Path = PathA
-                                   % otherwise fail!
-                                   ).
+verify( S, A ^ B, Path      ) :-  verify( S, A, PathA ), verify( S, B, PathB ),
+                                  (
+                                      append( PathA, _, PathB )       % prefix?
+                                  ->
+                                      Path = PathB
+                                  ;
+                                      append( PathB, _, PathA )       % prefix?
+                                  ->
+                                      Path = PathA
+                                  % otherwise fail!
+                                  ).
 
-tverify( S, A v B, Path      ) :-  verify( S, A, Path ) ; verify( S, B, Path ).
+verify( S, A v B, Path      ) :-  verify( S, A, Path ) ; verify( S, B, Path ).
 
-tverify( S, f A,   Path      ) :-  verify( S, A, Path )
-                                   ;
-                                   verify( S, x f A, Path ).
-
-tverify( S, A u B, Path      ) :-  verify( S, B, Path )
-                                   ;
-                                   verify( S, A ^ x( A u B), Path ).
-
-tverify( S, x A,   [ S | P ] ) :-  trans( S, S2 )  , verify( S2, A, P ).
+verify( S, x A,   [ S | P ] ) :-  trans( S, S2 )  , verify( S2, A, P ).
 
                           % The last clause is correct only because the query is
                           % always negated, so for a successful query we will
                           % try out all the relevant clauses of trans/2 through
                           % backtracking.
+
+
+:- tabled tverify/3.
+
+tverify( S, f A,   Path ) :-  verify( S, A, Path )
+                              ;
+                              verify( S, x f A, Path ).
+
+tverify( S, A u B, Path ) :-  verify( S, B, Path )
+                              ;
+                              verify( S, A ^ x( A u B), Path ).
 
 
 :- coinductive coverify/3.
