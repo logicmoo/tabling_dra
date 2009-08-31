@@ -1,5 +1,6 @@
-%%% An example that demonstrates the inadequacy of verifier.pl,
-%%% by Brian W. DeVries.
+%%% An example that demonstrates the inadequacy of the old version of
+%%% verifier.pl, by Brian W. DeVries.
+%%% (The example runs in the new version).
 
 :- ['verifier.tlp'].
 
@@ -16,36 +17,3 @@ trans(s0, s0).
 
 q :- check(s0, ~ (x g p)).
 q2 :- check(s0, ~ (g p)).
-
-
-% A simple example to show why the X operator should *not* be tabled. In the
-% case of the above transition system, X G p and G p should both hold, because
-% of the self-loop from s0 -> s0. Because the X operator is tabled, the
-% expansion is as follows (ignoring the path argument):
-%   verify(s0, x g p)
-%   `-- tverify(s0, x g p)  [*]
-%       |-- trans(s0, s0)
-%               `-- verify(s0, g p)
-%                       `-- coverify(s0, g p)
-%                               `-- verify(s0, p ^ x g p)
-%                                       `-- tverify(s0, p ^ x g p)
-%                                               |-- verify(s0, p) [succeeds]
-%                                               `-- tverify(s0, x g p)
-%                                                   `-- Whoops - variant of [*]!
-%
-% So when `tverify(s0, x g p)` is seen a second time, the tabling engine will
-% see it as a variant / looping call of the first instance of
-% `tverify(s0, x g p)` and fail, rather than transitioning to s0 again to
-% verify G p, which would coinductively succeed. This is akin to the
-% stratification necessary between tabled and coinductive calls -- if a mutual
-% recursion exists between a tabled and a coinductive predicate, the semantics
-% are defined by whichever one was called first. In this case, X G p is called
-% first, so the tabling semantics of X override the coinductive semantics of
-% G. I believe similar examples could be constructed for ^ and v , since these
-% are also tabled.
-%
-% The solution is probably to have 3 kinds of clauses: tabled (for F and U),
-% coinductive (G and R), and regular (X, true, APs, ~, ^, and v). This is
-% necessary if we define the expansions for G and R in terms of the regular
-% operators, to prevent the tabling  semantics from squishing the coinductive
-% semantics.

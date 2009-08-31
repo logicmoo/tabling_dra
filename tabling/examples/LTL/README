@@ -36,7 +36,7 @@ v.pl:
 
 verifier.clp:
         A version of "verifier.tlp" (see below) that can be translated to
-        "verifier.pl" by using "../../../coind/translate.colp".
+        "verifier.pl" by using "../../../coind/translate_colp".
 
 verifier.tlp:
         A version of Gopal Gupta's elegant "interpreter for Linear Temporal
@@ -51,21 +51,26 @@ verifier.tlp:
         "dra". (See "../../README" for more information.)
 
         NOTE: Brian W. DeVries discovered several problems with the current
-              version of this program: the problem is more tricky than it looks.
-              There are examples when the program loops unnecessarily, and
-              sometimes it fails when it should succeed.  See the files whose
-              names begin with "bwd_".
+              version of this program: the problem is more tricky than it
+              looks.  There are examples when the program loops
+              unnecessarily, and sometimes it fails when it should succeed.
+              See the files whose names begin with "bwd_".
 
 verifier2.tlp:
-        A version of verifier.tlp that does not use assert/retract and negation.
-        (NOTE: This is just for testing, there is no consistency checking.)
+        A version of verifier.tlp that does not use assert/retract and
+        negation.  (NOTE: This is just for testing, there is no consistency
+        checking.)
+
+bwd_next_global.tlp:
+        An example by Brian W. DeVries that demonstrates why the old version
+        of "verifier.tlp" will not always work correctly.  The verifier has
+        been modified to accomodate this example.
 
 bwd_future_and_fail.tlp:
-bwd_next_global.tlp:
 bwd_once_bitten.tlp:
-        Ingenious examples by Brian W. DeVries that demonstrate three different
-        reasons why "verifier.tlp" will not always work correctly.  The layout
-        and comments slightly edited by F.K.
+        Ingenious examples by Brian W. DeVries that demonstrate two different
+        reasons why "verifier.tlp" will not always work correctly.  The
+        layout and comments slightly edited by F.K.
 
 consistency_checker.pl:
         A program that checks whether the definition of an automaton is
