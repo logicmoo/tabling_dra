@@ -72,6 +72,12 @@ bwd_once_bitten.tlp:
         reasons why "verifier.tlp" will not always work correctly.  The
         layout and comments slightly edited by F.K.
 
+bwd_next_global_v.tlp:
+bwd_future_and_fail_v.tlp:
+bwd_once_bitten_v.tlp:
+        Versions of the bwd_... examples that run with v.pl.  They seem to
+        run without problems.
+
 consistency_checker.pl:
         A program that checks whether the definition of an automaton is
         internally consitent.  Used by the verifier.
