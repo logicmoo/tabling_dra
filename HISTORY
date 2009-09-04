@@ -37,4 +37,21 @@
                 - Modified the LTL verifier to take care of one of these
                   examples (modification suggested by Brian W. DeVries).
 
+4 September 2009 (version 0.94 (beta)):
+                - Fixed a subtle error in the represantation of the some
+                  tables in DRA (including the answer table).  The error
+                  could lead to missing answers for programs that used
+                  essence_hook/2.
+                - Made the SWI Prolog version faster: examples/XSB/ham.tlp is
+                  now 2.2 times slower than with Sicstus.  This was done by
+                  more clever encoding of the data.
+                - Made the SWI Prolog version even faster: it turns out using
+                  the recorded data base is even more expensive than frequent
+                  decompilation of clauses (especially for the auxiliary
+                  data).  The code that uses the internal database is still
+                  available, in case it should come in handy in future
+                  porting efforts.
+                - Used essence_hook/2 to make verifier.tlp run the difficult
+                  examples due to Brian W. DeVries.
+
 -------------------------------------------------------------------------------
