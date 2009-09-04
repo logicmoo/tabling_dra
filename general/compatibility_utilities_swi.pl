@@ -78,10 +78,14 @@ name_chars( Atomic, NameCharCodes ) :-
 %%       under the key "Head" (i.e., effectively under the name and arity of the
 %%       predicate). The effective key is also recorded, under the key
 %%       "interpreted_clause_key".
+%%   ->  This has been commented out for the time being, as the win is not all
+%%       that clear.  Just search for "interpreted" and uncomment to get back to
+%%       that version, but NOTE that it is unclear whether essence_hook/2 would
+%%       then work properly.
 
-clause_in_module( interpreted, Head, Body ) :-
-        !,
-        recorded( Head, interpreted_clause( Head, Body ) ).
+% clause_in_module( interpreted, Head, Body ) :-
+%        !,
+%        recorded( Head, interpreted_clause( Head, Body ) ).
 
 clause_in_module( ModuleName, Head, Body ) :-
         clause( ModuleName : Head, Body ).
@@ -93,9 +97,9 @@ clause_in_module( ModuleName, Head, Body ) :-
 %%
 %% NOTE: See the note to clause_in_module/3 above.
 
-current_predicate_in_module( interpreted, PredSpec ) :-
-        !,
-        recorded( interpreted_clause_key, PredSpec ).
+% current_predicate_in_module( interpreted, PredSpec ) :-
+%        !,
+%        recorded( interpreted_clause_key, PredSpec ).
 
 current_predicate_in_module( ModuleName, PredSpec ) :-
         current_predicate( ModuleName : PredSpec ).
@@ -117,25 +121,25 @@ assert_in_module( Module, Clause ) :-
 %%
 %% NOTE: See the note to clause_in_module/3 above.
 
-assertz_in_module( interpreted, Clause ) :-
-        !,
-        (
-            Clause = (Head :- Body)
-        ->
-            true
-        ;
-            Head = Clause,
-            Body = true
-        ),
-        recordz( Head, interpreted_clause( Head, Body ) ),
-        functor( Head, Name, Arity ),
-        (
-            recorded( interpreted_clause_key, Name / Arity )
-        ->
-            true
-        ;
-            recordz( interpreted_clause_key, Name / Arity )
-        ).
+% assertz_in_module( interpreted, Clause ) :-
+%         !,
+%         (
+%             Clause = (Head :- Body)
+%         ->
+%             true
+%         ;
+%             Head = Clause,
+%             Body = true
+%         ),
+%         recordz( Head, interpreted_clause( Head, Body ) ),
+%         functor( Head, Name, Arity ),
+%         (
+%             recorded( interpreted_clause_key, Name / Arity )
+%         ->
+%             true
+%         ;
+%             recordz( interpreted_clause_key, Name / Arity )
+%         ).
 
 assertz_in_module( Module, Clause ) :-
         assertz( Module : Clause ).
@@ -147,13 +151,13 @@ assertz_in_module( Module, Clause ) :-
 %%
 %% NOTE: See the note to clause_in_module/3 above.
 
-retractall_in_module( interpreted, Head ) :-
-        recorded( Head, interpreted_clause( Head, _ ), RefClause ),
-        erase( RefClause ),
-        fail.
+% retractall_in_module( interpreted, Head ) :-
+%         recorded( Head, interpreted_clause( Head, _ ), RefClause ),
+%         erase( RefClause ),
+%         fail.
 
-retractall_in_module( interpreted, _ ) :-
-        !.
+% retractall_in_module( interpreted, _ ) :-
+%         !.
 
 retractall_in_module( Module, Head ) :-
         retractall( Module : Head ).
@@ -246,16 +250,16 @@ translate_vardict_entry( N = V, [ N | V ] ).
 %%
 %% NOTE: See the note to clause_in_module/3 above.
 
-erase_module( interpreted ) :-
-        recorded( interpreted_clause_key,  Name / Arity, RefKey ),
-        erase( RefKey ),
-        functor( Key, Name, Arity ),
-        recorded( Key, interpreted_clause( _, _ ), RefClause ),
-        erase( RefClause ),
-        fail.
+% erase_module( interpreted ) :-
+%         recorded( interpreted_clause_key,  Name / Arity, RefKey ),
+%         erase( RefKey ),
+%         functor( Key, Name, Arity ),
+%         recorded( Key, interpreted_clause( _, _ ), RefClause ),
+%         erase( RefClause ),
+%         fail.
 
-erase_module( interpreted ) :-
-        !.
+% erase_module( interpreted ) :-
+%        !.
 
 erase_module( Module ) :-
         current_predicate( Module : PredSpec ),
