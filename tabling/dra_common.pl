@@ -26,10 +26,10 @@
 %%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 31 August 2009                                             %%%
+%%%  Last update: 4 September 2009                                           %%%
 %%%                                                                          %%%
 version( Version ) :-
-        name_chars( 'DRA ((c) UTD 2009) version 0.93 (beta), 31 August 2009 (',
+        name_chars( 'DRA ((c) UTD 2009) version 0.94 (beta), 4 Sep 2009 (',
                     VCodes
                   ),
         lp_system( Sys ),
@@ -286,7 +286,8 @@ version( Version ) :-
                1. In the actual implementation each fact in "answer" has the
                   form
                      answer( cgoal, goal, fact )
-                  where "cgoal" is a copy of "goal" (no shared variables).
+                  where "cgoal" is a copy of "goal" (no shared variables),
+                  passed through essence_hook/2.
                   This is done to facilitate more effective filtering (via
                   unification) before a check is made for whether "goal" is a
                   variant of the goal for which we are seeking a tabled answer.
@@ -410,7 +411,8 @@ version( Version ) :-
            (NOTE: In the actual implementation each fact in "pioneer" has the
                   form
                      pioneer( cgoal, goal, index )
-                  where "cgoal" is a copy of "goal" (no shared variables).
+                  where "cgoal" is a copy of "goal" (no shared variables),
+                  passed through essence_hook/2.
                   This is done to facilitate more effective filtering (via
                   unification) before a check is made for whether "goal" is a
                   variant of the goal for which we are checking whether it is
@@ -497,7 +499,8 @@ version( Version ) :-
            (NOTE: In the actual implementation each fact in "completed" has the
                   form
                      completed( cgoal, goal )
-                  where "cgoal" is a copy of "goal" (no shared variables).
+                  where "cgoal" is a copy of "goal" (no shared variables),
+                  passed through essence_hook/2.
                   This is done to facilitate more effective filtering (via
                   unification) before a check is made for whether "goal" is a
                   variant of the goal for which we are checking whether it is

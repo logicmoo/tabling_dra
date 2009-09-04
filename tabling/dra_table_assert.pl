@@ -57,7 +57,8 @@ reinitialise_answer :-
 
 is_answer_known( Goal, Fact ) :-
         copy_term2( Goal, Copy ),
-        answer( Copy, G, F ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        answer( CopyEssence, G, F ),
         are_essences_variants( G, Goal ),
         are_essences_variants( F, Fact ),
         !.
@@ -78,7 +79,8 @@ memo( Goal, Fact, Level ) :-
         % \+ is_answer_known( Goal, Fact ),
         optional_trace( 'Storing answer: ', Goal, Fact, Level ),
         copy_term2( Goal, Copy ),
-        assert( answer( Copy, Goal, Fact ) ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        assert( answer( CopyEssence, Goal, Fact ) ),
         incval( number_of_answers ).
 
 
@@ -91,7 +93,8 @@ memo( Goal, Fact, Level ) :-
 get_answer( Goal ) :-
         once( essence_hook( Goal, EssenceOfGoal ) ),
         copy_term2( Goal, Copy ),
-        answer( Copy, G, Ans ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        answer( CopyEssence, G, Ans ),
         once( essence_hook( G, EssenceOfG ) ),
         are_variants( EssenceOfGoal, EssenceOfG ),
         EssenceOfGoal = EssenceOfG,     % make sure variables are the right ones
@@ -156,7 +159,8 @@ reinitialise_pioneer :-
 
 is_a_variant_of_a_pioneer( Goal, Index ) :-
         copy_term2( Goal, Copy ),
-        pioneer( Copy, G, Index ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        pioneer( CopyEssence, G, Index ),
         are_essences_variants( Goal, G ),
         !.
 
@@ -168,8 +172,9 @@ is_a_variant_of_a_pioneer( Goal, Index ) :-
 
 add_pioneer( Goal, Index ) :-
         copy_term2( Goal, Copy ),
+        once( essence_hook( Copy, CopyEssence ) ),
         get_unique_index( Index ),
-        assert( pioneer( Copy, Goal, Index ) ).
+        assert( pioneer( CopyEssence, Goal, Index ) ).
 
 
 %% delete_pioneer( + index ):
@@ -280,7 +285,8 @@ reinitialise_completed :-
 
 is_completed( Goal ) :-
         copy_term2( Goal, Copy ),
-        completed( Copy, G ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        completed( CopyEssence, G ),
         are_essences_variants( Goal, G ).
 
 
@@ -296,7 +302,8 @@ complete_goal( Goal, _ ) :-
 complete_goal( Goal, Level ) :-
         % \+ is_completed( Goal ),
         copy_term2( Goal, Copy ),
+        once( essence_hook( Copy, CopyEssence ) ),
         trace_other( 'Completing', Goal, '?', Level ),
-        assert( completed( Copy, Goal ) ).
+        assert( completed( CopyEssence, Goal ) ).
 
 %-------------------------------------------------------------------------------

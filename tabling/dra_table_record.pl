@@ -60,9 +60,11 @@ ensure_recorded( Key, Item ) :-
 
 %------------------------------------------------------------------------------
 
-%% Each item recorded for table "answer" is of the form "answer( Goal, Fact )".
+%% Each item recorded for table "answer" is of the form
+%% "answer( Filter, Goal, Fact )", where "Filter" is the essence of a copy of
+%% "Goal".
 %% The item is recorded under the key "Goal" , i.e., effectively the key is the
-%% principal functor of the goal.  A most general instance of the goal is
+%% principal functor of the goal.  A most general instance of the key is
 %% additionally recorded under the key "answer_key".
 
 
@@ -71,7 +73,7 @@ ensure_recorded( Key, Item ) :-
 reinitialise_answer :-
         recorded( answer_key, Key, RefKey ),
         erase( RefKey ),
-        recorded( Key, answer( _, _ ), RefAnswer ),
+        recorded( Key, answer( _, _, _ ), RefAnswer ),
         erase( RefAnswer ),
         fail.
 
@@ -85,7 +87,9 @@ reinitialise_answer.
 % :- mode is_answer_known( +, + ).
 
 is_answer_known( Goal, Fact ) :-
-        recorded( Goal, answer( G, F ) ),
+        copy_term2( Goal, Copy ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        recorded( Goal, answer( CopyEssence, G, F ) ),
         are_essences_variants( G, Goal ),
         are_essences_variants( F, Fact ),
         !.
@@ -105,7 +109,9 @@ memo( Goal, Fact, _ ) :-
 memo( Goal, Fact, Level ) :-
         % \+ is_answer_known( Goal, Fact ),
         optional_trace( 'Storing answer: ', Goal, Fact, Level ),
-        recordz( Goal, answer( Goal, Fact ) ),
+        copy_term2( Goal, Copy ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        recordz( Goal, answer( CopyEssence, Goal, Fact ) ),
         most_general_instance( Goal, Key ),
         ensure_recorded( answer_key, Key ),
         incval( number_of_answers ).
@@ -118,8 +124,10 @@ memo( Goal, Fact, Level ) :-
 % :- mode get_answer( ? ).
 
 get_answer( Goal ) :-
+        copy_term2( Goal, Copy ),
+        once( essence_hook( Copy, CopyEssence ) ),
         once( essence_hook( Goal, EssenceOfGoal ) ),
-        recorded( Goal, answer( G, Ans ) ),
+        recorded( Goal, answer( CopyEssence, G, Ans ) ),
         once( essence_hook( G, EssenceOfG ) ),
         are_variants( EssenceOfGoal, EssenceOfG ),
         EssenceOfGoal = EssenceOfG,     % make sure variables are the right ones
@@ -133,7 +141,7 @@ get_answer( Goal ) :-
 get_all_tabled_goals( Goals ) :-
         findall( Goal,
                  (recorded( answer_key, Key ),
-                  recorded( Key, answer( Goal, _ ) )
+                  recorded( Key, answer( _, Goal, _ ) )
                  ),
                  Goals
                ).
@@ -186,7 +194,8 @@ new_result_or_fail( Index, Fact ) :-
 %-------------------------------------------------------------------------------
 
 %% Each item recorded for table "pioneer" is of the form
-%% "pioneer( Goal, Index )" (where "Index" is unique).
+%% "pioneer( Filter, Goal, Index )" (where "Index" is unique and "Filter" is the
+%% essence of a copy of "Goal".
 %% The item is recorded under the key "Goal" , i.e., effectively the key is the
 %% principal functor of the goal.  A most general instance of the goal is
 %% additionally  recorded under the key "pioneer_key".
@@ -200,7 +209,7 @@ new_result_or_fail( Index, Fact ) :-
 reinitialise_pioneer :-
         recorded( pioneer_key, Key, RefIndex ),
         erase( RefIndex ),
-        recorded( Key, pioneer( _, _ ), RefResult ),
+        recorded( Key, pioneer( _, _, _ ), RefResult ),
         erase( RefResult ),
         fail.
 
@@ -214,7 +223,9 @@ reinitialise_pioneer.
 % :- mode is_a_variant_of_a_pioneer( +, - ).
 
 is_a_variant_of_a_pioneer( Goal, Index ) :-
-        recorded( Goal, pioneer( G, Index ) ),
+        copy_term2( Goal, Copy ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        recorded( Goal, pioneer( CopyEssence, G, Index ) ),
         are_essences_variants( Goal, G ),
         !.
 
@@ -226,7 +237,9 @@ is_a_variant_of_a_pioneer( Goal, Index ) :-
 
 add_pioneer( Goal, Index ) :-
         get_unique_index( Index ),
-        recordz( Goal, pioneer( Goal, Index ) ),
+        copy_term2( Goal, Copy ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        recordz( Goal, pioneer( CopyEssence, Goal, Index ) ),
         most_general_instance( Goal, Key ),
         ensure_recorded( pioneer_key, Key ),
         recordz( Index, pioneer_goal( Key ) ).
@@ -240,7 +253,7 @@ add_pioneer( Goal, Index ) :-
 delete_pioneer( Index ) :-
         recorded( Index, pioneer_goal( Key ), RefIndex ),
         erase( RefIndex ),
-        recorded( Key, pioneer( _, Index ), RefPioneer ),
+        recorded( Key, pioneer( _, _, Index ), RefPioneer ),
         erase( RefPioneer ).
 
 
@@ -362,7 +375,8 @@ get_looping_alternative( Index, Clause ) :-
 %-------------------------------------------------------------------------------
 
 %% Each item recorded for table "completed" is of the form
-%% "completed( Goal )".
+%% "completed( Filter, Goal )", where "Filter" is the essence of a copy of
+%% "Goal".
 %% The item is recorded under the key "Goal" , i.e., effectively the key is the
 %% principal functor of the goal.  A most general instance of the goal is
 %% additionally recorded under the key "completed_key".
@@ -374,7 +388,7 @@ get_looping_alternative( Index, Clause ) :-
 reinitialise_completed :-
         recorded( completed_key, Key , RefIndex ),
         erase( RefIndex ),
-        recorded( Key, completed( _ ), RefResult ),
+        recorded( Key, completed( _, _ ), RefResult ),
         erase( RefResult ),
         fail.
 
@@ -388,7 +402,9 @@ reinitialise_completed.
 % :- mode is_completed( + ).
 
 is_completed( Goal ) :-
-        recorded( Goal, completed( G ) ),
+        copy_term2( Goal, Copy ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        recorded( Goal, completed( CopyEssence, G ) ),
         are_essences_variants( Goal, G ).
 
 
@@ -404,7 +420,9 @@ complete_goal( Goal, _ ) :-
 complete_goal( Goal, Level ) :-
         % \+ is_completed( Goal ),
         trace_other( 'Completing', Goal, '?', Level ),
-        recordz( Goal, completed( Goal ) ),
+        copy_term2( Goal, Copy ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        recordz( Goal, completed( CopyEssence, Goal ) ),
         most_general_instance( Goal, Key ),
         ensure_recorded( completed_key, Key ).
 

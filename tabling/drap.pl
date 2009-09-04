@@ -38,5 +38,6 @@
          ).
 
 :- ensure_loaded( '../general/compatibility_utilities_swi' ).
-:- ensure_loaded( dra_table_record ).
+%:- ensure_loaded( dra_table_record ).
+:- ensure_loaded( dra_table_assert ).
 :- ensure_loaded( dra_common ).
