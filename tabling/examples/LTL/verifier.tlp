@@ -163,4 +163,9 @@ coverify( S, A r B, Path ) :-  verify( S, A ^ B,           Path ).
 
 coverify( S, A r B, Path ) :-  verify( S, B ^ x( A r B ),  Path ).
 
+
+%
+essence_hook( tverify( State, Formula, _Path ),  tverify( State, Formula )  ).
+essence_hook( coverify( State, Formula, _Path ), coverify( State, Formula ) ).
+
 %-------------------------------------------------------------------------------

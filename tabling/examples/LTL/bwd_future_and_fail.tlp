@@ -1,5 +1,7 @@
-%%% An example that demonstrates the inadequacy of verifier.pl,
-%%% by Brian W. DeVries.
+%%% An example that demonstrates the inadequacy of the olde version of
+%%% verifier.pl, by Brian W. DeVries.
+%%% The new version seems to run correctly.
+
 
 :- ['verifier.tlp'].
 
@@ -20,53 +22,3 @@ trans(s1, s0).
 
 % Infinite Loop! Wheeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 q :- check(s0, ~(f p ^ q)).
-
-
-% When verifying F p ^ q, we first call `tverify(s0, f p, Path1)`. Since `p`
-% does not hold in s0, we transition to s1 and call `tverify(s1, f p, Path2)`.
-% This succeeds (since `p` holds in `s1`), binds `Path2 = [s1]`, and returns
-% to the call `tverify(s0, f p, Path1)`. This succeeds, binds
-% `Path1 = [s0, s1]`. The table at this point contains
-%               `tverify(s0, f p, [s0, s1])`
-%               `tverify(s1, f p, [s1])`
-%
-% Next, we attempt `tverify(s0, q, Path3)` and fail, since `q` does not hold
-% in the first state (or anywhere else in the transition system, for that
-% matter). Prolog will backtrack to `tverify(s1, f p, Path)` and attempt the
-% clause corresponding to `Fp === X F p`. Since the only transition available
-% is s1 -> s0, we make the transition and call `tverify(s0, f p, Path4)`. This
-% is a variant of `tverify(s0, f p, Path1)`, so we suspend. Since there are no
-% other clauses to attempt, we begin pulling entries from the table --
-% `tverify(s0, f p, Path4)` becomes `tverify(s0, f p, [s0, s1])`. We return to
-% `tverify(s1, f p, Path2)`, bind `Path2 = [s1, s0, s1]`, succeed, and return
-% to `tverify(s0, f p, Path1)`. `Path1 = [s0, s1, s0, s1]` now, making the
-% call `tverify(s0, f p, [s0, s1, s0, s1])`. This call is not in our table, so
-% we have, from the tabling system's standpoint, found a new solution, rather
-% than a variant of one already in there. We add these new solutions to our
-% table, making the table now contain
-%               `tverify(s0, f p, [s0, s1])`
-%               `tverify(s0, f p, [s0, s1, s0, s1])`
-%               `tverify(s1, f p, [s1])`
-%               `tverify(s1, f p, [s1, s0, s1])`
-%
-% We again call `tverify(s0, q, Path5)`, fail again, backtrack, rinse and
-% repeat. This behavior causes an infinite loop, as each time we add
-% `[s0, s1]` to the path used to prove the formula, the tabling system
-% considers the call to be new and unseen, rather than concluding that all
-% available solutions have been found and tabled, which would break the
-% infinite loop.
-%
-% I believe an attempt is made to avoid this behavior by surrounding the
-% original call to `verify` in a `once`. (verifier.tlp, line 91).
-% While this would prevent the User
-% from receiving a looping path for `check(s0, f p)` by pushing ';' after
-% every success + return to the top-level, if the failure occurs before the
-% original call to `verify` succeeds and returns to `check`, then the infinite
-% loop will still be encountered.
-%
-% Short version: we can't table the Path argument without some sort of
-% processing to make the tabling engine realize that `[s0, s1]` is the same
-% path as `[s0, s1, s0, s1]`. If we do not do this processing, the tabling
-% engine will see these paths as being unique solutions, tabling both of them
-% rather than concluding that the table has been filled with all available
-% solutions for the call and failing.

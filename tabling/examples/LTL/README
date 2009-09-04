@@ -62,15 +62,12 @@ verifier2.tlp:
         checking.)
 
 bwd_next_global.tlp:
-        An example by Brian W. DeVries that demonstrates why the old version
-        of "verifier.tlp" will not always work correctly.  The verifier has
-        been modified to accomodate this example.
-
 bwd_future_and_fail.tlp:
 bwd_once_bitten.tlp:
         Ingenious examples by Brian W. DeVries that demonstrate two different
-        reasons why "verifier.tlp" will not always work correctly.  The
-        layout and comments slightly edited by F.K.
+        reasons why the old version of  "verifier.tlp" will not always work
+        correctly.  The layout and comments slightly edited by F.K.
+        The verifier has been modified to accomodate these examples.
 
 bwd_next_global_v.tlp:
 bwd_future_and_fail_v.tlp:
