@@ -14,15 +14,7 @@ form.%
 The interpreter is known to run on \Eclipse{}~6.0, \Sicstus{}~4.0 and
 SWI~Prolog~5~7.  If you plan to run programs that take advantage of
 coinductive programming, you might prefer to avoid \Eclipse{}, which has
-somewhat inadequate support for cyclic terms.\footnote{
-  On a given machine, the interpreter runs more quickly on \Sicstus{}, and
-  most slowly on SWI Prolog.  The difference can be substantial: a run of the
-  interpreter on \prog{tabling/examples/XSB/ham.tlp} is about 7 times slower
-  with SWI Prolog than with \Sicstus{}.  \Sicstus{} is faster in general, but
-  it also supports much faster access to clauses of dynamic predicates.  In
-  the case of SWI Prolog the interpreted program is stored in the
-  ``recorded'' database (to avoid the overhead of repeated decompilation), so
-  there is no clever precompiled indexing.}
+somewhat inadequate support for cyclic terms.
 
 For both these systems, the simplest way to proceed is to:
 \begin{Enumerate}
