@@ -77,13 +77,13 @@ q1  :- check( s0, g p ).            % no       no        no
 
 q2  :- check( s0, f p ).            % no       no        no
 
-q3  :- check( s0, f p v f t ).      % yes      no        yes (*)
+q3  :- check( s0, f p v f t ).      % yes      no        yes
 
 q4  :- check( s0, f (p v t) ).      % yes      yes       yes
 
 q5  :- check( s1, g p ).            % no       no        no
 
-q6  :- check( s1, f p ).            % no       no        no (**)
+q6  :- check( s1, f p ).            % no       no        no
 
 q7  :- check( s0, f g p ).          % no       no        no
 
@@ -96,13 +96,3 @@ q10 :- check( s2, f( q ^ z ) ).     % no       no        no
 q11 :- check( s2, f q ^ f z ).      % yes      yes       yes
 
 q12 :- check( s2, g f s ).          % yes      loops     yes
-
-
-                                    % (*)  Eclipse loops after the sequence
-                                    %        ?- q1. ?- q2.  ?- q3.
-                                    %      It does not loop if ?- q3. is issued
-                                    %      as the first query.  The looping is
-                                    %      caused by Eclipse's variant/2 not
-                                    %      being able to handle cyclic terms.
-                                    % (**) Eclipse has been observed to loop
-                                    %      in some circumstances.
