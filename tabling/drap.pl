@@ -38,6 +38,6 @@
          ).
 
 :- ensure_loaded( '../general/compatibility_utilities_swi' ).
-%:- ensure_loaded( dra_table_record ).
-:- ensure_loaded( dra_table_assert ).
+%:- ensure_loaded( dra_table_assert ).    % Fast, but not good for cyclic terms
+:- ensure_loaded( dra_table_record ).    % OK for cyclic terms
 :- ensure_loaded( dra_common ).
