@@ -54,4 +54,14 @@
                 - Used essence_hook/2 to make verifier.tlp run the difficult
                   examples due to Brian W. DeVries.
 
+10 September 2009 (same version, i.e., 0.94 (beta))
+                - The previous release was not good for cyclic terms, because
+                  the new implementation of variant/2 did not handle them
+                  correctly.  This has been fixed, but Eclipse essentially
+                  cannot handle cyclic terms now.
+                - SWI Prolog must use the recorded database if it is to handle
+                  cyclic terms.  This makes it 2.5 times slower than Sicstus
+                  on XSB/ham.
+
+
 -------------------------------------------------------------------------------
