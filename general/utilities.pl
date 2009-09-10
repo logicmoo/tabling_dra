@@ -58,6 +58,8 @@ check( Goal ) :-  \+ \+ Goal .
 %%              mk_ground( T ) :- numbervars( T, 0, _ ).
 %%           on Prolog systems that support numbervars/3.
 %%    )
+%%
+%% NOTE: The following implementation is no good for cyclic terms.
 
 % :- mode mk_ground( ? ).
 
@@ -153,8 +155,14 @@ gtv_( T, S, NS ) :-
 %%    Succeeds iff arg1 is an instance of arg2, but does not instantiate any
 %%    variables.
 
+% is_an_instance( T1, T2 ) :-
+%        check( (mk_ground( T1 ) , T1 = T2) ).
+
+%% NOTE: We use numbervars/3 instead, because in SWI Prolog and SICStus Prolog
+%%       this handles cyclic terms correctly.  Eclipse is another story...
+
 is_an_instance( T1, T2 ) :-
-        check( (mk_ground( T1 ) , T1 = T2) ).
+        check( (numbervars( T1, 0, _ ), T1 = T2) ).
 
 
 %%------------------------------------------------------------------------------
