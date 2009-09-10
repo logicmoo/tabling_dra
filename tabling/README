@@ -9,7 +9,14 @@ dra.pl:
         A wrapping of dra_common.pl for Sicstus.
 
 drap.pl:
-        A wrapping of dra_common.pl for SWI Prolog.
+        A wrapping of dra_common.pl for SWI Prolog.  Safe for cyclic terms, but
+        DRA can be 2.5 times slower than with Sicstus (examples/XSB/ham.tlp).
+
+drapf.pl:
+        A wrapping of dra_common.pl for SWI Prolog: this one makes DRA
+        significantly faster than with Sicstus (on examples/XSB/ham.tlp).
+        HOWEVER, it cannot handle cyclic terms, so is not to be used for
+        programs with coinduction.
 
 dra_builtins.pl:
         This file contains declarations of built-in predicates that are
