@@ -29,6 +29,8 @@
 %%%                                                                          %%%
 
 :- ensure_loaded( higher_order ).
+:- ensure_loaded( library( numbervars ) ).  % but no good for cyclic terms! :-(
+:- import numbervars/3 from numbervars.
 
 
 %%------------------------------------------------------------------------------
