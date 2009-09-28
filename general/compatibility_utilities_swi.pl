@@ -25,8 +25,6 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February, August 2009)               %%%
 %%%                                                                          %%%
-%%%  Last update: 28 August 2009.                                            %%%
-%%%                                                                          %%%
 
 :- ensure_loaded( higher_order ).
 :- ensure_loaded( library( lists ) ). % An SWI library, for reverse/2.

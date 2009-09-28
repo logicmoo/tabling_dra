@@ -25,8 +25,6 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February 2009)                       %%%
 %%%                                                                          %%%
-%%%  Last update: 28 August 2009.                                            %%%
-%%%                                                                          %%%
 
 :- ensure_loaded( higher_order ).
 :- ensure_loaded( library( terms ) ). % A Sicstus library, for variant/2 and
