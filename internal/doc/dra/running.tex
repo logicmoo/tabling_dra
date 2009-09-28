@@ -16,7 +16,7 @@ SWI~Prolog~5~7.  If you plan to run programs that take advantage of
 coinductive programming, you might prefer to avoid \Eclipse{}, which has
 somewhat inadequate support for cyclic terms.
 
-For both these systems, the simplest way to proceed is to:
+The simplest way to proceed is to:
 \begin{Enumerate}
 \item
   start your logic programming system;
@@ -24,13 +24,19 @@ For both these systems, the simplest way to proceed is to:
   If you are using \Eclipse{} or \Sicstus{}, type in the following directive:\\
   \ind\prog{:-~[~'\patt{Path}/tabling/dra'~].}\\
   where \about{Path} is the path to the root of the distribution
-  tree.\footnote{
-    This will just load the interpreter, but you will still be interacting
-    with the host logic programming system.  \Secref{sec:loading-prog}
-    describes how to start the interpreter.}
-  If you are using SWI Prolog, the directive is:\\
+  tree.
+  If you are using SWI Prolog, the directive is:\footnote{You can use also\\
+    \ind\prog{:-~[~'\patt{Path}/tabling/drapf'~].}\\
+      if the interpreted program does not use cyclic terms (i.e., in
+      particular if there are no coinductive predicates).  This version could
+      be significantly faster, even faster than \Sicstus{}.
+  }\\
   \ind\prog{:-~[~'\patt{Path}/tabling/drap'~].}
 \end{Enumerate}
+
+This will just load the interpreter, but you will still be interacting with
+the host logic programming system.  \Secref{sec:loading-prog} describes how
+to start the interpreter.
 
 The interpreter is encapsulated in its own module, called \about{dra} (or
 \about{drap} in the case of SWI Prolog).  So if
@@ -56,7 +62,7 @@ writing\\
 \ind\prog{prog(~\patt{filename}~).}\progidxonly{prog}%
 \footnote{
   If you are running in \Eclipse{}, and have not imported the module \about{dra}
-  (as explained on \Pageref{import-dra}), you must write \prog{dra:prog}
+  (as explained in \Secref{import-dra}), you must write \prog{dra:prog}
   instead of \prog{prog}.
 }\\
 \patt{filename} should be the name of the file that contains your program.
