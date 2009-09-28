@@ -26,6 +26,7 @@
 %%%  Written by Feliks Kluzniak at UTD (February 2009)                       %%%
 %%%                                                                          %%%
 
+:- ensure_loaded( utilities ).
 :- ensure_loaded( higher_order ).
 :- ensure_loaded( library( terms ) ). % A Sicstus library, for variant/2 and
                                       %   term_variables/2.
@@ -45,6 +46,17 @@ std_input_stream(   user_input  ).
 std_output_stream(  user_output ).
 std_error_stream(   user_error  ).
 std_warning_stream( user_error  ).
+
+
+%%------------------------------------------------------------------------------
+%% are_variants( + term, + term ) :
+%%    Succeeds only if both arguments are variants of each other.
+%%    Does not instantiate any variables.
+
+are_variants( T1, T2 ) :-
+        check( T1 = T2 ),                % to weed out obvious "misfits" cheaply
+        is_an_instance( T1, T2 ),
+        is_an_instance( T2, T1 ).
 
 
 %%------------------------------------------------------------------------------

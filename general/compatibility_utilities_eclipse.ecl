@@ -26,6 +26,7 @@
 %%%  Written by Feliks Kluzniak at UTD (February 2009)                       %%%
 %%%                                                                          %%%
 
+:- ensure_loaded( utilities ).
 :- ensure_loaded( higher_order ).
 :- ensure_loaded( library( numbervars ) ).  % but no good for cyclic terms! :-(
 :- import numbervars/3 from numbervars.
@@ -44,6 +45,17 @@ std_input_stream(   input          ).
 std_output_stream(  output         ).
 std_error_stream(   error          ).
 std_warning_stream( warning_output ).
+
+
+%%------------------------------------------------------------------------------
+%% are_variants( + term, + term ) :
+%%    Succeeds only if both arguments are variants of each other.
+%%    Does not instantiate any variables.
+
+are_variants( T1, T2 ) :-
+        check( T1 = T2 ),                % to weed out obvious "misfits" cheaply
+        is_an_instance( T1, T2 ),
+        is_an_instance( T2, T1 ).
 
 
 %%------------------------------------------------------------------------------

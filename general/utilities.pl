@@ -165,17 +165,6 @@ is_an_instance( T1, T2 ) :-
         check( (numbervars( T1, 0, _ ), T1 = T2) ).
 
 
-%%------------------------------------------------------------------------------
-%% are_variants( + term, + term ) :
-%%    Succeeds only if both arguments are variants of each other.
-%%    Does not instantiate any variables.
-
-are_variants( T1, T2 ) :-
-        check( T1 = T2 ),                % to weed out obvious "misfits" cheaply
-        is_an_instance( T1, T2 ),
-        is_an_instance( T2, T1 ).
-
-
 
 %%------------------------------------------------------------------------------
 %% mk_pattern( + an atom representing the name of a predicate,
