@@ -28,7 +28,7 @@
 %%%                                                                          %%%
 %%%  Last update: 4 September 2009                                           %%%
 %%%                                                                          %%%
-version( Version ) :-
+dra_version( Version ) :-
         name_chars( 'DRA ((c) UTD 2009) version 0.94 (beta), 10 Sep 2009 (',
                     VCodes
                   ),
@@ -583,7 +583,7 @@ initialise :-                                             % invoked by top_level
         setval( unique_index,      0 ),
         setval( step_counter,      0 ),
         setval( old_table_size,    0 ),
-        version( Version ),
+        dra_version( Version ),
         writeln( Version ).
 
 
