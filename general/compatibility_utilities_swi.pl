@@ -287,7 +287,7 @@ erase_module( _ ).
 %%
 %% NOTE: Since DRA uses global variables to store only integers, we use the
 %%       flag/3 facility of SWI Prolog.  For more general values we would have
-%%       to use nb_setval/nb_getval.  See also getval/2 and incval/1 below.
+%%       to use nb_setval/nb_getval.  See also getval/2 below.
 
 setval( Name, Value ) :-
         flag( Name, _Old, Value ).
