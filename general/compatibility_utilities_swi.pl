@@ -47,17 +47,6 @@ std_warning_stream( user_error  ).
 
 
 %%------------------------------------------------------------------------------
-%% are_variants( + term, + term ) :
-%%    Succeeds only if both arguments are variants of each other.
-%%    Does not instantiate any variables.
-%% NOTE: Unlike most other Prologs, SWI Prolog has been fixed to handle
-%%       variant/2 correctly even when the arguments share variables.
-
-are_variants( T1, T2 ) :-
-        variant( T1, T2 ).
-
-
-%%------------------------------------------------------------------------------
 %% getchar( + input stream, - character in the form of an atom ):
 %% This is introduced because the built-in get_char/2 returns strings on
 %% Eclipse and atoms on Sicstus.

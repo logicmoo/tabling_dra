@@ -149,20 +149,27 @@ gtv_( T, S, NS ) :-
         gtv_( Args, S, NS ).
 
 
+%%------------------------------------------------------------------------------
+%% are_variants( + term, + term ) :
+%%    Succeeds only if both arguments are variants of each other.
+%%    Does not instantiate any variables.
+%% NOTE: In Eclipse this loops on cyclic terms.
+
+are_variants( T1, T2 ) :-
+        check( T1 = T2 ),                     % quickly weed out obvious misfits
+        copy_term( T2, CT2 ),
+        variant( T1, CT2 ).
+
 
 %%------------------------------------------------------------------------------
 %% is_an_instance( + term, + term ) :
 %%    Succeeds iff arg1 is an instance of arg2, but does not instantiate any
 %%    variables.
-
-% is_an_instance( T1, T2 ) :-
-%        check( (mk_ground( T1 ) , T1 = T2) ).
-
-%% NOTE: We use numbervars/3 instead, because in SWI Prolog and SICStus Prolog
-%%       this handles cyclic terms correctly.  Eclipse is another story...
+%% NOTE: In Eclipse this loops on cyclic terms.
 
 is_an_instance( T1, T2 ) :-
-        check( (numbervars( T1, 0, _ ), T1 = T2) ).
+        check( T1 = T2 ),                     % quickly weed out obvious misfits
+        copy_term( T2, CT2 ), subsumes_chk( CT2, T1 ).
 
 
 
