@@ -45,7 +45,7 @@
 
 % :- mode check( + ).
 
-check( Goal ) :-  \+ \+ Goal .
+check( Goal ) :-  \+ \+ call( Goal ) .
 
 
 
