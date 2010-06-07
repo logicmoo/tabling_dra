@@ -8,6 +8,12 @@ boolean_operations.pl:
 clause_verification.pl:
         Utilities for checking whether clauses are well-formed.
 
+checker.pl:
+        This is a general utility for checking a file with a Prolog program.
+        It is tailored to SWI Prolog.
+        It could be improved to take into account modules and inclusion of
+        files.
+
 compatibility_utilities.ecl:
 compatibility_utilities.pl:
         Predicates that hide some incompatibilities between Eclipse and
