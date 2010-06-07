@@ -12,7 +12,7 @@ checker.pl:
         This is a general utility for checking a file with a Prolog program.
         It is tailored to SWI Prolog.
         It could be improved to take into account modules and inclusion of
-        files.
+        files.  DCGs are not properly checked, either.
 
 compatibility_utilities.ecl:
 compatibility_utilities.pl:

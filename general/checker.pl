@@ -11,6 +11,9 @@
 
 %% Lightly reformatted, commented and simplified by F.K.
 
+%% This program could be improved to take into account modules and inclusion of
+%% files.  DCGs are not properly checked, either.
+
 :-  ensure_loaded( compatibility_utilities_swi ).
 :-  ensure_loaded( clause_verification ).
 
