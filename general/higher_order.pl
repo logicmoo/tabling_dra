@@ -99,7 +99,7 @@ filter( PredName, [ H | T ], NL ) :-
 %%     arguments, and the third of which is an output argument;
 %%   - it should always succeed, and the first result should be "what we want".
 %% If the list is empty, the initial value is returned; otherwise the predicate
-%% is applied to the initial value and ther first member of the list, and then
+%% is applied to the initial value and the first member of the list, and then
 %% to the result and the third member, and so on.
 %% For example, if "sum( A, B, C )" unifies "C" with the sum of "A" and "B",
 %% then "fold( sum, 0, [1,2,3], S )" unifies "S" with "6".
