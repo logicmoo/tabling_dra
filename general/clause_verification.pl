@@ -25,12 +25,13 @@
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (January 2009).                       %%%
 %%%                                                                          %%%
-%%%  Last update: 12 June 2009.                                              %%%
+%%%  Last update: 7 June 2010 (fixing errors found by Abramo Bagnara).       %%%
 %%%                                                                          %%%
 
 :- ensure_loaded( boolean_operations ).
 :- ensure_loaded( vardict_utilities ).
 :- ensure_loaded( errors_and_warnings ).
+:- ensure_loaded( set_in_list ).
 %% NOTE: requires proper compatibility_utilities_....
 
 
@@ -287,31 +288,14 @@ check_for_singleton_variables( Clause, Ctxt ) :-
 % Note also that a variable whose name begins with an underscore "does not
 % count".
 
-cs( V, ctxt( VarDict, _), false, SeenFromFront, SeenFromBehind, Single ) :-
+cs( V, Ctxt, false, SeenFromFront, SeenFromBehind, Single ) :-
         var( V ),
-        member( [ Name | Var ], VarDict ),
-        Var == V,
         !,
-        name_chars( '_',  [ Underscore ] ),
-        (
-            name_chars( Name, [ Underscore | _ ] )
-        ->
-            empty_set( SeenFromFront  ),
-            empty_set( SeenFromBehind ),
-            empty_set( Single         )
-        ;
-            empty_set( Empty ),
-            add_to_set( V, Empty, SeenFromFront  ),
-            add_to_set( V, Empty, SeenFromBehind ),
-            add_to_set( V, Empty, Single         )
-        ).
-
-cs( V, _, false, SeenFromFront, SeenFromBehind, Single ) :-
-        var( V ),                                       % '_' is not in VarDict!
-        !,
-        empty_set( SeenFromFront  ),
-        empty_set( SeenFromBehind ),
-        empty_set( Single         ).
+        cs_args( [ V ], Ctxt, Seen, Single ),
+        empty_set( EmptyFront ),
+        empty_set( EmptyBehind ),
+        set_union( EmptyFront,  Seen, SeenFromFront ),
+        set_union( EmptyBehind, Seen, SeenFromBehind ).
 
 cs( fail, _, true, SeenFromFront, SeenFromBehind, Single ) :-
         !,
@@ -400,13 +384,76 @@ cs( C, Ctxt, false, SeenFromFront, SeenFromBehind, Single ) :-
         compound( C ),
         !,
         C =.. [ _ | Args ],
-        cs( Args, Ctxt, _, SeenFromFront, SeenFromBehind, Single ).
+        cs_args( Args, Ctxt, Seen, Single ),
+        empty_set( EmptyFront ),
+        empty_set( EmptyBehind ),
+        set_union( EmptyFront,  Seen, SeenFromFront ),
+        set_union( EmptyBehind, Seen, SeenFromBehind ).
+
 
 cs( T, Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single ) :-
         error( [ 'INTERNAL ERROR: (clause_verification)',
                  cs( T, Ctxt, MustFail, SeenFromFront, SeenFromBehind, Single )
                ]
              ).
+
+
+% The arguments of a single call: produce variables that are seen, and those
+% that occur only once in this call.
+% This has been factored out because negation, disjunction etc. in arguments
+% should not have the effects that they have on the top level. (Thanks are due
+% to Abramo Bagnara for detecting this error.)
+
+cs_args( [], _Ctxt, Empty, Empty ) :-
+        empty_set( Empty ).
+
+cs_args( [ Arg | Args ], Ctxt, Seen, Single ) :-
+        cs_arg( Arg, Ctxt, Seen1, Single1 ),
+        cs_args( Args, Ctxt, Seen2, Single2 ),
+        set_difference( Single2, Seen1, Single2OK ),
+        set_difference( Single1, Seen2, Single1OK ),
+        set_union( Single1OK, Single2OK, Single ),
+        set_union( Seen1, Seen2, Seen ).
+
+
+%
+cs_arg( V, Ctxt, Seen, Single ) :-
+        var( V ),
+        Ctxt = ctxt( VarDict, _ ),
+        member( [ Name | Var ], VarDict ),
+        Var == V,
+        !,
+        (
+            name_chars( '_',  [ Underscore ] ),
+            name_chars( Name, [ Underscore | _ ] )
+        ->
+            % ignore a variable whose name begins with _
+            empty_set( Seen ),
+            empty_set( Single )
+        ;
+            empty_set( Empty ),
+            add_to_set( V, Empty, Seen ),
+            add_to_set( V, Empty, Single )
+        ).
+
+cs_arg( V, _, Seen, Single ) :-
+        var( V ),                                       % '_' is not in VarDict!
+        !,
+        empty_set( Seen ),
+        empty_set( Single ).
+
+cs_arg( Other, Ctxt, Seen, Single ) :-
+        nonvar( Other ),
+        (
+            atomic( Other )
+        ->
+            empty_set( Seen ),
+            empty_set( Single )
+        ;
+            Other =.. [ _ | Args ],
+            cs_args( Args, Ctxt, Seen, Single )
+        ).
+
 
 
 % Several paths seem to converge: special treatment is needed if any of them
