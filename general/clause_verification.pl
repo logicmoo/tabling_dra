@@ -262,7 +262,16 @@ check_for_variable_calls( _, _, _ ).
 %% Assume the clause has been verified by is_a_good_clause/1.
 
 check_for_singleton_variables( Clause, Ctxt ) :-
-        cs( Clause, Ctxt, _, _, _, Singletons ),
+        % expand a DCG rule
+        (
+            Clause = (_ --> _)
+        ->
+            expand_term( Clause, Expanded )
+        ;
+            Expanded = Clause
+        ),
+        % general case
+        cs( Expanded, Ctxt, _, _, _, Singletons ),
         (
             empty_set( Singletons )
         ->
