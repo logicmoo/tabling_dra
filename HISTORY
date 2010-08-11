@@ -63,12 +63,12 @@
                   cyclic terms.  This makes it 2.5 times slower than Sicstus
                   on XSB/ham.
 
-version 0.95 (beta)
+28 September 2009, version 0.95 (beta)
                 - Take advantage of variant/2 in SWI Prolog (which is
                   correctly implemented since version 5.7.15).
                 - Various small changes to bring DRA up on YAP.
 
-version 0.96 (beta):
+30 November 2009, version 0.96 (beta):
                 - Improved treatment of variants and instances (thanks to advice
                   by Ulrich Neumerkel).
 

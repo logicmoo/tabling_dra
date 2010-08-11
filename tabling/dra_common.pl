@@ -26,10 +26,10 @@
 %%%  see the description below for more information.                         %%%
 %%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
 %%%                                                                          %%%
-%%%  Last update: 4 September 2009                                           %%%
+%%%  Last update: 30 November 2009                                           %%%
 %%%                                                                          %%%
 dra_version( Version ) :-
-        name_chars( 'DRA ((c) UTD 2009) version 0.94 (beta), 10 Sep 2009 (',
+        name_chars( 'DRA ((c) UTD 2009) version 0.96 (beta), 30 Nov 2009 (',
                     VCodes
                   ),
         lp_system( Sys ),
