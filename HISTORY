@@ -72,4 +72,10 @@
                 - Improved treatment of variants and instances (thanks to advice
                   by Ulrich Neumerkel).
 
+ 8 June 2010 (same version):
+                - Fixed an error in clause checker (found by Abramo Bagnara).
+                  Proper checking of singletons in DCG rules (not used in these
+                  metainterpreters).  A few other minor improvements, not worth
+                  bumping the version counter.
+
 -------------------------------------------------------------------------------
