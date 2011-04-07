@@ -201,6 +201,19 @@ copy_term2( Term, Copy ) :-
 
 
 %%------------------------------------------------------------------------------
+%% are_variants( + term, + term ) :
+%%    Succeeds only if both arguments are variants of each other.
+%%    Does not instantiate any variables.
+%% NOTE: In SWI-Prolog 5.11.18 variant/2 is broken.
+
+are_variants( T1, T2 ) :-
+        check( T1 = T2 ),                     % quickly weed out obvious misfits
+        copy_term( T2, CT2 ),
+        % should be "variant( T1, CT2 ).", but instead:
+        check( ( numbervars( T1, 0, N ), numbervars( CT2, 0, N ), T1 = CT2 ) ).
+
+
+%%------------------------------------------------------------------------------
 %% write_shallow( + output stream, + term, + maximum depth ):
 %% Like write/2, but only to a limited print depth.
 

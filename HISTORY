@@ -78,4 +78,8 @@
                   metainterpreters).  A few other minor improvements, not worth
                   bumping the version counter.
 
+  April 2011 version 0.97 (beta):
+                - A work around for the incorrect implementation of variant/2 in
+                  SWI Prolog.
+
 -------------------------------------------------------------------------------
