@@ -213,14 +213,20 @@ get_term_equation( Term, EquationList, HeadVar ) :-
 get_equation( Term, Equation ) :-
         obtain_all_cyclic_subterms( Term, List ),
         number_list_starting_at( List, 1, NumberedList ),
+% originally:
 %         replace_loop( [ (0 , Term) ], NumberedList, [],
 %                       EquationWithDuplicates
 %                     ),
 %         setof( X, member( X, EquationWithDuplicates ), Equation ).
-% [FK]:
+%
+% [FK] replace_loop/4 replaced by convert/5, which produces no duplicates.
+%      The equations are reversed to obtain a more natural correspondence
+%      between the subequations and the order of arguments in the original
+%      term:
         convert( [ Term ], NumberedList,
-                 [ (0 , NewTerm)], Equation, [ NewTerm ]
-               ).
+                 [ (0 , NewTerm)], REquation, [ NewTerm ]
+               ),
+        reverse( REquation, Equation ).
 
 
 %% obtain_all_cyclic_subterms( + Term, - List ) :
@@ -431,9 +437,9 @@ convert( [ T | Ts ],  CyclicSubterms, Acc, Equation, [ NewT | NewTs ] ) :-
         (
             compound( T )
         ->
-            T =.. [ Functor | Args ],
+            T =.. [ F | Args ],
             convert( Args, CyclicSubterms, Acc, NewAcc, NewArgs ),
-            NewT =.. [ Functor | NewArgs ]
+            NewT =.. [ F | NewArgs ]
         ;
             NewT   = T,
             NewAcc = Acc
