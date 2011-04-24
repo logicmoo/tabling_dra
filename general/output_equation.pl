@@ -343,9 +343,14 @@ replace_term( Term, SubtermList, NewAgenda, Result ) :-
 %% term.
 
 replace_term_proper( Term, SubtermList, NewAgenda, Result ) :-
+        compound( Term ),
+        !,
         Term =.. [ Functor | Args ],
         replace_term_list( Args, SubtermList, NewAgenda, Results ),
         Result =.. [ Functor | Results ].
+
+replace_term_proper( Term, _SubtermList, _NewAgenda, Term ) :-
+        \+ compound( Term ).
 
 
 %% replace_term_list( + Terms, + SubtermList, - NewAgenda, - Results ) :
