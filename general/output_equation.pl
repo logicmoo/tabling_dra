@@ -1,6 +1,6 @@
 %%%  Output cyclic terms as equations.                                       %%%
 %%%                                                                          %%%
-%%%  Written by Ronald de Haan at UT Dresden (January, April 20011).         %%%
+%%%  Written by Ronald de Haan at UT Dresden (January, April 2011).          %%%
 %%%                                                                          %%%
 %%%  Reformatted by FK.  Some modifications by FK.                           %%%
 %%%                                                                          %%%
@@ -20,7 +20,7 @@
 %%%                                                            %%%
 %%% Example of use:                                            %%%
 %%%                                                            %%%
-%%% ?- X = f(Y), Y = g(Y), get_term_equation(X,Eq,InitVar).    %%%
+%%% ?- X = f(Y), Y = g(Y), get_term_equation(X, Eq, InitVar).  %%%
 %%% X = f(g(**)),                                              %%%
 %%% Y = g(**),                                                 %%%
 %%% Eq = [InitVar=f(_G805), _G805=g(_G805)] .                  %%%
@@ -87,20 +87,17 @@ cyclic( Term, Max ) :-
 %
 % number_with( N, [ H | T ], [ (N , H) | Ans ] ) :-
 %         number_with( N, T, Ans ).
-%
-%
-% I have rewritten this to the form given below, which is not strictly tail-
-% recursive, but does not use append/3 to extend the list of (depth , term)
-% pairs that are to be processed.  We probably have enough memory for the
-% execution stack, but the use of append may slow the program down in extreme
-% cases.
+
+
+% I have rewritten the above to the form given below, which is not strictly
+% tail-recursive, but does not use append/3 to extend the list of
+% (depth , term) pairs that are to be processed.  We probably have enough memory
+% for the execution stack, but the use of append may slow the program down in
+% extreme cases.
 %
 % Additionally, now that I have a truly recursive version of
 % aux_subterms_up_to_depth/4, I can avoid building an explicit list of
-% (depth , subterm)  pairs.
-%
-% Such improvements were made possible by Ronald's original program:
-% it would have been difficult to write the improved version from scratch.
+% (depth , subterm)  pairs.  [FK]
 
 
 %% list_subterms_up_to_depth( + Term, + MaxDepth, - Subterms ) :
@@ -122,7 +119,7 @@ aux_subterms_up_to_depth( [], _MaxDepth, End, End ).
 
 aux_subterms_up_to_depth( [ Term | Terms ], MaxDepth, Subterms, End ) :-
         (
-            ( \+ compound( Term ) ; MaxDepth =:= 0)
+            ( \+ compound( Term ) ; MaxDepth =< 0 )
         ->                                    % Term has no interesting subterms
             Subterms = [ Term | RestOfSubterms ]
         ;
@@ -152,10 +149,10 @@ aux_subterms_up_to_depth( [ Term | Terms ], MaxDepth, Subterms, End ) :-
 % I have replaced it with the following in the interest of "efficiency": if
 % a duplicate is found early, there is no need to go through the entire list.
 % The worst-case cost should be about the same, i.e., quadratic in the length of
-% the list (in the original version this is hidden within setof/3).
+% the list (in the original version this is hidden within setof/3). [FK]
 
 check_list_for_duplicates( List ) :-
-        % append/3 is used to generate various splittings of the list:
+        % append/3 is used to generate various splittings of List:
         append( _Prefix, [ Term | Postfix ], List ),
         identical_member( Term, Postfix ),
         !.
@@ -186,7 +183,7 @@ get_printable_list( [ ( A = B ) | T ], [ String | Rest ] ) :-
 %% get_term_equation( Term, EquationList, HeadVar ) obtains a list of
 %% equations EquationList corresponding to the cyclic term Term, in which
 %% HeadVar is the variable corresponding to Term.
-%% Conversion to more sensible variable names added by FK.
+%% Added conversion to more sensible variable names. [FK]
 
 get_term_equation( Term, EquationList, HeadVar ) :-
         get_equation( Term, Equation ),
@@ -201,7 +198,8 @@ get_term_equation( Term, EquationList, HeadVar ) :-
 %%------------------------------------------------------------------------------
 %% get_equation( Term, Equation )  gets the equation corresponding to a term in
 %% the form of a list of equalities in which the cyclic points are marked with
-%% x/1 markers
+%% x/1 markers. The argument of x/1 is the integer that is paired with the
+%% replaced term.
 %%
 %% example:
 %% ?-  X = [ a | Y ],  Y = [ b | Y ],  get_equation( X, E ).
@@ -330,8 +328,7 @@ replace_loop( [ (I , Term) | RestAgenda ], SubtermList, DoneBefore,
 %% Also returns all replaced subterms in NewAgenda.
 
 replace_term( Term, SubtermList, [ (N , Term) ], x( N ) ) :-
-        member( (N , T), SubtermList ),
-        T == Term,
+        identical_member2( (N , Term), SubtermList ),
         !.
 
 replace_term( Term, SubtermList, NewAgenda, Result ) :-
@@ -488,17 +485,24 @@ find_duplicate_eq( [ _ | T ], Init, M ) :-
 
 
 %%------------------------------------------------------------------------------
-%% identical_member( + term, + list ):
+%% identical_member( + term, + list ) :
 %% Succeed if the list contains this term (as opposed to something that is
 %% unifiable with this term).
 
-identical_member( X, [ Item | Items ] ) :-
-        (
-            X == Item
-        ->
-            true
-        ;
-            identical_member( X, Items )
-        ).
+identical_member( X, Items ) :-
+        member( T, Items ),
+        X == T,
+        !.
+
+
+%% identical_member2( (-+ number , + term), + list of pairs ) :
+%% Succeed if the list contains a pair whose second element is identical to the
+%% second element of arg1, and whose first element unifies with the first
+%% element of arg1.
+
+identical_member2( (N , Term), Items ) :-
+        member( (N, T), Items ),
+        Term == T,
+        !.
 
 %%==============================================================================
