@@ -187,7 +187,8 @@ get_printable_list( [ ( A = B ) | T ], [ String | Rest ] ) :-
 
 get_term_equation( Term, EquationList, HeadVar ) :-
         get_equation( Term, Equation ),
-        clean_equation( Equation, CleanEquation ),
+%        clean_equation( Equation, CleanEquation ),          % [FK]
+        Equation = CleanEquation,                            % [FK]
         get_equation_with_variables( CleanEquation,
                                      UnsortedEquationList, HeadVar
                                    ),
@@ -523,75 +524,86 @@ replace_markers_by_variables_in_list( [ T | Ts ], VL, [ V | Vs ] ) :-
 
 
 %%------------------------------------------------------------------------------
-%% The following predicates are used to remove redundancies from the equation.
-%%
-%% the following exemplifies what kind of redundancies can occur:
-%% ?- X = [ a | X ],  get_equation( X, E ),
-%%    get_equation_with_variables( E, EL, HV ).
-%% X = [ a | ** ],
-%% E = [  ( 0, [ a | x( 1 ) ] ), ( 1, [ a | x( 1 ) ] ) ],
-%% EL = [ HV=[ a | _G735 ], _G735=[ a | _G735 ] ] .
-%%
-%% ?- X = [ a | X ],  get_equation( X, E ),  clean_equation( E, F ),
-%%    get_equation_with_variables( F, EL, HV ).
-%% X = [ a | ** ],
-%% E = [  (0 , [ a | x( 1 ) ]), (1 , [ a | x( 1 ) ]) ],
-%% F = [  (0 , [ a | x( 0 ) ]) ],
-%% EL = [ HV=[ a | HV ] ] .
+%%%% [FK}: With the new version of convert/5, all this stuff seems to be
+%%%%%      unnecessary:
+%
+% %% The following predicates are used to remove redundancies from the equation.
+% %%
+% %% the following exemplifies what kind of redundancies can occur:
+% %% ?- X = [ a | X ],  get_equation( X, E ),
+% %%    get_equation_with_variables( E, EL, HV ).
+% %% X = [ a | ** ],
+% %% E = [  ( 0, [ a | x( 1 ) ] ), ( 1, [ a | x( 1 ) ] ) ],
+% %% EL = [ HV=[ a | _G735 ], _G735=[ a | _G735 ] ] .
+% %%
+% %% ?- X = [ a | X ],  get_equation( X, E ),  clean_equation( E, F ),
+% %%    get_equation_with_variables( F, EL, HV ).
+% %% X = [ a | ** ],
+% %% E = [  (0 , [ a | x( 1 ) ]), (1 , [ a | x( 1 ) ]) ],
+% %% F = [  (0 , [ a | x( 0 ) ]) ],
+% %% EL = [ HV=[ a | HV ] ] .
+%
+% %% clean_equation( + Equation, - Result ) :
+% %% Checks if there is a redundancy, and if so gets rid of it.
+%
+% clean_equation( Equation, Result ) :-
+%         identical_member( (0 , Init), Equation ),
+%         find_duplicate_eq( Equation, Init, N ),
+%         !,
+%         doclean_equation( Equation, N, Result ).
+%
+% clean_equation( Equation, Equation ).
+%
+%
+% %% doclean_equation( Equation, SuperfluousVar, Result )
+% %% Actually gets rid of the redundancy.
+%
+% doclean_equation( [], _, [] ).
+%
+% doclean_equation( [ (N , _) | Rest ], N, Ans ) :-
+%         !,
+%         doclean_equation( Rest, N, Ans ).
+%
+% doclean_equation( [ (N , Term) | Rest ], M, [ (N , NewTerm) | Ans ] ) :-
+%         replace_markers_with_initial( Term, M, NewTerm ),
+%         doclean_equation( Rest, M, Ans ).
+%
+%
+% %% replace_markers_with_initial( Term, SuperfluousVar, Result )
+% %% replaces markers of the superfluous variable with markers for the initial
+% %% variable
+%
+% replace_markers_with_initial( x( N ), N, x( 0 ) ) :- !.
+%
+% replace_markers_with_initial( x( K ), N, x( K ) ) :- K \= N,  !.
+%
+% replace_markers_with_initial( Term, N, Result ) :-
+%         Term =.. [ H | TS ],
+%         replace_markers_with_initial_list( TS, N, RS ),
+%         Result =.. [ H | RS ].
+%
+%
+% %% replace_markers_with_initial_list( Terms, SuperfluousVar, Results )
+% %% straightforwardly extends replace_markers_with_initial/3 to act on lists
+%
+% replace_markers_with_initial_list( [], _, [] ).
+%
+% replace_markers_with_initial_list( [ H | T ], N, [ R | RS ] ) :-
+%         replace_markers_with_initial( H, N, R ),
+%         replace_markers_with_initial_list( T, N, RS ).
+%
+%
+% %% find_duplicate_eq( Equation, InitialTerm, SuperfluousVar ) :
+% %% Produce information about a duplicate.
+%
+% find_duplicate_eq( [ (0 , Init) | T ], Init, M ) :- !,
+%         find_duplicate_eq( T, Init, M ).
+%
+% find_duplicate_eq( [ (M , Init) | _ ], Init, M ) :- !.
+%
+% find_duplicate_eq( [ _ | T ], Init, M ) :-
+%         find_duplicate_eq( T, Init, M ).
 
-%% clean_equation( + Equation, - Result ) :
-%% Checks if there is a redundancy, and if so gets rid of it.
-
-clean_equation( Equation, Result ) :-
-        identical_member( (0 , Init), Equation ),
-        find_duplicate_eq( Equation, Init, N ),
-        !,
-        doclean_equation( Equation, N, Result ).
-
-clean_equation( Equation, Equation ).
-
-
-%% doclean_equation( Equation, SuperfluousVar, Result )
-%% Actually gets rid of the redundancy.
-
-doclean_equation( [], _, [] ).
-
-doclean_equation( [ (N , _) | Rest ], N, Ans ) :-
-        !,
-        doclean_equation( Rest, N, Ans ).
-
-doclean_equation( [ (N , Term) | Rest ], M, [ (N , NewTerm) | Ans ] ) :-
-        replace_markers_with_initial( Term, M, NewTerm ),
-        doclean_equation( Rest, M, Ans ).
-
-%% replace_markers_with_initial( Term, SuperfluousVar, Result )
-%% replaces markers of the superfluous variable with markers for the initial
-%% variable
-replace_markers_with_initial( x( N ), N, x( 0 ) ) :- !.
-replace_markers_with_initial( x( K ), N, x( K ) ) :- K \= N,  !.
-replace_markers_with_initial( Term, N, Result ) :-
-        Term =.. [ H | TS ],
-        replace_markers_with_initial_list( TS, N, RS ),
-        Result =.. [ H | RS ].
-
-%% replace_markers_with_initial_list( Terms, SuperfluousVar, Results )
-%% straightforwardly extends replace_markers_with_initial/3 to act on lists
-replace_markers_with_initial_list( [], _, [] ).
-replace_markers_with_initial_list( [ H | T ], N, [ R | RS ] ) :-
-        replace_markers_with_initial( H, N, R ),
-        replace_markers_with_initial_list( T, N, RS ).
-
-
-%% find_duplicate_eq( Equation, InitialTerm, SuperfluousVar ) :
-%% Produce information about a duplicate.
-
-find_duplicate_eq( [ (0 , Init) | T ], Init, M ) :- !,
-        find_duplicate_eq( T, Init, M ).
-
-find_duplicate_eq( [ (M , Init) | _ ], Init, M ) :- !.
-
-find_duplicate_eq( [ _ | T ], Init, M ) :-
-        find_duplicate_eq( T, Init, M ).
 
 
 %%------------------------------------------------------------------------------
