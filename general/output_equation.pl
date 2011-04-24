@@ -213,10 +213,14 @@ get_term_equation( Term, EquationList, HeadVar ) :-
 get_equation( Term, Equation ) :-
         obtain_all_cyclic_subterms( Term, List ),
         number_list_starting_at( List, 1, NumberedList ),
-        replace_loop( [ (0 , Term) ], NumberedList, [],
-                      EquationWithDuplicates
-                    ),
-        setof( X, member( X, EquationWithDuplicates ), Equation ).
+%         replace_loop( [ (0 , Term) ], NumberedList, [],
+%                       EquationWithDuplicates
+%                     ),
+%         setof( X, member( X, EquationWithDuplicates ), Equation ).
+% [FK]:
+        convert( [ Term ], NumberedList,
+                 [ (0 , NewTerm)], Equation, [ NewTerm ]
+               ).
 
 
 %% obtain_all_cyclic_subterms( + Term, - List ) :
@@ -298,80 +302,153 @@ number_list_starting_at( [ H | T ], N, [ (N , H) | A ] ) :-
         number_list_starting_at( T, M, A ).
 
 
-%% replace_loop( + Agenda, + SubtermList, + DoneBefore, - Results ) :
-%% Replaces all subterms at cyclic positions with x/1 markers.
-%%  - Agenda is a list of pairs of numbers and terms that still have to be
-%%    handled (i.e., they or their terms may have to be replaced);
-%%  - SubtermList is a list of similar pairs, for subterms that have been picked
-%%    up by obtain_all_cyclic_subterms/2: it is occurrences of subterms that
-%%    are in this list (as second elements) that will be replaced with x(N)
-%%    items, where N is the first element of the pair that contains the subterm.
-%%  - DoneBefore is a list of subterms that have already been handled;
-%%  - Results is the list of the modified subterms.
+%%%%  The original form (reformatted, with some additional comments and minor
+%%%% fixes by FK):
+%
+% %% replace_loop( + Agenda, + SubtermList, + DoneBefore, - Results ) :
+% %% Replaces all subterms at cyclic positions with x/1 markers.
+% %%  - Agenda is a list of pairs of numbers and terms that still have to be
+% %%    handled (i.e., they or their terms may have to be replaced);
+% %%  - SubtermList is a list of similar pairs, for subterms that have been
+% %%    picked up by obtain_all_cyclic_subterms/2: it is occurrences of subterms
+% %%    that are in this list (as second elements) that will be replaced with
+% %%    x(N) items, where N is the first element of the pair that contains the
+% %%    subterm.
+% %%  - DoneBefore is a list of subterms that have already been handled;
+% %%  - Results is the list of the modified subterms.
+%
+% replace_loop( [], _, _, [] ).
+%
+% replace_loop( [ (I , Term) | RestAgenda ], SubtermList, DoneBefore,
+%               [ (I , Result1) | Results ]
+%             ) :-
+%         replace_term_proper( Term, SubtermList, NewAgenda1, Result1 ),
+%         findall( (N , AgendaItem),
+%                 ( member( (N , AgendaItem), NewAgenda1 ),
+%                   \+ identical_member( AgendaItem, DoneBefore ) ),
+%                  RealNewAgenda
+%                ),
+%         append( RestAgenda, RealNewAgenda, NewAgenda ),
+%         replace_loop( NewAgenda, SubtermList, [ Term | DoneBefore ],
+%                       Results
+%                     ).
+%
+%
+% %% replace_term( + Term, + SubtermList, - NewAgenda, - Result ) :
+% %% Replaces all subterms of a term with cycle markers x/1.
+% %% Also returns all replaced subterms in NewAgenda.
+%
+% replace_term( Term, SubtermList, [ (N , Term) ], x( N ) ) :-
+%         identical_member2( (N , Term), SubtermList ),
+%         !.
+%
+% replace_term( Term, SubtermList, NewAgenda, Result ) :-
+%         replace_term_proper( Term, SubtermList, NewAgenda, Result ).
+%
+%
+% %% replace_term_proper( + Term, + SubtermList, - NewAgenda, - Result ) :
+% %% Acts like replace_term/4 but skips any replacements in the root of the
+% %% term.
+%
+% replace_term_proper( Term, SubtermList, NewAgenda, Result ) :-
+%         compound( Term ),
+%         !,
+%         Term =.. [ Functor | Args ],
+%         replace_term_list( Args, SubtermList, NewAgenda, Results ),
+%         Result =.. [ Functor | Results ].
+%
+% replace_term_proper( Term, _SubtermList, _NewAgenda, Term ) :-
+%         \+ compound( Term ).
+%
+%
+% %% replace_term_list( + Terms, + SubtermList, - NewAgenda, - Results ) :
+% %% Straightforwardly extends replace_term/4 to act on lists of terms instead
+% %% of on single terms.
+%
+% replace_term_list( [], _, [], [] ).
+%
+% replace_term_list( [ Term | List ], SubtermList, NewAgenda, Results ) :-
+%         replace_term( Term, SubtermList, NewAgenda1, Result1 ),
+%         replace_term_list( List, SubtermList, NewAgenda2, Results2 ),
+%         append( NewAgenda1, NewAgenda2, NewAgenda ),
+%         Results = [ Result1 | Results2 ].
 
-replace_loop( [], _, _, [] ).
 
-replace_loop( [ (I , Term) | RestAgenda ], SubtermList, DoneBefore,
-              [ (I , Result1) | Results ]
-            ) :-
-        replace_term_proper( Term, SubtermList, NewAgenda1, Result1 ),
-        findall( (N , AgendaItem),
-                ( member( (N , AgendaItem), NewAgenda1 ),
-                  \+ identical_member( AgendaItem, DoneBefore ) ),
-                 RealNewAgenda
-               ),
-        append( RestAgenda, RealNewAgenda, NewAgenda ),
-        replace_loop( NewAgenda, SubtermList, [ Term | DoneBefore ],
-                      Results
-                    ).
+%% After finally having understood (?) the code above, I rewrote it from
+%% scratch, as follows [FK]:
+
+%% convert( + Terms, + CyclicSubterms, + Accumulator, - Equation, - NewTerms ) :
+%%    - Terms is (the remainder of) a list containing one terms, or all the
+%%      arguments of one term (sibling terms);
+%%    - CyclicSubterms is a cyclic subterms (produced by
+%%      obtain_all_cyclic_subterms/2), each paired with a unique number;
+%%    - Accumulator is the accumulator for the sub-equations of the entire
+%%      equation: each element is a pair consisting of a number and a term;
+%%    - Equation is the accumulator, augmented with information produced in this
+%%      instance of convert/5;
+%%    - NewTerms is a list with the converted forms of the input terms.
+%%
+%% Conversion consists in replacing each occurrence of a (sub)term that is
+%% identical to one of the terms on CyclicSubterms with x( N ), where N is the
+%% number that is associated with the term on CyclicSubterms.  For each such
+%% replacement a "subequation" of the form (N , Term) must appear on Equation:
+%% however, care is taken not to allow repetitions on that list.  Replacement is
+%% carried out also for the arguments of the cyclic subterms: to prevent
+%% infinite looping, it is not carried out if an argument already has its number
+%% on the Equation list.
+
+convert( [], _, Acc, Acc, [] ).
+
+convert( [ T | Ts ],  CyclicSubterms, Acc, Equation, [ x( N ) | NewTs ] ) :-
+        identical_member2( (N , T), CyclicSubterms ),
+        !,                                              % a cyclic term: replace
+        (
+            member( (N , _), Acc )
+        ->
+            % Break the loop: don't add to Equation, don't replace in arguments
+            % (if any):
+            NewAcc = Acc
+        ;
+            % Add the term to Equation, and run through its arguments, if any:
+            NAcc = [ (N , NewT) | Acc ],
+            (
+                compound( T )
+            ->
+                T =.. [ F | Args ],
+                convert( Args, CyclicSubterms, NAcc, NewAcc, NewArgs ),
+                NewT =.. [ F | NewArgs ]
+            ;
+                NewT   = T,
+                NewAcc = NAcc
+            )
+        ),
+        convert( Ts, CyclicSubterms, NewAcc, Equation, NewTs ).
 
 
-%% replace_term( + Term, + SubtermList, - NewAgenda, - Result ) :
-%% Replaces all subterms of a term with cycle markers x/1.
-%% Also returns all replaced subterms in NewAgenda.
-
-replace_term( Term, SubtermList, [ (N , Term) ], x( N ) ) :-
-        identical_member2( (N , Term), SubtermList ),
-        !.
-
-replace_term( Term, SubtermList, NewAgenda, Result ) :-
-        replace_term_proper( Term, SubtermList, NewAgenda, Result ).
-
-
-%% replace_term_proper( + Term, + SubtermList, - NewAgenda, - Result ) :
-%% Acts like replace_term/4 but skips any replacements in the root of the
-%% term.
-
-replace_term_proper( Term, SubtermList, NewAgenda, Result ) :-
-        compound( Term ),
-        !,
-        Term =.. [ Functor | Args ],
-        replace_term_list( Args, SubtermList, NewAgenda, Results ),
-        Result =.. [ Functor | Results ].
-
-replace_term_proper( Term, _SubtermList, _NewAgenda, Term ) :-
-        \+ compound( Term ).
+convert( [ T | Ts ],  CyclicSubterms, Acc, Equation, [ NewT | NewTs ] ) :-
+        % \+ identical_member2( (N , T), CyclicSubterms ),
+        % Don't add to equation, but convert arguments (if any):
+        (
+            compound( T )
+        ->
+            T =.. [ Functor | Args ],
+            convert( Args, CyclicSubterms, Acc, NewAcc, NewArgs ),
+            NewT =.. [ Functor | NewArgs ]
+        ;
+            NewT   = T,
+            NewAcc = Acc
+        ),
+        convert( Ts, CyclicSubterms, NewAcc, Equation, NewTs ).
 
 
-%% replace_term_list( + Terms, + SubtermList, - NewAgenda, - Results ) :
-%% Straightforwardly extends replace_term/4 to act on lists of terms instead
-%% of on single terms.
-
-replace_term_list( [], _, [], [] ).
-
-replace_term_list( [ Term | List ], SubtermList, NewAgenda, Results ) :-
-        replace_term( Term, SubtermList, NewAgenda1, Result1 ),
-        replace_term_list( List, SubtermList, NewAgenda2, Results2 ),
-        append( NewAgenda1, NewAgenda2, NewAgenda ),
-        Results = [ Result1 | Results2 ].
 
 
 %%------------------------------------------------------------------------------
-%% get_equation_with_variables( Equation, EquationList, HeadVar )
+%% get_equation_with_variables( + Equation, - EquationList, - HeadVar ) :
 %% turns an equation with x/1 markers into an equation with variables for the
 %% cyclic points
 %%
-%% example:
+%% Example:
 %% ?- X = [ a | Y ], Y = [ b | Y ],  get_equation( X, E ),
 %%    get_equation_with_variables( E, EL, HV ).
 %% X = [ a, b | ** ],
@@ -382,60 +459,61 @@ replace_term_list( [ Term | List ], SubtermList, NewAgenda, Results ) :-
 get_equation_with_variables( Equation, EquationList, HeadVar ) :-
         variable_list( Equation, VarList ),
         member( ( 0, HeadVar ), VarList ),
-        loop_through_list( Equation, VarList, EquationList ).
+        convert_markers_to_vars( Equation, VarList, EquationList ).
 
 
-% loop_through_list( Equation, VarList, EquationList ) :
+%% variable_list( + Equation, - VariableList ) :
+%% Gets a list of numbered variables for every term in the list of equations.
 
-loop_through_list( [], _, [] ).
-
-loop_through_list( [ ( N, T ) | Rest ], VarList, [ Eq | RestAns ] ) :-
-        replace_marker_by_variable( T, VarList, L ),
-        member( ( N, V ), VarList ),
-        Eq = ( V=L ),
-        loop_through_list( Rest, VarList, RestAns ).
-
-
-%% variable_list( Equation, variable_list )
-%% gets a list of numbered variables for every term in the list of equations
 variable_list( [], [] ).
 
 variable_list( [ ( N, _ ) | T ], [ ( N, _ ) | R ] ) :-
         variable_list( T, R ).
 
 
-%% replace_marker_by_variable( + Term, + NumberedVarList, - NewTerm ) :
+% convert_markers_to_vars( + Equation, + VarList, - NewEquation ) :
+% For each pair in Equation:
+%   - replace the number by the corresponding variable in VarList;
+%   - convert the term by replacing each x( N ) marker with the
+%     N'th variable in VarList.
+
+convert_markers_to_vars( [], _, [] ).
+
+convert_markers_to_vars( [ (N , T) | Rest ], VarList, [ V = NT | RestAns ] ) :-
+        member( (N , V), VarList ),
+        replace_markers_by_variables( T, VarList, NT ),
+        convert_markers_to_vars( Rest, VarList, RestAns ).
+
+
+%% replace_markers_by_variable( + Term, + NumberedVarList, - NewTerm ) :
 %% Replaces cyclic positions, marked with x/1, with corresponding variables from
 %% a numbered list of variables.
 %%
 %% The original version spuriously unified a variable term with x( N ), which
 %% led to wrong results.  This is fixed below.  [FK]
 
-replace_marker_by_variable( V, _VL, V ) :-
-        var( V ),
+replace_markers_by_variables( T, _VL, T ) :-
+        \+ compound( T ),
         !.
 
-replace_marker_by_variable( T, VL, S ) :-
-        % \+ var( T ),
-        T = x( N ),
+replace_markers_by_variables( x( N ), VL, V ) :-
         !,
-        member( ( N, S ), VL ).
+        member( (N , V), VL ).
 
-replace_marker_by_variable( T, VL, S ) :-
-        % \+ T = x( _ ),
-        % \+ compound( T ),
-        T =.. [ H | R ],
-        replace_marker_by_variable_list( R, VL, SS ),
-        S =.. [ H | SS ].
+replace_markers_by_variables( T, VL, NewT ) :-
+        T =.. [ F | Args ],
+        replace_markers_by_variables_in_list( Args, VL, NewArgs ),
+        NewT =.. [ F | NewArgs ].
 
 
-% replace_marker_by_variable_list( +Terms, +VarList, -Loops )
+% replace_markers_by_variables_in_list( +Terms, +VarList, -Vars ) :
+% Invokes replace_marker_by_variable for each item on the list.
 
-replace_marker_by_variable_list( [], _, [] ).
+replace_markers_by_variables_in_list( [], _, [] ).
 
-replace_marker_by_variable_list( [ H | T ], VL, [ S | SS ] ) :-
-        replace_marker_by_variable( H, VL, S ),
-        replace_marker_by_variable_list( T, VL, SS ).
+replace_markers_by_variables_in_list( [ T | Ts ], VL, [ V | Vs ] ) :-
+        replace_markers_by_variables( T, VL, V ),
+        replace_markers_by_variables_in_list( Ts, VL, Vs ).
 
 
 %%------------------------------------------------------------------------------
