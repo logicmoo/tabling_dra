@@ -381,32 +381,55 @@ get_equation_with_variables( Equation, EquationList, HeadVar ) :-
         member( ( 0, HeadVar ), VarList ),
         loop_through_list( Equation, VarList, EquationList ).
 
-% loop_through_list( Equation, VarList, EquationList )
+
+% loop_through_list( Equation, VarList, EquationList ) :
+
 loop_through_list( [], _, [] ).
+
 loop_through_list( [ ( N, T ) | Rest ], VarList, [ Eq | RestAns ] ) :-
         replace_marker_by_variable( T, VarList, L ),
         member( ( N, V ), VarList ),
         Eq = ( V=L ),
         loop_through_list( Rest, VarList, RestAns ).
 
+
 %% variable_list( Equation, variable_list )
 %% gets a list of numbered variables for every term in the list of equations
 variable_list( [], [] ).
+
 variable_list( [ ( N, _ ) | T ], [ ( N, _ ) | R ] ) :-
         variable_list( T, R ).
 
+
 %% replace_marker_by_variable( Term, VarList, Loop )
 %% replaces cyclic positions, marked with x/1, with corresponding variable from
-%% a numbered list of variables
-replace_marker_by_variable( x( N ), VL, S ) :- !,
-        member( ( N, S ), VL ).
+%% a numbered list of variables.
+%%
+%% The original version spuriously unified a variable term with x( N ), which
+%% led to wrong results.  This is fixed below.  [FK]
+
+replace_marker_by_variable( V, _VL, V ) :-
+        var( V ),
+        !.
+
 replace_marker_by_variable( T, VL, S ) :-
+        % \+ var( T ),
+        T = x( N ),
+        !,
+        member( ( N, S ), VL ).
+
+replace_marker_by_variable( T, VL, S ) :-
+        % \+ T = x( _ ),
+        % \+ compound( T ),
         T =.. [ H | R ],
         replace_marker_by_variable_list( R, VL, SS ),
         S =.. [ H | SS ].
 
+
 % replace_marker_by_variable_list( +Terms, +VarList, -Loops )
+
 replace_marker_by_variable_list( [], _, [] ).
+
 replace_marker_by_variable_list( [ H | T ], VL, [ S | SS ] ) :-
         replace_marker_by_variable( H, VL, S ),
         replace_marker_by_variable_list( T, VL, SS ).
@@ -433,7 +456,7 @@ replace_marker_by_variable_list( [ H | T ], VL, [ S | SS ] ) :-
 %% Checks if there is a redundancy, and if so gets rid of it.
 
 clean_equation( Equation, Result ) :-
-        member( (0 , Init), Equation ),
+        identical_member( (0 , Init), Equation ),
         find_duplicate_eq( Equation, Init, N ),
         !,
         doclean_equation( Equation, N, Result ).
