@@ -188,10 +188,13 @@ get_printable_list( [ ( A = B ) | T ], [ String | Rest ] ) :-
 get_term_equation( Term, EquationList, HeadVar ) :-
         get_equation( Term, Equation ),
         clean_equation( Equation, CleanEquation ),
-        get_equation_with_variables( CleanEquation, EquationList, HeadVar ),
+        get_equation_with_variables( CleanEquation,
+                                     UnsortedEquationList, HeadVar
+                                   ),
         % ADDED:
-        mk_variable_dictionary( p( HeadVar, EquationList ), VarDict ),
-        bind_variables_to_names( VarDict ).
+        mk_variable_dictionary( p( HeadVar, UnsortedEquationList ), VarDict ),
+        bind_variables_to_names( VarDict ),
+        sort( UnsortedEquationList, EquationList ).
 
 
 
@@ -401,8 +404,8 @@ variable_list( [ ( N, _ ) | T ], [ ( N, _ ) | R ] ) :-
         variable_list( T, R ).
 
 
-%% replace_marker_by_variable( Term, VarList, Loop )
-%% replaces cyclic positions, marked with x/1, with corresponding variable from
+%% replace_marker_by_variable( + Term, + NumberedVarList, - NewTerm ) :
+%% Replaces cyclic positions, marked with x/1, with corresponding variables from
 %% a numbered list of variables.
 %%
 %% The original version spuriously unified a variable term with x( N ), which
