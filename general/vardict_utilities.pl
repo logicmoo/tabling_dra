@@ -29,6 +29,10 @@
 %%%                                                                          %%%
 
 
+:- ensure_loaded( higher_order ).
+
+
+
 %%------------------------------------------------------------------------------
 %% expand_variable_dictionary( + term,
 %%                             + variable dictionary,

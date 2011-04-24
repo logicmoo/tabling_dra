@@ -81,5 +81,6 @@
   April 2011 version 0.97 (beta):
                 - A work around for the incorrect implementation of variant/2 in
                   SWI Prolog.
+                - Added Ronald de Haan's display of cyclic terms as equations.
 
 -------------------------------------------------------------------------------

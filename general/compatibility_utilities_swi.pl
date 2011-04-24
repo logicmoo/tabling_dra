@@ -21,7 +21,7 @@
    %                                                                      %
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%  Sicstus-specific predicates that ease compatibility problems.           %%%
+%%%  Predicates specific to SWI Prolog.                                      %%%
 %%%                                                                          %%%
 %%%  Written by Feliks Kluzniak at UTD (February, August 2009)               %%%
 %%%                                                                          %%%
@@ -29,6 +29,7 @@
 :- ensure_loaded( higher_order ).
 :- ensure_loaded( library( lists ) ). % An SWI library, for reverse/2.
 :- ensure_loaded( utilities ).
+:- ensure_loaded( output_equation ).
 
 
 %%------------------------------------------------------------------------------
@@ -217,8 +218,33 @@ are_variants( T1, T2 ) :-
 %% write_shallow( + output stream, + term, + maximum depth ):
 %% Like write/2, but only to a limited print depth.
 
+%% This version modified by Ronald de Haan of TU Dresden (with slight
+%% reformatting by FK).
+
 write_shallow( OutputStream, Term, MaxDepth ) :-
+        cyclic( Term, MaxDepth ),
+        !,
+        get_printable_term_equation( Term, Head, List ),
+        write_term( OutputStream, Head, [] ),
+        print_equations( OutputStream, List ).
+
+write_shallow( OutputStream, Term, MaxDepth ) :-
+        % \+ cyclic( Term, MaxDepth ),
+        mk_variable_dictionary( Term, VarDict ),
+        bind_variables_to_names( VarDict ),
         write_term( OutputStream, Term, [ max_depth( MaxDepth ) ] ).
+
+%
+print_equations( _OutputStream, [] ) :-
+        !.
+
+print_equations( OutputStream, [ H | T ] ) :-
+        write_term( OutputStream, H, [] ),
+        print_equations( OutputStream, T ).
+
+% Original version:
+% write_shallow( OutputStream, Term, MaxDepth ) :-
+%        write_term( OutputStream, Term, [ max_depth( MaxDepth ) ] ).
 
 
 %%------------------------------------------------------------------------------
@@ -289,7 +315,7 @@ erase_module( _ ).
 %%
 %% NOTE: Since DRA uses global variables to store only integers, we use the
 %%       flag/3 facility of SWI Prolog.  For more general values we would have
-%%       to use nb_setval/nb_getval.  See also getval/2 below.
+%%       to use nb_setval/nb_getval.  See also getval/2 and incval/1 below.
 
 setval( Name, Value ) :-
         flag( Name, _Old, Value ).
