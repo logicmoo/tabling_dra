@@ -193,7 +193,9 @@ get_term_equation( Term, EquationList, HeadVar ) :-
                                      UnsortedEquationList, HeadVar
                                    ),
         % ADDED:
-        mk_variable_dictionary( p( HeadVar, UnsortedEquationList ), VarDict ),
+        dra:mk_variable_dictionary( p( HeadVar, UnsortedEquationList ),
+                                    VarDict
+                                  ),
         bind_variables_to_names( VarDict ),
         sort( UnsortedEquationList, EquationList ).
 
