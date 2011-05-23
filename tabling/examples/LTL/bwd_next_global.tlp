@@ -15,5 +15,5 @@ trans(s0, s0).
 
 :- top q/0, q2/0.
 
-q :- check(s0, ~ (x g p)).
-q2 :- check(s0, ~ (g p)).
+q :- check(s0, ~ (x g p)).     % should find a counterexample
+q2 :- check(s0, ~ (g p)).      % should find a counterexample

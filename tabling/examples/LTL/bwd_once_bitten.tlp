@@ -12,30 +12,31 @@ state(s1).
 state(s2).
 
 
-holds(s0, p).
-holds(s0, q).
+holds(s0, p).   holds(s0, q).
 holds(s1, p).
-holds(s2, p).
-holds(s2, q).
+holds(s2, p).   holds(s2, q).
 
 
 
 % Swap the order of these two transitions and win prizes
 % * If s0 -> s2 (i.e., trans( s0, s2 ) is tried first, the old version of the
-%   verifier looped  for the query q.  The new version is OK
+%   verifier looped  for the query q0.
 
-trans(s0, s2).
 trans(s0, s1).
+trans(s0, s2).
 
 trans(s1, s1).
 trans(s2, s2).
 
 
-:- top q/0.
-:- top q_gq/0.
-:- top q_gp/0.
+:- top q0/0, q1/0, q2/0, q3/0, q4/0, q5/0, q6/0, q7/0.
 
-q :- check(s0, ~ (g p ^ g q)).
-q_gq :- check(s0, ~ g q).
-q_gp :- check(s0, ~ g p).
+q0 :- check(s0, ~ (g p ^ g q)).    % should find a counterexampls
+q1 :- check(s0, ~ (g (p ^ q))).    % should find a counterexampls
+q2 :- check(s0, ~ g q).            % should find a counterexampls
+q3 :- check(s0, ~ g p).            % should find a counterexampls
+q4 :- check(s0,   f p).            % should succeed
+q5 :- check(s0,   f q).            % should succeed
+q6 :- check(s1,   f q).            % should find a counterexampls
+q7 :- check(s0,  g ~q).            % should find a counterexampls
 
