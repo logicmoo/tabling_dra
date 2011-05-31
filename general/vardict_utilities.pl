@@ -71,6 +71,18 @@ in_vardict( V, [ _ | RestOfVarDict ] ) :-
 
 
 %%------------------------------------------------------------------------------
+%% extract_vars_from_dict( + variable dictionary, - list of variables ) :
+%% Produce a list of the (current instantiations of) the variables that
+%% occur in this dictionary.
+
+extract_vars_from_dict( VarDict, Vars ) :-
+        map( drop_name, VarDict, Vars ).
+
+%
+drop_name( [ _Name | Var ], Var ).
+
+
+%%------------------------------------------------------------------------------
 %% bind_all_variables_to_names( +- term, +- variable dictionary  ):
 %% Make sure that all the variables in this term are instantiated to their
 %% names. This is not quite the same as bind_variables_to_names/1 (see below),
@@ -95,13 +107,31 @@ bind_anonymous( [ '_' | Vs ] ) :-
 %% The variable dictionary is of the format returned by readvar/3, i.e., a list
 %% of pairs of the form "[ name | variable ]".  Go through the dictionary,
 %% binding each variable to the associated name.
-%% NOTE: See bind_all_variables_to_names/2 above!
+%% NOTE: 1. The assumption is that none of the variables has been instantiated!
+%%       2. See also bind_all_variables_to_names/2 above!
 
 bind_variables_to_names( VarDict ) :-
         map( bind_var_to_name, VarDict, _ ).
 
 %
 bind_var_to_name( [ Name | Name ], _ ).
+
+
+
+%%------------------------------------------------------------------------------
+%% bind_free_variables_to_names( +- variable dictionary  ):
+%% Like bind_variables_to_names/1, but done only for those items in the
+%% dictionary that are still variables.
+
+bind_free_variables_to_names( [] ).
+
+bind_free_variables_to_names( [ [ Name | Var ] | RestOfVarDict ] ) :-
+        ( Var = Name
+        ; true
+        ),
+        !,
+        bind_free_variables_to_names( RestOfVarDict ).
+
 
 
 %%------------------------------------------------------------------------------
