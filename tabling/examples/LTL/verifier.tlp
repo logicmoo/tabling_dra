@@ -160,8 +160,8 @@ coverify( S, A r B, Path ) :-  verify( S, B ^ x( A r B ),  Path ).
 %% Check whether arg1 ia a prefix of arg2 or vice versa.
 %% If so, arg3 is unified with the longer of the two.
 %%
-prefix( Prefix, Path, Path ) :-  once( append( Prefix, _, Path ) ).
-prefix( Path, Prefix, Path ) :-  once( append( Prefix, _, Path ) ).
+prefix( Prefix, Path, Path ) :-  append( Prefix, _, Path ),  !.
+prefix( Path, Prefix, Path ) :-  append( Prefix, _, Path ),  !.
 
 
 %% Ignore the path when checking for unification or variance.
