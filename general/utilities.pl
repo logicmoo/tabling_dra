@@ -318,4 +318,14 @@ member_reversed( M, [ _ | L ] ) :-
         member_reversed( M, L ).
 member_reversed( M, [ M | _ ] ).
 
+
+%%------------------------------------------------------------------------------
+%% remove( + item, + list, - list sans item ) :
+%% The item is in the list: remove the first occurrence.
+
+remove( Item, List, ListSansItem ) :-
+        append( Prefix, [ Item | Postfix ], List ),
+        append( Prefix, Postfix, ListSansItem ),
+        !.
+
 %%------------------------------------------------------------------------------
