@@ -218,33 +218,40 @@ are_variants( T1, T2 ) :-
 %% write_shallow( + output stream, + term, + maximum depth ):
 %% Like write/2, but only to a limited print depth.
 
-%% This version modified by Ronald de Haan of TU Dresden (with slight
-%% reformatting by FK).
-
 write_shallow( OutputStream, Term, MaxDepth ) :-
+       write_term( OutputStream, Term, [ max_depth( MaxDepth ) ] ).
+
+
+%%------------------------------------------------------------------------------
+%% write_shallow_with_eq( + output stream, + term, + maximum depth ):
+%% Like write_shallow/3, but instead of relying on the underlying mechanism of
+%% Prolog write equations for terms that are cyclical at a depth that does not
+%% excceed the maximum depth.  This procedure is due to Ronald de Haan of TU
+%% Dresden.
+
+write_shallow_with_eq( OutputStream, Term, MaxDepth ) :-
         cyclic( Term, MaxDepth ),
         !,
         get_printable_term_equation( Term, Head, List ),
         write_term( OutputStream, Head, [] ),
         print_equations( OutputStream, List ).
 
-write_shallow( OutputStream, Term, MaxDepth ) :-
+write_shallow_with_eq( OutputStream, Term, MaxDepth ) :-
         % \+ cyclic( Term, MaxDepth ),
         mk_variable_dictionary( Term, VarDict ),
         bind_variables_to_names( VarDict ),
-        write_term( OutputStream, Term, [ max_depth( MaxDepth ) ] ).
+        write_shallow( OutputStream, Term, MaxDepth ).
 
-%
+
+%% Print the list of equations.
+%% NOTE: Invoked also diretly from show_bindings/1 in top_level.pl!
+
 print_equations( _OutputStream, [] ) :-
         !.
 
 print_equations( OutputStream, [ H | T ] ) :-
         write_term( OutputStream, H, [] ),
         print_equations( OutputStream, T ).
-
-% Original version:
-% write_shallow( OutputStream, Term, MaxDepth ) :-
-%        write_term( OutputStream, Term, [ max_depth( MaxDepth ) ] ).
 
 
 %%------------------------------------------------------------------------------
