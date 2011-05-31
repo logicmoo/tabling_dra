@@ -93,6 +93,25 @@ filter( PredName, [ H | T ], NL ) :-
 
 
 %%------------------------------------------------------------------------------
+%% filter2( + predicate name, + list, - yes list, - no list ):
+%% The predicate should take one argument.
+%% The first output list will contain only those elements of the input list for
+%% which the predicate succeeds; the second output list will contain only those
+%% elements of the input list for which the predicate fails.
+
+filter2( _, [], [], [] ) :-  !.
+
+filter2( PredName, [ H | T ], [ H | Yes ], No ) :-
+        apply( PredName, [ H ] ),
+        !,
+        filter2( PredName, T, Yes, No ).
+
+filter2( PredName, [ H | T ], Yes, [ H | No ] ) :-
+        % \+ apply( PredName, [ H ] ),
+        filter2( PredName, T, Yes, No ).
+
+
+%%------------------------------------------------------------------------------
 %% fold( + predicate name,+ initial value, + list, - final value ):
 %% The predicate should implement a binary function, i.e.,
 %%   - it should take three arguments, the first two of which are input
