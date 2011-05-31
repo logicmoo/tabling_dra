@@ -651,21 +651,84 @@ show_result( no, _ ) :-
 %% show_bindings( + variable dictionary ):
 %% Use the variable dictionary to show the results of a query.
 %% (Recall that the variable dictionary is in Eclipse format.)
+%% This version uses Ronald de Haan's equation generator
+%% (see output_equations.pl) to display cyclic terms.
 
 % :- mode show_bindings( + ).
 
-show_bindings( Dict ) :-
+% OLD VERSION:
+% show_bindings( Dict ) :-
+%         std_output_stream( Output ),
+%         print_depth( MaxDepth ),
+%         member( [ Name | Var ], Dict ),
+%         write( Output, Name ),
+%         write( Output, ' = ' ),
+%         write_shallow( Output, Var, MaxDepth ),
+%         nl( Output ),
+%         fail.
+%
+% show_bindings( _ ).
+
+show_bindings( VarDict ) :-
+        extract_vars_from_dict( VarDict, TopTerms ),  % instantiations, actually
+        Parcel =.. [ '_parcel' | TopTerms ],          % a term with top "vars"
+        get_equation( Parcel, Equations ),
+        get_equation_with_variables( Equations, EquationList, HeadVar ),
+        most_general_instance( Parcel, ParcelPattern ),
+        remove( _ = ParcelPattern, EquationList, EquationListSansParcel ),
+        % The above has instantiated ParcelPattern so that its arguments are now
+        % the new versions of the instantiations of top variables: we must now
+        % replace the old versions with the new ones:
+        ParcelPattern =.. [ _ | NewTopTerms ],
+        swap_terms( VarDict, NewTopTerms, NewVarDict ),
+        % A variable dictionary for the new variables:
+        mk_variable_dictionary( p( HeadVar, EquationListSansParcel ), AuxVarDict
+                              ),
+        % Create equations for the top variables:
+        map( mk_eq, NewVarDict, TopEqs ),
+        % Bind all uninstantiated variables to their names:
+        bind_free_variables_to_names( NewVarDict ),         % names in query
+        bind_free_variables_to_names( AuxVarDict ),         % names for new vars
+        % A unified list of all the equations:
+        append( TopEqs, EquationListSansParcel, AllEquations ),
+        % We don't want equation of the form  "V = V":
+        filter( non_trivial_eq, AllEquations, NontrivialEquations ),
+        % Sort by variable name:
+        sort( NontrivialEquations, SortedEquations ),
         std_output_stream( Output ),
-        print_depth( MaxDepth ),
-        member( [ Name | Var ], Dict ),
-        write( Output, Name ),
-        write( Output, ' = ' ),
-        write_shallow( Output, Var, MaxDepth ),
-        nl( Output ),
-        fail.
+        show_equations( SortedEquations, Output ),
+        fail.              % We must undo all the bindings that we created here!
 
 show_bindings( _ ).
 
+
+%
+swap_terms( [], [], [] ).
+
+swap_terms( [ [ Name | _OldTerm ] | Pairs    ], [ NewTerm | NewTerms ],
+            [ [ Name | NewTerm ]  | NewPairs ]
+          ) :-
+        swap_terms( Pairs, NewTerms, NewPairs ).
+
+
+%
+mk_eq( [ Name | Term ], Name = Term ).
+
+
+%
+non_trivial_eq( A = B ) :-  A \= B .
+
+
+%
+show_equations( Equations, Output ) :-
+        member( Name = Term, Equations ),
+        write( Output, Name ),
+        write( Output, ' = ' ),
+        write( Output, Term ),
+        nl( Output ),
+        fail.
+
+show_equations( _, _ ).
 
 
 %% check_not_builtin( + clause, + variable dictionary ):
