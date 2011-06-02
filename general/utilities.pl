@@ -328,4 +328,35 @@ remove( Item, List, ListSansItem ) :-
         append( Prefix, Postfix, ListSansItem ),
         !.
 
+
+%%------------------------------------------------------------------------------
+%% write_shallow_with_eq( + output stream, + term, + maximum depth ):
+%% Like write_shallow/3, but instead of relying on the underlying mechanism of
+%% Prolog write equations for terms that are cyclical at a depth that does not
+%% excceed the maximum depth.  This procedure is due to Ronald de Haan of TU
+%% Dresden.
+
+write_shallow_with_eq( OutputStream, Term, MaxDepth ) :-
+        cyclic( Term, MaxDepth ),
+        !,
+        get_printable_term_equation( Term, Head, List ),
+        write_term( OutputStream, Head, [] ),
+        print_equations( OutputStream, List ).
+
+write_shallow_with_eq( OutputStream, Term, MaxDepth ) :-
+        % \+ cyclic( Term, MaxDepth ),
+        mk_variable_dictionary( Term, VarDict ),
+        bind_variables_to_names( VarDict ),
+        write_shallow( OutputStream, Term, MaxDepth ).
+
+
+%% Print the list of equations.
+
+print_equations( _OutputStream, [] ) :-
+        !.
+
+print_equations( OutputStream, [ H | T ] ) :-
+        write_term( OutputStream, H, [] ),
+        print_equations( OutputStream, T ).
+
 %%------------------------------------------------------------------------------
