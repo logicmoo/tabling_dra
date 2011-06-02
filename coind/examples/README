@@ -2,6 +2,10 @@
 
 This directory includes the following files:
 
+automaton.clp:
+        An example of an omega-automaton, due to Horst Reichel of Technical
+        University at Dresden, Germany.
+
 comember.clp:
 
         A modified version of Example 2 from Luke Simon's Ph.D. thesis.

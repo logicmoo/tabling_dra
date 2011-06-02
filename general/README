@@ -41,6 +41,10 @@ higher_order.pl:
 io_utilities.pl:
         Utilities that have to do with input and output.
 
+Makefile:
+        Creates a stand-alone clause checker (advanced checking for singleton
+        variables).
+
 olist.pl:
         Basic operations on open lists.
 
