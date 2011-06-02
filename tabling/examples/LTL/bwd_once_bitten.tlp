@@ -20,7 +20,8 @@ holds(s2, p).   holds(s2, q).
 
 % Swap the order of these two transitions and win prizes
 % * If s0 -> s2 (i.e., trans( s0, s2 ) is tried first, the old version of the
-%   verifier looped  for the query q0.
+%   verifier looped  for the query q0.  The new version succeeds, but it
+%   should give a counterexample.
 
 trans(s0, s1).
 trans(s0, s2).
