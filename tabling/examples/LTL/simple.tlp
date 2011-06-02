@@ -1,0 +1,13 @@
+:- ['verifier.tlp'].
+
+proposition( p ).
+
+state( s ).
+
+trans( s, s ).
+
+holds( s, p ).
+
+:- top q/0.
+
+q :-  check( s, f g p ).

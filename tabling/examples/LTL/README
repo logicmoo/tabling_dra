@@ -126,6 +126,9 @@ example4_v.tlp:
         conjunctions when one conjunct is true along one path, and the other
         along another.
 
+simple_example.tlp:
+        A trivial example of a one-state automaton.
+
 small_example.pl:
 small_example.tlp:
 small_example_v.tlp:
