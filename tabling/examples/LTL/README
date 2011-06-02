@@ -143,4 +143,7 @@ microwave2.tlp:
         verifier.tlp.  Since negation is not allowed, explicit "notholds"
         facts have been added.
 
+two_loops.tlp:
+        A simple example of an automaton with three states.
+
 --------------------------------------------------------------------------------
