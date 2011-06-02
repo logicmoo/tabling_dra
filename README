@@ -52,6 +52,12 @@ NOTE: At the time of this writing Eclipse tends to behave quite
       advisable to use the Sicstus version for coinductive programs,
       especially when they are coupled with tabling.
 
+LATER ADDITION:  The programs have now been ported to SWI Prolog.  SWI Prolog
+                 is now our standard Prolog system.  Sicstus is supported
+                 marginally (we don't have access to the latest version), and
+                 support for Eclipse has essentially been dropped, mostly
+                 because of its brittleness in the presence of cyclic terms.
+
 
 
 ..................

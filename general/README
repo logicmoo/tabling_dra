@@ -54,8 +54,12 @@ program_consistency.pl:
         An auxiliary of top_level: checks general consistency of the loaded
         program.
 
+output_equation.pl:
+        Ronald de Haan's predicates for converting a cyclic term to a set
+        of equations (used in top_level.pl).
+
 README:
-        This file
+        This file.
 
 set_in_list.pl:
         Simple operations on smallish sets, used by utilities.

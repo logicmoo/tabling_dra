@@ -29,7 +29,7 @@
 %%%  Last update: 30 November 2009                                           %%%
 %%%                                                                          %%%
 dra_version( Version ) :-
-        name_chars( 'DRA ((c) UTD 2009) version 0.97 (beta), April 2011 (',
+        name_chars( 'DRA ((c) UTD 2009) version 0.97 (beta), June 2011 (',
                     VCodes
                   ),
         lp_system( Sys ),
