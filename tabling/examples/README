@@ -2,6 +2,10 @@
 
 This directory includes the following files:
 
+automaton.tlp:
+        An example of an omega-automaton, due to Horst Reichel of Technical
+        University at Dresden, Germany.
+
 bad.tlp:
 bad2.tlp:
 etc.
