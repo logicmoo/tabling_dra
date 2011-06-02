@@ -204,13 +204,15 @@ copy_term2( Term, Copy ) :-
 %% are_variants( + term, + term ) :
 %%    Succeeds only if both arguments are variants of each other.
 %%    Does not instantiate any variables.
-%% NOTE: In SWI-Prolog 5.11.18 variant/2 is broken.
+%% NOTE:
+%%   If variant/2 turns out to be broken, replace the last call with the
+%%    following three:
+%%        check( T1 = T2 ),                   % quickly weed out obvious misfits
+%%        copy_term( T2, CT2 ),
+%%        check( (numbervars( T1, 0, N ), numbervars( CT2, 0, N ), T1 = CT2) ).
 
 are_variants( T1, T2 ) :-
-        check( T1 = T2 ),                     % quickly weed out obvious misfits
-        copy_term( T2, CT2 ),
-        % should be "variant( T1, CT2 ).", but instead:
-        check( ( numbervars( T1, 0, N ), numbervars( CT2, 0, N ), T1 = CT2 ) ).
+        variant( T1, T2 ).
 
 
 %%------------------------------------------------------------------------------
