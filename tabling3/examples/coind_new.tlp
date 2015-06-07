@@ -6,6 +6,6 @@ p( [ a | X ] ) :-  p( X ).
 
 p( [ b | X ] ) :-  p( X ).
 
-:- top p/1.
+:- topl p/1.
 
 % Try this with: ?- p( A ).  and with  ?- p( [a, b, a | _ ] ).

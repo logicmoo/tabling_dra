@@ -439,7 +439,7 @@ memberEl(_63,_65,_67) :-
 makevars(_63,_65) :- 
         makevars__1(_67,_69),
         unify_sets([_63,_65], [_67,_69]).
-top(_63) :- 
+is_top(_63) :- 
         top__1(_65),
         unify_sets([_63], [_65]).
 zero200(_63) :- 
@@ -596,7 +596,7 @@ show_facts :- makevars__1(_63,_65),
               write(makevars(_63,_65)), nl, fail.
 show_facts :- top__1(_63),
               numbervars([_63]),
-              write(top(_63)), nl, fail.
+              write(topl(_63)), nl, fail.
 show_facts :- zero200__1(_63),
               numbervars([_63]),
               write(zero200(_63)), nl, fail.

@@ -6,7 +6,7 @@ edge( a, b ).
 edge( b, a ).
 
 
-:- tabled path/2 .
+:- table path/2 .
 
 path( A, B ) :-  edge( A, B ).
 

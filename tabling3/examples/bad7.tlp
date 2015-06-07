@@ -40,4 +40,4 @@ b(a,a).
 c(a).
 d(a).
 d(a,a,a).
-:- top a/1, a/2, p/2.
+:- topl a/1, a/2, p/2.

@@ -17,12 +17,12 @@ go:-
 
 queens(N):-
     statistics(runtime,[Start|_]),
-    top(N),
+    is_top(N),
     statistics(runtime,[End|_]),
     T is End-Start,
     write('%execution time ='), write(T), write(' milliseconds'),nl.
 
-top(N):-
+is_top(N):-
     cputime(T1),
     make_list(N,List),
     List in 1..N,

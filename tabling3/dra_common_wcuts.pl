@@ -1,9 +1,9 @@
    % NOTICE: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    %                                                                      %
-   %  COPYRIGHT (2009) University of Dallas at Texas.                     %
+   %  COPYRIGHT(2009) University of Dallas at Texas.                     %
    %                                                                      %
    %  Developed at the Applied Logic, Programming Languages and Systems   %
-   %  (ALPS) Laboratory at UTD by Feliks Kluzniak.                        %
+   %(ALPS) Laboratory at UTD by Feliks Kluzniak.                        %
    %                                                                      %
    %  Permission is granted to modify this file, and to distribute its    %
    %  original or modified contents for non-commercial purposes, on the   %
@@ -21,15 +21,17 @@
    %                                                                      %
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+:- use_module(library(memo)).
+
 %%%                                                                          %%%
 %%%  An interpreter for tabled logic programming with coinduction:           %%%
 %%%  see the description below for more information.                         %%%
-%%%  Written by Feliks Kluzniak at UTD (January-February 2009).              %%%
+%%%  Written by Feliks Kluzniak at UTD(January-February 2009).              %%%
 %%%                                                                          %%%
 %%%  Last update: 30 November 2009                                           %%%
 %%%                                                                          %%%
 dra_version( Version ) :-
-        name_chars( 'DRA ((c) UTD 2009) version 0.97 (beta), June 2011 (',
+        name_chars( 'DRA((c) UTD 2009) version 0.97(beta), June 2011(',
                     VCodes
                   ),
         lp_system( Sys ),
@@ -52,15 +54,15 @@ dra_version( Version ) :-
 %%%
 %%%    2. The interpreter supports a number of directives:
 %%%
-%%%       a) Tabled and coinductive predicates should be declared as such in
+%%%       a) Tabled and coinductive0 predicates should be declared as such in
 %%%          the program file, e.g.,
-%%%              :- table       ancestor/2.
+%%%              :- tabled       ancestor/2.
 %%%              :- coinductive0  comember/2.
 %%%              :- coinductive1 comember/2.
 %%%
 %%%          "coinductive1" means that if there are coinductive hypotheses
 %%%          with which a goal unifies, then the usual clauses will not be tried
-%%%          after the hypotheses are exhausted (this is "new style"
+%%%          after the hypotheses are exhausted(this is "new style"
 %%%          coinduction).
 %%%
 %%%       b) To include files use the usual Prolog syntax:
@@ -70,21 +72,21 @@ dra_version( Version ) :-
 %%%          use
 %%%              :- dynamic p/k.
 %%%
-%%%       d) By default, a goal produces new (i.e., heretofore unknown) answers
+%%%       d) By default, a goal produces new(i.e., heretofore unknown) answers
 %%%          before producing old ones.  To reverse this behaviour, use
 %%%
 %%%              :- old_first p/k.
 %%%          or
 %%%              :- old_first all.
 %%%
-%%%       e) To produce a wallpaper traces use the traces directive. For example,
+%%%       e) To produce a wallpaper traced use the traced directive. For example,
 %%%
-%%%              :- traces p/3, q/0, r/1.
+%%%              :- traced p/3, q/0, r/1.
 %%%
-%%%          will traces predicates "p/3", "q/0" and "r/1".  If you want to traces
+%%%          will traced predicates "p/3", "q/0" and "r/1".  If you want to traced
 %%%          everything, use
 %%%
-%%%              :- traces all.
+%%%              :- traced all.
 %%%
 %%%          These directives are cumulative.
 %%%
@@ -103,37 +105,37 @@ dra_version( Version ) :-
 %%%
 %%%    3. Just before the result of a query is reported, the interpreter
 %%%       produces a printout with statistics accummulated since the previous
-%%%       printout (or since the beginning, if this is the first printout during
+%%%       printout(or since the beginning, if this is the first printout during
 %%%       this session with the interpreted program). The printout looks like
 %%%       this:
 %%%
-%%%           [K steps, M new answers tabled (N in all)]
+%%%           [K steps, M new answers tabled(N in all)]
 %%%
 %%%       where K, M and N are some natural numbers. K is the number of
 %%%       evaluated goals, M is the number of new additions to the answer table,
 %%%       N is the current size of the answer table.
 %%%
 %%%    4. If the program invokes a built-in predicate, that predicate must
-%%%       be declared in the table "builtin/1" (see file "dra_builtins.pl").
+%%%       be declared in the table "builtin/1"(see file "dra_builtins.pl").
 %%%       Every addition should be considered carefully: some built-ins might
 %%%       require special treatment by the interpreter.
 %%%
 %%%    5. The program may contain clauses that modify the definition of the
-%%%       interpreter's predicate "essence_hook/2" (the clauses will be asserted
+%%%       interpreter's predicate "essence_hook/2"(the clauses will be asserted
 %%%       at the front of the predicate, and will thus override the default
 %%%       definition for some cases).  The default definition is
 %%%
 %%%          essence_hook( T, T ).
 %%%
 %%%       This predicate is invoked _in certain contexts_ when:
-%%%          - two terms are about to be compared (either for equality or to
+%%%          - two terms are about to be compared(either for equality or to
 %%%            check whether they are variants of each other);
 %%%          - an answer is tabled;
 %%%          - an answer is retrieved from the table.
 %%%
 %%%       The primary intended use is to suppress arguments that carry only
 %%%       administrative information and that may differ in two terms that are
-%%%       "semantically" equal or variants of each other. (Such, for example, is
+%%%       "semantically" equal or variants of each other.(Such, for example, is
 %%%       the argument that carries the set of coinductive hypotheses in a
 %%%       co-logic program translated into Prolog: see "../coind/translate_clp".
 %%%       Mind you, that translation need not be applied to programs executed by
@@ -157,18 +159,20 @@ dra_version( Version ) :-
 
 
 
-
+initialize_table:-must(initialise).
+print_table_statistics:-print_statistics.
+load(P):-must(prog0(P)),!.
 /*******************************************************************************
 
    General description
    -------------------
 
-   A simple (and very inefficient) interpreter that emulates "top-down tabled
+   A simple(and very inefficient) interpreter that emulates "top-down tabled
    programming", as described in
 
      [1] Hai-Feng Guo, Gopal Gupta:
          Tabled Logic Programming with Dynamic Ordering of Alternatives
-         (17th ICLP, 2001)
+       (17th ICLP, 2001)
 
    There are two significant changes with respect to the description in the
    paper:
@@ -183,25 +187,25 @@ dra_version( Version ) :-
          directive.
 
          Here, "new answer for a tabled goal" means an answer that has not yet
-         been seen (and tabled) for a variant of the goal.
+         been seen(and tabled) for a variant of the goal.
 
          The default behaviour is intended to help computations converge more
          quickly.  The user is given an option to change it, because some
-         predicates may produce a very large (even infinite) set of answers on
+         predicates may produce a very large(even infinite) set of answers on
          backtracking, and the application might not require those answers.
 
    The terminology has been modified under the influence of
 
      [2] Neng-Fa Zhou, Taisuke Sato, Yi-Dong Shen:
          Linear Tabling Strategies and Optimizations
-         (TPLP 2008 (?))
+       (TPLP 2008(?))
 
-   More specifically, "masters" are called "pioneers" (although in a sense
+   More specifically, "masters" are called "pioneers"(although in a sense
    somewhat different than in [2]: we use "pioneer" for "topmost looping goal"),
    and "strongly connected components" are called "clusters".
 
    Note that "clusters" are detected dynamically, to achieve greater precision
-   (a dependency graph among static calls can only be a rough approximation, a
+ (a dependency graph among static calls can only be a rough approximation, a
    dependency graph among predicates is rougher still).
 
 
@@ -211,24 +215,24 @@ dra_version( Version ) :-
    Some predicates are "tabled", because the user has declared them to be such
    by using an appropriate directive, e.g.,
 
-       :- table p/2 .
+       :- tabled p/2 .
 
    All calls to a tabled predicate that are present in the interpreted program
    are called "tabled calls".  Instances of such calls are called "tabled
    goals".  In general, we will use the term "call" to refer to a static entity
    in the program, and "goal" to refer to an instance of a call.  We will also
    avoid the conventional overloading of the term "goal" in yet another way: we
-   will call a sequence (i.e., conjunction) of goals just that (unless we can
+   will call a sequence(i.e., conjunction) of goals just that(unless we can
    refer to it as a "query" or a "resolvent").
 
-   Similarly, the user can declare a predicate to be "coinductive", by using
+   Similarly, the user can declare a predicate to be "coinductive0", by using
    another kind of directive, e.g.,
 
        :- coinductive0  p/2 .
        :- coinductive1 q/3 .
 
-   Calls and goals that refer to a coinductive predicate will also be called
-   "coinductive".
+   Calls and goals that refer to a coinductive0 predicate will also be called
+   "coinductive0".
 
 
    Limitations
@@ -236,7 +240,7 @@ dra_version( Version ) :-
 
    The interpreted program must not contain cuts.  It also must not contain
    calls to built-in-predicates, except for the handful of predicates listed in
-   builtin/1 below.  (This list can be easily extended as the need arises.  Some
+   builtin/1 below.(This list can be easily extended as the need arises.  Some
    built-in predicates, however, cannot be added without modifying the
    interpreter, sometimes extensively: "!/0" is a good example.)
 
@@ -247,27 +251,27 @@ dra_version( Version ) :-
 
    The interpreter uses a number of tables that store information accumulated
    during a computation.  A computation consists in reading a program and
-   executing a number of queries.  A query is a sequence (i.e., conjunction) of
+   executing a number of queries.  A query is a sequence(i.e., conjunction) of
    goals.
 
-   The tables (implemented as dynamic predicates of Prolog) are:
+   The tables(implemented as dynamic predicates of Prolog) are:
 
 
-   -- is_coinductive0( generic head )
+   -- coinductive0( generic head )
    -- coinductive1( generic head )
-   -- is_tabled( generic head )
+   -- tabled( generic head )
    -- old_first( generic head )
 
            Each of these tables contains an entry for each predicate that has
-           been declared as having the corresponding property (i.e., as
-           coinductive, table etc.).  For instance, when the interpreter reads
+           been declared as having the corresponding property(i.e., as
+           coinductive0, tabled etc.).  For instance, when the interpreter reads
                :- coinductive0 p/2 .
            it stores the fact
-               is_coinductive0( p( _, _ ) ).
+               coinductive0( p( _, _ ) ).
 
-           A "coinductive" declaration is deemed to supersede "coinductive1",
+           A "coinductive0" declaration is deemed to supersede "coinductive1",
            and information about a predicate that has been so declared is stored
-           both in coinductive/1 and coinductive1/1.
+           both in coinductive0/1 and coinductive1/1.
 
            These tables are cleared only before reading in a new program.
 
@@ -280,20 +284,20 @@ dra_version( Version ) :-
 
            Note that the fact is an instantiation of the goal.  If a tabled goal
            has no solutions, it will have no entry in "answer", even though it
-           may have an entry in "completed" (see below).
+           may have an entry in "completed"(see below).
 
-           (NOTE:
+         (NOTE:
                1. In the actual implementation each fact in "answer" has the
                   form
                      answer( cgoal, goal, fact )
-                  where "cgoal" is a copy of "goal" (no shared variables),
+                  where "cgoal" is a copy of "goal"(no shared variables),
                   passed through essence_hook/2.
-                  This is done to facilitate more effective filtering (via
+                  This is done to facilitate more effective filtering(via
                   unification) before a check is made for whether "goal" is a
                   variant of the goal for which we are seeking a tabled answer.
 
                2. This stuff has been removed to file dra_table_assert.pl
-                  or dra_table_record.pl (only one of them is used,
+                  or dra_table_record.pl(only one of them is used,
                   depending on the logic programming system: see the main file
                   used to load the program.
            )
@@ -304,15 +308,15 @@ dra_version( Version ) :-
            ..................
            In general, for each success of a tabled goal encountered during the
            evaluation of a query, the interpreter will make certain that the
-           result, i.e., the successful instantiation of that goal (which need
+           result, i.e., the successful instantiation of that goal(which need
            not be ground!) is stored in the table "answer", accompanied by a
-           variant of the original version of the goal (i.e., as it appeared
+           variant of the original version of the goal(i.e., as it appeared
            when it was first encountered).
 
-           Before a query finally fails (after exhausting all the answers),
+           Before a query finally fails(after exhausting all the answers),
            tabled goals encountered during its evaluation will have computed
            their least fixed points, i.e., all the possible results for those
-           goals will be stored in "answer".  (Of course, if this set of all
+           goals will be stored in "answer".(Of course, if this set of all
            answers is not sufficiently small, the interpreter will not terminate
            successfully.)
 
@@ -322,10 +326,10 @@ dra_version( Version ) :-
 
            The need for associating a fact with information about the
            corresponding goal might not be immediately obvious.  Consider the
-           following example (which is simplistic in that the computation itself
+           following example(which is simplistic in that the computation itself
            is trivial):
 
-               program:  :- table p/2.
+               program:  :- tabled p/2.
                          p( A, A ).
                          p( a, b ).
 
@@ -351,7 +355,7 @@ dra_version( Version ) :-
            A subsequent invocation of p( U, V ) would then return all three
            results, i.e., also "p( b, b )"!
 
-           The proper contents of "answer" should be as follows (though not
+           The proper contents of "answer" should be as follows(though not
            necessarily in this order):
 
                answer( p( U, V ), p( U, U ) ).
@@ -375,24 +379,24 @@ dra_version( Version ) :-
 
            If the current goal is tabled, and it is not a variant of any of its
            ancestors, then the goal is called a "pioneer" and obtains an "index"
-           (i.e., an unique identifier). Both the goal and its index are
+         (i.e., an unique identifier). Both the goal and its index are
            recorded in this table.
 
-           The role of a pioneer is to compute the fixpoint (by tabling answers)
+           The role of a pioneer is to compute the fixpoint(by tabling answers)
             for itself and its cluster before failing: this is why the results
            for its variant descendants can be obtained simply by querying
-           "answer", without using their clauses (which prevents endless
+           "answer", without using their clauses(which prevents endless
            recursion).
 
            If a pioneer is later determined not to be the "topmost looping goal"
-           in a "cluster" of interdependent goals (see ref. [2]), then it loses
+           in a "cluster" of interdependent goals(see ref. [2]), then it loses
            the status of a pioneer, and its role will be overtaken by the
-           topmost goal in the cluster.  (This can happen if one of the
+           topmost goal in the cluster.(This can happen if one of the
            descendants of a pioneer turns out to be a variant of one of its
            ancestors.)
 
            A pioneer also loses its status if its fixpoint has been computed: it
-           then becomes a "completed" goal (and all its variants become
+           then becomes a "completed" goal(and all its variants become
            completed).
 
            A pioneer "G" may also lose its status because another goal "G'",
@@ -401,29 +405,29 @@ dra_version( Version ) :-
            completed as well.
 
            When a pioneer loses its status, the associated entries in "pioneer",
-           "loop" and "looping_alternative" (see below) are removed.  The
+           "loop" and "looping_alternative"(see below) are removed.  The
            associated entries in "result" are not removed. The unique index is
            not reused for other goals during the evaluation of the current
            query.
 
            This table is cleared before the evaluation of a new query.
 
-           (NOTE: In the actual implementation each fact in "pioneer" has the
+         (NOTE: In the actual implementation each fact in "pioneer" has the
                   form
                      pioneer( cgoal, goal, index )
-                  where "cgoal" is a copy of "goal" (no shared variables),
+                  where "cgoal" is a copy of "goal"(no shared variables),
                   passed through essence_hook/2.
-                  This is done to facilitate more effective filtering (via
+                  This is done to facilitate more effective filtering(via
                   unification) before a check is made for whether "goal" is a
                   variant of the goal for which we are checking whether it is
-                  (still) a pioneer.
+                (still) a pioneer.
            )
 
    -- unique_index
 
            This is a non-logical variable that holds the index to be used for
            the next entry in "pioneer".  It is also used to generate unique
-           indices for coinductive goals, which might need them to hold their
+           indices for coinductive0 goals, which might need them to hold their
            own results in "result".
 
            The variable is cleared before the evaluation of a new query.
@@ -432,19 +436,19 @@ dra_version( Version ) :-
    -- result( index, fact )
 
            A tabled goal "G" that "started out" as a pioneer may have associated
-           entries (marked with the unique index of "G") in "result".  This
+           entries(marked with the unique index of "G") in "result".  This
            table records the instantiations of "G" that were returned as "G"
            succeeded.  By using the table, the interpreter prevents "G" from
            returning the same answer over and over again: in general, each
            tabled goal will not produce two results that are variants of each
            other.
 
-           When a goal loses its pioneer status (because it is determined to be
+           When a goal loses its pioneer status(because it is determined to be
            a part of a larger loop, or because it has become completed), the
            associated entries in "result" are not removed.  They are removed
            only when the goal finally fails.
 
-           The table is also used by coinductive goals that are not pioneers.
+           The table is also used by coinductive0 goals that are not pioneers.
 
            This table is cleared before the evaluation of a new query.
 
@@ -457,12 +461,12 @@ dra_version( Version ) :-
            pioneer and the variant are stored in "loop".
 
            A number of "loop" entries may exist for a given pioneer: together,
-           they describe a "cluster" (i.e., a "strongly connected component",
+           they describe a "cluster"(i.e., a "strongly connected component",
            see ref. [1]).  Before finally failing upon backtracking, a pioneer
            will compute its own fixpoint as well as the fixpoints of the goals
            in its cluster.
 
-           When a goal loses its pioneer status (because it is determined to be
+           When a goal loses its pioneer status(because it is determined to be
            a part of a larger loop, or because it has become completed), the
            associated entries in "loop" are removed.
 
@@ -473,14 +477,14 @@ dra_version( Version ) :-
 
            When a goal "G" is determined to be a variant descendant of a
            pioneer, the clause that is currently being used by the pioneer
-           (i.e., the clause that led to "G") is stored in this table, together
+         (i.e., the clause that led to "G") is stored in this table, together
            with the unique index of the pioneer.  "G" will then succeed only
            with answers that have been tabled so far, but the clause will be
            used again as backtracking brings the computation back to the
-           pioneer.  (This is the essence of the "dynamic reordering of
+           pioneer.(This is the essence of the "dynamic reordering of
            alternatives".)
 
-           When a goal loses its pioneer status (because it is determined to be
+           When a goal loses its pioneer status(because it is determined to be
            a part of a larger loop, or because it has become completed), the
            associated entries in "looping_alternative" are removed.
 
@@ -496,23 +500,23 @@ dra_version( Version ) :-
 
            This table is not cleared before the evaluation of a new query.
 
-           (NOTE: In the actual implementation each fact in "completed" has the
+         (NOTE: In the actual implementation each fact in "completed" has the
                   form
                      completed( cgoal, goal )
-                  where "cgoal" is a copy of "goal" (no shared variables),
+                  where "cgoal" is a copy of "goal"(no shared variables),
                   passed through essence_hook/2.
-                  This is done to facilitate more effective filtering (via
+                  This is done to facilitate more effective filtering(via
                   unification) before a check is made for whether "goal" is a
                   variant of the goal for which we are checking whether it is
                   completed.
            )
 
 
-   -- is_tracing( goal )
+   -- tracing( goal )
 
            A goal that matches something in this table will show up on the
-           wallpaper traces.  This table is empty by default, and filled only
-           by invocations of "traces" (most often in "traces" directives
+           wallpaper traced.  This table is empty by default, and filled only
+           by invocations of "traced"(most often in "traced" directives
            encountered when the interpreted program is being read).
 
    -- step_counter
@@ -553,9 +557,9 @@ default_extension( '.tlp' ).                              % invoked by top_level
 
 %% Initialization of tables:
 
-:- dynamic (coinductive0)/1 .
-:- dynamic (coinductive1)/1 .
-:- dynamic (table)/1 .
+:- dynamic ((coinductive0)/1) .
+:- dynamic ((coinductive1)/1) .
+:- dynamic (tabled)/1 .
 :- dynamic (old_first)/1 .
 :- dynamic pioneer/3 .
 :- dynamic result/2 .
@@ -564,27 +568,32 @@ default_extension( '.tlp' ).                              % invoked by top_level
 :- dynamic completed/2 .
 :- dynamic tracing/1.
 
+
+
 :- setval( number_of_answers, 0 ).
 :- setval( unique_index,      0 ).
 
 initialise :-                                             % invoked by top_level
+   must_det_l((
         reinitialise_answer,
         reinitialise_result,
         reinitialise_pioneer,
         reinitialise_loop,
         reinitialise_looping_alternative,
         reinitialise_completed,
-        retractall( is_coinductive0( _ )  ),
+        /*
+        retractall( coinductive0( _ )  ),
         retractall( coinductive1( _ ) ),
-        retractall( is_tabled( _ )       ),
+        retractall( tabled( _ )       ),
         retractall( old_first( _ )    ),
-        retractall( is_tracing( _ )      ),
+        retractall( tracing( _ )      ),
+        */
         setval( number_of_answers, 0 ),
         setval( unique_index,      0 ),
         setval( step_counter,      0 ),
         setval( old_table_size,    0 ),
         dra_version( Version ),
-        writeln( Version ).
+        writeln( Version ))),!.
 
 
 %% Checking consistency:
@@ -592,14 +601,15 @@ initialise :-                                             % invoked by top_level
 program_loaded :-                                         % invoked by top_level
         check_consistency.
 
+cputime(X):-statistics(cputime,X).
 
 %% check_consistency:
-%% Produce a warning if predicates were declared but not defined (this may well
+%% Produce a warning if predicates were declared but not defined(this may well
 %% be due to a "tabled" directive giving the wrong arity), or if tabled/
-%% coinductive predicates have been declared as "suppport".
+%% coinductive0 predicates have been declared as "suppport".
 
 check_consistency :-
-        is_tabled( Head ),
+        tabled( Head ),
         nonvar( Head ),
         functor( Head, P, K ),
         \+ current_predicate_in_module( interpreted, P / K ),
@@ -611,21 +621,21 @@ check_consistency :-
         nonvar( Head ),
         functor( Head, P, K ),
         \+ current_predicate_in_module( interpreted, P / K ),
-        warning( [ P/K, ' declared as coinductive, but not defined' ] ),
+        warning( [ P/K, ' declared as coinductive0, but not defined' ] ),
         fail.
 
 check_consistency :-
-        is_support( Head ),
-        is_tabled( Head ),
+        support( Head ),
+        tabled( Head ),
         functor( Head, P, K ),
         warning( [ P/K, ' declared as both tabled and \"support\"' ] ),
         fail.
 
 check_consistency :-
-        is_support( Head ),
+        support( Head ),
         coinductive1( Head ),
         functor( Head, P, K ),
-        warning( [ P/K, ' declared as both coinductive and \"support\"' ] ),
+        warning( [ P/K, ' declared as both coinductive0 and \"support\"' ] ),
         fail.
 
 check_consistency.
@@ -634,7 +644,7 @@ check_consistency.
 
 %%%%  Hooks
 
-%% Declarations of hook predicates (for the top level):
+%% Declarations of hook predicates(for the top level):
 
 hook_predicate( essence_hook( _, _ ) ).
 
@@ -650,100 +660,100 @@ essence_hook( T, T ).    % default, may be overridden by the interpreted program
 
 %%%%%  Administration  %%%%%
 
+:- op( 1010, fy, coinductive  ).    % allow  ":- coinductive p/k ."
 :- op( 1010, fy, coinductive0  ).    % allow  ":- coinductive0 p/k ."
 :- op( 1010, fy, coinductive1 ).    % allow  ":- coinductive1 p/k ."
-:- op( 1010, fy, table       ).    % allow  ":- table p/k ."
+:- op( 1010, fy, tabled       ).    % allow  ":- tabled p/k ."
 :- op( 1010, fy, old_first    ).    % allow  ":- old_first p/k ."
-:- op( 1010, fy, traces        ).    % allow  ":- traces  p/k ."
-:- op( 1010, fy, multifile    ).    % allow  ":- multifile  p/k ." (for Eclipse)
+:- op( 1010, fy, traced        ).    % allow  ":- traced  p/k ."
+:- op( 1010, fy, multifile    ).    % allow  ":- multifile  p/k ."(for Eclipse)
+:- op( 1010, fy, hilog    ).    % allow  ":- hilog  p/k ."
 
 
 
-%% The legal directives (check external form only).  (Used by the top level.)
+%% The legal directives(check external form only).(Used by the top level.)
 
-legal_directive( (coinductive0 _)  ).
-legal_directive( (coinductive1 _) ).
-legal_directive( (table _)       ).
-legal_directive( (traces _)        ).
-legal_directive( (dynamic _)      ).
-legal_directive( (old_first _)    ).
-legal_directive( (multifile _)    ).
+legal_directive((coinductive( _))  ).
+legal_directive((coinductive0( _))  ).
+legal_directive((coinductive1( _)) ).
+legal_directive((tabled(_))      ).
+legal_directive((traced(_))       ).
+legal_directive((dynamic ( _))      ).
+legal_directive((old_first( _))    ).
+legal_directive((multifile( _))    ).
 legal_directive( answers( _, _ )  ).
 legal_directive( answers          ).
+legal_directive((call( _))  ).
+
+% SWI=Prolog
+legal_directive((traced)   ).
+legal_directive( notrace ).
+
+legal_directive(M:P):-atom(M),M:legal_directive(P).
+
+legal_directive(P):-compound(P),functor(P,F,1),property_pred(F).
+
+property_pred(table,tabled).
+property_pred(D,DB):-property_pred(D),DB=D.
+property_pred(builtin).
+property_pred(support).
+property_pred(old_first).
+property_pred(coinductive0).
+property_pred(coinductive1).
+property_pred(top).
+property_pred(support).
+property_pred(tabled).
+property_pred(traced).
+property_pred(hilog).
 
 
-%% Check and process the legal directives (invoked by top_level)
 
-execute_directive( (table all) ) :-
-        !,
-        assert( is_tabled( _ ) ).
+%% Check and process the legal directives(invoked by top_level)
 
-execute_directive( (table PredSpecs) ) :-
-        predspecs_to_patterns( PredSpecs, Patterns ),
-        (
-            member( Pattern, Patterns ),
-            assert( is_tabled( Pattern ) ),
-            fail
-        ;
-            true
-        ).
 
-execute_directive( (coinductive0 all) ) :-
+execute_directive((coinductive0 all) ) :-
         !,
         assert( coinductive1( _ ) ),
-        assert( is_coinductive0( _ ) ).
+        assert( coinductive0( _ ) ).
 
-execute_directive( (coinductive0 PredSpecs) ) :-
+execute_directive((coinductive0 PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
-        (
+      (
             member( Pattern, Patterns ),
             assert( coinductive1( Pattern ) ),
-            assert( is_coinductive0( Pattern ) ),
+            assert( coinductive0( Pattern ) ),
             fail
         ;
             true
         ).
 
-execute_directive( (coinductive1 all) ) :-
-        !,
-        assert( coinductive1( _ ) ).
+execute_directive(Dir ) :- property_pred(F,DBF), Dir=..[F,all],DB=..[DBF,_],
+        !, assert( DB ).
 
-execute_directive( (coinductive1 PredSpecs) ) :-
+execute_directive(Dir ) :- property_pred(F,DBF), Dir=..[F,PredSpecs],DB=..[DBF,Pattern],
         predspecs_to_patterns( PredSpecs, Patterns ),
-        (
+      (
             member( Pattern, Patterns ),
-            assert( coinductive1( Pattern ) ),
+            assert_if_new( DB ),
             fail
         ;
             true
         ).
 
-execute_directive( (old_first all) ) :-
-        !,
-        asserta( old_first( _ ) ).
 
-execute_directive( (old_first PredSpecs) ) :-
-        predspecs_to_patterns( PredSpecs, Patterns ),
-        (
-            member( Pattern, Patterns ),
-            assert( old_first( Pattern ) ),
-            fail
-        ;
-            true
-        ).
-
-execute_directive( (traces all) ) :-
+execute_directive((traced all) ) :-
         !,
         will_trace( [ _ ] ).
 
-execute_directive( (traces PredSpecs) ) :-
+execute_directive((traced PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         will_trace( Patterns ).
 
-execute_directive( (dynamic PredSpecs) ) :-
+execute_directive((dynamic PredSpecs) ) :-
         dynamic_in_module( interpreted, PredSpecs).
 
-execute_directive( (multifile _) ).    % ignore
+execute_directive((multifile( X)) ):-!,    % ignore ?
+      multifile(X). 
 
 execute_directive( answers( Goal, Pattern ) ) :-
         print_required_answers( Goal, Pattern ).
@@ -754,7 +764,7 @@ execute_directive( answers( Goal, Pattern ) ) :-
 
 will_trace( Patterns ) :-
         member( Pattern, Patterns ),
-        assert( is_tracing( Pattern ) ),
+        assert( tracing( Pattern ) ),
         fail.
 
 will_trace( _ ).
@@ -771,7 +781,7 @@ print_required_answers( Var, Pattern ) :-
         get_all_tabled_goals( Goals ),
         remove_variants( Goals, DifferentGoals ),
         sort( DifferentGoals, SortedDifferentGoals ),
-        (
+      (
             member( Goal, SortedDifferentGoals ),      % iterate through members
             print_required_answers( Goal, Pattern ),
             nl,
@@ -832,26 +842,24 @@ query( Goals ) :-                                         % invoked by top_level
         reinitialise_pioneer,
         reinitialise_result,
         reinitialise_loop,
-        reinitialise_looping_alternative,
+        reinitialise_looping_alternative,!,
         setval( unique_index,      0    ),
         getval( number_of_answers, NAns ),
         setval( old_table_size,    NAns ),
-        setval( step_counter,      0    ),
-        (
+        setval( step_counter,      0    ),!,
+       call_cleanup((
             empty_hypotheses( Hyp ),
             empty_stack( Stack ),
-            solve( Goals, Stack, Hyp, 0 ),
+            solve( Goals, Stack, Hyp, 0 , _TC, Cutted),
+            ((var(Cutted);((traced),non_cutted(Goals,Cutted,( _))))->true;(!,fail)),
             print_statistics,
             setval( step_counter, 0 ),
             getval( number_of_answers, NAns2 ),
-            setval( old_table_size, NAns2 )
-        ;
-            print_statistics,
+            setval( old_table_size, NAns2 )),        
+           (( print_statistics,
             setval( step_counter, 0 ),
             getval( number_of_answers, NAns2 ),
-            setval( old_table_size, NAns2 ),
-            fail
-        ).
+            setval( old_table_size, NAns2 )))).
 
 
 %% Print information about the number of steps and the answer table.
@@ -870,7 +878,7 @@ print_statistics :-
         write(  Output, TableGrowth ),
         write(  Output, ' new answer' ),
         plural( Output, TableGrowth ),
-        write(  Output, ' tabled (' ),
+        write(  Output, ' tabled(' ),
         write(  Output, NAns ),
         write(  Output, ' in all)' ),
         write(  Output, ']' ),
@@ -887,40 +895,58 @@ plural( Output, N ) :-  N \= 1,  write( Output, 's' ).
 %% solve( + sequence of goals,
 %%        + stack,
 %%        + coinductive hypotheses,
-%%        + level
+%%        + level,
+%%        + (coind,tabling),
+%%        + cutto
 %%      ):
 %% Solve the sequence of goals, maintaining information about the current chain
-%% of tabled ancestors (stack) and the chain of coinductive ancestors
-%% (coinductive0 hypotheses).  The level is the level of recursion, and is used
+%% of tabled ancestors(stack) and the chain of coinductive0 ancestors
+%%(coinductive hypotheses).  The level is the level of recursion, and is used
 %% only for tracing.
 %%
 %% Each link in the chain of tabled ancestors is of the form
 %%    triple( goal, index, clause )
 %% where
-%%    goal    is the (current instantiation of the) goal;
-%%    index   is the unique index of the goal (every goal that is stacked starts
+%%    goal    is the(current instantiation of the) goal;
+%%    index   is the unique index of the goal(every goal that is stacked starts
 %%               out as a pioneer!)
-%%    clause  is the clause that is currently used by the goal (it has been
+%%    clause  is the clause that is currently used by the goal(it has been
 %%               instantiated by matching with the goal in its original form,
 %%               but does not share variables with the goal).
 %%
 %% NOTE: The set of coinductive hypotheses and the stack of tabled ancestors
-%%       have been factored out (see files "dra_coinductive_hypotheses.pl" and
-%%       "dra_stack.pl").  The representations may have changed (to enable
-%%       faster access, so the comments in this file ("chain of ancestors" etc.)
+%%       have been factored out(see files "dra_coinductive_hypotheses.pl" and
+%%       "dra_stack.pl").  The representations may have changed(to enable
+%%       faster access, so the comments in this file("chain of ancestors" etc.)
 %%       might no longer be quite accurate.
+%% 
+%% DMILES ADDED Last Arg.. When its bound we cut
+% :- mode solve(+, +, +, + , +).
 
-% :- mode solve( +, +, +, + ).
+
+% solve( throw( Tag), _Stack, _Hyp, _Level, _TC,_Cutted ) :- !, throw( Tag).
+
+% call/1
+solve( call( Goal ), Stack, Hyp, Level , TC,Cutted ) :- !,
+      (
+          ( var( Goal )                          % e.g., Eclipse
+            ; Goal = interpreted : V,  var( V )    % e.g., Sicstus
+            )
+        ->
+            error( [ 'A variable meta-call: ', call( Goal ) ] )
+        ;
+            solve( Goal, Stack, Hyp, Level , TC,Cutted )
+        ).
 
 
 % A negation.
 
-solve( \+ Goal, Stack, Hyp, Level ) :-
+solve( \+ Goal, Stack, Hyp, Level, TC,Cutted ) :-
         !,
         NLevel is Level + 1,
         trace_entry( normal, \+ Goal, '?', Level ),
-        (
-            \+ solve( Goal, Stack, Hyp, NLevel ),
+      (
+            \+ solve( Goal, Stack, Hyp, NLevel, TC,Cutted ),
             trace_success( normal, \+ Goal, '?', Level )
         ;
             trace_failure( normal, \+ Goal, '?', Level ),
@@ -928,78 +954,40 @@ solve( \+ Goal, Stack, Hyp, Level ) :-
         ).
 
 
-% One solution.
-
-solve( once( Goal ), Stack, Hyp, Level ) :-
-        !,
-        NLevel is Level + 1,
-        trace_entry( normal, once( Goal ), '?', Level ),
-        (
-            once( solve( Goal, Stack, Hyp, NLevel ) ),
-            trace_success( normal, once( Goal ), '?', Level )
-        ;
-            trace_failure( normal, once( Goal ), '?', Level ),
-            fail
-        ).
-
-
 % A conditional with an else.
 
-solve( (Cond -> Then ; _Else), Stack, Hyp, Level ) :-
-        solve( Cond, Stack, Hyp, Level ),
-        !,
-        solve( Then, Stack, Hyp, Level ).
-
-solve( (_Cond -> _Then ; Else), Stack, Hyp, Level ) :-
-        !,
-        solve( Else, Stack, Hyp, Level ).
+solve((Cond -> Then ; Else), Stack, Hyp, Level, TC,Cutted ) :- !,
+    ( solve( Cond, Stack, Hyp, Level , TC,Cutted ) -> 
+        solve( Then, Stack, Hyp, Level , TC,Cutted ) ;
+        solve( Else, Stack, Hyp, Level , TC,Cutted  ) ).
 
 
 % A conditional without an else.
 
-solve( (Cond -> Then), Stack, Hyp, Level ) :-
-        solve( Cond, Stack, Hyp, Level ),
-        !,
-        solve( Then, Stack, Hyp, Level ).
+solve((Cond -> Then), Stack, Hyp, Level, TC,Cutted ) :- !,
+      (solve( Cond, Stack, Hyp, Level , TC,Cutted ) ->  
+         solve( Then, Stack, Hyp, Level , TC,Cutted )).
 
 
 % A disjunction without a conditional.
 
-solve( (Goals ; _), Stack, Hyp, Level ) :-
-        solve( Goals, Stack, Hyp, Level ).
-
-solve( (_ ; Goals), Stack, Hyp, Level ) :-
-        !,
-        solve( Goals, Stack, Hyp, Level ).
+solve((GoalL ; GoalR), Stack, Hyp, Level, TC,Cutted ) :- !, 
+    (solve( GoalL, Stack, Hyp, Level, TC,Cutted ); solve( GoalR, Stack, Hyp, Level, TC,Cutted )).
 
 
 % A conjunction.
 
-solve( (Goals1 , Goals2), Stack, Hyp, Level ) :-
+solve((Goals1 , Goals2), Stack, Hyp, Level, TC,Cutted ) :-
         !,
-        solve( Goals1, Stack, Hyp, Level ),
-        solve( Goals2, Stack, Hyp, Level ).
-
-
-% call/1
-
-solve( call( Goal ), Stack, Hyp, Level ) :-
-        (
-            ( var( Goal )                          % e.g., Eclipse
-            ; Goal = interpreted : V,  var( V )    % e.g., Sicstus
-            )
-        ->
-            error( [ 'A variable meta-call: ', call( Goal ) ] )
-        ;
-            solve( Goal, Stack, Hyp, Level )
-        ).
+      (solve( Goals1, Stack, Hyp, Level, TC,Cutted ),
+        solve( Goals2, Stack, Hyp, Level, TC,Cutted )).
 
 
 % assert/1
 
-solve( assert( Clause ), _, _, _ ) :-
+solve( assert( Clause ), _, _, _, _TC,_Cutted ) :-
         !,
-        (
+      (
             \+ is_a_good_clause( Clause )
         ->
             error( [ 'Bad clause argument: ', assert( Clause ) ] )
@@ -1012,18 +1000,18 @@ solve( assert( Clause ), _, _, _ ) :-
 
 % retractall/1
 
-solve( retractall( C ), _, _, _ ) :-
+solve( retractall( C ), _, _, _, _TC,_Cutted ) :-
         !,
         incval( step_counter ),
         retractall_in_module( interpreted, C ).
 
 
-% findall/3: note that this is not opaque to coinductive and tabled ancestors!
+% findall/3: note that this is not opaque to coinductive0 and tabled ancestors!
 
-solve( findall( Template, Goal, Bag ), Stack, Hyp, Level ) :-
+solve( findall( Template, Goal, Bag ), Stack, Hyp, Level , TC,Cutted ) :-
         !,
         NLevel is Level + 1,
-        (
+      (
             % Sicstus prefixes the second argument of findall with the module
             % name, but it does not do that for nested findall...
             lp_system( sicstus ),
@@ -1033,39 +1021,61 @@ solve( findall( Template, Goal, Bag ), Stack, Hyp, Level ) :-
         ;
             G = Goal
         ),
-        findall( Template, solve( G, Stack, Hyp, NLevel ), Bag ).
+        findall( Template, solve( G, Stack, Hyp, NLevel, TC,Cutted), Bag ).
 
 
 % Some other supported built-in.
-
-solve( BuiltIn, _, _, _ ) :-
-        builtin( BuiltIn ),
-        !,
-        incval( step_counter ),
-        call( BuiltIn ).
+solve( BuiltIn, _, _, _, _TC,_Cutted ) :- builtin( BuiltIn ), !, incval( step_counter ), 
+   (current_predicate(_,BuiltIn) -> logOnError(BuiltIn); warning( [ 'Calling an undefined BuiltIn predicate: \"', BuiltIn, '\"' ] ),fail).
 
 
 % A "support" predicate
+solve( Goal, _, _, _, _TC,_Cutted ) :- support( Goal ), !, incval( step_counter ), call_in_module( support, Goal ).
 
-solve( Goal, _, _, _ ) :-
-        is_support( Goal ),
+% One solution.
+solve( once( Goal ), Stack, Hyp, Level, TC,Cutted ) :-
         !,
-        incval( step_counter ),
-        call_in_module( support, Goal ).
+        NLevel is Level + 1,
+        trace_entry( normal, once( Goal ), '?', Level ),
+      (
+            once( solve( Goal, Stack, Hyp, NLevel , TC,Cutted  ) ),
+            trace_success( normal, once( Goal ), '?', Level )
+        ;
+            trace_failure( normal, once( Goal ), '?', Level ),
+            fail
+        ).
+
+solve((!(TO)), _Stack, _Hyp, _Level, TC,Cutted ) :-(traced),var(TC), !,(var(Cutted);Cutted=cut(TO,TC)).
+
+% Cut .. test to see if its not allowe to cut
+solve((!), _Stack, _Hyp, Level,(T,C),Cutted ) :- !, 
+ (nonvar(T)->((traced),throw(cutting_in_table(T)));(nonvar(C) -> Cutted=cut(Level,(T,C));(var(Cutted);Cutted=cut(Level,(T,C))))).
 
 
-% A "normal" goal (i.e., not tabled, not coinductive).
+solve( Goal, Stack, Hyp, Level, TC, CuttedOut ):- 
+(nonvar(CuttedOut)->(traced);true),
+  solve0( Goal, Stack, Hyp, Level, TC,Cutted ),
+((var(Cutted);non_cutted(Goal,Cutted, CuttedOut))->true;(!,fail)).
 
-solve( Goal, Stack, Hyp, Level ) :-
-        \+ is_tabled( Goal ),
+solve1( Goal, Stack, Hyp, Level, TC, CuttedOut ):-solve( Goal, Stack, Hyp, Level, TC, CuttedOut ).
+
+%non_cutted(G,cut_to(F),_):-functor(G,F,_),!,fail.
+non_cutted(_,cut(_Level,_Mode),_):-!,fail.
+non_cutted(_,Cutted,Cutted).
+
+% A "normal" goal(i.e., not tabled, not coinductive0).
+
+solve0( Goal, Stack, Hyp, Level, TC,Cutted ) :-
+        \+ tabled( Goal ),
         \+ coinductive1( Goal ),
         !,
         incval( step_counter ),
         trace_entry( normal, Goal, '?', Level ),
-        (
+      (
             NLevel is Level + 1,
             use_clause( Goal, Body ),
-            solve( Body, Stack, Hyp, NLevel ),
+            solve1( Body, Stack, Hyp, NLevel, TC,Cutted ),
+
             trace_success( normal, Goal, '?', Level )
         ;
             trace_failure( normal, Goal, '?', Level ),
@@ -1073,45 +1083,45 @@ solve( Goal, Stack, Hyp, Level ) :-
         ).
 
 
-% A goal that is coinductive, but not tabled.
+% A goal that is coinductive0, but not tabled.
 % Apply the coinductive hypotheses first, then the clauses.
 %
-% NOTE: Now that we have both "coinductive" and "coinductive2" the logic gets a
+% NOTE: Now that we have both "coinductive0" and "coinductive2" the logic gets a
 %       little tricky.  If a goal is not "coinductive2", then it should activate
-%       its clauses only if there are no unifiable ancestors (hypotheses). What
+%       its clauses only if there are no unifiable ancestors(hypotheses). What
 %       follows is an attempt to avoid too much duplication of code and
 %       redundant invocations of the costly check for unifiable ancestors.
 
-solve( Goal, Stack, Hyp, Level ) :-
-        \+ is_tabled( Goal ),
+solve0( Goal, Stack, Hyp, Level,(_,PC),Cutted ) :-
+        \+ tabled( Goal ),
         coinductive1( Goal ),
         !,
         incval( step_counter ),
-        trace_entry( coinductive, Goal, '?', Level ),
-        (
-            \+ is_coinductive0( Goal ),
+        trace_entry( coinductive0, Goal, '?', Level ),
+      (
+            \+ coinductive0( Goal ),
             unify_with_coinductive_ancestor( Goal, Hyp )
         ->
-            (
-                trace_success( 'coinductive (hypothesis)', Goal, '?', Level )
+          (
+                trace_success( 'coinductive0(hypothesis)', Goal, '?', Level )
             ;
-                trace_failure( coinductive, Goal, '?', Level ),
+                trace_failure( coinductive0, Goal, '?', Level ),
                 fail
             )
         ;
-            % coinductive, or no unifiable ancestors
-            (
-                is_coinductive0( Goal ),
+            % coinductive0, or no unifiable ancestors
+          (
+                coinductive0( Goal ),
                 unify_with_coinductive_ancestor( Goal, Hyp ),
-                trace_success( 'coinductive (hypothesis)', Goal, '?', Level )
+                trace_success( 'coinductive0(hypothesis)', Goal, '?', Level )
             ;
                 NLevel is Level + 1,
                 use_clause( Goal, Body ),
-                push_is_coinductive0( Goal, Hyp, NHyp ),
-                solve( Body, Stack, NHyp, NLevel ),
-                trace_success( 'coinductive (clause)', Goal, '?', Level )
+                push_coinductive( Goal, Hyp, NHyp ),
+                solve1( Body, Stack, NHyp, NLevel ,(Goal,PC),Cutted),                
+                trace_success( 'coinductive0(clause)', Goal, '?', Level )
             ;
-                trace_failure( coinductive, Goal, '?', Level ),
+                trace_failure( coinductive0, Goal, '?', Level ),
                 fail
             )
         ).
@@ -1120,45 +1130,45 @@ solve( Goal, Stack, Hyp, Level ) :-
 
 % A tabled goal that has been completed: all the results are in "answer".
 
-solve( Goal, _, _, Level ) :-
+solve0( Goal, _, _, Level , TC, Cutted) :-
         is_completed( Goal ),
         !,
         incval( step_counter ),
         trace_entry( completed, Goal, '?', Level ),
-        (
-            get_all_tabled_answers( Goal, '?', completed, Level )
+      (
+            get_all_tabled_answers( Goal, '?', completed, Level, TC, Cutted )
         ;
             trace_failure( completed, Goal, '?', Level ),
             fail
         ).
 
 
-% A tabled goal that has a variant among its ancestors (and has not been
+% A tabled goal that has a variant among its ancestors(and has not been
 % completed).
-% If the goal is not coinductive, only the existing (most likely incomplete)
+% If the goal is not coinductive0, only the existing(most likely incomplete)
 % results from "answer" are  returned before failure.
-% If the goal is also coinductive, return the results that arise from
+% If the goal is also coinductive0, return the results that arise from
 % coinductive hypotheses, then the remaining results from "answer".
 %
 % NOTE: 1. There can be only one variant ancestor, so the question of which one
 %          to use does not arise.
 %
 %       2. Ancestor pioneer goals between this goal and its variant ancestor
-%          will lose their status as pioneers (and the associated entries in
+%          will lose their status as pioneers(and the associated entries in
 %          "loop" and "looping_alternative" will be removed).
 %
 %       3. If the variant ancestor is a pioneer, then:
-%             - the entire prefix of the list of goals upto (but not including)
+%             - the entire prefix of the list of goals upto(but not including)
 %               the variant ancestor will be added to the cluster of that
-%               ancestor (by storing it in "loop");
-%             - a copy of the current clause invoked by the ancestor (which can
+%               ancestor(by storing it in "loop");
+%             - a copy of the current clause invoked by the ancestor(which can
 %               be found together with the ancestor on the stack) is added to
 %               "looping_alternative" entries for that ancestor.
 %
-%       4. If this goal is coinductive, then we use "result" to avoid
+%       4. If this goal is coinductive0, then we use "result" to avoid
 %          duplicating results.
 
-solve( Goal, Stack, Hyp, Level ) :-
+solve0( Goal, Stack, Hyp, Level, TC,Cutted ) :-
         is_variant_of_ancestor( Goal, Stack,
                                 triple( G, I, C ), InterveningTriples
                               ),
@@ -1170,7 +1180,7 @@ solve( Goal, Stack, Hyp, Level ) :-
         suppress_pioneers_on_list( InterveningTriples, Level ),
 
         % Create a looping alternative if the variant ancestor is a pioneer:
-        (
+      (
             is_a_variant_of_a_pioneer( G, I )
         ->
             extract_goals( InterveningTriples, InterveningGoals ),
@@ -1181,13 +1191,13 @@ solve( Goal, Stack, Hyp, Level ) :-
         ),
 
         % The main action:
-        (
+      (
             coinductive1( Goal )
         ->
             copy_term2( Goal, OriginalGoal ),
-            (
+          (
                 get_tabled_if_old_first( Goal, Index,
-                                         'variant (coinductive0)', Level
+                                         'variant(coinductive0)', Level, TC,Cutted
                                        )
             ;
                 % results from coinductive hypotheses:
@@ -1195,21 +1205,21 @@ solve( Goal, Stack, Hyp, Level ) :-
                 \+ is_answer_known( OriginalGoal, Goal ),    % postpone "old"
                 memo( OriginalGoal, Goal, Level ),
                 new_result_or_fail( Index, Goal ),           % i.e., note answer
-                trace_success( 'variant (coinductive0)', Goal, Index, Level )
+                trace_success( 'variant(coinductive0)', Goal, Index, Level )
             ;
                 % other tabled results
                 get_remaining_tabled_answers( Goal, Index, variant, Level )
             ;
                 % wrap it up
-                trace_failure( 'variant (coinductive0)', Goal, Index, Level ),
+                trace_failure( 'variant(coinductive0)', Goal, Index, Level ),
                 retractall( result( Index, _ ) ),
                 fail
             )
         ;
 
-            % Not coinductive, just sequence through tabled answers:
-            (
-                get_all_tabled_answers( Goal, Index, variant, Level )
+            % Not coinductive0, just sequence through tabled answers:
+          (
+                get_all_tabled_answers( Goal, Index, variant, Level, TC,Cutted )
             ;
                 trace_failure( variant, Goal, Index, Level ),
                 retractall( result( Index, _ ) ),
@@ -1220,28 +1230,28 @@ solve( Goal, Stack, Hyp, Level ) :-
 
 % A pioneer goal is solved by program clauses, producing results that are stored
 % in "answer".
-% The goal succeeds as each new answer (i.e., an answer heretofore unknown for
+% The goal succeeds as each new answer(i.e., an answer heretofore unknown for
 % this goal) is produced, and tries to come up with more after backtracking.
 % When the usual clauses are exhausted, clauses stored in the associated entries
-% of "looping_alternative" will be used to produce more answers (but only those
+% of "looping_alternative" will be used to produce more answers(but only those
 % that have not yet been produced by the goal), until a fixed point is reached.
-% The pioneer (and all the goals in its cluster) will then be marked as
+% The pioneer(and all the goals in its cluster) will then be marked as
 % complete, and will cease to be a pioneer.
 %
 % Note that a pioneer may also lose its status when some descendant goal finds
 % a variant ancestor that is also an ancestor of the pioneer.  See the case
 % of "variant of ancestor" above.
 %
-% Note also that a goal might become completed after it succeeded (because
+% Note also that a goal might become completed after it succeeded(because
 % another variant goal "on the right" has completed), so after backtracking it
 % might not be necessary to continue the computation with the remaining clauses:
 % the rest of the results should be picked up from the table, instead.
 
-solve( Goal, Stack, Hyp, Level ) :-
-        (
+solve0( Goal, Stack, Hyp, Level,(_,PC), Cutted ) :-
+      (
             coinductive1( Goal )
         ->
-            push_is_coinductive0( Goal, Hyp, NHyp )
+            push_coinductive( Goal, Hyp, NHyp )
         ;
             NHyp = Hyp
         ),
@@ -1250,16 +1260,16 @@ solve( Goal, Stack, Hyp, Level ) :-
         add_pioneer( Goal, Index ),
         trace_entry( pioneer, Goal, Index, Level ),
 
-        (
-            get_tabled_if_old_first( Goal, Index, pioneer, Level )
+      (
+            get_tabled_if_old_first( Goal, Index, pioneer, Level,(0,PC),Cutted )
         ;
 
             NLevel is Level + 1,
             use_clause( Goal, Body ),
             \+ is_completed( OriginalGoal ), % might well be, after backtracking
-            copy_term2( (Goal :- Body), ClauseCopy ),
-            push_is_tabled( OriginalGoal, Index, ClauseCopy, Stack, NStack ),
-            solve( Body, NStack, NHyp, NLevel ),
+            copy_term2((Goal :- Body), ClauseCopy ),
+            push_tabled( OriginalGoal, Index, ClauseCopy, Stack, NStack ),
+            solve1( Body, NStack, NHyp, NLevel ,(0, PC),Cutted),
             \+ is_answer_known( OriginalGoal, Goal ),   % postpone "old" answers
             memo( OriginalGoal, Goal, Level ),
             new_result_or_fail( Index, Goal ),          % i.e., note the answer
@@ -1267,9 +1277,9 @@ solve( Goal, Stack, Hyp, Level ) :-
         ;
 
             % All the clauses have been exhausted, except for looping
-            % alternatives (if any).  However, the goal may have become
-            % completed (by a later variant), or it might have lost its pioneer
-            % status (because it belongs to a larger loop).
+            % alternatives(if any).  However, the goal may have become
+            % completed(by a later variant), or it might have lost its pioneer
+            % status(because it belongs to a larger loop).
 
             is_completed( Goal )                      % a variant has completed?
         ->
@@ -1280,7 +1290,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 
             is_a_variant_of_a_pioneer( Goal, Index )  % not lost pioneer status?
         ->
-            (
+          (
                 trace_other( 'Computing fixed point for', Goal, Index, Level ),
                 compute_fixed_point( Goal, Index, Stack, Hyp, Level ),
                 \+ new_result_or_fail( Index, Goal ),
@@ -1300,7 +1310,7 @@ solve( Goal, Stack, Hyp, Level ) :-
             )
         ;
 
-            (
+          (
                 % No longer a pioneer and not completed, so just sequence
                 % through the remaining available tabled answers.
                 get_remaining_tabled_answers( Goal, Index,
@@ -1316,36 +1326,36 @@ solve( Goal, Stack, Hyp, Level ) :-
 
 
 %% get_tabled_if_old_first( + goal, + goal index,
-%%                          + traces label, + traces level
+%%                          + traced label, + traced level, + cutted
 %%                        ):
 %% If the goal has been declared as "old_first", produce all the tabled answers,
 %% remembering them in "result", then succeed; otherwise just fail.
 
 % :- mode get_tabled_if_old_first( +, +, +, + ).
 
-get_tabled_if_old_first( Goal, Index, Label, Level ) :-
+get_tabled_if_old_first( Goal, Index, Label, Level, TC,Cutted ) :-
         old_first( Goal ),
-        get_all_tabled_answers( Goal, Index, Label, Level ),
+        get_all_tabled_answers( Goal, Index, Label, Level, TC,Cutted ),
         new_result_or_fail( Index, Goal ).     % i.e., make a note of the answer
 
 
-%% get_all_tabled_answers( + goal, + goal index, + traces label, + traces level ):
-%% Return (one by one) all the answers that are currently tabled for this goal.
-%% (Each answer is returned by appropriately instantiating the goal.)
+%% get_all_tabled_answers( + goal, + goal index, + traced label, + traced level, + cutted ):
+%% Return(one by one) all the answers that are currently tabled for this goal.
+%%(Each answer is returned by appropriately instantiating the goal.)
 
-% :- mode get_all_tabled_answers( +, +, +, + ).
+% :- mode get_all_tabled_answers( +, +, +, +, + ).
 
-get_all_tabled_answers( Goal, Index, Label, Level ) :-
+get_all_tabled_answers( Goal, Index, Label, Level, _TC,_Cutted ) :-
         get_answer( Goal ),
         trace_success( Label, Goal, Index, Level ).
 
 
 %% get_remaining_tabled_answers( + goal,        + goal index,
-%%                               + traces label, + traces level
+%%                               + traced label, + traced level
 %%                             ):
-%% Return (one by one) all the answers that are currently tabled for this goal
+%% Return(one by one) all the answers that are currently tabled for this goal
 %% but are not present in its "result" entries.
-%% (Each answer is returned by appropriately instantiating the goal.)
+%%(Each answer is returned by appropriately instantiating the goal.)
 
 % :- mode get_remaining_tabled_answers( +, +, +, + ).
 
@@ -1362,31 +1372,30 @@ get_remaining_tabled_answers( Goal, Index, Label, Level ) :-
 %% clause whose head matches the goal.
 
 use_clause( Goal, Body ) :-
-        (
+      (
             functor( Goal, P, K ),
             current_predicate_in_module( interpreted, P/K )
         ->
             clause_in_module( interpreted, Goal, Body )
         ;
-            warning( [ 'Calling an undefined predicate: \"', Goal, '\"' ] ),
-            fail
+          (current_predicate(_,Goal) -> logOnError(Goal); warning( [ 'Calling an undefined predicate: \"', Goal, '\"' ] ),fail)
         ).
 
 
 
 %% compute_fixed_point( + pioneer goal, + its index, + stack, + level ):
 %% Solve the goal by associated rules from "looping_alternative", succeeding
-%% with each new answer (and tabling it).  Fail when all the possible results
+%% with each new answer(and tabling it).  Fail when all the possible results
 %% are exhausted.
 
 % :- mode compute_fixed_point( +, +, +, +, + ).
 
 compute_fixed_point( Goal, Index, Stack, Hyp, Level ) :-
         NLevel is Level + 1,
-        (
+      (
             coinductive1( Goal )
         ->
-            push_is_coinductive0( Goal, Hyp, NHyp )
+            push_coinductive( Goal, Hyp, NHyp )
         ;
             NHyp = Hyp
         ),
@@ -1398,12 +1407,12 @@ compute_fixed_point( Goal, Index, Stack, Hyp, Level ) :-
 
 compute_fixed_point_( Goal, Index, Stack, Hyp, Level, _ ) :-
         copy_term2( Goal, OriginalGoal ),
-        get_looping_alternative( Index, (G :- Body) ),        % i.e., iterate
+        get_looping_alternative( Index,(G :- Body) ),        % i.e., iterate
         \+ \+ G = Goal,
-        copy_term2( (G :- Body), ClauseCopy ),
+        copy_term2((G :- Body), ClauseCopy ),
         G = Goal,
-        push_is_tabled( OriginalGoal, Index, ClauseCopy, Stack, NStack ),
-        solve( Body, NStack, Hyp, Level ),
+        push_tabled( OriginalGoal, Index, ClauseCopy, Stack, NStack ),
+        solve1( Body, NStack, Hyp, Level , _TC,_TODO_Cutted ),
         new_result_or_fail( Index, Goal ),
         memo( OriginalGoal, Goal, Level ).
 
@@ -1511,12 +1520,12 @@ are_essences_variants( T1, T2 ) :-
 
 
 %% trace_entry( + label, + goal, + goal index, + level ):
-%% If the goal matches one of the traced patterns, print out a traces line about
-%% entering the goal (at this level, with this label).
-%% (The goal index is not always relevant: "?" is used for those cases.)
+%% If the goal matches one of the traced patterns, print out a traced line about
+%% entering the goal(at this level, with this label).
+%%(The goal index is not always relevant: "?" is used for those cases.)
 
 trace_entry( Label, Goal, Index, Level ) :-
-        is_tracing( Goal ),
+        tracing( Goal ),
         !,
         write_level( Level ),
         std_output_stream( Output ),
@@ -1528,17 +1537,17 @@ trace_entry( _, _, _, _ ).
 
 
 %% trace_success( + label, + goal, + goal index, + level ):
-%% If the goal matches one of the traced patterns, print out a traces line about
-%% success of the goal (at this level, with this label).  Moreover, just before
-%% backtracking gets back to the goal, print out a traces line about retrying the
+%% If the goal matches one of the traced patterns, print out a traced line about
+%% success of the goal(at this level, with this label).  Moreover, just before
+%% backtracking gets back to the goal, print out a traced line about retrying the
 %% goal.
-%% (The goal index is not always relevant: "?" is used for those cases.)
+%%(The goal index is not always relevant: "?" is used for those cases.)
 
 trace_success( Label, Goal, Index, Level ) :-
-        is_tracing( Goal ),
+        tracing( Goal ),
         !,
         std_output_stream( Output ),
-        (
+      (
             write_level( Level ),
             write( Output, 'Success ' ),
             write_label_and_goal( Label, Goal, Index ),
@@ -1555,12 +1564,12 @@ trace_success( _, _, _, _ ).
 
 
 %% trace_failure( + label, + goal, + goal index, + level ):
-%% If the goal matches one of the traced patterns, print out a traces line about
-%% failure of the goal (at this level, with this label).
-%% (The goal index is not always relevant: "?" is used for those cases.)
+%% If the goal matches one of the traced patterns, print out a traced line about
+%% failure of the goal(at this level, with this label).
+%%(The goal index is not always relevant: "?" is used for those cases.)
 
 trace_failure( Label, Goal, Index, Level ) :-
-        is_tracing( Goal ),
+        tracing( Goal ),
         !,
         write_level( Level ),
         std_output_stream( Output ),
@@ -1572,12 +1581,12 @@ trace_failure( _, _, _, _ ).
 
 
 %% trace_other( + label, + goal, + goal index, + level ):
-%% If the goal matches one of the traced patterns, print out a traces line about
-%% this goal (at this level, with this label).
-%% (The goal index is not always relevant: "?" is used for those cases.)
+%% If the goal matches one of the traced patterns, print out a traced line about
+%% this goal(at this level, with this label).
+%%(The goal index is not always relevant: "?" is used for those cases.)
 
 trace_other( Label, Goal, Index, Level ) :-
-        is_tracing( Goal ),
+        tracing( Goal ),
         !,
         write_level( Level ),
         write_label_and_goal( Label, Goal, Index ),
@@ -1616,11 +1625,11 @@ write_goal_number( Index ) :-
 
 
 %% optional_trace( + label, + goal, + term, + level ):
-%% If the goal matches one of the traced patterns, print out a traces line with
+%% If the goal matches one of the traced patterns, print out a traced line with
 %% this label, the goal and the term.
 
 optional_trace( Label, Goal, Term, Level ) :-
-        is_tracing( Goal ),
+        tracing( Goal ),
         !,
         print_depth( Depth ),
         write_level( Level ),

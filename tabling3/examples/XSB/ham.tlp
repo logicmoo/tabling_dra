@@ -24,9 +24,9 @@
 
 % Adapted by F.K. @ UTD
 
-:- top demo/0.
+:- topl demo/0.
 
-:- tabled cycle_ham/2, edge/2.
+:- table cycle_ham/2, edge/2.
 
 
 /************************************************************************/

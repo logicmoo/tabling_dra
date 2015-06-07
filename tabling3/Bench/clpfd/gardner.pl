@@ -50,14 +50,14 @@
 /*-------------------------------------------------------------------------*/
 
 go:-
-   top(4,5).
+   is_top(4,5).
 
 q:-    
 	write('M ?'), read(M),
 	write('N ?'), read(N),
-        top(M,N).
+        is_top(M,N).
 
-top(M,N):-
+is_top(M,N):-
         statistics(runtime,_),
         (gardner(M,N,L,Lab),
          write(L), nl, 

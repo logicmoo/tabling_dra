@@ -33,6 +33,6 @@ holds( s1, b ).
 holds( s2, c ).
 
 
-:- top q/0.
+:- topl q/0.
 
 q :-  check( s0, g( f a ^ (f b v f c) ) ).    % yes

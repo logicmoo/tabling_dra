@@ -1,4 +1,4 @@
-:- tabled r/2.
+:- table r/2.
 
 r( X, Y ) :-  r( X, Z ),  r( Z, Y ).
 r( X, Y ) :-  p( X, Y ),  q( Y ).

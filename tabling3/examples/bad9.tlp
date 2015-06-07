@@ -6,6 +6,6 @@ a :- c, d.
 
 b :- e.
 
-:- top x/0.
+:- topl x/0.
 
 x :- b.

@@ -94,7 +94,7 @@ notholds( s6, heat  ).  notholds( s6, error  ).
 notholds( s7, error ).
 
 
-:- top q1/0, q2/0, q3/0, q4/0.
+:- topl q1/0, q2/0, q3/0, q4/0.
 %                                           Expected   Prolog    Tabling
 
 q1 :-  check( s1,   g(~ heat u close) ).   % yes       loops     yes

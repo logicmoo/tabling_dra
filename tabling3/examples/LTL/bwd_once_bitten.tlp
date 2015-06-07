@@ -32,7 +32,7 @@ trans(s1, s1).
 trans(s2, s2).
 
 
-:- top q0/0, q1/0, q2/0, q3/0, q4/0, q5/0, q6/0, q7/0.
+:- topl q0/0, q1/0, q2/0, q3/0, q4/0, q5/0, q6/0, q7/0.
 
 q0 :- check(s0, ~ (g p ^ g q)).    % should find a counterexample  !!!!
 q1 :- check(s0, ~ (g (p ^ q))).    % should find a counterexample

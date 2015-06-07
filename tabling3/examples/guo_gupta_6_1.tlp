@@ -1,4 +1,4 @@
-:- tabled p/2.
+:- table p/2.
 
 p( 1, 1 ).
 p( X, Y ) :-  p( X, S ),  p( X, T ),  q( S, T, Y ).

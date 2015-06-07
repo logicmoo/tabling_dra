@@ -6,19 +6,19 @@
 
 top:-
     N=25,
-    top(N).
+    is_top(N).
 
 go:-
     write('N=?'),read(N),queens(N).
 
 queens(N):-
     statistics(runtime,[Start|_]),
-    top(N),
+    is_top(N),
     statistics(runtime,[End|_]),
     T is End-Start,
     write('%execution time ='), write(T), write(' milliseconds'),nl.
 
-top(N):-
+is_top(N):-
     make_list(N,List),
     domain(List,1,N),
     make_list12(List,0,List1,List2),

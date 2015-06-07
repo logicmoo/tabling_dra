@@ -1,4 +1,4 @@
-:- tabled p/2, q/1, r/1.
+:- table p/2, q/1, r/1.
 
 p( X, Y ) :-  q( X ),  r( Y ).
 

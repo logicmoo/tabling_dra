@@ -50,7 +50,7 @@
 %%%    empty_hypotheses( - stack of hypotheses ):
 %%%         Create an empty stack for coinductive hypotheses.
 %%%
-%%%    push_coinductive( + goal, + stack of hypotheses , - new stack ):
+%%%    push_is_coinductive0( + goal, + stack of hypotheses , - new stack ):
 %%%         Push the coinductive goal onto the stack.
 %%%
 %%%    unify_with_coinductive_ancestor( + goal, + stack of hypotheses ):
@@ -66,17 +66,17 @@
 % %%
 % %% The set of coinductive hypotheses is just a list.
 %
-% :- mode empty_hypotheses( - ).
+% %% :- mode empty_hypotheses( - ).
 %
 % empty_hypotheses( [] ).
 %
 %
-% :- mode push_coinductive( +, +, - ).
+% %% :- mode push_is_coinductive0( +, +, - ).
 %
-% push_coinductive( Goal, Hyp, [ Goal | Hyp ] ).
+% push_is_coinductive0( Goal, Hyp, [ Goal | Hyp ] ).
 %
 %
-% :- mode unify_with_coinductive_ancestor( +, + ).
+% %% :- mode unify_with_coinductive_ancestor( +, + ).
 %
 % unify_with_coinductive_ancestor( Goal, Hyp ) :-
 %         once( essence_hook( Goal, Essence ) ),
@@ -86,22 +86,22 @@
 
 %%--------------  An implementation that uses goal_table:  --------------%%
 
-:- ensure_loaded( '../../general/goal_table_in_tree' ).
+:- ensure_loaded( 'goal_table_in_tree' ).
 
 
-:- mode empty_hypotheses( - ).
+%% :- mode empty_hypotheses( - ).
 
 empty_hypotheses( Hyp ) :-
         empty_goal_table( Hyp ).
 
 
-:- mode push_coinductive( +, +, - ).
+%% :- mode push_is_coinductive0( +, +, - ).
 
-push_coinductive( Goal, Hyp, NewHyp ) :-
+push_is_coinductive0( Goal, Hyp, NewHyp ) :-
         goal_table_add( Hyp, Goal, NewHyp ).
 
 
-%:- mode unify_with_coinductive_ancestor( +, + ).
+%%% :- mode unify_with_coinductive_ancestor( +, + ).
 %
 %unify_with_coinductive_ancestor( Goal, Hyp ) :-
 %        goal_table_member( Goal, Hyp ).
@@ -116,7 +116,7 @@ push_coinductive( Goal, Hyp, NewHyp ) :-
 %% do with an additional counter of the number of generated answer.
 
 
-:- mode unify_with_coinductive_ancestor( +, +, - ).
+%% :- mode unify_with_coinductive_ancestor( +, +, - ).
 
 unify_with_coinductive_ancestor( Goal, Hyp, AncNumber ) :-
         setval( ancNumberVar, 0 ),

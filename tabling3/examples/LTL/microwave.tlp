@@ -78,7 +78,7 @@ holds( s6, start ).  holds( s6, close ).
 holds( s7, start ).  holds( s7, close ).  holds( s7, heat  ).
 
 
-:- top q1/0, q2/0, q3/0, q4/0.
+:- topl q1/0, q2/0, q3/0, q4/0.
 %                                           Expected   Prolog    Tabling
 
 q1 :-  check( s1,   g(~ heat u close) ).   % yes       loops     yes

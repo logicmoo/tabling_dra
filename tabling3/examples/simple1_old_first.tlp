@@ -1,4 +1,4 @@
-:- tabled p/2, q/1.
+:- table p/2, q/1.
 
 p( X, Y ) :-  q( X ),  q( Y ).
 
@@ -9,6 +9,6 @@ q( b ).
 
 
 :- old_first all.
-:- trace all.
+:- traces all.
 
 ?- p( X, Y ).  % expected:  p( b, b ),  p( b, a ),  p( a, b ),  p( a, a ),

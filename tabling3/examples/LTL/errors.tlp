@@ -51,6 +51,6 @@ trans( s3, s3 ).
 holds( s1, p ).
 
 
-:- top q/0.
+:- topl q/0.
 
 q :-  check( s0, g p ).  % This is supposed to produce errors (inconsistency)

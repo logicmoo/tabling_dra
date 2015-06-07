@@ -36,7 +36,7 @@ num( s( N ), Hyp ) :-
 
 
 % A stream of numbers.
-% :- coinductive stream/1 .
+% :- coinductive0 stream/1 .
 
 stream( S, Hyp ) :-
         member( stream( S ), Hyp ).
@@ -49,7 +49,7 @@ stream( [ H | T ], Hyp ) :-
 
 
 % Similar to append/3.
-% :- coinductive append1/3 .
+% :- coinductive0 append1/3 .
 
 append1( L1, L2, L12, Hyp ) :-
         member( append1( L1, L2, L12), Hyp ).
@@ -62,7 +62,7 @@ append1( [ H | T ], Y , [ H | Z ], Hyp ) :-
 
 
 % Similar to member/2.
-% :- coinductive member1/2 .
+% :- coinductive0 member1/2 .
 
 member1( E, L , Hyp ) :-
         member( member1( E, L ), Hyp ).
@@ -92,7 +92,7 @@ drop( H, [ _ | T ], T1, Hyp ) :-
 
 
 % Are there infinitely many "occurrences" of arg1 in arg2?
-% :- coinductive comember/2 .
+% :- coinductive0 comember/2 .
 
 comember( X, L, Hyp ) :-
         member( comember( X, L ), Hyp ).

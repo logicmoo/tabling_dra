@@ -10,13 +10,13 @@ trans( s2, e, s0 ).
 trans( s2, c, s3 ).
 trans( s3, d, s0 ).
 
-:- coinductive automaton/2.
+:- coinductive0 automaton/2.
 
 automaton( [ X | T ],  St ) :-
            trans( St, X, NewSt ),
            automaton( T, NewSt ).
 
-:- top go/2.
+:- topl go/2.
 
 go( A, B ) :-  automaton( A, B ).
 

@@ -1,7 +1,9 @@
-:-tabled reach/2.
+
+:- topl go/0, main/0.
+:-table reach/2.
 
 go:-
-    cputime(Start),
+    must(cputime(Start)),
     top,
     cputime(End),
     T is End-Start,

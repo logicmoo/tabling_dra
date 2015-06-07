@@ -12,8 +12,8 @@ trans( s2, e, s0 ).
 trans( s2, c, s3 ).
 trans( s3, d, s0 ).
 
-:- coinductive automaton/2.
-:- tabled automaton/2.
+:- coinductive0 automaton/2.
+:- table automaton/2.
 
 automaton( [ X | T ],  St ) :-
            trans( St, X, NewSt ),

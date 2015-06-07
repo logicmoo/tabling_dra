@@ -13,6 +13,6 @@ s( X ) :-  r( X ).
 r( X ) :-  p( X, _ ).
 
 
-:- top q/1.
+:- topl q/1.
 
 q( X ) :-  p( hoho, X ).   % Expected: hoho

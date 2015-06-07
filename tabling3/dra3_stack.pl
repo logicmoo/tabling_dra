@@ -64,7 +64,7 @@
 %%%    empty_stack( - stack ):
 %%%            Create an empty stack.
 %%%
-%%%    push_tabled( + goal, + index, + clause, + stack, - new stack ):
+%%%    push_is_tabled( + goal, + index, + clause, + stack, - new stack ):
 %%%            where the first three arguments are the constitutive elements of
 %%%            a triple.
 %%%            Push the triple goal onto the stack.
@@ -83,19 +83,19 @@
 % %%
 % %% The stack is just a list of triples.
 %
-% :- mode empty_stack( - ).
+% %% :- mode empty_stack( - ).
 %
 % empty_stack( [] ).
 %
 %
-% :- mode push_tabled( +, +, +, +, - ).
+% %% :- mode push_is_tabled( +, +, +, +, - ).
 %
-% push_tabled( Goal, Index, Clause, Stack,
+% push_is_tabled( Goal, Index, Clause, Stack,
 %              [ triple( Goal, Index, Clause ) | Stack ]
 %            ).
 %
 %
-% :- mode is_variant_of_ancestor( +, +, -, - ).
+% %% :- mode is_variant_of_ancestor( +, +, -, - ).
 %
 % is_variant_of_ancestor( Goal, Stack, AncestorTriple, Prefix ) :-
 %         append( Prefix, [ AncestorTriple | _ ], Stack ),      % split the list
@@ -112,25 +112,25 @@
 %%    tstack( stack, goal table )
 
 
-:- ensure_loaded( '../../general/goal_table_in_tree' ).
+:- ensure_loaded( 'goal_table_in_tree' ).
 
 
-:- mode empty_stack( - ).
+%% :- mode empty_stack( - ).
 
 empty_stack( tstack( [], Table ) ) :-
         empty_goal_table( Table ).
 
 
-:- mode push_tabled( +, +, +, +, - ).
+%% :- mode push_is_tabled( +, +, +, +, - ).
 
-push_tabled( StackedGoal, Index, Clause, tstack( Stack, Table ),
+push_is_tabled( StackedGoal, Index, Clause, tstack( Stack, Table ),
              tstack( [ triple( StackedGoal, Index, Clause ) | Stack ], Table )
            ) :-
         StackedGoal = goal( _, _, Goal ),
         goal_table_add( Table, Goal ).
 
 
-:- mode is_variant_of_ancestor( +, +, -, - ).
+%% :- mode is_variant_of_ancestor( +, +, -, - ).
 
 is_variant_of_ancestor( Goal,
                         tstack( Stack, Table ),

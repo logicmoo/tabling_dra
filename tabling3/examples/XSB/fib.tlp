@@ -24,9 +24,9 @@
 
 % Adapted by F.K. @ UTD
 
-:- top demo/0.
+:- topl demo/0.
 
-:- tabled fib0/3.
+:- table fib0/3.
 
 
 demo :-

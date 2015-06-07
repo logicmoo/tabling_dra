@@ -50,7 +50,7 @@
 %%%    empty_hypotheses( - stack of hypotheses ):
 %%%         Create an empty stack for coinductive hypotheses.
 %%%
-%%%    push_coinductive( + goal, + stack of hypotheses , - new stack ):
+%%%    push_is_coinductive0( + goal, + stack of hypotheses , - new stack ):
 %%%         Push the coinductive goal onto the stack.
 %%%
 %%%    unify_with_coinductive_ancestor( + goal, + stack of hypotheses ):
@@ -71,9 +71,9 @@
 % empty_hypotheses( [] ).
 %
 %
-% :- mode push_coinductive( +, +, - ).
+% :- mode push_is_coinductive0( +, +, - ).
 %
-% push_coinductive( Goal, Hyp, [ Goal | Hyp ] ).
+% push_is_coinductive0( Goal, Hyp, [ Goal | Hyp ] ).
 %
 %
 % :- mode unify_with_coinductive_ancestor( +, + ).
@@ -95,9 +95,9 @@ empty_hypotheses( Hyp ) :-
         empty_goal_table( Hyp ).
 
 
-:- mode push_coinductive( +, +, - ).
+:- mode push_is_coinductive0( +, +, - ).
 
-push_coinductive( Goal, Hyp, NewHyp ) :-
+push_is_coinductive0( Goal, Hyp, NewHyp ) :-
         goal_table_add( Hyp, Goal, NewHyp ).
 
 

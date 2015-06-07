@@ -23,7 +23,7 @@ edge( d, e ).
 edge( d, a ).
 
 
-:- tabled path/2 .
+:- table path/2 .
 
 path( A, B ) :-  edge( A, B ).
 

@@ -13,9 +13,9 @@ go:-
     write('execution time is '),write(T), write(milliseconds),nl.
 
 top:-
-    top(9).
+    is_top(9).
 
-top(N):-
+is_top(N):-
     constrs(N,L),
     labeling(L),
     write(L),

@@ -10,6 +10,6 @@ q( X ) :-  r( X ).
 r( X ) :-  p( X ).
 
 
-:- top q/0.
+:- topl q/0.
 
 q :-  p( hoho ).

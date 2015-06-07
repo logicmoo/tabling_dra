@@ -15,7 +15,7 @@ c( 8, c, 9 ).
 
 
 %% Is this a sentence of the regular expression "(a|b)*" ?
-:- tabled p/2.
+:- table p/2.
 
 p( X, Y ) :-  p( X, Z ),  c( Z, a, Y ).
 p( X, Y ) :-  p( X, Z ),  c( Z, b, Y ).

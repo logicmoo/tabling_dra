@@ -64,7 +64,7 @@
 %%%    empty_stack( - stack ):
 %%%            Create an empty stack.
 %%%
-%%%    push_tabled( + goal, + index, + clause, + stack, - new stack ):
+%%%    push_is_tabled( + goal, + index, + clause, + stack, - new stack ):
 %%%            where the first three arguments are the constitutive elements of
 %%%            a triple.
 %%%            Push the triple goal onto the stack.
@@ -88,9 +88,9 @@
 % empty_stack( [] ).
 %
 %
-% % :- mode push_tabled( +, +, +, +, - ).
+% % :- mode push_is_tabled( +, +, +, +, - ).
 %
-% push_tabled( Goal, Index, Clause, Stack,
+% push_is_tabled( Goal, Index, Clause, Stack,
 %              [ triple( Goal, Index, Clause ) | Stack ]
 %            ).
 %
@@ -121,9 +121,9 @@ empty_stack( tstack( [], Table ) ) :-
         empty_goal_table( Table ).
 
 
-% :- mode push_tabled( +, +, +, +, - ).
+% :- mode push_is_tabled( +, +, +, +, - ).
 
-push_tabled( Goal, Index, Clause, tstack( Stack, Table ),
+push_is_tabled( Goal, Index, Clause, tstack( Stack, Table ),
              tstack( [ triple( Goal, Index, Clause ) | Stack ], NewTable )
            ) :-
         goal_table_add( Table, Goal, NewTable ).

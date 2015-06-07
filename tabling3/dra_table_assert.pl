@@ -36,7 +36,7 @@
 %% In order to facilitate such changes, routines for handling the table is
 %% factored out of the main program.
 
-
+end_of_file.
 
 %% >>>>>>>>>  This version for systems that use assert/1. <<<<<<<<<
 

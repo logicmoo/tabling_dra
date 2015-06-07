@@ -11,7 +11,7 @@ holds( s0, q ).
 
 
 
-:- top q/0.
+:- topl q/0.
 
 %                                         Expected   Prolog    Tabling
 

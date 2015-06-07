@@ -23,7 +23,7 @@
 
 %% This is the shell for Sicstus.  See dra_common.pl for documentation.
 
-:- module( dra, [ prog/1, top/0 ] ).
+:- module( dra, [ prog/1, old_top/0 ] ).
 
 :- ensure_loaded( '../general/compatibility_utilities_sicstus' ).
 :- ensure_loaded( dra_table_assert ).

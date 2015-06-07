@@ -38,7 +38,7 @@
 %%%
 %%%       A coinductive predicate should be declared as such in the program
 %%%       file, e.g.,
-%%%           :- coinductive comember/2 .
+%%%           :- coinductive0 comember/2 .
 %%%
 %%%       To include files use the usual Prolog syntax:
 %%%           :- [ file1, file2, ... ].
@@ -66,12 +66,12 @@
 hook_predicate( '' ).              % No hooks used here
 
 
-:- dynamic coinductive/1 .         % e.g., coinductive( comember( _, _ ) ).
+:- dynamic coinductive/1 .         % e.g., is_coinductive0( comember( _, _ ) ).
 
-:- op( 1000, fy, coinductive ).    % allow  ":- coinductive p/k ."
+:- op( 1000, fy, coinductive ).    % allow  ":- coinductive0 p/k ."
 :- op( 1000, fy, bottom ).         % allow  ":- bottom p/k ."        (see below)
-:- op( 1000, fy, top ).            % allow  ":- top p/k ."           (see below)
-:- op( 1000, fy, tabled ).         % allow  ":- tabled p/k ."        (see below)
+:- op( 1000, fy, top ).            % allow  ":- topl p/k ."           (see below)
+:- op( 1000, fy, table ).         % allow  ":- table p/k ."        (see below)
 
 
 default_extension( '.clp' ).       % default extension for file names
@@ -81,7 +81,7 @@ default_extension( '.clp' ).       % default extension for file names
 %% Get rid of previous state.
 
 initialise :-
-        retractall( coinductive( _ ) ).
+        retractall( is_coinductive0( _ ) ).
 
 
 %% Invoked by top level: do nothing.
@@ -90,36 +90,36 @@ program_loaded.
 
 
 %% The legal directives (check external form only).
-%% Note: ":- top ...", ":- bottom ..." and ":- tabled ..." are ignored by this
+%% Note: ":- topl ...", ":- bottom ..." and ":- table ..." are ignored by this
 %%       metainterpreter, and are allowed only to allow the same examples to be
 %%       translated by "translate_colp".
 
-legal_directive( (coinductive _) ).
+legal_directive( (coinductive0 _) ).
 legal_directive( (bottom      _) ).
-legal_directive( (top         _) ).
-legal_directive( (tabled      _) ).
+legal_directive( (topl         _) ).
+legal_directive( (table      _) ).
 
 
 %% execute_directive( + directive ):
 %% Check and process the legal directives.
 
-execute_directive( (coinductive PredSpecs) ) :-     % declaration of coinductive
+execute_directive( (coinductive0 PredSpecs) ) :-     % declaration of coinductive
         predspecs_to_patterns( PredSpecs, Patterns ),
-        declare_coinductive( Patterns ).
+        declare_is_coinductive0( Patterns ).
 
 execute_directive( (bottom _) ).
-execute_directive( (top    _) ).
-execute_directive( (tabled _) ).
+execute_directive( (topl    _) ).
+execute_directive( (table _) ).
 
 
 
-%% declare_coinductive( + list of general instances ):
+%% declare_is_coinductive0( + list of general instances ):
 %% Store the general instances in "coinductive", warning about duplications.
 
-declare_coinductive( Patterns ) :-
+declare_is_coinductive0( Patterns ) :-
         member( Pattern, Patterns ),              % i.e., sequence through these
         (
-            coinductive( Pattern )
+            is_coinductive0( Pattern )
         ->
             functor( Pattern, P, K ),
             warning( [ 'Duplicate declaration of ', P / K,
@@ -127,11 +127,11 @@ declare_coinductive( Patterns ) :-
                      ]
                    )
         ;
-            assert( coinductive( Pattern ) )
+            assert( is_coinductive0( Pattern ) )
         ),
         fail.
 
-declare_coinductive( _ ).
+declare_is_coinductive0( _ ).
 
 
 
@@ -186,7 +186,7 @@ solve( Goal, _Hypotheses ) :-                     % other supported built-in
         call( Goal ).
 
 solve( Goal, Hypotheses ) :-                      % call a coinductive predicate
-        coinductive( Goal ),
+        is_coinductive0( Goal ),
         !,
         solve_coinductive_call( Goal, Hypotheses ).
 

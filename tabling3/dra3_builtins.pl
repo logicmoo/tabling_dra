@@ -43,6 +43,7 @@ builtin( true               ).
 builtin( var( _ )           ).
 builtin( write( _ )         ).
 builtin( write_term( _, _ ) ).
+builtin( cputime( _ ) ).
 builtin( writeln( _ )       ).
 builtin( 'C'( _, _, _ )     ).  % for DCG's on some Prolog systems
 builtin( set_print_depth( _ ) ).          % not a real built-in, see "top_level"

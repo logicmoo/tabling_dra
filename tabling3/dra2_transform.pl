@@ -51,7 +51,7 @@ show.
 %% Produce a fatal error if "support" has been used in this program.
 
 check_no_support :-
-        support( _ ),
+        is_support( _ ),
         error( 'Programs with "support" cannot be executed by this version' ).
 
 check_no_support.

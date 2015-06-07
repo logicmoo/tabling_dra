@@ -25,13 +25,13 @@
 
 :- module( drap,
            [ prog/1, top/0,
-             op( 1010, fy, coinductive  ),    % allow  ":- coinductive p/k ."
+             op( 1010, fy, coinductive0  ),    % allow  ":- coinductive0 p/k ."
              op( 1010, fy, coinductive1 ),    % allow  ":- coinductive1 p/k ."
-             op( 1010, fy, tabled       ),    % allow  ":- tabled p/k ."
+             op( 1010, fy, table       ),    % allow  ":- table p/k ."
              op( 1010, fy, old_first    ),    % allow  ":- old_first p/k ."
-             op( 1010, fy, trace        ),    % allow  ":- trace  p/k ."
+             op( 1010, fy, traces        ),    % allow  ":- traces  p/k ."
              op( 1010, fy, multifile    ),    % allow  ":- multifile  p/k ."
-             op( 1010, fy, top          ),    % allow  ":- top p/k ."
+             op( 1010, fy, top          ),    % allow  ":- topl p/k ."
              op( 1010, fy, support      ),    % allow  ":- support p/k ."
              op( 1010, fy, load_support )     % allow  ":- load_support filename
            ]

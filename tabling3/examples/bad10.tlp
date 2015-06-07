@@ -1,6 +1,6 @@
 % Non-contiguous declaration.
 
-:- top p/1, q/1.
+:- topl p/1, q/1.
 
 p( a ).
 

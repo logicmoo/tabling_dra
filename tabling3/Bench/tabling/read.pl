@@ -170,7 +170,7 @@ read_tokens__1(_306,_308,_310) :-
 read_tokens__1(_296,_298,_300) :- 
         [num] = _302, [_266] = _304, [_270] = _306, 
         my_get0([_262]),
-        read_fullstop([_262],[_266],[_270]),
+        read_fullsis_top([_262],[_266],[_270]),
         normalize_result([_302,_304,_306],
                          [_296,_298,_300]).
 read_tokens__1(_354,_356,_358) :- 
@@ -928,7 +928,7 @@ read_digits(_63,_65,_67,_69) :-
 read_integer(_63,_65,_67) :- 
         read_integer__1(_69,_71,_73),
         unify_sets([_63,_65,_67], [_69,_71,_73]).
-read_fullstop(_63,_65,_67) :- 
+read_fullsis_top(_63,_65,_67) :- 
         read_fullstop__1(_69,_71,_73),
         unify_sets([_63,_65,_67], [_69,_71,_73]).
 check_special(_63) :- 
@@ -1121,7 +1121,7 @@ show_facts :- read_integer__1(_63,_65,_67),
               write(read_integer(_63,_65,_67)), nl, fail.
 show_facts :- read_fullstop__1(_63,_65,_67),
               numbervars([_63,_65,_67]),
-              write(read_fullstop(_63,_65,_67)), nl, fail.
+              write(read_fullsis_top(_63,_65,_67)), nl, fail.
 show_facts :- check_special__1(_63),
               numbervars([_63]),
               write(check_special(_63)), nl, fail.

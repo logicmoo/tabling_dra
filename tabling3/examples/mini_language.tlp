@@ -9,7 +9,7 @@
 
 % main: composing syntax and semantics
 
-:- top main/3.
+:- topl main/3.
 
 main(Vala, Valb, Output) :-  p1(Prog),
 	program(P, Prog, []), prog_eval(P, Vala, Valb, Output).
@@ -24,7 +24,7 @@ p1([  	z,  :=,  1,  ;,
 
 % Syntax:
 
-:- tabled express/3, term/3, comd1/3.
+:- table express/3, term/3, comd1/3.
 
 program(p(X)) --> comd(X).
 

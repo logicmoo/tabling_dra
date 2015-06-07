@@ -1,5 +1,5 @@
-:- top p/1.
-:- tabled p/1 .
+:- topl p/1.
+:- table p/1 .
 
 p( a ).
 p( b ).

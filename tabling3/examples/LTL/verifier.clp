@@ -67,7 +67,7 @@
 :- [ 'consistency_checker.pl' ].
 
 
-:- top check/2.     % make check( S, F ) available in its original form
+:- topl check/2.     % make check( S, F ) available in its original form
 
 % Don't transform these:
 
@@ -158,7 +158,7 @@ verify( S, x A,   [ S | P ] ) :-  trans( S, S2 )  , verify( S2, A, P ).
                           % backtracking.
 
 
-:- tabled tverify/3.
+:- table tverify/3.
 
 tverify( S, f A,   Path ) :-  verify( S, A, Path )
                               ;
@@ -169,7 +169,7 @@ tverify( S, A u B, Path ) :-  verify( S, B, Path )
                               verify( S, A ^ x( A u B), Path ).
 
 
-:- coinductive coverify/3.
+:- coinductive0 coverify/3.
 
 coverify( S, g A,   Path ) :-  verify( S, A ^ x g A,       Path ).
 

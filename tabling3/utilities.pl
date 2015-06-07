@@ -287,7 +287,7 @@ uc( 'Y' ).  uc( 'Z' ).
 %% Succeed if arg1 =< arg2 < arg3.
 %% If arg2 is a variable, generate the appropriate values
 
-between( A, V, B ) :-
+old_between( A, V, B ) :-
         integer( A ),
         integer( B ),
         (

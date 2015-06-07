@@ -1,4 +1,4 @@
-:- tabled p/2.
+:- table p/2.
 
 p( A, A ).
 p( a, b ).
