@@ -566,6 +566,8 @@ default_extension( '.tlp' ).                              % invoked by top_level
 :- dynamic completed/2 .
 :- dynamic is_tracing/1.
 
+is_tabled(G):- current_predicate(_,G),!, predicate_property(G,dynamic),predicate_property(G,number_of_clauses(_)), \+ predicate_property(G,built_in).
+
 :- setval( number_of_answers, 0 ).
 :- setval( unique_index,      0 ).
 
@@ -680,7 +682,7 @@ legal_directive((call( _))  ).
 legal_directive((hilog( _))  ).
 
 % SWI=Prolog
-legal_directive((trace)   ).
+legal_directive((traces)   ).
 legal_directive( notrace ).
 
 legal_directive(M:P):-atom(M),M:legal_directive(P).
@@ -693,13 +695,13 @@ legal_directive(P):-compound(P),functor(P,F,1),property_pred(F,_).
 
 execute_directive( (table all) ) :-
         !,
-        asserta_new( is_tabled( _ ) ).
+        assert_if_new( is_tabled( _ ) ).
 
 execute_directive( (table PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
             member( Pattern, Patterns ),
-            asserta_if_new( is_tabled( Pattern ) ),
+            assert_if_new( is_tabled( Pattern ) ),
             fail
         ;
             true
@@ -736,8 +738,8 @@ execute_directive( (coinductive1 PredSpecs) ) :-
         ).
 
 execute_directive(Dir ) :- property_pred(F,DBF), Dir=..[F,all],DB=..[DBF,_],
-        !, assert_if_new( DB ).
-execute_directive(Dir ) :- property_pred(F,DBF), Dir=..[F,PredSpecs],
+        !, asserta_new( DB ).
+execute_directive(Dir ) :- property_pred(F,DBF), Dir=..[F,PredSpecs],!,
          DB=..[DBF,Pattern],
      
         predspecs_to_patterns( PredSpecs, Patterns ),
@@ -874,7 +876,8 @@ query( Goals ) :-                                         % invoked by top_level
         ((
             empty_hypotheses( Hyp ),
             empty_stack( Stack ),
-            solve( Goals, Stack, Hyp, 0 ),
+            solve(Cutted, Goals, Stack, Hyp, 0 ),
+            ((var(Cutted);((trace),non_cutted(Goals,Cutted,( _))))->true;(!,fail)),
             print_statistics,
             setval( step_counter, 0 ),
             getval( number_of_answers, NAns2 ),
@@ -918,7 +921,7 @@ plural( Output, N ) :-  N \= 1,  write( Output, 's' ).
 
 
 
-%% solve( + sequence of goals,
+%% solve(Cutted, + sequence of goals,
 %%        + stack,
 %%        + coinductive hypotheses,
 %%        + level
@@ -944,17 +947,17 @@ plural( Output, N ) :-  N \= 1,  write( Output, 's' ).
 %%       faster access, so the comments in this file ("chain of ancestors" etc.)
 %%       might no longer be quite accurate.
 
-% :- mode solve( +, +, +, + ).
+% :- mode solve(Cutted, +, +, +, + ).
 
 
 % A negation.
 
-solve( \+ Goal, Stack, Hyp, Level ) :-
+solve(Cutted, \+ Goal, Stack, Hyp, Level ) :-
         !,
         NLevel is Level + 1,
         trace_entry( normal, \+ Goal, '?', Level ),
         (
-            \+ solve( Goal, Stack, Hyp, NLevel ),
+            \+ solve(Cutted, Goal, Stack, Hyp, NLevel ),
             trace_success( normal, \+ Goal, '?', Level )
         ;
             trace_failure( normal, \+ Goal, '?', Level ),
@@ -964,12 +967,12 @@ solve( \+ Goal, Stack, Hyp, Level ) :-
 
 % One solution.
 
-solve( once( Goal ), Stack, Hyp, Level ) :-
+solve(Cutted, once( Goal ), Stack, Hyp, Level ) :-
         !,
         NLevel is Level + 1,
         trace_entry( normal, once( Goal ), '?', Level ),
         (
-            once( solve( Goal, Stack, Hyp, NLevel ) ),
+            once( solve(Cutted, Goal, Stack, Hyp, NLevel ) ),
             trace_success( normal, once( Goal ), '?', Level )
         ;
             trace_failure( normal, once( Goal ), '?', Level ),
@@ -979,45 +982,45 @@ solve( once( Goal ), Stack, Hyp, Level ) :-
 
 % A conditional with an else.
 
-solve( (Cond -> Then ; _Else), Stack, Hyp, Level ) :-
-        solve( Cond, Stack, Hyp, Level ),
+solve(Cutted, (Cond -> Then ; _Else), Stack, Hyp, Level ) :-
+        solve(Cutted, Cond, Stack, Hyp, Level ),
         !,
-        solve( Then, Stack, Hyp, Level ).
+        solve(Cutted, Then, Stack, Hyp, Level ).
 
-solve( (_Cond -> _Then ; Else), Stack, Hyp, Level ) :-
+solve(Cutted, (_Cond -> _Then ; Else), Stack, Hyp, Level ) :-
         !,
-        solve( Else, Stack, Hyp, Level ).
+        solve(Cutted, Else, Stack, Hyp, Level ).
 
 
 % A conditional without an else.
 
-solve( (Cond -> Then), Stack, Hyp, Level ) :-
-        solve( Cond, Stack, Hyp, Level ),
+solve(Cutted, (Cond -> Then), Stack, Hyp, Level ) :-
+        solve(Cutted, Cond, Stack, Hyp, Level ),
         !,
-        solve( Then, Stack, Hyp, Level ).
+        solve(Cutted, Then, Stack, Hyp, Level ).
 
 
 % A disjunction without a conditional.
 
-solve( (Goals ; _), Stack, Hyp, Level ) :-
-        solve( Goals, Stack, Hyp, Level ).
+solve(Cutted, (Goals ; _), Stack, Hyp, Level ) :-
+        solve(Cutted, Goals, Stack, Hyp, Level ).
 
-solve( (_ ; Goals), Stack, Hyp, Level ) :-
+solve(Cutted, (_ ; Goals), Stack, Hyp, Level ) :-
         !,
-        solve( Goals, Stack, Hyp, Level ).
+        solve(Cutted, Goals, Stack, Hyp, Level ).
 
 
 % A conjunction.
 
-solve( (Goals1 , Goals2), Stack, Hyp, Level ) :-
+solve(Cutted, (Goals1 , Goals2), Stack, Hyp, Level ) :-
         !,
-        solve( Goals1, Stack, Hyp, Level ),
-        solve( Goals2, Stack, Hyp, Level ).
+        solve(Cutted, Goals1, Stack, Hyp, Level ),
+        solve(Cutted, Goals2, Stack, Hyp, Level ).
 
 
 % call/1
 
-solve( call( Goal ), Stack, Hyp, Level ) :-
+solve(Cutted, call( Goal ), Stack, Hyp, Level ) :-
         (
             ( var( Goal )                          % e.g., Eclipse
             ; Goal = interpreted : V,  var( V )    % e.g., Sicstus
@@ -1025,13 +1028,13 @@ solve( call( Goal ), Stack, Hyp, Level ) :-
         ->
             error( [ 'A variable meta-call: ', call( Goal ) ] )
         ;
-            solve( Goal, Stack, Hyp, Level )
+            solve(Cutted, Goal, Stack, Hyp, Level )
         ).
 
 
 % assert/1
 
-solve( assert( Clause ), _, _, _ ) :-
+solve(_Cutted, assert( Clause ), _, _, _ ) :-
         !,
         (
             \+ is_a_good_clause( Clause )
@@ -1046,7 +1049,7 @@ solve( assert( Clause ), _, _, _ ) :-
 
 % retractall/1
 
-solve( retractall( C ), _, _, _ ) :-
+solve(_Cutted, retractall( C ), _, _, _ ) :-
         !,
         incval( step_counter ),
         retractall_in_module( interpreted, C ).
@@ -1054,7 +1057,7 @@ solve( retractall( C ), _, _, _ ) :-
 
 % findall/3: note that this is not opaque to coinductive and tabled ancestors!
 
-solve( findall( Template, Goal, Bag ), Stack, Hyp, Level ) :-
+solve(Cutted, findall( Template, Goal, Bag ), Stack, Hyp, Level ) :-
         !,
         NLevel is Level + 1,
         (
@@ -1067,12 +1070,13 @@ solve( findall( Template, Goal, Bag ), Stack, Hyp, Level ) :-
         ;
             G = Goal
         ),
-        findall( Template, solve( G, Stack, Hyp, NLevel ), Bag ).
+        findall( Template, solve(Cutted, G, Stack, Hyp, NLevel ), Bag ).
 
+solve(Cutted, !, _, _, _ ) :- !, (var(Cutted);Cutted=cut).
 
 % Some other supported built-in.
 
-solve( BuiltIn, _, _, _ ) :-
+solve(Cutted, BuiltIn, _, _, _ ) :-
         builtin( BuiltIn ),
         !,
         incval( step_counter ),
@@ -1081,16 +1085,23 @@ solve( BuiltIn, _, _, _ ) :-
 
 % A "support" predicate
 
-solve( Goal, _, _, _ ) :-
+solve(Cutted, Goal, _, _, _ ) :-
         is_support( Goal ),
         !,
         incval( step_counter ),
         call_in_module( support, Goal ).
 
+solve(CuttedOut, Goal, Stack, Hyp, Level ):- 
+   (nonvar(CuttedOut)->(trace);true),
+   solve0(Cutted, Goal, Stack, Hyp, Level ),
+   ((var(Cutted);non_cutted(Goal,Cutted, CuttedOut))->true;(!,fail)).
+
+non_cutted(_,cut,_):-!,fail.
+non_cutted(_,Cutted,Cutted).
 
 % A "normal" goal (i.e., not tabled, not coinductive).
 
-solve( Goal, Stack, Hyp, Level ) :-
+solve0(Cutted, Goal, Stack, Hyp, Level ) :-
         \+ is_tabled( Goal ),
         \+ is_coinductive1( Goal ),
         !,
@@ -1099,7 +1110,7 @@ solve( Goal, Stack, Hyp, Level ) :-
         (
             NLevel is Level + 1,
             use_clause( Goal, Body ),
-            solve( Body, Stack, Hyp, NLevel ),
+            solve(Cutted, Body, Stack, Hyp, NLevel ),
             trace_success( normal, Goal, '?', Level )
         ;
             trace_failure( normal, Goal, '?', Level ),
@@ -1116,7 +1127,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 %       follows is an attempt to avoid too much duplication of code and
 %       redundant invocations of the costly check for unifiable ancestors.
 
-solve( Goal, Stack, Hyp, Level ) :-
+solve0(Cutted, Goal, Stack, Hyp, Level ) :-
         \+ is_tabled( Goal ),
         is_coinductive1( Goal ),
         !,
@@ -1142,7 +1153,7 @@ solve( Goal, Stack, Hyp, Level ) :-
                 NLevel is Level + 1,
                 use_clause( Goal, Body ),
                 push_is_coinductive0( Goal, Hyp, NHyp ),
-                solve( Body, Stack, NHyp, NLevel ),
+                solve(Cutted, Body, Stack, NHyp, NLevel ),
                 trace_success( 'coinductive (clause)', Goal, '?', Level )
             ;
                 trace_failure( coinductive, Goal, '?', Level ),
@@ -1154,7 +1165,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 
 % A tabled goal that has been completed: all the results are in "answer".
 
-solve( Goal, _, _, Level ) :-
+solve0(Cutted, Goal, _, _, Level ) :-
         is_completed( Goal ),
         !,
         incval( step_counter ),
@@ -1192,7 +1203,7 @@ solve( Goal, _, _, Level ) :-
 %       4. If this goal is coinductive, then we use "result" to avoid
 %          duplicating results.
 
-solve( Goal, Stack, Hyp, Level ) :-
+solve0(Cutted, Goal, Stack, Hyp, Level ) :-
         is_variant_of_ancestor( Goal, Stack,
                                 triple( G, I, C ), InterveningTriples
                               ),
@@ -1271,7 +1282,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 % might not be necessary to continue the computation with the remaining clauses:
 % the rest of the results should be picked up from the table, instead.
 
-solve( Goal, Stack, Hyp, Level ) :-
+solve0(Cutted, Goal, Stack, Hyp, Level ) :-
         (
             is_coinductive1( Goal )
         ->
@@ -1293,7 +1304,7 @@ solve( Goal, Stack, Hyp, Level ) :-
             \+ is_completed( OriginalGoal ), % might well be, after backtracking
             copy_term2( (Goal :- Body), ClauseCopy ),
             push_is_tabled( OriginalGoal, Index, ClauseCopy, Stack, NStack ),
-            solve( Body, NStack, NHyp, NLevel ),
+            solve(Cutted, Body, NStack, NHyp, NLevel ),
             \+ is_answer_known( OriginalGoal, Goal ),   % postpone "old" answers
             memo( OriginalGoal, Goal, Level ),
             new_result_or_fail( Index, Goal ),          % i.e., note the answer
@@ -1403,7 +1414,7 @@ use_clause( Goal, Body ) :-
             clause_in_module( interpreted, Goal, Body )
         ;
           (current_predicate(_,Goal) -> 
-                clause(Goal,Body); 
+                 clause(Goal,Body); 
                (warning( [ 'Calling an undefined predicate: \"', Goal, '\"' ] ),
                 fail))
         ).
@@ -1439,7 +1450,7 @@ compute_fixed_point_( Goal, Index, Stack, Hyp, Level, _ ) :-
         copy_term2( (G :- Body), ClauseCopy ),
         G = Goal,
         push_is_tabled( OriginalGoal, Index, ClauseCopy, Stack, NStack ),
-        solve( Body, NStack, Hyp, Level ),
+        solve(Cutted, Body, NStack, Hyp, Level ),
         new_result_or_fail( Index, Goal ),
         memo( OriginalGoal, Goal, Level ).
 
