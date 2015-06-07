@@ -20,4 +20,4 @@ top.
 reach(X,Y):-edge(X,Y).
 reach(X,Y):-reach(X,Z),edge(Z,Y).
 
-:-['edge.pl'].
+:-['sg_edge.pl'].

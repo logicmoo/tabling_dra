@@ -27,7 +27,10 @@
   	    op(1150, fx, (coinductive))
   	  ]).
 
-process_file_test(F):- must_det_l((retractall(top(_)),once(process_file(F)))),!.  % ,once(ignore((run_curent_test,sleep(2)))))).
+process_file_test(F):-    abolish( interpreted:demo/0  ),abolish( demo/0  ),
+   retractall( interpreted:top  ),retractall( top  ),
+   retractall( interpreted:test  ),retractall( test  ),
+   time(must(once(process_file(F)))),!.  % ,once(ignore((run_curent_test,sleep(2)))))).
 
 run_curent_test:- show_call_failure(if_defined(go,if_defined(test,if_defined(top)))),!.
 run_curent_test:- top(_),!,forall(top(I),time((ignore(show_call((nonvar(I),query(I))))))),!.
@@ -281,6 +284,8 @@ print_table_statistics:-print_statistics.
 :- time(process_file_test(library('dra/tabling3/examples/XSB/ham.tlp') )).
 
 % :- process_file_test('/devel/LogicmooDeveloperFramework/PrologMUD/packs/MUD_PDDL/prolog/dra/tabling3/Bench/tabling/tcl.pl').
+
+:-prolog.
 
 :- repeat,logOnErrorIgnore(tprolog),fail.
 

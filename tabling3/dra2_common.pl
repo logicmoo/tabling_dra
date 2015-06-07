@@ -628,7 +628,7 @@ default_extension( '.tlp' ).                              % invoked by top_level
 :- dynamic loop/2 .
 :- dynamic looping_alternative/2 .
 :- dynamic completed/2 .
-:- dynamic tracing/1.
+:- dynamic is_tracing/1.
 :- dynamic index/3, rule/3.
 
 

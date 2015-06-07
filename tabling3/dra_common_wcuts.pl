@@ -557,7 +557,7 @@ default_extension( '.tlp' ).                              % invoked by top_level
 
 :- dynamic (is_coinductive0)/1 .
 :- dynamic (is_coinductive1)/1 .
-:- dynamic (is_table)/1 .
+:- dynamic (is_tabled)/1 .
 :- dynamic (is_old_first)/1 .
 :- dynamic pioneer/3 .
 :- dynamic result/2 .
@@ -565,6 +565,8 @@ default_extension( '.tlp' ).                              % invoked by top_level
 :- dynamic looping_alternative/2 .
 :- dynamic completed/2 .
 :- dynamic is_tracing/1.
+
+is_tabled(G):- current_predicate(_,G),!, predicate_property(G,dynamic),predicate_property(G,number_of_clauses(_)), \+ predicate_property(G,built_in).
 
 :- setval( number_of_answers, 0 ).
 :- setval( unique_index,      0 ).
@@ -577,11 +579,11 @@ initialise :-                                             % invoked by top_level
         reinitialise_loop,
         reinitialise_looping_alternative,
         reinitialise_completed,
-        retractall( is_coinductive0( _ )  ),
+       /* retractall( is_coinductive0( _ )  ),
         retractall( is_coinductive1( _ ) ),
         retractall( is_tabled( _ )       ),
         retractall( is_old_first( _ )    ),
-        retractall( is_tracing( _ )      ),
+        retractall( is_tracing( _ )      ),*/
         setval( number_of_answers, 0 ),
         setval( unique_index,      0 ),
         setval( step_counter,      0 ),
@@ -736,14 +738,14 @@ execute_directive( (coinductive1 PredSpecs) ) :-
         ).
 
 execute_directive(Dir ) :- property_pred(F,DBF), Dir=..[F,all],DB=..[DBF,_],
-        !, assert_if_new( DB ).
-execute_directive(Dir ) :- property_pred(F,DBF), Dir=..[F,PredSpecs],
+        !, asserta_new( DB ).
+execute_directive(Dir ) :- property_pred(F,DBF), Dir=..[F,PredSpecs],!,
          DB=..[DBF,Pattern],
      
         predspecs_to_patterns( PredSpecs, Patterns ),
       (
             member( Pattern, Patterns ),
-            assert( DB ),
+            assert_if_new( DB ),
             fail
         ;
             true
@@ -875,7 +877,7 @@ query( Goals ) :-                                         % invoked by top_level
             empty_hypotheses( Hyp ),
             empty_stack( Stack ),
             solve(Cutted, Goals, Stack, Hyp, 0 ),
-            ((var(Cutted);((traces),non_cutted(Goals,Cutted,( _))))->true;(!,fail)),
+            ((var(Cutted);((trace),non_cutted(Goals,Cutted,( _))))->true;(!,fail)),
             print_statistics,
             setval( step_counter, 0 ),
             getval( number_of_answers, NAns2 ),
@@ -1412,7 +1414,7 @@ use_clause( Goal, Body ) :-
             clause_in_module( interpreted, Goal, Body )
         ;
           (current_predicate(_,Goal) -> 
-                Body=logOnError(Goal); 
+                 clause(Goal,Body); 
                (warning( [ 'Calling an undefined predicate: \"', Goal, '\"' ] ),
                 fail))
         ).

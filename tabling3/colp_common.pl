@@ -66,11 +66,11 @@
 hook_predicate( '' ).              % No hooks used here
 
 
-:- dynamic coinductive/1 .         % e.g., is_coinductive0( comember( _, _ ) ).
+:- dynamic is_coinductive0/1 .         % e.g., is_coinductive0( comember( _, _ ) ).
 
-:- op( 1000, fy, coinductive ).    % allow  ":- coinductive0 p/k ."
+:- op( 1000, fy, coinductive0 ).    % allow  ":- coinductive0 p/k ."
 :- op( 1000, fy, bottom ).         % allow  ":- bottom p/k ."        (see below)
-:- op( 1000, fy, top ).            % allow  ":- topl p/k ."           (see below)
+:- op( 1000, fy, topl ).            % allow  ":- topl p/k ."           (see below)
 :- op( 1000, fy, table ).         % allow  ":- table p/k ."        (see below)
 
 
@@ -127,7 +127,7 @@ declare_is_coinductive0( Patterns ) :-
                      ]
                    )
         ;
-            assert( is_coinductive0( Pattern ) )
+            assert_if_new( is_coinductive0( Pattern ) )
         ),
         fail.
 

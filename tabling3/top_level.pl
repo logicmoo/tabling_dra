@@ -312,7 +312,7 @@ prog( FileName ) :-
 
 %
 setup :-
-        retractall( known( _ )   ),
+        retractall( known( _ )   ),       
         retractall( is_support( _ ) ),
         retractall( is_top( _ )     ),
         retractall( defined( _ ) ),
@@ -582,14 +582,14 @@ ensure_dynamic( _ ).
 
 process_directive( (topl all) ) :-
         !,
-        assert( is_top( _ ) ).
+        assert_if_new( is_top( _ ) ).
 
 process_directive( (topl PredSpecs) ) :-
         !,
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
             member( Pattern, Patterns ),
-            assert( is_top( Pattern ) ),
+            assert_if_new( is_top( Pattern ) ),
             fail
         ;
             true
@@ -600,7 +600,7 @@ process_directive( (support PredSpecs) ) :-      % store in "support" table
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
             member( Pattern, Patterns ),
-            assert( is_support( Pattern ) ),
+            assert_if_new( is_support( Pattern ) ),
             fail
         ;
             true

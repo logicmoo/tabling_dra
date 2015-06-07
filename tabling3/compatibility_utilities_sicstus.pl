@@ -72,7 +72,7 @@ name_chars( Atomic, NameCharCodes ) :-
 %% Like clause/2, but from the named module.
 
 clause_in_module( ModuleName, Head, Body ) :-
-        clause( ModuleName : Head, Body ).
+      debugOnError(  clause( ModuleName : Head, Body )).
 
 
 %%------------------------------------------------------------------------------

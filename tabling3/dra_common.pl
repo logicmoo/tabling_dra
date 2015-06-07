@@ -557,7 +557,7 @@ default_extension( '.tlp' ).                              % invoked by top_level
 
 :- dynamic (is_coinductive0)/1 .
 :- dynamic (is_coinductive1)/1 .
-:- dynamic (is_table)/1 .
+:- dynamic (is_tabled)/1 .
 :- dynamic (is_old_first)/1 .
 :- dynamic pioneer/3 .
 :- dynamic result/2 .
@@ -577,11 +577,11 @@ initialise :-                                             % invoked by top_level
         reinitialise_loop,
         reinitialise_looping_alternative,
         reinitialise_completed,
-        retractall( is_coinductive0( _ )  ),
+       /* retractall( is_coinductive0( _ )  ),
         retractall( is_coinductive1( _ ) ),
         retractall( is_tabled( _ )       ),
         retractall( is_old_first( _ )    ),
-        retractall( is_tracing( _ )      ),
+        retractall( is_tracing( _ )      ),*/
         setval( number_of_answers, 0 ),
         setval( unique_index,      0 ),
         setval( step_counter,      0 ),
@@ -680,7 +680,7 @@ legal_directive((call( _))  ).
 legal_directive((hilog( _))  ).
 
 % SWI=Prolog
-legal_directive((traces)   ).
+legal_directive((trace)   ).
 legal_directive( notrace ).
 
 legal_directive(M:P):-atom(M),M:legal_directive(P).
@@ -693,13 +693,13 @@ legal_directive(P):-compound(P),functor(P,F,1),property_pred(F,_).
 
 execute_directive( (table all) ) :-
         !,
-        assert_if_new( is_tabled( _ ) ).
+        asserta_new( is_tabled( _ ) ).
 
 execute_directive( (table PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
             member( Pattern, Patterns ),
-            assert_if_new( is_tabled( Pattern ) ),
+            asserta_if_new( is_tabled( Pattern ) ),
             fail
         ;
             true
@@ -743,7 +743,7 @@ execute_directive(Dir ) :- property_pred(F,DBF), Dir=..[F,PredSpecs],
         predspecs_to_patterns( PredSpecs, Patterns ),
       (
             member( Pattern, Patterns ),
-            assert( DB ),
+            assert_if_new( DB ),
             fail
         ;
             true
@@ -1403,7 +1403,7 @@ use_clause( Goal, Body ) :-
             clause_in_module( interpreted, Goal, Body )
         ;
           (current_predicate(_,Goal) -> 
-                Body=logOnError(Goal); 
+                clause(Goal,Body); 
                (warning( [ 'Calling an undefined predicate: \"', Goal, '\"' ] ),
                 fail))
         ).

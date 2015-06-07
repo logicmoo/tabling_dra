@@ -46,3 +46,7 @@ builtin( write_term( _, _ ) ).
 builtin( writeln( _ )       ).
 builtin( 'C'( _, _, _ )     ).  % for DCG's on some Prolog systems
 builtin( set_print_depth( _ ) ).          % not a real built-in, see "top_level"
+builtin( G       ):-  predicate_property(G,foreign),!.
+builtin( G       ):- current_predicate(_,G),!, \+ predicate_property(G,number_of_clauses(_)), \+ is_tabled(G).
+
+

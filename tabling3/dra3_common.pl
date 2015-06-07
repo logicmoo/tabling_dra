@@ -746,13 +746,13 @@ legal_directive( answers         ).
 
 execute_directive( (table all) ) :-
         !,
-        assert( is_tabled( _ ) ).
+        assert_if_new( is_tabled( _ ) ).
 
 execute_directive( (table PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
             member( Pattern, Patterns ),
-            assert( is_tabled( Pattern ) ),
+            assert_if_new( is_tabled( Pattern ) ),
             fail
         ;
             true
