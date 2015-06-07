@@ -37,6 +37,6 @@
            ]
          ).
 
-:- ensure_loaded( '../general/compatibility_utilities_swi' ).
+:- ensure_loaded( 'compatibility_utilities_swi' ).
 :- ensure_loaded( dra_table_record ).    % OK for cyclic terms
 :- ensure_loaded( dra_common ).

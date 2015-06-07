@@ -23,5 +23,5 @@
 
 %% This is the shell for SWI Prolog.  See colp_common.pl for documentation.
 
-:- ensure_loaded( '../general/compatibility_utilities_swi' ).
+:- ensure_loaded( 'compatibility_utilities_swi' ).
 :- ensure_loaded( [ colp_common ] ).

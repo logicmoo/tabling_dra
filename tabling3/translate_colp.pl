@@ -24,5 +24,5 @@
 %% This is the shell for Sicstus.
 %% See translate_colp_common.pl for documentation.
 
-:- ensure_loaded( '../general/compatibility_utilities_sicstus' ).
+:- ensure_loaded( 'compatibility_utilities_sicstus' ).
 :- ensure_loaded( [ translate_colp_common ] ).

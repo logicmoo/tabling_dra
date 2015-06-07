@@ -27,11 +27,7 @@
   	    op(1150, fx, (coinductive))
   	  ]).
 
-% :- user:ensure_loaded(library(dra/tabling3/dra_table_assert)).
-:- user:ensure_loaded(library(dra/tabling3/dra3)).
-:- user:ensure_loaded(library(dra/tabling3/top_level)).
-
-process_file_test(F):- must_det_l((retractall(top(_)),once(load(F)))),!.  % ,once(ignore((run_curent_test,sleep(2)))))).
+process_file_test(F):- must_det_l((retractall(top(_)),once(process_file(F)))),!.  % ,once(ignore((run_curent_test,sleep(2)))))).
 
 run_curent_test:- show_call_failure(if_defined(go,if_defined(test,if_defined(top)))),!.
 run_curent_test:- top(_),!,forall(top(I),time((ignore(show_call((nonvar(I),query(I))))))),!.
@@ -59,7 +55,7 @@ load( FileName ) :-
 
 
 cputime(X):- statistics(cputime,X).
-
+table(X):-execute_directive(table(X)).
 
 %% process_file( + file name ):
 %% Load a program from this file, processing directives and queries.
@@ -69,11 +65,12 @@ cputime(X):- statistics(cputime,X).
 do_process_file( FileName ) :-    
         open_the_file( FileName, ProgStream ),
         process_input( ProgStream ),!,
-        stream_property(ProgStream,file_name(FN)),
+        
         sanity(at_end_of_stream(ProgStream)),        
    % atom_to_memory_file('',Null_stream),
    % file_directory_name(FileName,D),
-   load_files(FN,[derived_from(FN),register(true),stream(ProgStream)]),
+   stream_property(ProgStream,file_name(FN)),
+   load_files(FN,[derived_from(FileName),register(true),stream(ProgStream)]),
         close( ProgStream ),!.
 
 %
@@ -188,8 +185,9 @@ user:dra_prompt(Module, BrekLev, Prompt) :-
 	),
 	atom_chars(Prompt, P3).
 
-:- call(user:rl_add_history(ls)).
-:- call(user:rl_add_history('traced,go')).
+%:- call(user:rl_add_history(ls)).
+%:- call(user:rl_add_history('traced,go')).
+:- '$toplevel':setup_history.
 
 user:listing_mpred_hook(What):- debugOnError(dra_listing(What)).
 
@@ -248,10 +246,21 @@ property_pred(support,is_support).
 
 
 
+initialize_table:-must(initialise).
+print_table_statistics:-print_statistics.
+%load(P):-must(prog0(P)),!.
+
+:- user:ensure_loaded(library(dra/tabling3/dra_table_assert)).
+%:- user:ensure_loaded(library(dra/tabling3/dra_table_record)).
+:- user:ensure_loaded(library(dra/tabling3/compatibility_utilities_swi)).
+:- user:ensure_loaded(library(dra/tabling3/top_level)).
+:- user:ensure_loaded(library(dra/tabling3/dra_common_wcuts)).  
+
+% c + r = 7.949 seconds
 
 /*
 % :- process_file_test(library('dra/tabling3/examples/XSB/fib.tlp') ).
-:- process_file_test(library('dra/tabling3/examples/XSB/ham.tlp') ).
+
 :- process_file_test(library('dra/tabling3/examples/co_t.tlp') ).
 
 
@@ -268,9 +277,10 @@ property_pred(support,is_support).
 :- process_file_test(library('dra/tabling3/Bench/clpfd/run')).
 :- process_file_test(library('dra/tabling3/Bench/aspclp/run')).
 */
-:- process_file_test(library('dra/tabling3/examples/XSB/farmer.tlp') ),!.
+:- time(process_file_test(library('dra/tabling3/examples/XSB/farmer.tlp') )),!.
+:- time(process_file_test(library('dra/tabling3/examples/XSB/ham.tlp') )).
 
 % :- process_file_test('/devel/LogicmooDeveloperFramework/PrologMUD/packs/MUD_PDDL/prolog/dra/tabling3/Bench/tabling/tcl.pl').
 
-:- tprolog.
+:- repeat,logOnErrorIgnore(tprolog),fail.
 

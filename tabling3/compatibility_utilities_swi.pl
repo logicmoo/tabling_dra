@@ -308,7 +308,7 @@ getval( Name, Value ) :-
 %%------------------------------------------------------------------------------
 %% incval( + name ):
 %% Increment this counter by 1.
-
+incval( Name ) :- !, flag( Name, Value, Value+1 ).
 incval( Name ) :-
         getval( Name, Value ),
         NewValue is Value + 1,

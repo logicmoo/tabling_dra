@@ -24,5 +24,5 @@
 %% This is the shell for Eclipse.
 %% See translate_colp_common.pl for documentation.
 
-:- ensure_loaded( '../general/compatibility_utilities_eclipse' ).
+:- ensure_loaded( 'compatibility_utilities_eclipse' ).
 :- ensure_loaded( [ translate_colp_common ] ).

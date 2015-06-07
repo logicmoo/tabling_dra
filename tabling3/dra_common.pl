@@ -21,6 +21,8 @@
    %                                                                      %
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+:- use_module(library(memo)).
+
 %%%                                                                          %%%
 %%%  An interpreter for tabled logic programming with coinduction:           %%%
 %%%  see the description below for more information.                         %%%
@@ -254,9 +256,9 @@ dra_version( Version ) :-
 
 
    -- is_coinductive0( generic head )
-   -- coinductive1( generic head )
+   -- is_coinductive1( generic head )
    -- is_tabled( generic head )
-   -- old_first( generic head )
+   -- is_old_first( generic head )
 
            Each of these tables contains an entry for each predicate that has
            been declared as having the corresponding property (i.e., as
@@ -267,7 +269,7 @@ dra_version( Version ) :-
 
            A "coinductive" declaration is deemed to supersede "coinductive1",
            and information about a predicate that has been so declared is stored
-           both in coinductive/1 and coinductive1/1.
+           both in coinductive0/1 and coinductive1/1.
 
            These tables are cleared only before reading in a new program.
 
@@ -536,8 +538,8 @@ dra_version( Version ) :-
 *******************************************************************************/
 
 
-:- ensure_loaded( [ '../general/top_level',
-                    '../general/utilities',
+:- ensure_loaded( [ 'top_level',
+                    'utilities',
                     dra_builtins,
                     dra_coinductive_hypotheses,
                     dra_stack
@@ -553,21 +555,22 @@ default_extension( '.tlp' ).                              % invoked by top_level
 
 %% Initialization of tables:
 
-:- dynamic (coinductive0)/1 .
-:- dynamic (coinductive1)/1 .
-:- dynamic (table)/1 .
-:- dynamic (old_first)/1 .
+:- dynamic (is_coinductive0)/1 .
+:- dynamic (is_coinductive1)/1 .
+:- dynamic (is_table)/1 .
+:- dynamic (is_old_first)/1 .
 :- dynamic pioneer/3 .
 :- dynamic result/2 .
 :- dynamic loop/2 .
 :- dynamic looping_alternative/2 .
 :- dynamic completed/2 .
-:- dynamic tracing/1.
+:- dynamic is_tracing/1.
 
 :- setval( number_of_answers, 0 ).
 :- setval( unique_index,      0 ).
 
 initialise :-                                             % invoked by top_level
+   must_det_l((
         reinitialise_answer,
         reinitialise_result,
         reinitialise_pioneer,
@@ -575,16 +578,16 @@ initialise :-                                             % invoked by top_level
         reinitialise_looping_alternative,
         reinitialise_completed,
         retractall( is_coinductive0( _ )  ),
-        retractall( coinductive1( _ ) ),
+        retractall( is_coinductive1( _ ) ),
         retractall( is_tabled( _ )       ),
-        retractall( old_first( _ )    ),
+        retractall( is_old_first( _ )    ),
         retractall( is_tracing( _ )      ),
         setval( number_of_answers, 0 ),
         setval( unique_index,      0 ),
         setval( step_counter,      0 ),
         setval( old_table_size,    0 ),
         dra_version( Version ),
-        writeln( Version ).
+        writeln( Version ))),!.
 
 
 %% Checking consistency:
@@ -607,7 +610,7 @@ check_consistency :-
         fail.
 
 check_consistency :-
-        coinductive1( Head ),
+        is_coinductive1( Head ),
         nonvar( Head ),
         functor( Head, P, K ),
         \+ current_predicate_in_module( interpreted, P / K ),
@@ -623,7 +626,7 @@ check_consistency :-
 
 check_consistency :-
         is_support( Head ),
-        coinductive1( Head ),
+        is_coinductive1( Head ),
         functor( Head, P, K ),
         warning( [ P/K, ' declared as both coinductive and \"support\"' ] ),
         fail.
@@ -656,11 +659,14 @@ essence_hook( T, T ).    % default, may be overridden by the interpreted program
 :- op( 1010, fy, old_first    ).    % allow  ":- old_first p/k ."
 :- op( 1010, fy, traces        ).    % allow  ":- traces  p/k ."
 :- op( 1010, fy, multifile    ).    % allow  ":- multifile  p/k ." (for Eclipse)
+:- op( 1010, fy, hilog    ).    % allow  ":- hilog  p/k ."
 
 
 
 %% The legal directives (check external form only).  (Used by the top level.)
 
+
+legal_directive((coinductive( _))  ).
 legal_directive( (coinductive0 _)  ).
 legal_directive( (coinductive1 _) ).
 legal_directive( (table _)       ).
@@ -670,19 +676,30 @@ legal_directive( (old_first _)    ).
 legal_directive( (multifile _)    ).
 legal_directive( answers( _, _ )  ).
 legal_directive( answers          ).
+legal_directive((call( _))  ).
+legal_directive((hilog( _))  ).
+
+% SWI=Prolog
+legal_directive((traces)   ).
+legal_directive( notrace ).
+
+legal_directive(M:P):-atom(M),M:legal_directive(P).
+
+legal_directive(P):-compound(P),functor(P,F,1),property_pred(F,_).
+
 
 
 %% Check and process the legal directives (invoked by top_level)
 
 execute_directive( (table all) ) :-
         !,
-        assert( is_tabled( _ ) ).
+        assert_if_new( is_tabled( _ ) ).
 
 execute_directive( (table PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
             member( Pattern, Patterns ),
-            assert( is_tabled( Pattern ) ),
+            assert_if_new( is_tabled( Pattern ) ),
             fail
         ;
             true
@@ -690,15 +707,15 @@ execute_directive( (table PredSpecs) ) :-
 
 execute_directive( (coinductive0 all) ) :-
         !,
-        assert( coinductive1( _ ) ),
-        assert( is_coinductive0( _ ) ).
+        assert_if_new( is_coinductive1( _ ) ),
+        assert_if_new( is_coinductive0( _ ) ).
 
 execute_directive( (coinductive0 PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
             member( Pattern, Patterns ),
-            assert( coinductive1( Pattern ) ),
-            assert( is_coinductive0( Pattern ) ),
+            assert_if_new( is_coinductive1( Pattern ) ),
+            assert_if_new( is_coinductive0( Pattern ) ),
             fail
         ;
             true
@@ -706,27 +723,42 @@ execute_directive( (coinductive0 PredSpecs) ) :-
 
 execute_directive( (coinductive1 all) ) :-
         !,
-        assert( coinductive1( _ ) ).
+        assert_if_new( is_coinductive1( _ ) ).
 
 execute_directive( (coinductive1 PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
             member( Pattern, Patterns ),
-            assert( coinductive1( Pattern ) ),
+            assert_if_new( is_coinductive1( Pattern ) ),
             fail
         ;
             true
         ).
 
+execute_directive(Dir ) :- property_pred(F,DBF), Dir=..[F,all],DB=..[DBF,_],
+        !, assert_if_new( DB ).
+execute_directive(Dir ) :- property_pred(F,DBF), Dir=..[F,PredSpecs],
+         DB=..[DBF,Pattern],
+     
+        predspecs_to_patterns( PredSpecs, Patterns ),
+      (
+            member( Pattern, Patterns ),
+            assert( DB ),
+            fail
+        ;
+            true
+        ).
+
+
 execute_directive( (old_first all) ) :-
         !,
-        asserta( old_first( _ ) ).
+        asserta_new( is_old_first( _ ) ).
 
-execute_directive( (old_first PredSpecs) ) :-
+execute_directive( ( old_first(PredSpecs)) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
             member( Pattern, Patterns ),
-            assert( old_first( Pattern ) ),
+            asserta_new( is_old_first( Pattern ) ),
             fail
         ;
             true
@@ -743,7 +775,8 @@ execute_directive( (traces PredSpecs) ) :-
 execute_directive( (dynamic PredSpecs) ) :-
         dynamic_in_module( interpreted, PredSpecs).
 
-execute_directive( (multifile _) ).    % ignore
+execute_directive((multifile( X)) ):-!,    % ignore ?
+      multifile(X). 
 
 execute_directive( answers( Goal, Pattern ) ) :-
         print_required_answers( Goal, Pattern ).
@@ -754,7 +787,7 @@ execute_directive( answers( Goal, Pattern ) ) :-
 
 will_trace( Patterns ) :-
         member( Pattern, Patterns ),
-        assert( is_tracing( Pattern ) ),
+        asserta_if_new( is_tracing( Pattern ) ),
         fail.
 
 will_trace( _ ).
@@ -832,12 +865,13 @@ query( Goals ) :-                                         % invoked by top_level
         reinitialise_pioneer,
         reinitialise_result,
         reinitialise_loop,
-        reinitialise_looping_alternative,
+        reinitialise_looping_alternative,!,
         setval( unique_index,      0    ),
         getval( number_of_answers, NAns ),
         setval( old_table_size,    NAns ),
-        setval( step_counter,      0    ),
-        (
+        setval( step_counter,      0    ),!,
+       call_cleanup(
+        ((
             empty_hypotheses( Hyp ),
             empty_stack( Stack ),
             solve( Goals, Stack, Hyp, 0 ),
@@ -845,13 +879,13 @@ query( Goals ) :-                                         % invoked by top_level
             setval( step_counter, 0 ),
             getval( number_of_answers, NAns2 ),
             setval( old_table_size, NAns2 )
-        ;
+            )),        
+           (( 
             print_statistics,
             setval( step_counter, 0 ),
             getval( number_of_answers, NAns2 ),
-            setval( old_table_size, NAns2 ),
-            fail
-        ).
+            setval( old_table_size, NAns2 )
+           ))).
 
 
 %% Print information about the number of steps and the answer table.
@@ -890,8 +924,8 @@ plural( Output, N ) :-  N \= 1,  write( Output, 's' ).
 %%        + level
 %%      ):
 %% Solve the sequence of goals, maintaining information about the current chain
-%% of tabled ancestors (stack) and the chain of coinductive ancestors
-%% (coinductive0 hypotheses).  The level is the level of recursion, and is used
+%% of tabled ancestors(stack) and the chain of coinductive0 ancestors
+%%(coinductive hypotheses).  The level is the level of recursion, and is used
 %% only for tracing.
 %%
 %% Each link in the chain of tabled ancestors is of the form
@@ -1058,7 +1092,7 @@ solve( Goal, _, _, _ ) :-
 
 solve( Goal, Stack, Hyp, Level ) :-
         \+ is_tabled( Goal ),
-        \+ coinductive1( Goal ),
+        \+ is_coinductive1( Goal ),
         !,
         incval( step_counter ),
         trace_entry( normal, Goal, '?', Level ),
@@ -1076,7 +1110,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 % A goal that is coinductive, but not tabled.
 % Apply the coinductive hypotheses first, then the clauses.
 %
-% NOTE: Now that we have both "coinductive" and "coinductive2" the logic gets a
+% NOTE: Now that we have both "coinductive0" and "coinductive1" the logic gets a
 %       little tricky.  If a goal is not "coinductive2", then it should activate
 %       its clauses only if there are no unifiable ancestors (hypotheses). What
 %       follows is an attempt to avoid too much duplication of code and
@@ -1084,10 +1118,10 @@ solve( Goal, Stack, Hyp, Level ) :-
 
 solve( Goal, Stack, Hyp, Level ) :-
         \+ is_tabled( Goal ),
-        coinductive1( Goal ),
+        is_coinductive1( Goal ),
         !,
         incval( step_counter ),
-        trace_entry( coinductive, Goal, '?', Level ),
+        trace_entry( coinductive0, Goal, '?', Level ),
         (
             \+ is_coinductive0( Goal ),
             unify_with_coinductive_ancestor( Goal, Hyp )
@@ -1099,11 +1133,11 @@ solve( Goal, Stack, Hyp, Level ) :-
                 fail
             )
         ;
-            % coinductive, or no unifiable ancestors
+            % coinductive0, or no unifiable ancestors
             (
                 is_coinductive0( Goal ),
                 unify_with_coinductive_ancestor( Goal, Hyp ),
-                trace_success( 'coinductive (hypothesis)', Goal, '?', Level )
+                trace_success( 'coinductive0(hypothesis)', Goal, '?', Level )
             ;
                 NLevel is Level + 1,
                 use_clause( Goal, Body ),
@@ -1182,7 +1216,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 
         % The main action:
         (
-            coinductive1( Goal )
+            is_coinductive1( Goal )
         ->
             copy_term2( Goal, OriginalGoal ),
             (
@@ -1239,7 +1273,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 
 solve( Goal, Stack, Hyp, Level ) :-
         (
-            coinductive1( Goal )
+            is_coinductive1( Goal )
         ->
             push_is_coinductive0( Goal, Hyp, NHyp )
         ;
@@ -1324,7 +1358,7 @@ solve( Goal, Stack, Hyp, Level ) :-
 % :- mode get_tabled_if_old_first( +, +, +, + ).
 
 get_tabled_if_old_first( Goal, Index, Label, Level ) :-
-        old_first( Goal ),
+        is_old_first( Goal ),
         get_all_tabled_answers( Goal, Index, Label, Level ),
         new_result_or_fail( Index, Goal ).     % i.e., make a note of the answer
 
@@ -1368,8 +1402,10 @@ use_clause( Goal, Body ) :-
         ->
             clause_in_module( interpreted, Goal, Body )
         ;
-            warning( [ 'Calling an undefined predicate: \"', Goal, '\"' ] ),
-            fail
+          (current_predicate(_,Goal) -> 
+                Body=logOnError(Goal); 
+               (warning( [ 'Calling an undefined predicate: \"', Goal, '\"' ] ),
+                fail))
         ).
 
 
@@ -1384,7 +1420,7 @@ use_clause( Goal, Body ) :-
 compute_fixed_point( Goal, Index, Stack, Hyp, Level ) :-
         NLevel is Level + 1,
         (
-            coinductive1( Goal )
+            is_coinductive1( Goal )
         ->
             push_is_coinductive0( Goal, Hyp, NHyp )
         ;

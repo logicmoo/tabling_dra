@@ -126,7 +126,7 @@ version( 'DRA+ ((C) UTD 2009) version 0.1, 15 May 2009' ).
 
 %%% NOTE:
 %%%
-%%%    1. See ../../general/top_level.ecl for a description of how to load
+%%%    1. See top_level.ecl for a description of how to load
 %%%       and run programs.
 %%%       Please note that in Eclipse after loading this interpreter you
 %%%       should issue
@@ -621,7 +621,7 @@ default_extension( '.tlp' ).                              % invoked by top_level
 
 :- dynamic is_coinductive0/1 .
 :- dynamic is_tabled/1 .
-:- dynamic (old_first)/1 .
+:- dynamic (is_old_first)/1 .
 :- dynamic answer/4 .
 :- dynamic pioneer/3 .
 :- dynamic result/2 .
@@ -774,7 +774,7 @@ execute_directive( (coinductive0 PredSpecs) ) :-
 
 execute_directive( (old_first all) ) :-
         !,
-        asserta( is_old_first( _ ) ).
+        assert_if_new( is_old_first( _ ) ).
 
 execute_directive( (old_first PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
@@ -797,7 +797,7 @@ execute_directive( (traces PredSpecs) ) :-
 execute_directive( (dynamic PredSpecs) ) :-
         dynamic_in_module( interpreted, PredSpecs).
 
-execute_directive( (multifile X) ): - multifile(X).  % use the system
+execute_directive( (multifile X) ):- multifile(X).  % use the system
 
 execute_directive( answers( Goal, Pattern ) ) :-
         print_required_answers( Goal, Pattern ).
@@ -1402,7 +1402,7 @@ solve0( goal( RN, GoalNumber, Goal ), Stack, Hyp, Level,
                     % Guidance records a tabled answer, and old_first is chosen
                     % for this predicate, so we are backtracking from the tabled
                     % answers above:
-                    Guidance = a( _ ), old_first( Goal ),
+                    Guidance = a( _ ), is_old_first( Goal ),
                     PathGuide3 = nopath    % SmallestAllowedAncNumber a variable
                 ),
                 unify_with_coinductive_ancestor( Goal, Hyp, AncNumber ),
@@ -1524,7 +1524,7 @@ solve0( StackedGoal, Stack, Hyp, Level,
                 % Guidance records a tabled answer, and old_first is chosen
                 % for this predicate, so we are backtracking from the tabled
                 % answers above:
-                Guidance = a( _ ), old_first( Goal ),
+                Guidance = a( _ ), is_old_first( Goal ),
                 PathGuide3 = nopath       % SmallestAllowedRuleNumber a variable
             ),
             NLevel is Level + 1,
@@ -1715,26 +1715,16 @@ get_remaining_tabled_answers( Goal, Index, Label, Level, AnswerNumber ) :-
 %% :- mode use_clause( +, +, - ).
 
 use_clause( Goal, Body, RuleNumber ) :-
-        (
+       ( (
             index( Goal, M, N )
         ->
             between( M, RuleNumber, N ),
             rule( RuleNumber, Goal, Body )
         ;
-            warning( [ 'Calling an undefined predicate: \"', Goal, '\"' ] ),trace,
+            warning( [ 'Calling an non rule/indexed predicate: \"', Goal, '\"' ] ),
             fail
-        ).
+        )) *-> true; clause(Goal, Body, RuleNumber).
 
-use_clause( Goal, Body, RuleNumber ) :-
-        (
-            index( Goal, M, N )
-        ->
-            between( M, RuleNumber, N ),
-            rule( RuleNumber, Goal, Body )
-        ;
-            warning( [ 'Calling an undefined predicate: \"', Goal, '\"' ] ),trace,
-            fail
-        ).
 
 %% not_smaller_than( + integer, + limiting integer or variable ):
 %% Succeed only if (a) arg2 is a variable OR (b) arg1 >= arg2.

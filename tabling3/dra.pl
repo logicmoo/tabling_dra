@@ -25,6 +25,6 @@
 
 :- module( dra, [ prog/1, old_top/0 ] ).
 
-:- ensure_loaded( '../general/compatibility_utilities_sicstus' ).
+:- ensure_loaded( 'compatibility_utilities_sicstus' ).
 :- ensure_loaded( dra_table_assert ).
 :- ensure_loaded( [ dra_common ] ).

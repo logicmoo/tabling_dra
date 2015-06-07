@@ -37,7 +37,7 @@
 %%%    1. To use this top level, just include it in your the file that
 %%%       contains the code for your metainterpreter:
 %%%
-%%%           :- ensure_loaded( '../general/top_level' ).
+%%%           :- ensure_loaded( 'top_level' ).
 %%%
 %%%       Then load the metainterpreter into your logic programming system.
 %%%
@@ -424,6 +424,8 @@ fill_interface_modules.
 process_file( FileName ) :-
         open_the_file( FileName, ProgStream ),
         process_input( ProgStream ),
+        stream_property(ProgStream,file_name(FN)),
+        load_files(FN,[derived_from(FN),register(true),stream(ProgStream)]),
         close( ProgStream ).
 
 %

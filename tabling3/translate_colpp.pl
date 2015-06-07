@@ -24,5 +24,5 @@
 %% This is the shell for SWI Prolog.
 %% translate_See colp_common.pl for documentation.
 
-:- ensure_loaded( '../general/compatibility_utilities_swi' ).
+:- ensure_loaded( 'compatibility_utilities_swi' ).
 :- ensure_loaded( [ translate_colp_common ] ).

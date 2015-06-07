@@ -126,7 +126,7 @@ version( 'DRA+ ((C) UTD 2009) version 0.1, 15 May 2009' ).
 
 %%% NOTE:
 %%%
-%%%    1. See ../../general/top_level.ecl for a description of how to load
+%%%    1. See top_level.ecl for a description of how to load
 %%%       and run programs.
 %%%       Please note that in Eclipse after loading this interpreter you
 %%%       should issue
@@ -601,8 +601,8 @@ version( 'DRA+ ((C) UTD 2009) version 0.1, 15 May 2009' ).
 *******************************************************************************/
 
 
-:- ensure_loaded( [ '../../general/top_level',
-                    '../../general/utilities',
+:- ensure_loaded( [ 'top_level',
+                    'utilities',
                     dra2_builtins,
                     dra2_coinductive_hypotheses,
                     dra2_stack,
@@ -745,13 +745,13 @@ legal_directive( answers         ).
 
 execute_directive( (table all) ) :-
         !,
-        assert( is_tabled( _ ) ).
+        asserta_new(( is_tabled( _ ) :-! )).
 
 execute_directive( (table PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
             member( Pattern, Patterns ),
-            assert( is_tabled( Pattern ) ),
+            assert_if_new( is_tabled( Pattern ) ),
             fail
         ;
             true
@@ -759,13 +759,13 @@ execute_directive( (table PredSpecs) ) :-
 
 execute_directive( (coinductive0 all) ) :-
         !,
-        assert( is_coinductive0( _ ) ).
+        asserta_new(( is_coinductive0( _ ) :-! )).
 
 execute_directive( (coinductive0 PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
             member( Pattern, Patterns ),
-            assert( is_coinductive0( Pattern ) ),
+            asserta_new( is_coinductive0( Pattern ) ),
             fail
         ;
             true
@@ -773,13 +773,13 @@ execute_directive( (coinductive0 PredSpecs) ) :-
 
 execute_directive( (old_first all) ) :-
         !,
-        asserta( old_first( _ ) ).
+        asserta_new(( is_old_first( _ ) :-! )).
 
 execute_directive( (old_first PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
             member( Pattern, Patterns ),
-            assert( old_first( Pattern ) ),
+            asserta_new( is_old_first( Pattern ) ),
             fail
         ;
             true
@@ -796,7 +796,7 @@ execute_directive( (traces PredSpecs) ) :-
 execute_directive( (dynamic PredSpecs) ) :-
         dynamic_in_module( interpreted, PredSpecs).
 
-execute_directive( (multifile _) ).    % ignore
+execute_directive( (multifile X) ):-multifile(X).
 
 execute_directive( answers( Goal, Pattern ) ) :-
         print_required_answers( Goal, Pattern ).
@@ -807,7 +807,7 @@ execute_directive( answers( Goal, Pattern ) ) :-
 
 will_trace( Patterns ) :-
         member( Pattern, Patterns ),
-        assert( is_tracing( Pattern ) ),
+        assert_if_new( is_tracing( Pattern ) ),
         fail.
 
 will_trace( _ ).

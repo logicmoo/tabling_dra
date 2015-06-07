@@ -36,7 +36,7 @@
 :- [ 'normalize.pl' ].
 :- [ 'looping_prefix.pl' ].
 :- [ 'consistency_checker.pl' ].
-:- [ '../../../general/higher_order.pl' ].
+:- [ '../../higher_order.pl' ].
 
 :- ensure_loaded( library( lists ) ).  % Sicstus, reverse/2.
 

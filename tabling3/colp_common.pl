@@ -53,8 +53,8 @@
 %%%              - Error detection is quite rudimentary.
 
 
-:- ensure_loaded( [ '../general/top_level',
-                    '../general/utilities',
+:- ensure_loaded( [ 'top_level',
+                    'utilities',
                     colp_builtins
                   ]
                 ).
