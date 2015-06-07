@@ -23,6 +23,20 @@
 
 %% This is the shell for Sicstus.  See dra2_common.pl for documentation.
 
-:- module( dra, [ prog/1, top/0 ] ).
+:- module( drap,
+           [ prog/1, top/0,
+             op( 1010, fy, coinductive  ),    % allow  ":- coinductive p/k ."
+             op( 1010, fy, coinductive1 ),    % allow  ":- coinductive1 p/k ."
+             op( 1010, fy, tabled       ),    % allow  ":- tabled p/k ."
+             op( 1010, fy, old_first    ),    % allow  ":- old_first p/k ."
+             op( 1010, fy, trace        ),    % allow  ":- trace  p/k ."
+             op( 1010, fy, multifile    ),    % allow  ":- multifile  p/k ."
+             op( 1010, fy, top          ),    % allow  ":- top p/k ."
+             op( 1010, fy, support      ),    % allow  ":- support p/k ."
+             op( 1010, fy, load_support )     % allow  ":- load_support filename
+           ]
+         ).
 
-:- ensure_loaded( [ dra2_common ] ).
+:- ensure_loaded( '../general/compatibility_utilities_swi' ).
+:- ensure_loaded( dra_table_record ).    % OK for cyclic terms
+:- ensure_loaded( dra3_common ).
