@@ -1,0 +1,83 @@
+%-----------------------------------------------------------------
+% Some Quantificational tests for the parser (and some others too)
+%-----------------------------------------------------------------
+
+test('Val(x,"John1",\sigma) iff x = John & \sigma(1)=x').
+test('Val(t,[S NP VP]) iff Val(x,NP)&Val(x,VP)').
+test('Val(t, [S NP VP]) iff Val(x,NP) & Val(x,VP)').
+
+test('Val(x,[NP N],g) iff Val(x, N, g)').
+test('Val(x,[N "man"], g) iff Val(x,"man",g)').
+test('Val(x,[N "cake"],g) iff Val(x,"cake",g)').
+test('Val(x,"man",g) iff man(x)').
+
+test('Val(x,[VP V],g) iff Val(x, V, g)').
+test('Val(x,[V "arrived"],g) iff Val(x, "arrived", g)').
+test('Val(x,"arrived",g) iff arrived(x)').
+test('Val(<x,y>,"baked",g) iff x=y').
+test('Val(<x,y,z>,"baked",g) iff bake_for(x,z,y)').
+
+test('Val(t, [S NP VP]) iff \exists x [Val(x,NP) & Val(x,VP)]').
+test('Val(t, [S NP VP]) iff Val(x,NP) & Val(X,VP) & x \in X').
+
+%------------------
+% A. Non Set-based
+%------------------
+
+%-------------- Topicalization ----------------------------------------
+test('Val(t, [S NP_1 S], s) iff SeqV(s'',1,s) & Val(s''(1),NP,s) & Val(t,S,s'')').
+
+%------------------
+% B. Set-based
+%------------------
+
+%-------------- Pronouns and Traces as variables -----------------------
+test('Val(x,"he1",s) iff s(1) = x').
+test('Val(x,"t1", s) iff s(1) = x').
+
+%-------------- Determiners as set relations ---------------------------
+test('Val(<X,Y>,"every",s) iff |Y-X|=0').
+test('Val(<X,Y>,"some", s) iff |Y /\ X|>0').
+test('Val(<X,Y>,"some", s) iff 1>=|Y /\ X|').
+test('Val(<X,Y>,"most", s) iff |Y /\ X|>|Y-X|').
+test('Val(<X,Y>,"the", s) iff |Y - X| = 0 & |Y| = 1').
+
+%-------------- NP-Rule ------------------------------------------------
+test('Val(X,[NP Det N''],s) iff Val(<X,Y>,Det,s) & Y={y:Val(y,N'',s)}').
+
+%-------------- Quantification -----------------------------------------
+test('Val(t, [S NP_1 S], s) iff Val(X,NP,s) & X={s''(1): Val(t,S,s'') & SeqV(s'',1,s)}').
+test('Val(t, [S NP_1 S_1], s) iff Val(X,NP,s) & X={s''(1): Val(t,S_1,s'') & SeqV(s'',1,s)}').
+test('Val(t, [S NP_i S_1], \sigma) iff Val(X,NP,\sigma) & X={\sigma''(i): Val(t,S_1,\sigma'') & SeqV(\sigma'',i,\sigma)}').
+test('Val(x, [VP NP_1 VP], s) iff Val(X, NP, s) & X={s''(1): Val(x,VP,s'') & SeqV(s'',1,s)}').
+test('Val(z, [X NP_1 X_1], s) iff Val(Y,NP,s) & Y={s''(1): Val(z,X_1,s'') & SeqV(s'',1,s)}').
+
+%-------------- Other set relations stuff ---------------------------
+
+test('Val(<X,Y>, [D "every"], s) iff |Y - X| = 0').
+test('Val(<X,Y>, [D "not_every"], s) iff -(|Y - X| = 0)').
+test('Val(<X,Y,z>, [D "every_except"], s) iff Y - X = {z}').
+test('Val(<X,Y,z>, [D "every_except"], s) iff |(Y - {z}) - X| = 0').
+test('Val(<X,Y,z>, [D "no_except"], s) iff Y /\ X = {z}').
+test('Val(<X,Y,z>, [D "no_except"], s) iff |(Y - {z}) \/ X| = 0').
+test('Val(<X,Y>, "har", s) iff X/\Y = X').
+test('Val(<X,Y>, "har", s) iff X /\ Y = X').
+test('Val(<X,Y>, "har", s) iff {a,b} /\ Y = X').
+
+test('Val(X, [VP VP_1 "aur" VP_2]) iff X = Y /\ Z & Val(Y,VP_1) & Val(Z,VP_2)').
+test('Val(X, [VP VP_1 "aur" VP_2]) iff X = {x: member(x,Y) & Val(Y, VP_1) & member(x,Z) & Val(Z, VP_2)}').
+test('Val(X, [VP VP_1 "ya" VP_2]) iff X = {x:(member(x,Y) & Val(Y, VP_1)) \/ (member(x,Z) & Val(Z, VP_2))}').
+
+%-------------- Stuff that looks ambiguous, but shouldn't be --------
+
+test('Val(x, "z") iff z').
+test('Val(x, "X") iff X').	% error
+test('Val(<X,Y>, "foo", s) iff Y = X').
+test('Val(<X10,Y10>, "foo", s) iff Y10 = X10').
+test('Val(<X,Y>, "foo", s) iff X \/ Y = X').
+test('Val(X, [VP VP_1 "ya" VP_2]) iff X = Y \/ Z & Val(Y,VP_1) & Val(Z,VP_2)').
+
+end_of_file.
+
+%test('Val(t, [s [np_i every N] S1], \sigma) iff \every \sigma \prime((SeqV
+

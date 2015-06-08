@@ -1,0 +1,32 @@
+tst1 failed as expected
+tst1 failed as expected
+tst10 succeeded, as expected = flapply(ans,_$_$_flora'usermod'foo'd_fd(a,b,cc),foo,a,b,cc)
+tst10 succeeded, as expected = flapply(ans,_$_$_flora'usermod'foo'd_fd(a,b,cc),foo,a,b,cc)
+tst11 succeeded, as expected = flapply(ans,fllibmodlit(d_fd,[a,b,cc],foo),foo,foo,a,b,cc)
+tst11 succeeded, as expected = flapply(ans,fllibmodlit(d_fd,[a,b,cc],foo),foo,foo,a,b,cc)
+tst12 succeeded, as expected = flapply(ans,dd,fllibmodlit(flapply,[a,dd],ff),ff,_$_$_flora'usermod'foo'd_fd(a,b,cc),foo)
+tst12 succeeded, as expected = flapply(ans,dd,fllibmodlit(flapply,[a,dd],ff),ff,_$_$_flora'usermod'foo'd_fd(a,b,cc),foo)
+tst13 succeeded, as expected = flapply(ans,_$_$_flora'usermod'main'd_fd(a,b,c),pp,main)
+tst13 succeeded, as expected = flapply(ans,_$_$_flora'usermod'main'd_fd(a,b,c),pp,main)
+tst14 succeeded, as expected = flapply(ans,(_$_$_flora'usermod'foo'd_fd(a,b,c)  ','  _$_$_flora'usermod'foo'd_fd(a,e,d)),foo)
+tst14 succeeded, as expected = flapply(ans,(_$_$_flora'usermod'foo'd_fd(a,b,c)  ','  _$_$_flora'usermod'foo'd_fd(a,e,d)),foo)
+tst15 succeeded, as expected = flapply(ans,(_$_$_flora'usermod'foo'd_fd(a,b,c)  ','  _$_$_flora'usermod'foo'd_fd(a,e,d)),foo)
+tst15 succeeded, as expected = flapply(ans,(_$_$_flora'usermod'foo'd_fd(a,b,c)  ','  _$_$_flora'usermod'foo'd_fd(a,e,d)),foo)
+tst16 succeeded, as expected = flapply(ans,(_$_$_flora'usermod'foo'd_fd(a,b,c)  ';'  _$_$_flora'usermod'foo'd_fd(a,e,d)),foo)
+tst16 succeeded, as expected = flapply(ans,(_$_$_flora'usermod'foo'd_fd(a,b,c)  ';'  _$_$_flora'usermod'foo'd_fd(a,e,d)),foo)
+tst2 succeeded, as expected = flapply(ans,_$_$_flora'usermod'foo'flapply(a,b),_$_$_flora'usermod'foo'flapply(a,b),foo)
+tst2 succeeded, as expected = flapply(ans,_$_$_flora'usermod'foo'flapply(a,b),_$_$_flora'usermod'foo'flapply(a,b),foo)
+tst3 succeeded, as expected = flapply(ans,fllibmodlit(libmod_wrapper,flapply(a,b),foo),fllibmodlit(libmod_wrapper,a,foo))
+tst3 succeeded, as expected = flapply(ans,fllibmodlit(libmod_wrapper,flapply(a,b),foo),fllibmodlit(libmod_wrapper,a,foo))
+tst4 failed as expected
+tst4 failed as expected
+tst5 succeeded, as expected = flapply(ans,_$_$_flora'usermod'bar'flapply(a,b),bar,_$_$_flora'usermod'bar'flapply(a,b),bar)
+tst5 succeeded, as expected = flapply(ans,_$_$_flora'usermod'bar'flapply(a,b),bar,_$_$_flora'usermod'bar'flapply(a,b),bar)
+tst6 succeeded, as expected = flapply(ans,fllibmodlit(libmod_wrapper,flapply(a,b),foo),flapply(a,b))
+tst6 succeeded, as expected = flapply(ans,fllibmodlit(libmod_wrapper,flapply(a,b),foo),flapply(a,b))
+tst7 succeeded, as expected = flapply(ans,fllibmodlit(libmod_wrapper,flapply(a,b),foo),flapply(a,b),bar,bar)
+tst7 succeeded, as expected = flapply(ans,fllibmodlit(libmod_wrapper,flapply(a,b),foo),flapply(a,b),bar,bar)
+tst8 succeeded, as expected = flapply(ans,foo,_$_$_flora'usermod'foo'flapply(a,b),foo)
+tst8 succeeded, as expected = flapply(ans,foo,_$_$_flora'usermod'foo'flapply(a,b),foo)
+tst9 failed as expected
+tst9 failed as expected

@@ -1,0 +1,6 @@
+
+a[b->c].
+e[f->h].
+
+p(X) :- a[b->Y], HX=p(Y,_@), flP2H(X,HX).
+q(X) :- e[f->Y], HX=q(Y,_@), flP2H(X,HX).

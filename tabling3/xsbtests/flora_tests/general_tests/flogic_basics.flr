@@ -1,0 +1,110 @@
+/* File:      flogic_basics.flr
+** Author(s): Bertram Ludaescher
+** Contact:   flora-users@lists.sourceforge.net
+** 
+** Copyright (C) Bertram Ludaescher, 1998
+** 
+** FLORA-2 is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** FLORA-2 is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with FLORA-2; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id: flogic_basics.flr,v 1.2 2002-10-18 06:41:03 kifer Exp $
+** 
+*/
+
+%%% ===========================================================================
+%%% SOME SIMPLE EXAMPLES SHOWING SEVERAL F-LOGIC FEATURES 
+%%% ===========================================================================
+
+time_flies_like_an_arrow.		% a 0-ary PREDICATE (proposition)
+fruit_flies_like_an_apple[].		% an OBJECT with empty specification []
+
+:- table tc/2.
+
+e(a,b). e(b,a). e(b,c).			% a binary PREDICATE (graph)
+e(b,d).
+
+tc(X,Y) :- e(X,Y).			% a RULE and ...
+tc(X,Y) :- tc(X,Z), tc(Z,Y).		% ... a (doubly) RECURSIVE RULE
+ 
+person :: object.
+dangerous_hobby :: object.
+john:employee.				% INSTANCE : CLASS 
+employee::person.			% SUBCLASS :: SUPERCLASS
+bob:person.
+tim:person.
+betty:employee.
+
+person[age=>integer, kids=>>person].    % some (optional) SIGNATURE information
+
+mary:employee[				% a more complex MOLECULE involving
+	age->29,			% ... a SINGLE-VALUED (svd) method
+	kids ->> {tim,leo,betty},	% ... a MULTI-VALUED (mvd) method
+	salary(1998) -> a_lot		% ... a PARAMETERIZED (and svd) method
+].
+
+tim[hobbies ->> {stamps, snowboard}].	% somebodies hobbies
+betty[hobbies->>{fishing,diving}].
+
+snowboard:dangerous_hobby.		% isn't it??
+diving:dangerous_hobby.
+
+_X[self->_X].				% define self
+
+
+person[believes_in *->>			% INHERITABLE mvd method
+       {something, something_else}].	
+
+person[instances ->> {X}] :- X:person.  % NON-INHERITABLE mvd method of person
+
+
+%%% ===========================================================================
+%%% now ask some QUERIES here (or INTERACTIVELY from the FLORA SHELL)
+%%% ===========================================================================
+
+tst1 :- time_flies_like_an_arrow.	% ==> `yes'
+
+tst2 :- fruit_flies_like_a_banana[].	% ==> `yes'
+
+tst3 :- tc(X,Y),
+	write(X)@flora(io), write('  ')@prolog(), writeln(Y)@flora(io), fail.
+tst3 :- true.
+
+tst4 :- X:person, writeln(X)@flora(io), fail.
+tst4 :- true.
+
+tst5 :- person[instances ->> {X}], writeln(X)@flora(io), fail.
+tst5 :- true.
+
+tst6 :- X[believes_in ->> {Y}],
+	write(X)@flora(io), write('  ')@prolog(),  writeln(Y)@flora(io), fail.
+tst6 :- true.
+
+tst7 :- X..kids[		
+		   self -> K,	
+		   hobbies ->> {H:dangerous_hobby}
+	       ],
+	write(X)@flora(io), write('  ')@prolog(), write(K)@flora(io),
+	write('  ')@prolog(), writeln(H)@flora(io), fail. 
+tst7 :- true.
+
+pretest :- tst1, tst2, tst3, tst4, tst5, tst6, tst7.
+
+test :- tell(temp)@prolog(),
+	debug[#check_undefined(on)]@flora(sys),
+	pretest,
+	debug[#check_undefined(off)]@flora(sys),
+	pretest,
+	told@prolog().
+
+

@@ -1,0 +1,59 @@
+test(0, 'S'('NP'('N'('Chris')),'VP'('V'(walks)))).
+test( 1, 'S'('S'('NP'('N'('Chris')),'VP'('V'(walks))),and,
+	     'S'('NP'('N'('Chris')),'VP'('V'(walks))))).
+test( 2, 'S'('S'('S'('NP'('N'('Chris')),'VP'('V'(walks))),and,
+		 'S'('NP'('N'('Chris')),'VP'('V'(walks)))),and,
+		 'S'('NP'('N'('Chris')),'VP'('V'(walks))))).
+test( 3, 'S'('S'('NP'('N'('Chris')),'VP'('V'(walks))),and,
+	     'S'('S'('NP'('N'('Chris')),'VP'('V'(walks))),and,
+		 'S'('NP'('N'('Chris')),'VP'('V'(walks)))))).
+test( 4, 'S'('NP'('N'('Chris')),'VP'('V'(admires),'NP'('N'('Chris'))))).
+test( 5, 'S'('NP'('N'('Chris')),'VP'('V'('V'(walks),and,'V'(walks))))).
+test( 6, 'S'('NP'('N'('Chris')),'VP'('VP'('V'(walks)),and,'VP'('V'(walks))))).
+test( 7, 'S'('NP'('N'('Chris')),
+	    'VP'('V'('V'(admires),and,'V'(admires)),'NP'('N'('Chris'))))).
+test( 8, 'S'('NP'('N'('Chris')),
+	    'VP'('VP'('V'(admires),'NP'('N'('Chris'))),and,
+		 'VP'('V'(admires),'NP'('N'('Chris')))))).
+test( 9, 'S'('NP'('N'('Chris')),'VP'('VP'('V'(arrived)),'AP'('A'(tired))))).
+test(10, 'S'('NP'('N'('Chris')),
+	     'VP'('V'(gives),'NP'('N'('Kate')),'NP'('N'(peanuts))))).
+test(11, 'S'('NP'('N'('Chris')),
+	     'VP'('V'(eats),'NP'('N'(peanuts)),'AP'('A'(salted))))).
+test(12, 'S'('NP'('N'('Chris')),'VP'('V'(is),'NP'('N'('Kate'))))).
+test(13, 'S'(it_is_false_that,'S'('NP'('N'('Chris')),'VP'('V'(arrived))))).
+test(14, 'S'(it_is_false_that,
+	     'S'('NP'('N'('Chris')),
+		 'VP'('VP'('V'(arrived)),'AP'('A'(tired)))))).
+test(15, 'S'(it_is_false_that,
+	     'S'('S'('NP'('N'('Chris')),'VP'('V'(walks))),and,
+		 'S'('NP'('N'('Chris')),'VP'('V'(walks)))))).
+test(16, 'S'('S'(it_is_false_that,
+		 'S'('NP'('N'('Chris')),'VP'('V'(walks)))),and,
+		 'S'('NP'('N'('Chris')),'VP'('V'(walks))))).
+test(17, 'S'('NP'('N'('Chris')),'VP'('V'(is),'AP'('A'(tired))))).
+test(18, 'S'('NP'('N'('Chris')),
+	     'VP'('V'(is),'PP'('P'(behind),'NP'('N'('Kate')))))).
+test(19, 'S'('NP'('N'('Chris')),
+	     'VP'('V'(is),'AP'('A'(proud_of),'NP'('N'('Kate')))))).
+test(20, 'S'('NP'('N'('Chris')),
+	     'VP'('V'(gives),'NP'('N'(peanuts)),
+		  'PP'('P'(to),'NP'('N'('Kate')))))).
+test(21, 'S'('NP'('N'('Chris')),
+	     'VP'('VP'('V'(left),'NP'('N'('Kate'))),
+		  'AP'('A'(angry_at),'NP'('N'('Phil')))))).
+test(22, 'S'('NP'('N'('Chris')),
+	     'VP'('V'(left),'NP'('N'('Kate')),
+		  'AP'('A'(angry_at),'NP'('N'('Phil')))))).
+test(23, 'S'('S'('NP'('N'('Chris')),'VP'('V'(walks))),
+	     'CONJ'(and),'S'('NP'('N'('Chris')),'VP'('V'(walks))))).
+test(24, 'S'('S'('NP'('N'('Chris')),'VP'('V'(walks))),
+	     'CONJ'(or),'S'('NP'('N'('Chris')),'VP'('V'(walks))))).
+test(25, 'S'('S'('Phil_ponders'),and,'S'('Chris_agrees'))).
+test(16, 'S'('Phil_ponders')).
+test(27, 'S'('Jill_knows_Kate')).
+test(28, 'S'('S'('NP'('N'('Chris')),'VP'('V'(walks))),or,
+	     'S'('NP'('N'('Chris')),'VP'('V'(walks))))).
+test(29, 'S'('S'('NP'('N'('Chris')),'VP'('V'(walks))),'CONJ'(or),
+	     'S'('NP'('N'('Kate')),'VP'('V'(walks))))).
+test(30, 'S'('NEG'(it_is_false_that),'S'('NP'('N'('Chris')),'VP'('V'(walks))))).

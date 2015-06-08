@@ -1,0 +1,80 @@
+:- import append/3 from basics.
+:- import thread_create/3, thread_join/2 from thread.
+
+tab_name( prod ).
+
+prod( A, A ).
+prod( X, Y ) :- X > 1, X1 is X - 1, prod(X1, Y).
+
+:- table pc_seq/2.
+
+pc_seq( X, Y ) :- prod( X, Y ).
+
+prod_cons( G ) :- 
+	G, 
+	fail.
+
+prod_cons_seq( N ) :-
+	pc_seq(N,_), fail.	% produce
+prod_cons_seq( N ) :-
+	pc_seq(N,_), fail.	% consume
+prod_cons_seq( _ ).
+
+prod_cons_pair( G1, X1, X2 ) :-
+	thread_create( prod_cons( G1 ), X1, [glsize(15000),tcsize(15000)] ),
+	thread_create( prod_cons( G1 ), X2, [glsize(15000),tcsize(15000)] ).
+
+create_pairs( 0, [] ).
+create_pairs( N, [G1|Gs] ) :-
+	N > 0,
+	tab_name( T ), name( T, LT ), name( N, LN ),
+	append( LT, LN, L ), name( T1, L ),
+	work_size( M ),
+	G1 =.. [T1,A], G =.. [T,M,A],
+	abolish(T1/1),
+	thread_shared( T1/1), table( T1/1 ), dynamic( T1/1 ), 
+	assert( (G1 :- G) ),
+	N1 is N - 1,
+	create_pairs( N1, Gs ).
+
+do_pairs([],[]).
+do_pairs([G|Gs],[T1,T2|L]) :-
+	prod_cons_pair( G, T1, T2 ),
+	do_pairs(Gs,L).
+
+bench_1_thread :-
+	work_size( M ),
+	prod_cons_seq( M ).
+bench_n_threads(N) :-
+	%R is N mod 2,
+	%(	R =\=0
+	%->	writeln( 'odd thread number'(N) ),
+	%	fail
+	%;	true
+	%),
+	Npairs is floor( N / 2),
+	create_pairs(Npairs,Lpairs),
+	do_pairs(Lpairs,L),
+	thread_join(L,_).
+
+
+mt_bench(Type,M,1) :-
+	abolish( work_size/1 ),
+	assert( work_size(M) ),
+	walltime(ST),
+	bench_1_thread,
+	walltime(FT),
+	T is FT - ST,
+	write(datum(Type,1,T)), writeln('.'),
+	flush_output.
+mt_bench(Type,M,N) :-
+	N > 1,
+	abolish( work_size/1 ),
+	assert( work_size(M) ),
+	walltime(ST),
+	bench_n_threads(N),
+	walltime(FT),
+	T is FT - ST,
+	write(datum(Type,N,T)), writeln('.'),
+	flush_output.
+

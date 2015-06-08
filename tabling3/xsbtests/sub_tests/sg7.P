@@ -1,0 +1,1 @@
+go :- ['Driver'], sg(multidown,'Data/cycles').

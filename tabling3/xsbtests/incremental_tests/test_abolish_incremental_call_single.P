@@ -1,0 +1,66 @@
+
+:- import numbervars/1 from num_vars.
+:- import incr_assert/1 from increval.
+:- import abolish_incremental_call_single/1 from tables.
+:- import incr_directly_depends/2 from increval.
+
+:- table t_1a/1, t_1b/1, t_2a/1, t_2b/1, t_2c/1, t_3/1 as incremental.
+:- dynamic d_1/1 as incremental.
+
+t_1a(X):- t_2a(X).
+t_1a(X):- t_2b(X).
+t_1a(X):- t_2c(X).
+
+t_1b(X):- t_2a(X).
+t_1b(X):- t_2b(X).
+t_1b(X):- t_2c(X).
+
+t_2a(X):- t_3(X).
+t_2b(X):- t_3(X).
+t_2c(X):- t_3(X).
+
+t_3(X):- d_1(X).
+
+d_1(1).
+
+test1:- abolish_all_tables,fail.
+test1:- t_1a(_),fail.
+test1:- t_1b(_),fail.
+test1:- abolish_table_call(t_2b(_)),fail.
+test1:- incr_assert(d_1(2)),fail.
+test1:- t_1a(_),fail.
+test1:- t_1b(_),fail.
+test1:- writeln('-----------------'),print_results('after lazy reeval '),fail.
+test1.
+
+test:- t_1a(_),fail.
+test:- t_1b(_),fail.
+test:-writeln('-----------------'),print_results('before_abolish '),fail.
+test:- incr_directly_depends(t_1a(X),Y),numbervars(incr_directly_depends(t_1a(X),Y)),
+        writeln(before_abolish(incr_directly_depends(t_1a(X),Y))),fail.
+test:- incr_directly_depends(Y,t_3(X)),numbervars(incr_directly_depends(Y,t_3(X))),
+        writeln(before_abolish(incr_directly_depends(Y,t_3(X)))),fail.
+test:- t_1a(_),fail.
+%test:- abolish_incremental_call_single(t_2b(_)),fail.
+test:- abolish_table_call(t_2b(_),[abolish_tables_singly]),fail.
+test:-writeln('-----------------'),print_results('after_abolish '),fail.
+test:- incr_directly_depends(t_1a(X),Y),numbervars(incr_directly_depends(t_1a(X),Y)),
+        writeln(after_abolish(incr_directly_depends(t_1a(X),Y))),fail.
+test:- incr_directly_depends(Y,t_3(X)),numbervars(incr_directly_depends(Y,t_3(X))),
+        writeln(after_abolish(incr_directly_depends(Y,t_3(X)))),fail.
+test:- t_1a(_),fail.
+test:-writeln('-----------------'),print_results('after_recall '),fail.
+test:- incr_directly_depends(t_1a(X),Y),numbervars(incr_directly_depends(t_1a(X),Y)),
+        writeln(after_recall(incr_directly_depends(t_1a(X),Y))),fail.
+test:- incr_directly_depends(Y,t_3(X)),numbervars(incr_directly_depends(Y,t_3(X))),
+        writeln(after_recall(incr_directly_depends(Y,t_3(X)))),fail.
+test:- catch(test1,E,writeln(caught_update_error)).
+test.
+
+print_results(Atom):- get_residual(t_1a(X),_),write(Atom),writeln(t_1a(X)),fail.
+print_results(Atom):- get_residual(t_1b(X),_),write(Atom),writeln(t_1b(X)),fail.
+print_results(Atom):- get_residual(t_2a(X),_),write(Atom),writeln(t_2a(X)),fail.
+print_results(Atom):- get_residual(t_2b(X),_),write(Atom),writeln(t_2b(X)),fail.
+print_results(Atom):- get_residual(t_2c(X),_),write(Atom),writeln(t_2c(X)),fail.
+print_results(Atom):- get_residual(t_3(X),_),write(Atom),writeln(t_3(X)),fail.
+print_results(_).

@@ -1,0 +1,484 @@
+'_$main'.
+
+'mark_occ2_#301'(_1, _2, _3, _4, _5, _6, _7, _8, _9) :- 
+        mark_occ1(_1, _3, _10, _5, _11, _7, _8, _9), 
+        mark_occ1(_2, _3, _12, _5, _13, _7, _8, _9), 
+(         _10 > _3, 
+        _12 > _3 -> 
+        _4 = _10, 
+        _6 = br(_11, _13)
+ ; 
+(         _10 > _3, 
+        _12 =:= _3 -> 
+        _4 = _10, 
+(         _3 >= 1 -> 
+        true, 
+        _6 = _11
+ ; 
+        true, 
+        _6 = br(_11, no(_7)) )
+
+ ; 
+(         _10 =:= _3, 
+        _12 > _3 -> 
+        _4 = _12, 
+(         _3 >= 1 -> 
+        true, 
+        _6 = _13
+ ; 
+        true, 
+        _6 = br(no(_7), _13) )
+
+ ; 
+        _4 = _3, 
+        _6 = _5 )
+ )
+ )
+.
+
+varproc(_5, _4, _3, _2, _1) :- 
+        '_$savecp'(_0), 
+        'varproc_#328'(_5, _4, _3, _2, _1, _0).
+
+'varproc_#328'(_1, _2, _3, _4, _5, _v329) :- 
+        get_lastchunk(_2, _6), 
+        closetail(_6), 
+        '_$cutto'(_v329), 
+        mark_occurrence(_1, _2, _3, _4), 
+        '_$cutto'(_v329), 
+        mark_type(_1, _2, _6), 
+        '_$cutto'(_v329), 
+        alloc_vars(_1, _2, 0, _5).
+
+get_lastchunk([_1|[]], _2) :- 
+        get_lastchunk1(_1, _2).
+get_lastchunk([_1|_2], _3) :- 
+        get_lastchunk(_2, _3).
+
+get_lastchunk1(goal(_1, _2, _3, _4), _5) :- 
+        member1(_1, _5).
+get_lastchunk1(inlinegoal(_1, _2, _3, _4), _5) :- 
+        member1(_1, _5).
+get_lastchunk1(head(_1), _2) :- 
+        member1(1, _2).
+get_lastchunk1(branch(_1, _2), _3) :- 
+        get_lastchunk(_1, _3), 
+        get_lastchunk(_2, _3).
+get_lastchunk1(ifthenelse(_1, _2, _3), _4) :- 
+        get_lastchunk(_2, _4), 
+        get_lastchunk(_3, _4).
+
+mark_occurrence([], _1, _2, _3).
+mark_occurrence([variable(_1, _2)|_3], _4, _5, _6) :- 
+        mark_occ1(_4, 0, _7, pr(0, _8), _9, _1, _5, _6), 
+        mark_last(_9), 
+        mark_occurrence(_3, _4, _5, _6).
+
+mark_occ1([], _1, _1, _2, _2, _3, _4, _5).
+mark_occ1([_1|_2], _3, _4, _5, _6, _7, _8, _9) :- 
+        mark_occ2(_1, _3, _10, _5, _11, _7, _8, _9), 
+        mark_occ1(_2, _10, _4, _11, _6, _7, _8, _9).
+
+mark_occ2(goal(_1, _2, _3, _4), _5, _6, _7, _8, _9, _10, _11) :- 
+        mark_occ3(_4, _5, _6, _7, _8, _9, _10, _11).
+mark_occ2(head(_1), _2, _3, _4, _5, _6, _7, _8) :- 
+        mark_occ3(_1, _2, _3, _4, _5, _6, _7, _8).
+mark_occ2(inlinegoal(_1, _2, _3, _4), _5, _6, _7, _8, _9, _10, _11) :- 
+        mark_occ3(_4, _5, _6, _7, _8, _9, _10, _11).
+mark_occ2(branch(_1, _2), _3, _4, _5, _6, _7, _8, _9) :- 
+        mark_occ1(_1, _3, _10, _5, _11, _7, _8, _9), 
+        mark_occ1(_2, _3, _12, _5, _13, _7, _8, _9), 
+(         _10 > _3, 
+        _12 > _3 -> 
+        _4 = _10, 
+        _6 = br(_11, _13)
+ ; 
+(         _10 > _3, 
+        _12 =:= _3 -> 
+        _4 = _10, 
+(         _3 >= 1 -> 
+        true, 
+        _6 = _11
+ ; 
+        true, 
+        _6 = br(_11, no(_7)) )
+
+ ; 
+(         _10 =:= _3, 
+        _12 > _3 -> 
+        _4 = _12, 
+(         _3 >= 1 -> 
+        true, 
+        _6 = _13
+ ; 
+        true, 
+        _6 = br(no(_7), _13) )
+
+ ; 
+        _4 = _3, 
+        _6 = _5 )
+ )
+ )
+.
+mark_occ2(ifthenelse(_1, _2, _3), _4, _5, _6, _7, _8, _9, _10) :- 
+        mark_occ1(_1, _4, _11, _6, _12, _8, _9, _10), 
+        '_$savecp'(_v371), 
+        _3 = [inlinegoal(_13, fail, 0, _14)|[]], 
+        '_$cutto'(_v371), 
+        mark_occ1(_2, _11, _5, _12, _7, _8, _9, _10)
+         ; 
+        'mark_occ2_#301'(_2, _3, _11, _5, _12, _7, _8, _9, _10).
+
+mark_occ3([], _1, _1, _2, _2, _3, _4, _5).
+mark_occ3([varocc(_1, _2)|_3], _4, _5, _6, _7, _8, _9, _10) :- 
+        '_$savecp'(_v412), 
+        _1 = _8, 
+        '_$cutto'(_v412), 
+        mark_previous(_6, _9, _10), 
+        _11 is +(_4, 1), 
+        _12 = pr(_11, _2)
+         ; 
+        _11 = _4, 
+        _12 = _6, 
+        mark_occ3(_3, _11, _5, _12, _7, _8, _9, _10).
+
+mark_previous(pr(_1, _2), _3, _4) :- 
+(         _1 =:= 0 -> 
+        true
+ ; 
+(         _1 =:= 1 -> 
+        vprag_occ(_2, f)
+ ; 
+        vprag_occ(_2, s) )
+ )
+.
+mark_previous(br(_1, _2), _3, _4) :- 
+        mark_previous(_1, _3, _4), 
+        mark_previous(_2, _3, _4).
+mark_previous(no(_1), _2, _3) :- 
+        sym_name(_2, _4, _5), 
+        '_$savecp'(_v424), 
+        option(init_var_off), 
+        '_$cutto'(_v424), 
+        warning(','('Uninitialized variable #', ','(_1, ','(' in clause #', ','(_3, ','(' of ', ','(_4, ','(/, _5)))))))), 
+        nl, 
+        message('           (object code may not be correct)')
+         ; 
+        error(','('Uninitialized variable #', ','(_1, ','(' in clause #', ','(_3, ','(' of ', ','(_4, ','(/, _5)))))))), 
+        nl, 
+        message('         (cannot generate object code)').
+
+mark_last(pr(_1, _2)) :- 
+(         _1 =:= 0 -> 
+        true
+ ; 
+(         _1 =:= 1 -> 
+        vprag_occ(_2, v)
+ ; 
+        vprag_occ(_2, l) )
+ )
+.
+mark_last(br(_1, _2)) :- 
+        mark_last(_1), 
+        mark_last(_2).
+mark_last(no(_1)).
+
+mark_type([], _1, _2).
+mark_type([variable(_1, v(_2, _3, _4, _5))|_6], _7, _8) :- 
+        mark_type1(_7, _9, _8, _10, _1), 
+        length(_9, _11), 
+(         _11 > 1 -> 
+        _2 = p
+ ; 
+        _2 = t
+         ; 
+        true )
+, 
+(         _2 == p -> 
+(         var(_10) -> 
+        _4 = d
+ ; 
+        _4 = u )
+
+ ; 
+        true )
+, 
+        mark_type(_6, _7, _8).
+
+mark_type1([], _1, _2, _3, _4).
+mark_type1([_1|_2], _3, _4, _5, _6) :- 
+        mark_type2(_1, _3, _4, _5, _6), 
+        mark_type1(_2, _3, _4, _5, _6).
+
+mark_type2(head(_1), _2, _3, _4, _5) :- 
+        mark_seen(_1, 1, _2, _3, _4, _5).
+mark_type2(goal(_1, _2, _3, _4), _5, _6, _7, _8) :- 
+        mark_seen(_4, _1, _5, _6, _7, _8).
+mark_type2(inlinegoal(_1, _2, _3, _4), _5, _6, _7, _8) :- 
+        mark_seen(_4, _1, _5, _6, _7, _8).
+mark_type2(branch(_1, _2), _3, _4, _5, _6) :- 
+        mark_type1(_1, _3, _4, _5, _6), 
+        mark_type1(_2, _3, _4, _5, _6).
+mark_type2(ifthenelse(_1, _2, _3), _4, _5, _6, _7) :- 
+        mark_type1(_1, _4, _5, _6, _7), 
+        mark_type1(_2, _4, _5, _6, _7), 
+        mark_type1(_3, _4, _5, _6, _7).
+
+mark_seen(_1, _2, _3, _4, _5, _6) :- 
+        mark_seen1(_1, _2, _7, _4, _5, _6), 
+(         var(_7) -> 
+        true
+ ; 
+        member1(_2, _3) )
+.
+
+mark_seen1([], _1, _2, _3, _4, _5).
+mark_seen1([varocc(_1, _2)|_3], _4, _5, _6, _7, _8) :- 
+        '_$savecp'(_v531), 
+        _1 = _8, 
+        '_$cutto'(_v531), 
+        _5 = 1, 
+        '_$savecp'(_v532), 
+        member(_4, _6), 
+        '_$cutto'(_v532), 
+        vprag_lastchunk(_2, 1)
+         ; 
+        vprag_lastchunk(_2, 0), 
+        vprag_occ(_2, _9), 
+(         _9 == f -> 
+        '_$savecp'(_v533), 
+        vprag_context(_2, b)
+         ; 
+        vprag_context(_2, i), 
+        vprag_level(_2, t), 
+        '_$cutto'(_v533), 
+        _7 = 0
+         ; 
+        true, 
+        '_$savecp'(_v534), 
+        vprag_context(_2, h)
+         ; 
+        vprag_level(_2, s)
+         ; 
+        member(_4, _6), 
+        '_$cutto'(_v534), 
+        true
+         ; 
+        vprag_type(_2, p)
+ ; 
+(         _9 == v -> 
+        '_$savecp'(_v535), 
+        vprag_context(_2, h), 
+        vprag_level(_2, t), 
+        '_$cutto'(_v535), 
+        vprag_type(_2, vh)
+         ; 
+        true
+ ; 
+        true )
+ )
+
+         ; 
+        true, 
+        mark_seen1(_3, _4, _5, _6, _7, _8).
+
+alloc_vars([], _1, _2, _2).
+alloc_vars([variable(_1, v(_2, _3, _4, _5))|_6], _7, _8, _9) :- 
+(         _2 == p -> 
+        _10 is +(_8, 1), 
+        _3 is +(_10, 1)
+ ; 
+(         _2 == vh -> 
+        _10 = _8, 
+        _3 = 0
+ ; 
+        _10 = _8, 
+        search_tvar(_7, _11, _12, _1), 
+        compute_use1(_11, _13, [], _14, [], _15, [], _16, _1), 
+(         var(_16) -> 
+        _17 = 0
+ ; 
+        _17 = _12 )
+, 
+        conflict_avoid(_14, _13, _15, _4, _5, _17) )
+ )
+, 
+        alloc_vars(_6, _7, _10, _9).
+
+search_tvar([_1|_2], _3, _4, _5) :- 
+        'search tvar'(_1, _3, _4, _5, _2).
+search_tvar([_1|_2], _3, _4, _5) :- 
+        search_tvar(_2, _3, _4, _5).
+
+'search tvar'(goal(_1, _2, _3, _4), _5, _3, _6, _7) :- 
+        search_occ(_4, _6), 
+        _5 = _4.
+'search tvar'(head(_1), _2, _3, _4, _5) :- 
+        search_occ(_1, _4), 
+        get_OccList(_5, _1, _2, _3).
+'search tvar'(inlinegoal(_1, _2, _3, _4), _5, _6, _7, _8) :- 
+        search_occ(_4, _7), 
+        get_OccList(_8, _4, _5, _6).
+'search tvar'(ifthenelse(_1, _2, _3), _4, _5, _6, _7) :- 
+        search_tvar(_1, _4, _5, _6)
+         ; 
+        search_tvar(_2, _4, _5, _6)
+         ; 
+        search_tvar(_3, _4, _5, _6).
+'search tvar'(branch(_1, _2), _3, _4, _5, _6) :- 
+        search_tvar(_1, _3, _4, _5)
+         ; 
+        search_tvar(_2, _3, _4, _5).
+
+search_occ([varocc(_1, _2)|_3], _1).
+search_occ([_1|_2], _3) :- 
+        search_occ(_2, _3).
+
+get_OccList([], _1, _1, 0).
+get_OccList([_1|_2], _3, _4, _5) :- 
+        '_$savecp'(_v662), 
+        _1 = goal(_6, _7, _5, _8), 
+        '_$cutto'(_v662), 
+        append(_3, _8, _4)
+         ; 
+        _1 = inlinegoal(_9, _10, _11, _8), 
+        '_$cutto'(_v662), 
+        append(_3, _8, _12), 
+        get_OccList(_2, _12, _4, _5)
+         ; 
+        _1 = ifthenelse(_13, _14, _15), 
+        '_$cutto'(_v662), 
+        get_OccList(_13, _3, _16, _17), 
+(         _17 =:= 0 -> 
+        get_OccList(_14, _16, _18, _19), 
+        get_OccList(_15, _18, _4, _20), 
+(         _19 >= _20 -> 
+        _5 = _19
+ ; 
+        _5 = _20 )
+
+ ; 
+        _5 = _17, 
+        _4 = _16 )
+
+         ; 
+        _4 = _3, 
+        _5 = 0.
+
+compute_use1([], _1, _1, _2, _2, _3, _3, _4, _5).
+compute_use1([varocc(_1, _2)|_3], _4, _5, _6, _7, _8, _9, _10, _11) :- 
+        '_$savecp'(_v690), 
+        _1 = _11, 
+        '_$cutto'(_v690), 
+        _8 = _12, 
+        vprag_context(_2, _13), 
+(         _13 == b -> 
+        _10 = 1
+ ; 
+        true )
+, 
+        vprag_level(_2, _14), 
+(         _14 == t -> 
+(         _13 == h -> 
+        vprag_argno(_2, _15), 
+        _4 = [_15|_16], 
+        _6 = _17
+ ; 
+(         _13 == b -> 
+        vprag_argno(_2, _15), 
+        _6 = [_15|_17], 
+        _4 = _16
+ ; 
+(         _13 == i -> 
+        _4 = _16, 
+        _6 = _17
+ ; 
+        fail )
+ )
+ )
+
+ ; 
+        _4 = _16, 
+        _6 = _17 )
+
+         ; 
+        _4 = _16, 
+        _6 = _17, 
+        vprag_context(_2, b), 
+        vprag_level(_2, t), 
+        vprag_type(_2, t), 
+        vprag_argno(_2, _15), 
+        _8 = [_15|_12]
+         ; 
+        _8 = _12, 
+        compute_use1(_3, _16, _5, _17, _7, _12, _9, _10, _11).
+
+conflict_avoid(_1, _2, _3, _4, _5, _6) :- 
+        conf_real_use(_2, _4, _1, _6), 
+        conf_nouse1(_3, _4, _5), 
+        conf_nouse2(_6, _4, _5).
+
+conf_real_use([], _1, _1, _2).
+conf_real_use([_1|_2], _3, _4, _5) :- 
+        _1 =< _5, 
+        _3 = _6
+         ; 
+        member(_1, _4), 
+        _3 = _6
+         ; 
+        _3 = [_1|_6], 
+        conf_real_use(_2, _6, _4, _5).
+
+conf_nouse1([], _1, _2).
+conf_nouse1([_1|_2], _3, _4) :- 
+        member(_1, _3)
+         ; 
+        member1(_1, _4), 
+        conf_nouse1(_2, _3, _4).
+
+conf_nouse2(_1, _2, _3) :- 
+(         _1 =:= 0 -> 
+        closetail(_3)
+ ; 
+        member2(_1, _2)
+         ; 
+        member1(_1, _3), 
+        _4 is -(_1, 1), 
+        conf_nouse2(_4, _2, _3) )
+.
+
+vprag_context(vrec(_1, _2, _3, _4, _5, _6), _1).
+
+vprag_level(vrec(_1, _2, _3, _4, _5, _6), _2).
+
+vprag_argno(vrec(_1, _2, _3, _4, _5, _6), _3).
+
+vprag_occ(vrec(_1, _2, _3, _4, _5, _6), _4).
+
+vprag_lastchunk(vrec(_1, _2, _3, _4, _5, _6), _6).
+
+vprag_common(vrec(_1, _2, _3, _4, _5, _6), _5).
+
+vprag_type(vrec(_1, _2, _3, _4, v(_5, _6, _7, _8), _9), _5).
+
+vprag_loc(vrec(_1, _2, _3, _4, v(_5, _6, _7, _8), _9), _6).
+
+vprag_use(vrec(_1, _2, _3, _4, v(_5, _6, _7, _8), _9), _7).
+
+vprag_nouse(vrec(_1, _2, _3, _4, v(_5, _6, _7, _8), _9), _8).
+
+vprag_type1(_1, _2) :- 
+        vprag_type(_1, _3), 
+        '_$savecp'(_v802), 
+        _3 = p, 
+        vprag_lastchunk(_1, 1), 
+        vprag_occ(_1, l)
+         ; 
+        vprag_occ(_1, s), 
+        '_$cutto'(_v802), 
+        vprag_use(_1, _2)
+         ; 
+        _2 = _3.
+
+force_varproc_loaded.
+

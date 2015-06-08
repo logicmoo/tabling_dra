@@ -1,0 +1,1 @@
+go :- ['Driver'], sg(multiup,'Data/cycles').

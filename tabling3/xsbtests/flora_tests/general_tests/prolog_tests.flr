@@ -1,0 +1,116 @@
+
+?- flP2H(PT,f(a,b)), insert{foo(PT,g(h))}.
+?- flP2H(PT,bar(f(a,b))), assert(PT)@prolog().
+
+tst1 :- write('tst1 ')@prolog(),
+	if foo(f(_X,_Y),g(_H)) then writeln('Something wrong')@prolog()
+	   else writeln('foo(f(X,Y),g(H)) failed, as expected')@prolog().
+    
+tst2 :- write('tst2 ')@prolog(),
+	if bar(f(X,Y))@prologall()
+	   then writeln(('X'=X,'Y'=Y))@prologall()
+	   else writeln('something wrong')@prolog().
+
+tst3 :- write('tst3 ')@prolog(),
+	if bar(f(_X,_Y))@prolog()
+	   then writeln('something wrong')@prolog()
+	   else writeln('failed, as expected')@prolog().
+
+%% Testing argument position
+?- flP2H(PT,g(f(a),f(Y,k))), insert{poo(PT,d(h))}.
+
+tst4:- write('tst4 ')@prolog(),
+	if poo(g(f(X),f(Y,k))@prologall(),d(W))
+       then (
+        if var(Y) then YY='_',
+	writeln(('X'=X,'Y'=YY,'W'=W))@prologall()
+       ) else writeln('something wrong')@prolog().
+
+tst5 :- write('tst5 ')@prolog(),
+	if poo(g(f(_X),f(_Y,k))@prolog(),d(_W))
+	   then writeln('something wrong')@prolog()
+	   else writeln('failed, as expected')@prolog().
+
+tst6 :- write('tst6 ')@prolog(),
+	if foo(f(_X,_Y)@prolog(),g(_H))
+	   then writeln('foo(f(X,Y)@prolog(),g(H)) succeeded, as expected')@prolog()
+	   else writeln('something wrong')@prolog().
+tst7 :- write('tst7 ')@prolog(),
+	if foo(f(_X,_Y)@prologall(),g(_H))
+	   then writeln('foo(f(X,Y)@prologall(),g(H)) succeeded, as expected')@prolog()
+	   else writeln('something wrong')@prolog().
+
+%% Testing meta
+:- arguments metapred(meta).
+
+%% Here we assert metapred(a[b->c]) as prolog
+tst8 :- write('tst8 ')@prolog(),
+	insert{a[b->c], metapred(a[b->c])}, 
+	assert(metapred(a[b->c]))@prologall(),
+	metapred(X)@prologall(),
+	if X
+        then writeln('metapred(X)@prologall() succeeded, as expected')@prolog()
+        else  writeln('something wrong')@prolog().
+
+%% Here we assert metapred(a[b->c]) as prolog
+tst9 :- write('tst9 ')@prolog(),
+	insert{a[b->c], metapred(a[b->c])}, 
+	assert(metapred(a[b->c]))@prologall(),
+	metapred(X)@prolog(),
+	if X
+        then writeln('metapred(X)@prolog() succeeded, as expected')@prolog()
+        else  writeln('something wrong')@prolog().
+
+%% Here we assert metapred(a[b->c]) as hilog
+tst10 :- write('tst10 ')@prolog(),
+	insert{a[b->c], metapred(a[b->c])}, 
+	 assert(metapred(a[b->c]))@prolog(),
+	 metapred(X),
+	 if X
+         then writeln('metapred(X) succeeded, as expected')@prolog()
+         else  writeln('something wrong')@prolog().
+
+
+%% Prolog predicates with embedded Flora terms (not meta)
+tst11 :- write('tst11 ')@prolog(),
+	 insert{f(a,b)[b->c]},
+	 L = collectset{T| bar(f(a,X)[b->Y])@prologall(), T=(X,Y)},
+	 if L \= []
+         then (sort(L,SortedL)@prolog(), writeln(SortedL)@prologall())
+         else writeln('something wrong')@prolog().
+
+tst12 :- write('tst12 ')@prolog(),
+	L = collectset{T| bar(f(a[b->Y],X))@prologall(), T=(X,Y)},
+	if L \= []
+         then (sort(L,SortedL)@prolog(), writeln(SortedL)@prologall())
+         else writeln('something wrong')@prolog().
+
+:- equality basic.
+c :=: x.y.
+
+tst13 :- write('tst13 ')@prolog(),
+	if bar(f(a[b->x.y],X))@prologall()
+         then writeln('bar(f(a[b->x.y],X))@prologall() X'=X)@prologall()
+         else writeln('something wrong')@prolog().
+
+tst14 :- write('tst14 ')@prolog(),
+	insert{a[e.e->f.f], f.f[q->>r.r]},
+	 if bar(f(a[e.e->f.f[q->>r.r]],X))@prologall()
+         then writeln('bar(f(a[e.e->f.f[q->>r.r]],X)@prologall() X'=X)@prologall()
+         else writeln('something wrong')@prolog().
+
+tst15 :- write('tst15 ')@prolog(),
+	if bar(f(a[b->x.y],_X))@prolog()
+         then writeln('something wrong')@prolog()
+         else writeln('bar(f(a[b->x.y],X))@prolog() failed, as expected')@prologall().
+
+pretest :- tst1, tst2, tst3, tst4, tst5,
+	   tst6, tst7, tst8, tst9, tst10,
+	   tst11, tst12, tst13, tst14, tst15.
+
+test :- tell(temp)@prolog(),
+	debug[#check_undefined(on)]@flora(sys),
+	pretest,
+	debug[#check_undefined(off)]@flora(sys),
+	pretest,
+	told@prolog().

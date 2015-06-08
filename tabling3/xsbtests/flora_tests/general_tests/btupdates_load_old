@@ -1,0 +1,162 @@
+After query10:
+After query10:
+After query11:
+After query11:
+After query2:
+After query2:
+After query3:
+After query3:
+After query4:
+After query4:
+After query5:
+After query5:
+After query6:
+After query6:
+After query7:
+After query7:
+After query8:
+After query8:
+After query9:
+After query9:
+After the no-effect query:
+After the no-effect query:
+No facts of the form mary[salary(...)->...]
+No facts of the form mary[salary(...)->...]
+Query 1 begins
+Query 1 begins
+Query 10 begins
+Query 10 begins
+Query 11 begins
+Query 11 begins
+Query 2 begins
+Query 2 begins
+Query 3 begins
+Query 3 begins
+Query 4 begins
+Query 4 begins
+Query 5 begins
+Query 5 begins
+Query 6 begins
+Query 6 begins
+Query 7 begins
+Query 7 begins
+Query 8 begins
+Query 8 begins
+Query 9 begins
+Query 9 begins
+Removed all Mary's salary info
+Removed all Mary's salary info
+a[f->b]
+a[f->b]
+a[f->c]
+a[f->c]
+a[f->c]
+a[f->c]
+a[f->c]
+a[f->c]
+a[f->d]
+a[f->d]
+a[f->d]
+a[f->d]
+a[f->f]
+a[f->f]
+mary[salary(1991)->30]
+mary[salary(1991)->30]
+mary[salary(1992)->60]
+mary[salary(1992)->60]
+mary[salary(1992)->60]
+mary[salary(1992)->60]
+mary[salary(1993)->70]
+mary[salary(1993)->70]
+mary[salary(1993)->70]
+mary[salary(1993)->70]
+mary[salary(1994)->60]
+mary[salary(1994)->60]
+mary[salary(1994)->60]
+mary[salary(1994)->60]
+mary[salary(1994)->60]
+mary[salary(1994)->60]
+mary[salary(1995)->60]
+mary[salary(1995)->60]
+mary[salary(1995)->60]
+mary[salary(1995)->60]
+mary[salary(1995)->60]
+mary[salary(1995)->60]
+mary[salary(1995)->60]
+mary[salary(1995)->60]
+mary[salary(1995)->60]
+mary[salary(1995)->60]
+mary[salary(1995)->60]
+mary[salary(1995)->60]
+mary[salary(1996)->70]
+mary[salary(1996)->70]
+mary[salary(1996)->70]
+mary[salary(1996)->70]
+mary[salary(1996)->70]
+mary[salary(1996)->70]
+mary[salary(1997)->80]
+mary[salary(1997)->80]
+mary[salary(1997)->80]
+mary[salary(1997)->80]
+mary[salary(1997)->80]
+mary[salary(1997)->80]
+mary[salary(1998)->90]
+mary[salary(1998)->90]
+mary[salary(1998)->90]
+mary[salary(1998)->90]
+mary[salary(1998)->90]
+mary[salary(1998)->90]
+mary[salary(1999)->100]
+mary[salary(1999)->100]
+mary[salary(1999)->100]
+mary[salary(1999)->100]
+mary[salary(1999)->100]
+mary[salary(1999)->100]
+mary[salary(1999)->100]
+mary[salary(1999)->100]
+mary[salary(2001)->110]
+mary[salary(2001)->110]
+mary[salary(2001)->110]
+mary[salary(2001)->110]
+mary[salary(2002)->111]
+mary[salary(2002)->111]
+mary[salary(2002)->111]
+mary[salary(2002)->111]
+mary[salary(2003)->100]
+mary[salary(2003)->100]
+mary[salary(2003)->100]
+mary[salary(2003)->100]
+mary[salary(2003)->100]
+mary[salary(2003)->100]
+mary[salary(2010)->200]
+mary[salary(2010)->200]
+mary[salary(2022)->333]
+mary[salary(2022)->333]
+mary[salary(2023)->222]
+mary[salary(2023)->222]
+mary[salary(2023)->222]
+mary[salary(2023)->222]
+mary[salary(2024)->222]
+mary[salary(2024)->222]
+mary[salary(2024)->222]
+mary[salary(2024)->222]
+mary[salary(2025)->222]
+mary[salary(2025)->222]
+mary[salary(2025)->222]
+mary[salary(2025)->222]
+mary[salary(2026)->222]
+mary[salary(2026)->222]
+mary[salary(2026)->222]
+mary[salary(2026)->222]
+mary[salary(2027)->222]
+mary[salary(2027)->222]
+mary[salary(2027)->222]
+mary[salary(2027)->222]
+mary[salary(2028)->222]
+mary[salary(2028)->222]
+mary[salary(2028)->222]
+mary[salary(2028)->222]
+mod2
+mod2
+yes
+yes

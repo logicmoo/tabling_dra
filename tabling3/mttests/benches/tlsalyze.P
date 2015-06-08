@@ -1,0 +1,29 @@
+
+%----------------------------------------------------
+% arranges datum/2 results into coumns
+
+analyze(File):- 
+	[File],
+	findall([Col,Num],find_best(Col,Num),Cols),
+	write_cols(Cols),nl.
+
+find_best(Col,Num):-
+	setof(N,datum([Col],N),Data),
+	Data = [Num|_].
+
+write_cols(L):- 
+	write_cols1(L,L1),
+        write_cols2(L1).
+
+write_cols1([[C,N]],[N]):- !,
+	writeln(C).
+write_cols1([[C,N]|T],[N|R]):- 
+	write(C),write('  &  '),
+	write_cols1(T,R).
+
+write_cols2([N]):- !,
+	writeln(N).
+write_cols2([N|T]):- 
+	write(N),write('     '),
+	write_cols2(T).
+

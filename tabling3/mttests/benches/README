@@ -1,0 +1,31 @@
+
+To run the these scripts.
+
+In you xsb directory $XSB, make sure you have make xsb with four
+different configurations:
+
+	default configuration, 
+	--enable-mt
+	--enable-batched-scheduling
+	--enable-batched-scheduling --enable-ccmpl.
+
+To do de overhead analisys, run the script: 
+
+overhead.sh $XSB $DIR
+
+where DIR is the name of a subdirectory which must exist (in the current
+path) into which intermediate results will be stored.  
+
+To output the results in latex readable format, run the script:
+
+over-analise.sh $DIR $FILE $XSB
+
+To do de scalability analisys, run the script: 
+
+scala.sh $XSB $DIR
+
+where the arguments are the same as in above.
+
+To ouput the results to a file, run the script:
+
+scal-analise.sh $DIR $FILE $XSB

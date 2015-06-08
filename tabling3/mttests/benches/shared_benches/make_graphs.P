@@ -1,0 +1,14 @@
+
+:- [gen_graph].
+
+make_big_graphs :-
+	fileGraph(8192,2,g8192x2),	% this has relatively few SCCs
+	fileGraph(4096,4,g4096x4),	% this has very few SCCs
+	fileGraph(2048,8,g2048x8).	% almost every nodes are reachable
+
+make_small_graphs :-
+	fileGraph(8192,1,g8192x1),	% one link per node
+	fileGraph(2048,2,g2048x2),	% this has relatively few SCCs
+	fileGraph(512,8,g512x8),	% this is a big SCC
+	fileGraph(256,128,g256x128).	% this is a big, very dense SCC
+

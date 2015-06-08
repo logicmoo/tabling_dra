@@ -1,0 +1,545 @@
+:- import between/3 from basics.
+:- import conset/2,conget/2 from machine.
+:- import concat_atom/2 from string.
+:- import member/2 from basics.
+
+:- conset(placectr,0).
+:- conset(transctr,0).
+
+:- import par_execute/1 from thread.
+
+:- index(rule/3,trie).
+:- thread_shared rule/3.
+
+:- [constrNet].
+:- import {}/1 from clpr.
+
+/* 
+Generates approx 5(Lengh/2)*16 states, a fairly small number as will
+be explained below. 
+
+There are 16 independent widgets each with 5 different processes.
+Each process requires a resource to initiate.  It holds the resource
+until it finishes at which time it returns the resource (i.e. puts a
+token in resource_n.)  Accordingly there are 16 different independent
+init states that can be tested.
+
+This differs from a standard net in that each state of each process
+has three variables that have CLP(R) constraints.  Each of these
+variables are unique to a given token in a place, so that variables
+are not shared between places, nor are they shared between (colored)
+tokens within a place.  To fire a transition T, not only do tokens of
+the right color need to be in the proper places, but a guard may need
+to fire: this guard is a CLP(R) expression that must be entailed by
+the constraint store of the variables in the input places to T.
+
+This benchmark heavily tests tabled constraints.  Each process has
+only two places, a token moves back and forth between the two places
+in a process Length/4 times, each time further constraining its
+variables until the variables are constrained enought o return the
+resource.  This leads to a number of redundant answer check/inserts
+which accounts for the examples quadratic behavior in terms of
+time. Also, while this example has relatively few states compared to
+other examples, each state is large, as the attributes for each
+attributed variable need to be copied in -- and in CLP(R) these
+attributes are large structures.
+*/
+
+:- import n_par_execute/2 from thread.
+
+% Length should be 4*M+1 for integer M
+private_scale_constr(Length,NumThr,NumCyc):- 
+	breset,
+	generate_cycle(Length,NumCyc),
+	walltime(S),
+%	statistics(mutex),
+	n_par_execute(bench_1,NumThr),
+%	statistics(mutex),
+	walltime(E),
+	Time is E - S,
+	write(datum([constr,priv],NumThr,Time)),writeln('.'),
+	flush_output.
+	
+shared_bench_constr(Length,NumThr,NumCyc):- 
+	breset,
+	generate_cycle(Length,NumCyc),
+	get_goallist(NumCyc,NumThr,G),
+	writelist(G),
+	walltime(S),
+%	statistics(mutex),
+	par_execute(G),
+%	seq_execute(G),
+%	statistics(mutex),
+	walltime(E),
+	Time is E - S,
+	write(datum([constr,shared],NumThr,Time)),writeln('.'),
+	flush_output.
+	
+bench(Length,Num,Time):- 
+	breset,
+	generate_cycle(Length,Num),
+	cputime(S),
+	bench_1,
+	cputime(E),
+	Time is E - S.
+
+bench_1:- 
+	initState(S),reachable(S,_T),
+	fail.
+bench_1.
+
+shared_bench_1:- 
+	initState(S),shared_reachable(S,_T),
+	fail.
+shared_bench_1.
+
+get_goallist(Max,NThreads,Out):- 
+	get_raw_goals(Max,RawGoals),
+%	findall(shared_reachable(S,_),initState(S),Goals),
+	get_par_goals(Max,NThreads,RawGoals,Out).
+
+get_raw_goals(0,[]):-!.
+get_raw_goals(N,[shared_reachable([place(Resource,[])],_)|T]):-
+	concat_atom([resource_,N],Resource),
+	N1 is N - 1,
+	get_raw_goals(N1,T).
+
+get_par_goals(Max,NThreads,InG,OutG):- 
+	Quot is Max//NThreads,
+	get_goals( InG, Quot, OutG ).	
+
+get_goals( [], _NT, []).
+get_goals( LS, NT, [seq_execute(G)|Gs]) :-
+	   get_first_goals( NT, LS, LS1, G),
+	   get_goals( LS1, NT, Gs).
+
+get_first_goals( _NT, [], [], [] ).
+get_first_goals( 0, LS, LS, [] ).
+get_first_goals( NT, [S|LS], LS1, [S|Gs]) :-
+		 NT1 is NT - 1,
+		 get_first_goals( NT1, LS, LS1, Gs).
+
+
+initState([place(resource_1,[])]).
+initState([place(resource_2,[])]).
+initState([place(resource_3,[])]).
+initState([place(resource_4,[])]). 
+/*
+initState([place(resource_5,[])]).
+initState([place(resource_6,[])]).
+initState([place(resource_7,[])]).
+initState([place(resource_8,[])]).
+initState([place(resource_9,[])]).
+initState([place(resource_10,[])]).
+initState([place(resource_11,[])]).
+initState([place(resource_12,[])]).
+initState([place(resource_13,[])]).
+initState([place(resource_14,[])]).
+initState([place(resource_15,[])]).
+initState([place(resource_16,[])]).
+*/
+
+generate_cycle(_High,0):- !.
+generate_cycle(High,N):- 
+	generate_cycle_1(High,N),
+	N1 is N - 1,
+	generate_cycle(High,N1).
+
+generate_cycle_1(High,N):- 
+	Low = 1,
+	concat_atom([p1,'_',N],P1),	concat_atom([q1,'_',N],Q1),
+	concat_atom([r1,'_',N],R1),	concat_atom([s1,'_',N],S1),
+	concat_atom([t1,'_',N],T1),     concat_atom([resource,'_',N],Resource),
+	assert(rule([place(Resource,[])],(0=0),
+	            [place(P1,[v(Xp,Yp,Zp)],
+	                   {Low =< Xp,Xp =< High,Low =< Yp,Yp =< High,Low =< Zp,Zp =< High})])),
+	assert(rule([place(Resource,[])],(0=0),
+	            [place(Q1,[v(Xq,Yq,Zq)],
+	                   {Low =< Xq,Xq =< High,Low =< Yq,Yq =< High,Low =< Zq,Zq =< High})])),
+	assert(rule([place(Resource,[])],(0=0),
+	            [place(R1,[v(Xq,Yq,Zq)],
+	                   {Low =< Xq,Xq =< High,Low =< Yq,Yq =< High,Low =< Zq,Zq =< High})])),
+	assert(rule([place(Resource,[])],(0=0),
+	            [place(S1,[v(Xq,Yq,Zq)],
+	                   {Low =< Xq,Xq =< High,Low =< Yq,Yq =< High,Low =< Zq,Zq =< High})])),
+	assert(rule([place(Resource,[])],(0=0),
+	            [place(T1,[v(Xq,Yq,Zq)],
+	                   {Low =< Xq,Xq =< High,Low =< Yq,Yq =< High,Low =< Zq,Zq =< High})])),
+	generate_cycle(Low,High,N).
+
+generate_cycle(Low,Low,N):-!,
+	concat_atom([p1,'_',N],P1),	concat_atom([q1,'_',N],Q1),
+	concat_atom([r1,'_',N],R1),	concat_atom([s1,'_',N],S1),
+	concat_atom([t1,'_',N],T1),     concat_atom([resource,'_',N],Resource),
+	assert(rule([place(P1,[v(Xp,Yp,Zp)])],(Low = Xp,Low = Yp,Low = Zp),
+                    [place(Resource,[],{0=0})])),
+	assert(rule([place(Q1,[v(Xq,Yq,Zq)])],(Low = Xq,Low = Yq,Low = Zq),
+                    [place(Resource,[],{0=0})])),
+	assert(rule([place(R1,[v(Xq,Yq,Zq)])],(Low = Xq,Low = Yq,Low = Zq),
+                    [place(Resource,[],{0=0})])),
+	assert(rule([place(S1,[v(Xq,Yq,Zq)])],(Low = Xq,Low = Yq,Low = Zq),
+                    [place(Resource,[],{0=0})])),
+	assert(rule([place(T1,[v(Xq,Yq,Zq)])],(Low = Xq,Low = Yq,Low = Zq),
+                    [place(Resource,[],{0=0})])).
+generate_cycle(Low,High,N):- 
+	Low1 is Low + 1,High1 is High - 1,
+	Low2 is Low + 2,High2 is High - 2,
+	concat_atom([p1,'_',N],P1),concat_atom([p2,'_',N],P2),
+	concat_atom([q1,'_',N],Q1),concat_atom([q2,'_',N],Q2),
+	concat_atom([r1,'_',N],R1),concat_atom([r2,'_',N],R2),
+	concat_atom([s1,'_',N],S1),concat_atom([s2,'_',N],S2),
+	concat_atom([t1,'_',N],T1),concat_atom([t2,'_',N],T2),
+	assert(rule([place(P1,[v(X1,Y1,Z1)])],
+	                   (Low =< X1,X1 =< High,Low =< Y1,Y1 =< High,Low =< X1,X1 =< High),
+	            [place(P2,[v(X2,Y2,Z2)],
+	                   {Low1 =< X2,X2 =< High1,Low1 =< Y2,Y2 =< High1,Low1 =< Z2,Z2 =< High1})])),
+	assert(rule([place(P2,[v(X2,Y2,Z2)])],
+	                   (Low1 =< X2,X2 =< High1,Low1 =< Y2,Y2 =< High1,Low1 =< Z2,Z2 =< High1),
+	            [place(P1,[v(X1,Y1,Z1)],
+	                   {Low2 =< X1,X1 =< High2,Low2 =< Y1,Y1 =< High2,Low2 =< Z1,Z1 =< High2})])),
+	assert(rule([place(Q1,[v(X1,Y1,Z1)])],
+	                   (Low =< X1,X1 =< High,Low =< Y1,Y1 =< High,Low =< X1,X1 =< High),
+	            [place(Q2,[v(X2,Y2,Z2)],
+	                   {Low1 =< X2,X2 =< High1,Low1 =< Y2,Y2 =< High1,Low1 =< Z2,Z2 =< High1})])),
+	assert(rule([place(Q2,[v(X2,Y2,Z2)])],
+	                   (Low1 =< X2,X2 =< High1,Low1 =< Y2,Y2 =< High1,Low1 =< Z2,Z2 =< High1),
+	            [place(Q1,[v(X1,Y1,Z1)],
+	                   {Low2 =< X1,X1 =< High2,Low2 =< Y1,Y1 =< High2,Low2 =< Z1,Z1 =< High2})])),
+	assert(rule([place(R1,[v(X1,Y1,Z1)])],
+	                   (Low =< X1,X1 =< High,Low =< Y1,Y1 =< High,Low =< X1,X1 =< High),
+	            [place(R2,[v(X2,Y2,Z2)],
+	                   {Low1 =< X2,X2 =< High1,Low1 =< Y2,Y2 =< High1,Low1 =< Z2,Z2 =< High1})])),
+	assert(rule([place(R2,[v(X2,Y2,Z2)])],
+	                   (Low1 =< X2,X2 =< High1,Low1 =< Y2,Y2 =< High1,Low1 =< Z2,Z2 =< High1),
+	            [place(R1,[v(X1,Y1,Z1)],
+	                   {Low2 =< X1,X1 =< High2,Low2 =< Y1,Y1 =< High2,Low2 =< Z1,Z1 =< High2})])),
+	assert(rule([place(S1,[v(X1,Y1,Z1)])],
+	                   (Low =< X1,X1 =< High,Low =< Y1,Y1 =< High,Low =< X1,X1 =< High),
+	            [place(S2,[v(X2,Y2,Z2)],
+	                   {Low1 =< X2,X2 =< High1,Low1 =< Y2,Y2 =< High1,Low1 =< Z2,Z2 =< High1})])),
+	assert(rule([place(S2,[v(X2,Y2,Z2)])],
+	                   (Low1 =< X2,X2 =< High1,Low1 =< Y2,Y2 =< High1,Low1 =< Z2,Z2 =< High1),
+	            [place(S1,[v(X1,Y1,Z1)],
+	                   {Low2 =< X1,X1 =< High2,Low2 =< Y1,Y1 =< High2,Low2 =< Z1,Z1 =< High2})])),
+	assert(rule([place(T1,[v(X1,Y1,Z1)])],
+	                   (Low =< X1,X1 =< High,Low =< Y1,Y1 =< High,Low =< X1,X1 =< High),
+	            [place(T2,[v(X2,Y2,Z2)],
+	                   {Low1 =< X2,X2 =< High1,Low1 =< Y2,Y2 =< High1,Low1 =< Z2,Z2 =< High1})])),
+	assert(rule([place(T2,[v(X2,Y2,Z2)])],
+	                   (Low1 =< X2,X2 =< High1,Low1 =< Y2,Y2 =< High1,Low1 =< Z2,Z2 =< High1),
+	            [place(T1,[v(X1,Y1,Z1)],
+	                   {Low2 =< X1,X1 =< High2,Low2 =< Y1,Y1 =< High2,Low2 =< Z1,Z1 =< High2})])),
+	generate_cycle(Low2,High2,N).
+
+breset:- 
+	abolish_all_tables,
+	retractall(rule(_,_,_)).
+
+seq_execute(H):- 
+		 member(G,H),
+%		 writeln(G),
+		 call(G),
+		 fail.
+seq_execute(_H).
+
+writelist([]).
+writelist([H|T]):- 
+		   writeln(H),
+		   writelist(T).
+
+end_of_file.
+
+bench_2(NThreads) :-
+	bench_2_priv(NThreads),
+	bench_2_shared(NThreads).
+
+bench_2_shared( NThreads ) :-
+	shared_bench_wf( NThreads, shared_reachable ).
+
+bench_2_priv( NThreads ) :-
+	private_bench_wf( NThreads, reachable ).
+
+private_bench_wf(NThreads,P) :-
+	abolish_all_tables,
+	gen_private_goal_list(NThreads,P,LG),
+	private_gen_wf_1,
+%	alt_private_gen_wf_1,
+	walltime(Before),
+	all_seq_execute(LG),
+	walltime(After),
+	Time is After - Before,
+	(P = reachable -> Bench = priv ; Bench = shared ),
+	write(datum([wf,Bench],NThreads,Time)),
+	writeln('.'),
+	flush_output.
+
+shared_bench_wf_1(NThreads,Time):- 
+	abolish_all_tables,
+	retractall(rule(_,_,_,_)),
+	gen_private_goal_list(NThreads,shared_reachable,LG),
+	gen_shared_wf,
+	walltime(Before),
+	all_par_execute(LG),
+	walltime(After),
+	Time is After - Before,
+	statistics.
+
+gen_shared_wf:- 
+	nextplace(Pstart),
+	gen_widget_14_7(6,6,Pstart,P1),
+	writeln(p1(P1)),
+	gen_widget_14_20(5,5,P1,P2),
+	writeln(p2(P2)),
+	gen_widget_14_7(6,6,P2,P3),
+	writeln(p3(P3)),
+	gen_widget_14_20(5,5,P3,P4),
+	writeln(p4(P4)),
+	gen_widget_14_9(5,5,P3,_P5),
+	nexttrans(T),
+	assert(rule([p(P4,X)],[p(0,X)],dyn([],[]),T)),
+	nextplace(_),
+	nextplace(P5),
+	writeln(p5(P5)),
+	gen_widget_14_7(6,6,P5,P6),
+	writeln(p6(P6)),
+	gen_widget_14_20(5,5,P6,P7),
+	writeln(p7(P7)),
+	gen_widget_14_7(6,6,P7,P8),
+	writeln(p8(P8)),
+	gen_widget_14_20(5,5,P8,P9),
+	writeln(p9(P9)),
+	gen_widget_14_9(5,5,P9,_P10),
+%---------
+	nextplace(_),
+	nextplace(P10),
+	writeln(p10(P10)),
+	gen_widget_14_7(6,6,P10,P11),
+	writeln(p11(P11)),
+	gen_widget_14_20(5,5,P11,P12),
+	writeln(p12(P12)),
+	gen_widget_14_7(6,6,P12,P13),
+	writeln(p13(P13)),
+	gen_widget_14_20(5,5,P13,P14),
+	writeln(p14(P14)),
+	gen_widget_14_9(5,5,P14,_P15),
+%---------
+	nextplace(_),
+	nextplace(P15),
+	writeln(p15(P15)),
+	gen_widget_14_7(6,6,P15,P16),
+	writeln(p16(P16)),
+	gen_widget_14_20(5,5,P16,P17),
+	writeln(p17(P17)),
+	gen_widget_14_7(6,6,P17,P18),
+	writeln(p18(P18)),
+	gen_widget_14_20(5,5,P18,P19),
+	writeln(p19(P19)),
+	gen_widget_14_9(5,5,P19,P20),
+	writeln(p20(P20)).
+
+% 14_7  - 6X6 is abt 12 secs
+% 14_9  - 6X6 is abt 32 secs  262207 states
+% 14_20 - 6X6 is abt 17 secs  117650 states
+
+/* Generation of goals */
+%private_init_state( [p(0,1)] ).
+private_init_state( [p(8,1)] ).
+%private_init_state( [p(15,1)] ).
+%private_init_state( [p(23,1)] ).
+%private_init_state( [p(30,1)] ).
+
+%shared_init_state( [p(0,1)] ).
+shared_init_state( [p(15,1)] ).
+shared_init_state( [p(23,1)] ).
+shared_init_state( [p(30,1)] ).
+
+%shared_init_state( [p(40,1)] ).
+shared_init_state( [p(48,1)] ).
+shared_init_state( [p(55,1)] ).
+shared_init_state( [p(63,1)] ).
+shared_init_state( [p(70,1)] ).
+
+%shared_init_state( [p(80,1)] ).
+shared_init_state( [p(88,1)] ).
+shared_init_state( [p(95,1)] ).
+shared_init_state( [p(103,1)] ).
+shared_init_state( [p(110,1)] ).
+
+%shared_init_state( [p(120,1)] ).
+shared_init_state( [p(128,1)] ).
+shared_init_state( [p(135,1)] ).
+shared_init_state( [p(143,1)] ).
+shared_init_state( [p(150,1)] ).
+
+gen_private_goal_list( NThreads, P, LG ) :-
+	findall( S, private_init_state( S ), LS ),
+	get_goals( LS, NThreads, LG, P ).	
+
+gen_shared_goal_list( NThreads, P, LG ) :-
+	findall( S, shared_init_state( S ), LS ),
+	get_goals( LS, NThreads, LG, P ).	
+
+get_goals( [], _NT, [], _P ).
+get_goals( LS, NT, [G|Gs], P ) :-
+	get_first_goals( NT, LS, LS1, G, P ),
+	get_goals( LS1, NT, Gs, P ).
+
+get_first_goals( _NT, [], [], [], _P ).
+get_first_goals( 0, LS, LS, [], _P ).
+get_first_goals( NT, [S|LS], LS1, [G|Gs], P ) :-
+	G =.. [P,S,_],
+	NT1 is NT - 1,
+	get_first_goals( NT1, LS, LS1, Gs, P ).
+
+all_par_execute([]).
+all_par_execute([H|L]) :-
+	par_execute(H),
+	all_par_execute(L).
+
+all_seq_execute([]).
+all_seq_execute([H|L]) :-
+	seq_execute(H),
+	all_seq_execute(L).
+
+seq_execute(H):- 
+	member(G,H),
+%	writeln(H),
+	call(G),
+	fail.
+seq_execute(_H).
+
+/* Generation of workflows */
+private_gen_wf_1 :-
+	abolish(rule/4),
+	restartplace,
+	nextplace(First1),
+	gen_wf_2(First1,_First2).
+
+gen_wf_2(First,Last):- 
+	gen_widget_14_7(6,6,First,P1),
+	gen_widget_14_20(5,5,P1,P2),
+	gen_widget_14_7(6,6,P2,P3),
+	gen_widget_14_20(5,5,P3,P4),
+	gen_widget_14_9(5,5,P3,Last),
+	nexttrans(T),
+	assert(rule([p(P4,X)],[p(0,X)],dyn([],[]),T)).
+
+alt_private_gen_wf_1 :-
+	abolish(rule/4),
+	restartplace,
+	nextplace(First1),
+	alt_gen_wf_2(First1,_First2).
+
+alt_gen_wf_2(First,_Last):- 
+	gen_widget_14_7(6,6,First,P1),
+	gen_widget_14_20(5,5,P1,P2),
+	gen_widget_14_7(6,6,P2,P3),
+	gen_widget_14_20(5,5,P3,P4),
+%	gen_widget_14_9(5,5,P3,Last),
+	nexttrans(T),
+	assert(rule([p(P4,X)],[p(0,X)],dyn([],[]),T)).
+
+coninc(Ctr,N):- 
+	conget(Ctr,N),
+	N1 is N + 1,
+	conset(Ctr,N1).
+
+restartplace :-
+	conset(placectr,0).
+
+nextplace(N):- 
+	coninc(placectr,N).
+nexttrans(P):- 
+	coninc(transctr,N),
+	concat_atom([t,N],P).
+
+% create multiple instances, then synchronized merge.  There will be ~(Length+1)**Width states.	
+gen_widget_14_7(Width,Length,Pin,Pout):- 
+	nexttrans(T),
+	nextplace(P1),
+	assert(rule([p(Pin,X)],[],dyn([],[insert(p(P1,o(X,N)),between(1,Width,N))]),T)),
+	gen_chain(Length,P1,Pendchn),
+	nexttrans(Tend),
+	nextplace(Pout),
+	gen_noconts(P1,Pendchn,EndInst,NoConts),
+	assert(rule([p(Pendchn,o(EndInst,1))],[p(Pout,EndInst)],dyn(NoConts,
+	                                                       [delete(p(Pendchn,o(EndInst,_)))]),Tend)).
+
+gen_widget_14_9(Width,Length,Pin,Pout):- 
+	nexttrans(T),
+	nextplace(P1),
+	assert(rule([p(Pin,X)],[],dyn([],[insert(p(P1,o(X,N)),between(1,Width,N))]),T)),
+	gen_chain(Length,P1,Pendchn),
+	nextplace(Pout),
+	gen_noconts(P1,Pendchn,EndInst,NoConts),
+	% propagate first & set up catcher 
+	nexttrans(Tend1),	nextplace(Preset),
+	assert(rule([p(Pendchn,o(EndInst,_))],[p(Pout,EndInst),p(Preset,EndInst)],
+	            dyn([doesnt_contain(constr(p(Preset,EndInst),true))],[]),Tend1)),
+        % remove all but first
+	nexttrans(Tend2),
+	assert(rule([p(Pendchn,o(EndInst,_))],[],
+	            dyn([contains(constr(p(Preset,EndInst),true))],[]),Tend2)),
+        % reset catcher
+	nexttrans(Tend3),
+	assert(rule([p(Preset,EndInst)],[],dyn(NoConts,[]),Tend3)).
+
+gen_widget_14_20(Width,Length,Pin,Pout):- 
+	nexttrans(T),
+	nextplace(P1),
+	assert(rule([p(Pin,X)],[],dyn([],[insert(p(P1,o(X,N)),between(1,Width,N))]),T)),
+	gen_chain(Length,P1,Pendchn),
+	nexttrans(Tend),
+	nextplace(Pout),
+	gen_deletes(P1,Pout,EndInst,Deletes),
+	assert(rule([p(Pendchn,o(EndInst,_))],[p(Pout,EndInst)],dyn([],Deletes),Tend)).
+
+gen_noconts(Pout,Pout,_Var,[]):- !.
+gen_noconts(Pin,Pout,Var,[doesnt_contain(constr(p(Pin,o(Var,_)),true))|R]):- 
+	Pmid is Pin + 1,
+	gen_noconts(Pmid,Pout,Var,R).
+
+gen_deletes(Pout,Pout,_Var,[]):- !.
+gen_deletes(Pin,Pout,Var,[delete(p(Pin,o(Var,_)))|R]):- 
+	Pmid is Pin + 1,
+	gen_deletes(Pmid,Pout,Var,R).
+
+gen_chain(0,Pendchain,Pendchain):-!.
+gen_chain(N,Pin,Pendchain):-
+	nexttrans(T),
+	nextplace(Pout),
+	assert(rule([p(Pin,X)],[p(Pout,X)],dyn([],[]),T)),
+	N1 is N - 1,
+	gen_chain(N1,Pout,Pendchain).
+
+end_of_file.
+
+rule([p(p1,X)],[],dyn([],[insert(p(p2,o(X,N)),between(1,4,N))],t1)).
+rule([p(p2,X)],[p3(X)],dyn([],[],t2)).
+rule([p(p3,X)],[p4(X)],dyn([],[],t3)).
+rule([p(p4,X)],[p5(X)],dyn([doesnt_contain(constr(p(p2,o(X,_)),true)),
+	                           doesnt_contain(constr(p(p3,o(X,_)),true))],[delete(p(p4,o(X,_)))],t4)).
+
+/* dont know if this one is being used */
+% all 5x5 -- 5 seconds
+% 6x6,5x5,6x6,5x5 -- 33 seconds
+% break apart at p(8,1), p(15,1) p(23,1), p(30,1)
+bench_wf_1(Time):- 
+	nextplace(Pstart),
+	gen_widget_14_7(6,6,Pstart,P1),
+	writeln(p1(P1)),
+	gen_widget_14_20(5,5,P1,P2),
+	writeln(p1(P2)),
+	gen_widget_14_7(6,6,P2,P3),
+	writeln(p1(P3)),
+	gen_widget_14_20(5,5,P3,P4),
+	writeln(p1(P4)),
+	gen_widget_14_9(5,5,P3,_P5),
+	nexttrans(T),
+	assert(rule([p(P4,X)],[p(0,X)],dyn([],[]),T)),
+	walltime(Before),
+	reachable([p(0,1)],_),
+	walltime(After),
+	Time is After - Before,
+	statistics.
+

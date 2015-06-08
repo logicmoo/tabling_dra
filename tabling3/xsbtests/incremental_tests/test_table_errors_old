@@ -1,0 +1,4 @@
+goal(t1(A))
+goalatom(t1(_v0))
+message( An incremental update is trying to invalidate the goal t1(_v0))
+tag(typed_table_error(incremental_tabling))

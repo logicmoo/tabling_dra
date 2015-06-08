@@ -1,0 +1,73 @@
+:- import str_cat/3 from machine.
+
+min(A,B,A) :- A < B.
+min(A,B,B) :- A >= B.
+
+min_list([],1000000).
+min_list([X],X).
+min_list([X|L],Y) :- min_list(L,Z), min(Z,X,Y).
+
+get_min(File,Bench,M) :-
+	findall(V,datum(File,Bench,V),LV),
+	min_list(LV,M).
+
+file_name(F,Fname) :-
+	str_cat(F,'.P',Fname).
+
+read_file(File) :-
+	file_name(File,Name),
+	see(Name),
+	read(X),
+	read_file(X, File),
+	seen.
+
+read_file(end_of_file,_) :- !.
+read_file(X,F) :- X = datum( B, N, V ),
+		assert(datum(F, B, N, V)),
+		read(Y),
+		read_file(Y,F).
+
+pr_data([],_B,_F).
+pr_data([N|Ns],B,F) :-
+	write( ' & ' ),
+	findall(T,datum(F,B,N,T),LT),
+	min_list( LT, T1 ),
+	write(T1),
+	pr_data(Ns,B,F).
+
+
+pr_line(B,F) :-
+	write(B),
+	findall(N,datum(F,B,N,_),L), sort(L, L1),
+	pr_data(L1,B,F).
+
+pr_lines([],_) :- nl, nl.
+pr_lines([B|Bs],F) :-
+	pr_line(B,F), nl,
+	pr_lines(Bs,F).
+
+pr_header( [] ).
+pr_header( [H] ) :-
+	write(H), nl.
+pr_header( [H|L] ) :-
+	write(H), write(' & '), pr_header(L).
+
+header(F) :-
+	findall(N,datum(F,_,N,_),L), sort(L,L1),
+	pr_header(L1).
+
+pr_table(F) :-
+	read_file(F),
+	findall(B,datum(F,B,_,_),L), sort(L,L1),
+	writeln(F),
+	header(F),
+	pr_lines(L1,F).
+
+table_all :-
+	pr_table(prolog),
+	pr_table('synth-local'),
+	pr_table('synth-batched'),
+	pr_table('tab-local'),
+	pr_table('tab-batched'),
+	pr_table('shared-local'),
+	pr_table('shared-batched').

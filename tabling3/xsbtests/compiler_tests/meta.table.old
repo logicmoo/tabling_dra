@@ -1,0 +1,169 @@
+:- import get_residual/2 from tables.
+:- import get_calls/3 from tables.
+:- import tnot/1 from tables.
+:- import member/2 from basics.
+
+?-         op(700, xfx, /=/).
+?-         op(900, fy, ~).
+?-         op(900, fy, not).
+?-         op(1200, xfx, <-).
+
+'_$demo_tu_#301'(not(_1)) :- 
+        !, 
+        tnot(demo_t(_1)).
+'_$demo_tu_#301'(_1) :- 
+        <-(_1, _2), 
+        demo_tu(_2), 
+        exchange(_1, _3), 
+        'demo_tu_#301'(not(_3)).
+
+:- index 'demo_tu_#301'/1-1.
+:- table 'demo_tu_#301'/1.
+'demo_tu_#301'(_1) :- 
+        '_$demo_tu_#301'(_1).
+
+:- index 'show_facts_#302'/2-1.
+'show_facts_#302'(true, _1) :- 
+        write('true facts are: '), 
+        member(_2, _1), 
+        sign(_2, _3), 
+        true(_3), 
+        write(_3), 
+        write(',  '), 
+        fail.
+'show_facts_#302'(_1, _2) :- 
+        nl.
+
+:- index 'show_facts_#303'/2-1.
+'show_facts_#303'(false, _1) :- 
+        write('(default) false facts are: '), 
+        member(_2, _1), 
+        sign(_2, _3), 
+        false(_3), 
+        write(_3), 
+        write(',  '), 
+        fail.
+'show_facts_#303'(_1, _2) :- 
+        nl.
+
+:- index 'show_facts_#304'/2-1.
+'show_facts_#304'(undefined, _1) :- 
+        write('undefined facts are: '), 
+        member(_2, _1), 
+        sign(_2, _3), 
+        undefined(_3), 
+        write(_3), 
+        write(',  '), 
+        fail.
+'show_facts_#304'(_1, _2) :- 
+        nl.
+
+demo(_1) :- 
+        demo_t(_1).
+demo(_1) :- 
+        demo_tu(_1).
+
+'_$demo_t'(true).
+'_$demo_t'(','(_1, _2)) :- 
+        !, 
+        demo_t(_1), 
+        demo_t(_2).
+'_$demo_t'(not(_1)) :- 
+        !, 
+        tnot(demo_tu(_1)).
+'_$demo_t'(/=/(_1, _2)) :- 
+        _1 \== _2.
+'_$demo_t'(_1) :- 
+        <-(_1, _2), 
+        demo_t(_2).
+
+:- table demo_t/1.
+demo_t(_1) :- 
+        '_$demo_t'(_1).
+
+'_$demo_tu'(true).
+'_$demo_tu'(','(_1, _2)) :- 
+        !, 
+        demo_tu(_1), 
+        demo_tu(_2).
+'_$demo_tu'(not(_1)) :- 
+        !, 
+        tnot(demo_t(_1)).
+'_$demo_tu'(/=/(_1, _2)) :- 
+        _1 \== _2.
+'_$demo_tu'(_1) :- 
+        <-(_1, _2), 
+        demo_tu(_2), 
+        exchange(_1, _3), 
+        'demo_tu_#301'(not(_3)).
+
+:- table demo_tu/1.
+demo_tu(_1) :- 
+        '_$demo_tu'(_1).
+
+exchange(~(_1), _1) :- 
+        !.
+exchange(_1, ~(_1)).
+
+show_model :- 
+        domain(_1), 
+        member(_2, _1), 
+        exchange(_2, _3), 
+        demo(_2)
+         ; 
+        demo(_3), 
+        fail.
+show_model :- 
+        domain(_1), 
+        'show_facts_#302'(true, _1), 
+        'show_facts_#303'(false, _1), 
+        'show_facts_#304'(undefined, _1).
+
+show_facts(true, _1) :- 
+        write('true facts are: '), 
+        member(_2, _1), 
+        sign(_2, _3), 
+        true(_3), 
+        write(_3), 
+        write(',  '), 
+        fail.
+show_facts(false, _1) :- 
+        write('(default) false facts are: '), 
+        member(_2, _1), 
+        sign(_2, _3), 
+        false(_3), 
+        write(_3), 
+        write(',  '), 
+        fail.
+show_facts(undefined, _1) :- 
+        write('undefined facts are: '), 
+        member(_2, _1), 
+        sign(_2, _3), 
+        undefined(_3), 
+        write(_3), 
+        write(',  '), 
+        fail.
+show_facts(_1, _2) :- 
+        nl.
+
+true(_1) :- 
+        get_residual(demo_t(_1), []).
+
+false(_1) :- 
+        get_calls(demo_tu(_1), _2, _3), 
+\+         get_residual(demo_tu(_1), _4).
+
+undefined(_1) :- 
+        get_residual(demo_t(_1), _2), 
+        _2 \== [], 
+\+         false(_1).
+
+sign(_1, _1).
+sign(_1, ~(_1)).
+
+at :- 
+        abolish_all_tables.
+
+sm :- 
+        show_model.
+

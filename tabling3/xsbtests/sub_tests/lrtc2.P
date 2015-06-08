@@ -1,0 +1,1 @@
+go :- ['Driver'], lrtc('1Y','Data/chain').

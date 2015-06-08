@@ -1,0 +1,26 @@
+
+These bench scrips can be used to invoke different bench suites for
+different emulators.  Benching information is emitted as Prolog facts
+of the form:
+
+datum(Label,Value)
+
+where label denotes information abt the test being run and value is
+the result.  Currently, benching scripts should be called in one of
+two ways.
+
+1) quick_bench.sh where
+	argument 1 is the directory in shich the benches are to be found
+	argument 2 is the script to call in that directory
+	argument 3 is the emulator
+	argument 4 is the (Prolog) file into which results are to be written.
+
+Example; 
+
+sh quick_bench.sh prolog_benches test.sh /home/tswift/XSB/XSB/XSB/bin/xsb
+pbench_sharing.P
+
+2) precise_bench.sh whose arguments are the same as above.  This bench
+tests out various memory configurations.  When done, it writes to the
+screen the minimal time and the variance for each test.
+

@@ -1,0 +1,76 @@
+
+:- import gc_dynamic/1 from standard.
+:- import retract_nr/1 from assert.
+
+test:- test1,test2,test3,test4,test5.
+
+init2:- retractall(p(X)),retractall(q(X)),initp2,initq2.
+initp2:- assert(p(1)),assert(p(2)).
+initq2:- assert(q(1)),assert(q(2)).
+
+init3:- retractall(p(X)),retractall(q(X)),initp3,initq3.
+initp3:- assert(p(1)),assert(p(2)),assert(p(3)).
+initq3:- assert(q(1)),assert(q(2)),assert(q(3)).
+
+/* Test delay and gc of retracted clause */
+test1:- init2,fail.
+test1:- p(X),retract(p(1)),writeln((1-1,p(X))),fail.
+test1:- p(X),writeln((1-2,p(X))),fail.
+test1:- q(X),retract(p(2)),writeln((1-3,q(X))),fail.
+test1:- init2,fail.
+test1:- gc_dynamic(N),writeln((1-4,gc(N))),fail.
+test1.
+
+/* Test delay and gc of 2 retracted clauses */
+test2:- init3,fail.
+test2:- p(X),retract(p(1)),writeln((2-1,p(X))),fail.
+test2:- p(X),retract(p(3)),writeln((2-2,p(X))),fail.
+test2:- q(X),retract(p(2)),writeln((2-3,q(X))),fail.
+test2:- init3,fail.
+test2:- gc_dynamic(N),writeln((2-4,gc(N))),fail.
+test2.
+
+/* Test delay/gc_marking/delay */
+test3:- init3,fail.
+test3:- p(X),retract(p(1)),gc_dynamic(N),writeln((3-1,p(X),gc(N))),fail.
+test3:- gc_dynamic(N),writeln((3-2,gc(N))),fail.
+test3.
+
+/* Test delay/gc_marking/delay of one clause but not another.  */
+test4:- init3,fail.
+test4:- p(X),retract(p(2)),writeln((4-1,p(X))),fail.
+test4:- p(X),retract(p(1)),gc_dynamic(N),writeln((4-2,p(X),gc(N))),fail.
+test4:- gc_dynamic(N),writeln((4-3,gc(N))),fail.
+test4.
+
+/* Test delay/gc_marking/delay of clauses from different predicates. */
+/* Test delay/gc_marking/delay of one clause but not another.  */
+test5:- init3,fail.
+test5:- p(X),retract(p(2)),writeln((5-1,p(X))),fail.
+test5:- q(X),retract(q(2)),writeln((5-2,q(X))),fail.
+test5:- p(X),retract(p(1)),gc_dynamic(N),writeln((5-3,p(X),gc(N))),fail.
+test5:- gc_dynamic(N),writeln((5-4,gc(N))),fail.
+test5.
+
+end_of_file.
+
+test1:- init,fail.
+test1:- p(X),retractall(p(_)),writeln((1-1,p(X))),fail.
+test1:- q(X),retractall(q(_)),writeln((1-1,q(X))),fail.
+test1:- initq,fail.
+test1:- q(X),gc_dynamic(N),writeln((1-2,q(X,N))),fail.
+test1:- q(X),gc_dynamic(N),writeln((1-3,q(X,N))),fail.
+test1.
+
+test3:- init,fail.
+test3:- q(X),retractall(q(_)),writeln((3-1,q(X))),fail.
+test3:- init,fail.
+test3:- q(X),retractall(q(_)),writeln((3-1,q(X))),fail.
+test3:- gc_dynamic(N),writeln((3-2,N)).
+
+test4:- init,fail.
+test4:- q(X),retractall(q(_)),writeln((4-1,q(X))),fail.
+test4:- init,fail.
+test4:- q(X),retractall(q(_)),gc_dynamic(N),writeln((4-1,q(X,N))),fail.
+test4:- gc_dynamic(N),writeln((4-2,N)).
+

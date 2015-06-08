@@ -1,0 +1,84 @@
+
+
+faculty :: instructor.
+lecturer :: instructor.
+
+phd(_)::student.
+ms(_)::student.
+'5yr'(_X)::ms(_X).
+
+
+student[first      *=>  string,
+	last	   *=>  string,
+	email      *=>  string,
+	joined     *=>  semester, % when joined graduate program
+        advisor    *=>> supervising,
+	advisor    *->> {},
+        support    *=>> support,
+	support    *->> {},
+        status     *=>  status,
+	quals      *=>  exam,
+	quals      *->  nottaken,
+	rpe        *=>  exam,
+	rpe        *->  nottaken,
+	prelim     *=>  exam,
+	prelim     *->  nottaken,
+	defense    *=>  exam,
+	defense    *->  nottaken,
+	graduated  *=>  date,
+	graduated  *->  futuredate,
+	taught     *=>> teaching,
+	taught     *->> {},
+	%%canteach   *=>  list(courseCode),
+	canteach   *-> [],
+	ta_eligibility *->> {},
+	remarks    *=>  string,    % whatever appropriate
+        remarks    *->  '',
+        #print(_),
+	#enroll(_,_),
+        *active
+].
+
+instructor[name        =>  string,
+	   department  =>  string,
+	   department *->  cse      % default dept is cse
+].
+
+
+john:student
+  [ last      -> 'Doe',
+    first     -> 'John',
+    graduated -> date(2020,1),
+    advisor   ->> ad1[john, since -> spring(2010)],
+    status    ->> st1[type -> phd],
+    quals     -> ql1[passed     ->  date(2010,10)],
+    rpe       -> rp1[passed     ->  futuredate,
+			 conditions ->  '',
+			 remarks    ->  ''
+			],
+    taught    ->> {
+                    tt11[course->cse127,semester->fall(2004)],
+                    tt12[course->cse230,semester->spring(2004)]
+		   },
+    domestic,
+    canteach  -> [cse127,cse230,cse214],
+    remarks   -> ''
+].
+
+mary:student
+  [ last      -> 'Doe',
+    first     -> 'Mary',
+    joined    -> fall(1997),
+    graduated ->  date(2003,8),
+    advisor   ->> ad2[bill, since -> fall(1998)],
+    support   ->> {sp2[type ->ra],
+		   sp3[type -> fellowship,
+		       since->fall(1998), until->spring(2001)]},
+    status    ->> st3[type -> phd],
+    quals     -> ql2[passed     ->  date(1997,5) ],
+    rpe       -> rp2[passed     ->  date(1999,10) ],
+    prelim    -> pm2[passed     ->  date(2002,5) ],
+    defense   -> df2[passed     ->  date(2003,8) ],
+    female
+].
+

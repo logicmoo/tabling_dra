@@ -1,0 +1,6 @@
+'-(|({x : laughed(x)} - {y : woman(y)})| = 0)'
+'-(|({x : woman(x)} - {y : laughed(y)})| = 0)'
+'|(({x : woman(x)} - {rita}) - {y : laughed(y)})| = 0'
+'|(({x : woman(x)} - {rita}) /\\ {y : ran(y)})| = 0'
+'|({x : laughed(x)} - {y : woman(y)})| = 0'
+'|({x : woman(x)} - {y : laughed(y)})| = 0'

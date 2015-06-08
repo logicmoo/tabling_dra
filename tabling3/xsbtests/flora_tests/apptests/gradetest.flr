@@ -1,0 +1,14 @@
+
+?- ['programs/Grade' >> grade], ['programs/Class' >> class].
+
+
+pretest :-
+	full_report([midterm,proj1,proj2,final])@grade,
+	id_scorelist_report([midterm,proj1,proj2,final])@grade.
+
+test :- tell(temp)@prolog(),
+	debug[#check_undefined(on)]@flora(sys),
+	pretest,
+	debug[#check_undefined(off)]@flora(sys),
+	pretest,
+	told@prolog().

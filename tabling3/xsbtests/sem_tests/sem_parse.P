@@ -1,0 +1,453 @@
+/************************************************************************/
+/*									*/
+/* SEMANTICA System							*/
+/* Copyright (C) SUNY at Stony Brook, 1994				*/
+/*									*/
+/************************************************************************/
+
+/*======================================================================
+  File                  :  sem_parse.P
+  Author(s)             :  Kostis F. Sagonas
+  Last modification     :  July 24, 1995
+========================================================================*/
+
+:- export parse/2.
+:- export is_true/1.
+
+:- export 'set member'/1.	% function symbol (term constructor)
+
+:- import tokenise/2 from sem_lex.
+:- import functor/3, arg/3 from standard.
+:- import memberchk/2, append/3 from basics.
+:- import 'set equal'/2, 'term equal'/2 from sem_pe.
+
+/*======================================================================*/
+/* parse(+String, -Translation)						*/
+/*	Parses the entire String and returns its Translation.		*/
+/*======================================================================*/
+
+parse(String, Translation) :-
+	tokenise(String, Tokenised_List),
+	rule(_VarDict,Translation, Tokenised_List,[]).	% mimics use of phrase/2
+
+/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+
+rule(VarDict, (L :- R)) -->
+	val(VarDict, L, Goal), [iff], expr(VarDict, E),
+	{( var(Goal) -> R = E ; R = (Goal, E) )}.
+
+/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+
+val(VarDict, VAL, Goal) -->
+	['Val', '('],
+	first_arg(VarDict, Arg1), [','],
+	second_arg(VarDict, Arg2, Goal),
+	( [')'] -> {VAL = val(Arg1,Arg2)}
+	; [','], just_sequence(VarDict, Sequence), [')'],
+	  {VAL = val(Arg1,Arg2,Sequence)}
+	).
+
+/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+
+first_arg(VarDict, Arg) --> true(Arg), !
+			 |  tuple_of_variables(VarDict, Arg), !
+			 |  variable(VarDict, Arg).
+
+second_arg(VarDict, T, Goals) --> configuration(VarDict, T, Goals), !
+			       |  terminal(T), !
+			       |  meta_variable(VarDict, T), !
+			       |  category(VarDict, T, _CatGoal). % force it to
+								  % be variable.
+
+/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+
+configuration(VarDict, Tree, ConfigGoals) -->
+	['['],
+	root_non_terminal(VarDict, Parent),
+	config_children(VarDict, Children, CatChkGoals),
+	{( nonvar(Parent) ->
+		Tree =.. [Parent|Children],
+		ConfigGoals = CatChkGoals
+	 ; MetaVarGoal = (Tree =.. [Parent|Children]),
+	   ( var(CatChkGoals) -> ConfigGoals = MetaVarGoal
+	   ; ConfigGoals = (MetaVarGoal, CatChkGoals)
+	   )
+	 )}.
+
+root_non_terminal(VarDict, NT) --> meta_variable(VarDict, NT), !
+				|  root_category(NT).
+
+root_category(NT) --> category(NT).
+
+/*----------------------------------------------------------------------*/
+/*  config_children(#VarDict, -Children, -Goals)			*/
+/*	Parses a non-empty list of children of a configuration.	 The	*/
+/*	auxiliary predicate 'config children'/5 performs left-factoring.*/
+/*----------------------------------------------------------------------*/
+
+config_children(VarDict, [Child|Children], Goals) -->
+	config_child(VarDict, Child, Goal),
+	'config children'(VarDict, Children, GoalList),
+	{form_goals([Goal|GoalList], Goals)}.
+
+'config children'(_VarDict, [], []) -->
+	[']'].
+'config children'(VarDict, [Child|Children], [Goal|Goals]) -->
+	config_child(VarDict, Child, Goal),
+	'config children'(VarDict, Children, Goals).
+
+config_child(VarDict, Child, CatChkGoal) -->
+	  meta_variable(VarDict, Child), !
+	| terminal(Child), !
+	| category(VarDict, Child, CatChkGoal).
+
+/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+
+meta_variable(VarDict, MetaVar) -->
+	[MetaVariableName],
+	{strip_indicator(MetaVariableName, MetaVarName),
+	 is_meta_variable(MetaVarName),
+	 memberchk(name_var(MetaVariableName,MetaVar), VarDict)}.
+
+category(VarDict, CatVar, CatChkGoal) -->
+	category(CatName_i),
+	{memberchk(name_var(CatName_i,CatVar), VarDict),
+	 strip_indicator(CatName_i, CatName),
+	 CatChkGoal = functor(CatVar,CatName,_)}.
+
+/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+
+:- table expr/4.
+
+expr(VarDict, (E1; E2)) -->
+	expr(VarDict, E1), [\/], and_expr(VarDict, E2).
+expr(VarDict, E) -->
+	and_expr(VarDict, E).
+
+:- table and_expr/4.
+
+and_expr(VarDict, (E1, E2)) -->
+	and_expr(VarDict, E1), [&], simple_expr(VarDict, E2).
+and_expr(VarDict, E) -->
+	simple_expr(VarDict, E).
+
+simple_expr(VarDict, Expr) -->
+	( ['('] ->
+		expr(VarDict, Expr), [')']
+	; [-] ->
+		simple_expr(VarDict, E), {Expr = not(E)}
+	; term(VarDict, Expr)
+	).
+
+term(VarDict, Term) -->
+	predicate(VarDict, Term).
+term(VarDict, SetRelation) -->
+	cardinality_relation(VarDict, SetRelation).
+term(VarDict, 'set equal'(SetTerm1,SetTerm2)) -->
+	set_expr(VarDict, SetTerm1), [=], set_expr(VarDict, SetTerm2).
+term(VarDict, Term) -->
+	simple_term(VarDict, Term1),
+	( [=] ->
+		simple_term(VarDict, Term2),
+		{Term = 'term equal'(Term1,Term2)}
+	; ['\in'], set_expr(VarDict, SetExpr),
+		{Term = 'set member'(Term1,SetExpr)}
+	).
+
+simple_term(VarDict, T) --> simple_variable(VarDict, T), !
+			 |  sequence_or_function(VarDict, T).
+
+/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+
+:- table set_expr/4.
+
+set_expr(VarDict, 'set intersection'(Set1,Set2)) -->
+	set_expr(VarDict, Set1), [/\], diff_set_expr(VarDict, Set2).
+set_expr(VarDict, 'set union'(Set1,Set2)) -->
+	set_expr(VarDict, Set1), [\/], diff_set_expr(VarDict, Set2).
+set_expr(VarDict, SetExpr) -->
+        diff_set_expr(VarDict, SetExpr).
+
+:- table diff_set_expr/4.
+
+diff_set_expr(VarDict, 'set difference'(Set1,Set2)) -->
+	diff_set_expr(VarDict, Set1), [-], simple_set_expr(VarDict, Set2).
+diff_set_expr(VarDict, SetExpr) -->
+	simple_set_expr(VarDict, SetExpr).
+
+simple_set_expr(VarDict, SetExpr) -->
+	( ['('] ->
+		set_expr(VarDict, SetExpr), [')']
+	; set_term(VarDict, SetExpr)
+	).
+
+set_term(VarDict, T) --> set_variable(VarDict, T), !
+		      |  set(VarDict, T).
+
+/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+
+cardinality_relation(VarDict, SetRelation) -->
+	set_cardinal(VarDict, Card1),
+	card_op(RelOp),
+	set_cardinal(VarDict, Card2),
+	{construct(Card1, RelOp, Card2, SetRelation)}.
+
+/*----------------------------------------------------------------------*/
+/*  Parses system- (vals) and user-defined predicates.			*/
+/*  NOTE: Set variables cannot be parsed as user-defined predicates.	*/
+/*----------------------------------------------------------------------*/
+
+predicate(VarDict, Pred) -->
+	val(VarDict, Val, ValGoals),
+	!,	% so that vals are not parsed as user-defined predicates.
+	{( var(ValGoals) -> Pred = Val ; Pred = (Val, ValGoals) )}.
+predicate(VarDict, Pred) -->
+	seqV(VarDict, Pred),
+	!.
+predicate(VarDict, Pred) -->
+	atom(F), possible_arguments(VarDict, Args),
+	{Pred =.. [F|Args], fail_if(is_a_set_variable(Pred))}.
+
+possible_arguments(VarDict, Args) -->
+	( ['('] -> arguments(VarDict, Args), [')']
+	        |  {Args = []}
+	).
+
+/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+
+arguments(VarDict, [Arg]) -->
+	argument(VarDict, Arg).
+arguments(VarDict, [Arg|Args]) -->
+	argument(VarDict, Arg), [','], arguments(VarDict, Args).
+
+argument(VarDict, Arg) --> variable(VarDict, Arg), !
+			|  tuple_of_variables(VarDict, Arg), !
+			|  set(VarDict, Arg)
+			|  sequence_or_function(VarDict, Arg).
+
+sequence_or_function(VarDict, Arg) -->
+	( sequence_elem(VarDict, SeqVar) -> % imitates just_sequence/4
+	    possible_index(IL),
+	    {( var(IL) -> Arg = SeqVar ; Arg = ith(IL,SeqVar,_Elem) )}
+	| function(VarDict, Arg)
+	).
+			       
+function(VarDict, Function) --> predicate(VarDict, Function).
+
+/*----------------------------------------------------------------------*/
+/*  Sequences and such...						*/
+/*----------------------------------------------------------------------*/
+
+seqV(VarDict, Pred) -->
+	['SeqV','('],
+	just_sequence(VarDict, Seq1),
+	[','], indx(Index), [','],
+	just_sequence(VarDict, Seq2),
+	[')'],
+	{Pred = 'SeqV'(Seq1,Index,Seq2)}.
+
+just_sequence(VarDict, Sequence) -->
+	sequence_elem(VarDict, SeqVar),
+	possible_index(IL),
+	{( var(IL) -> Sequence = SeqVar ; Sequence = ith(IL,SeqVar,_Elem) )}.
+
+possible_index(IL) --> ['('], indx(Index), [')'], !, {IL = Index}
+		    |  [].
+
+sequence_elem(VarDict, SeqVar) -->
+	[SeqName],
+	{is_sequence(SeqName),
+	 memberchk(name_var(SeqName,SeqVar), VarDict)}.
+ 
+/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+ 
+set_cardinal(_, Cardinal) -->
+	[Cardinal], {integer(Cardinal)}.
+set_cardinal(VarDict, Cardinal) -->
+	['|'],
+	set_expr(VarDict, Set),
+	['|'],
+	{Cardinal = 'size of'(Set)}.
+
+/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+ 
+tuple_of_variables(VarDict, VarList) -->
+	[<], variables(VarDict, VarList), [>].
+
+variables(VarDict, [Var]) -->
+	variable(VarDict, Var).
+variables(VarDict, [Var|Vars]) -->
+	variable(VarDict, Var), [','], variables(VarDict, Vars).
+
+variable(VarDict, Var) --> simple_variable(VarDict, Var)
+			|  set_variable(VarDict, Var).
+
+simple_variable(VarDict, Var) -->
+	[VarName],
+	{( is_a_variable(VarName) ->
+		memberchk(name_var(VarName,Var), VarDict)
+	 ; is_an_event(VarName), memberchk(name_var(VarName,Var), VarDict)
+	 )}.
+
+set_variable(VarDict, SetVar) -->
+	[SetVarName],
+	{is_a_set_variable(SetVarName),
+	 memberchk(name_var(SetVarName,SetVar), VarDict)}.
+
+set(VarDict, Set) -->
+	['{'],
+	( argument(VarDict, Arg), [':'] ->
+		expr(VarDict, Expr), ['}'], {Set = {Arg:Expr}}
+	; set_elements(VarDict, Elements), {Set = {Elements}}
+	).
+
+set_elements(VarDict, Element) -->
+	argument(VarDict, Element), ['}'].
+set_elements(VarDict, (Element,Elements)) -->
+	argument(VarDict, Element), [','], set_elements(VarDict, Elements).
+
+category(NT) --> [NT], {atom(NT)}.
+
+terminal(T) --> ['"', T], {atom(T)}, ['"'].
+
+indx(Index) --> [Index], {is_index(Index)}.
+
+atom(Atom) --> [Atom], {atom(Atom)}.
+
+true(True) --> [True], {is_true(True)}.
+
+/*----------------------------------------------------------------------*/
+/* Auxiliary predicates.						*/
+/*----------------------------------------------------------------------*/
+
+:- mode strip_indicator(+,-).
+
+strip_indicator(Cat_i, Cat) :-
+	atom_codes(Cat_i, Cat_i_List),
+	( append(Cat_List, [0'_|_Indicator], Cat_i_List) ->
+		atom_codes(Cat, Cat_List)
+	; Cat = Cat_i
+	).
+
+:- mode form_goals(+,-).
+
+form_goals([], _).
+form_goals([G|Gs], Goals) :-
+	( var(G) -> form_goals(Gs, Goals)
+	; form_goals(Gs, GoalsMid),
+	  ( var(GoalsMid) -> Goals = G ; Goals = (G,GoalsMid) )
+	).
+
+:- mode construct(+,+,+,-).
+
+construct(Arg1, Op, Arg2, Term) :-
+	functor(Term,Op,2), arg(1,Term,Arg1), arg(2,Term,Arg2).
+
+/*----------------------------------------------------------------------*/
+/* Cardinality comparison operators and operators for sets.		*/
+/*----------------------------------------------------------------------*/
+ 
+card_op(InternalCardOp) -->
+	read_card_op(CardOp), {card_relop(CardOp, InternalCardOp)}.
+
+read_card_op(CardOp) --> [=,<], !, {CardOp = =<}
+		      |  [=],	       {CardOp = =}
+		      |  [>,=], !, {CardOp = >=}
+		      |  [>],	       {CardOp = >}
+		      |  [<],	       {CardOp = <}.
+
+card_relop(=,  'card eq').
+card_relop(=<, 'card le').
+card_relop(<,  'card lt').
+card_relop(>,  'card gt').
+card_relop(>=, 'card ge').
+
+/*----------------------------------------------------------------------*/
+/* Semantic information about the syntactic conventions.		*/
+/*----------------------------------------------------------------------*/
+
+is_true(t).
+
+/*----------------------------------------------------------------------*/
+
+is_a_variable(X) :-
+	atom(X),
+	atom_codes(X, [Var|NumberList]),
+	atom_codes(VarName, [Var]), is_variable(VarName),
+	( NumberList == [] -> true
+	; name(Number, NumberList), integer(Number)
+	).
+
+is_variable(x).
+is_variable(y).
+is_variable(z).
+is_variable(w).
+is_variable(u).
+is_variable(v).
+
+/*----------------------------------------------------------------------*/
+/* The separation is so that events can be handled as special variables.*/
+/*----------------------------------------------------------------------*/
+
+is_an_event(X) :-
+	atom(X),
+	atom_codes(X, [Var|NumberList]),
+	atom_codes(VarName, [Var]), is_event(VarName),
+	( NumberList == [] -> true
+	; NumberList == [0''] -> true
+	; name(Number, NumberList), integer(Number)
+	).
+
+is_event(e).
+
+/*----------------------------------------------------------------------*/
+
+is_a_set_variable(X) :-
+	atom(X),
+	atom_codes(X, [Var|NumberList]),
+	atom_codes(VarName, [Var]), is_set_variable(VarName),
+	( NumberList == [] -> true
+	; name(Number, NumberList), integer(Number)
+	).
+
+is_set_variable('X').
+is_set_variable('Y').
+is_set_variable('Z').
+
+/*----------------------------------------------------------------------*/
+
+is_meta_variable('X').
+is_meta_variable('Y').
+is_meta_variable('XP').
+is_meta_variable('YP').
+
+/*----------------------------------------------------------------------*/
+
+is_index(i).
+is_index(j).
+is_index(k).
+is_index(l).
+is_index(m).
+is_index(X) :- integer(X).
+
+/*----------------------------------------------------------------------*/
+
+is_sequence('g').
+is_sequence('g''').
+is_sequence('s').
+is_sequence('s''').
+is_sequence('\sigma').
+is_sequence('\sigma''').
+
+/* ------------------- end of file sem_parse.P ------------------------ */

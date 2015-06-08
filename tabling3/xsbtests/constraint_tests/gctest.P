@@ -1,0 +1,28 @@
+
+:- ensure_loaded(chr).
+:- ensure_loaded(timeConstraints).
+:- ensure_loaded(globalvar).
+:- ensure_loaded(mutablevar).
+:- ensure_loaded(allentable).
+:- ensure_loaded(time).
+:- ensure_loaded(constraintLib).
+
+:- import arc/4 from timeConstraints.
+:- import show_store/1 from chr_interp.
+
+/* This test checks garbage collection when there are lots of
+   attributed variables and pre-images on the trial.  */
+
+test:-  make_chain(25),
+	writeln('made the chain without seg faulting!').
+
+make_chain(N):- 
+	arc(_Var1,Var2,[before],i-i),
+	make_chain(N,Var2).
+
+make_chain(1,_Var1):- !.
+make_chain(N,Var1):- 
+	arc(Var1,Var2,[before],i-i),
+	N1 is N - 1,
+	make_chain(N1,Var2).
+

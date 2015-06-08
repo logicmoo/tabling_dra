@@ -1,0 +1,211 @@
+:- import between/3 from basics.
+:- import par_execute/1 from thread.
+:- import concat_atom/2 from string.
+:- import member/2 from basics.
+
+:- index(rule/4,trie).
+%:- thread_shared rule/4.
+
+:- [prefNet].
+
+/* 
+
+This benchmark evaluates workflow nets (i.e. colorNet.P, which is
+actually an extension of workflow nets) that have been augmented with
+preferences.  If T1 is declared to be preferred to T2 in a set of
+states {\cal S}, then if T1 and T2 are both applicable in some S \in
+{\cal S}, T1 will be taken, but not T2.  Preferences are in fact
+rules, and the preferences in this benchmark have the form that T1 is
+preferred to T2 in S if, after applying T2 to S some bad state is
+reachable.  I dont believe that the preferences extend the
+expressivity of the previous colorNet.P as the preferences could
+always be encoded into conditions in colorNet.P -- however the
+preferences can be added "on top" of a workflow net (i.e. by adding
+new preference rules to the net, rather than by mucking around with
+the rules already in the net).  They thus provide a practical means of
+adding a local "policy" to a workflow.
+
+In prefNet.P, I think Ive captured the main aspects of preferences,
+but my main purpose is to get together a believable benchmark so there
+are numerous details that I havent addressed.  The preferences are
+implemented using sk_not/1, which is an extension of tnot/1 that
+handles cases where the negated goal may not be ground, and where a
+tabled goal may not be called directly, but rather through Prolog
+predicates.  As a result, this implementation is rather slow compared
+to some of the others -- it could be optimized, but I think that it
+represents use of tabled negation through preferences.
+
+The structures that are generated are reasonably simple trees (with
+short branches) where at each step the bad state is avoided.  Because
+at each state S traversed in the tree a subsidiary goal not
+reachable(S,badstate) is called, behavior is quadratic.  For a tree of
+length L, there are approximately L tabled subgoals, about L/2 of
+which use negation.  
+
+For simplicity I generate 16 independent structures, which can be
+traversed independently by up to 16 processors.
+
+Here are the times on my Mac
+
+55X16: 5.1 secs, 7392 states, 1808 calls, 2Mb
+77X16: 10.5 secs, 13728 states, 2512 calls 2.7Mbt
+
+Trying 199X4
+*/
+
+:- import n_par_execute/2, par_execute/1 from thread.
+
+private_scale_prefs(Length,NumThr,NumC):- 
+	reset,
+	generate_chain(NumC,Length),
+	walltime(S),
+	statistics(mutex),
+	n_par_execute(bench_1,NumThr),
+	statistics(mutex),
+	walltime(E),
+	Time is E - S,
+	write(datum([prefs,priv],NumThr,Time)),writeln('.'),
+	flush_output.
+	
+seq_bench_prefs(Length,Num):- 
+	reset,
+	generate_chain(Num,Length),
+	cputime(S),
+	bench_1,
+	cputime(E),
+	Time is E - S,
+	write(datum([prefs,seq],Time)),writeln('.'),
+	flush_output.
+	
+shared_bench_prefs(Length,NumThr,NumC):- 
+	reset,
+	generate_chain(NumC,Length),
+	get_goallist(NumC,NumThr,G),
+%	writelist(G),
+	walltime(S),
+%	statistics(mutex),
+	par_execute(G),
+%	seq_execute(G),
+%	statistics(mutex),
+	walltime(E),
+	Time is E - S,
+	write(datum([prefs,shared],NumThr,Time)),writeln('.'),
+	flush_output.
+	
+bench(Length,Num,Time):- 
+	reset,
+	generate_chain(Num,Length),
+	cputime(S),
+	bench_1,
+	cputime(E),
+	Time is E - S.
+
+
+bench_1:- 
+	initState(S),reachable(S,_T),
+	fail.
+bench_1.
+
+get_goallist(Max,NThreads,Out):- 
+	get_raw_goals(Max,RawGoals),
+%	findall(shared_reachable(S,_),initState(S),Goals),
+	get_par_goals(Max,NThreads,RawGoals,Out).
+
+initState([p1(1)]).
+get_raw_goals(0,[]):-!.
+get_raw_goals(N,[shared_reachable([Term],_)|T]):-
+	concat_atom([p,N],Functor),
+	functor(Term,Functor,1),
+	arg(1,Term,1),
+	N1 is N - 1,
+	get_raw_goals(N1,T).
+
+get_par_goals(Max,NThreads,InG,OutG):- 
+	Quot is Max//NThreads,
+	get_goals( InG, Quot, OutG ).	
+
+get_goals( [], _NT, []).
+get_goals( LS, NT, [seq_execute(G)|Gs]) :-
+	   get_first_goals( NT, LS, LS1, G),
+	   get_goals( LS1, NT, Gs).
+
+get_first_goals( _NT, [], [], [] ).
+get_first_goals( 0, LS, LS, [] ).
+get_first_goals( NT, [S|LS], LS1, [S|Gs]) :-
+		 NT1 is NT - 1,
+		 get_first_goals( NT1, LS, LS1, Gs).
+
+
+/* Length should be odd */
+generate_chain(0,_Length):- !.
+generate_chain(Num,Length):- 
+	concat_atom([p,Num],PFunc),concat_atom([t,Num],TFunc),
+	PN =.. [PFunc,N],TBad =.. [TFunc,bad],
+	assert(rule([PN],[badstate],dyn([condition(0 is N mod 2)],[]),TBad)),
+	generate_chain(1,Length,PFunc,TFunc),
+	N1 is Num - 1,
+        generate_chain(N1,Length).
+
+generate_chain(Length1,Length,_PFunc,_TFunc):- Length1 > Length,!.
+generate_chain(N,Length,PFunc,TFunc):- 
+	N1 is N + 1,N2 is N + 2,
+	PN =.. [PFunc,N],PN1 =.. [PFunc,N1],PN2 =.. [PFunc,N2],
+	TN =.. [TFunc,N],TN1 =.. [TFunc,N1],
+	assert(rule([PN],[PN1],dyn([],[]),TN)),
+	assert(rule([PN],[PN2],dyn([],[]),TN1)),
+	generate_chain(N2,Length,PFunc,TFunc).
+	
+lessPreferred(T1,_T2,[Place]):- 
+	arg(1,Place,N),
+	1 is (N mod 2),
+	applyTransition(T1,[Place],NewState),
+%	writeln(calling_reachable(NewState,[badstate])),
+	reachable(NewState,[badstate]).
+
+reset:- 
+	abolish_all_tables,
+	retractall(rule(_,_,_,_)).
+
+seq_execute(H):- 
+		 member(G,H),
+%		 writeln(G),
+		 call(G),
+		 fail.
+seq_execute(_H).
+
+writelist([]).
+writelist([H|T]):- 
+		   writeln(H),
+		   writelist(T).
+
+end_of_file.
+
+rule([p(1)],[p(2)],dyn([],[]),t(1)).
+rule([p(1)],[p(3)],dyn([],[]),t(2)).
+
+rule([p(3)],[p(4)],dyn([],[]),t(3)).
+rule([p(3)],[p(5)],dyn([],[]),t(4)).
+
+rule([p(5)],[p(6)],dyn([],[]),t(5)).
+rule([p(5)],[p(7)],dyn([],[]),t(6)).
+
+
+initState([p1(1)]).
+initState([p2(1)]).
+initState([p3(1)]).
+initState([p4(1)]).
+/*
+initState([p5(1)]).
+initState([p6(1)]).
+initState([p7(1)]).
+initState([p8(1)]).
+initState([p9(1)]).
+initState([p10(1)]).
+initState([p11(1)]).
+initState([p12(1)]).
+initState([p13(1)]).
+initState([p14(1)]).
+initState([p15(1)]).
+initState([p16(1)]).
+*/
+

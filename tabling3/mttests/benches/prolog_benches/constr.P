@@ -1,0 +1,18 @@
+:- import n_par_execute/2 from thread.
+
+?- cd(consttest),ensure_loaded(consistent),cd('..').
+
+mttest(Threads):- 
+	walltime(Before),
+	n_par_execute(test(_),Threads),
+	walltime(After),
+	Time is After - Before,
+	writeq(datum([constraint],Threads,Time)),writeln('.'),nl.
+
+test:- 
+	cputime(Before),
+	test(_),
+	cputime(After),
+	Time is After - Before,
+	writeq(datum([constraint],Time)),writeln('.'),nl.
+

@@ -1,0 +1,16 @@
+test(0,'S'('NP'('D'(har),'N'(aurat)),'VP'('V'(dauri)))).
+test(1,'S'('NP'('D'(pratyek),'N'(aurat)),'VP'('V'(dauri)))).
+test(2,'S'('NP'('D'(koi),'N'(aurat)),'VP'('V'(dauri)))).
+test(3,'S'('NP'('D'(siv),'N'(auraten)),'VP'('V'(dauri)))).
+test(4,'S'('NP'('D'(sab),'N'(auraten)),'VP'('V'(dauri)))).
+test(5,'S'('NP'('D'(ek),'N'(aurat)),'VP'('V'(dauri)))).
+test(6,'S'('NP'('D'(do),'N'(auraten)),'VP'('V'(dauri)))).
+test(7,'S'('NP'('D'(tin),'N'(auraten)),'VP'('V'(dauri)))).
+test(8,'S'('NP'('D'(dono),'N'(auraten)),'VP'('V'(dauri)))).
+test(9,'S'('NP'('D'(koi),'N'(aurat)),nehi,'VP'('V'(dauri)))).
+test(10,'S'('NP'('D'('SOME'),'N'(aurat)),'VP'('V'(dauri)))).
+test(11,'S'('NP'('D'('THE'),'N'(aurat)),'VP'('V'(dauri)))).
+test(12,'S'('NP'('D'('SOME'),'N'(auraten)),'VP'('V'(dauri)))).
+test(13,'S'('NP'('D'('THE'),'N'(auraten)),'VP'('V'(dauri)))).
+test(14,'S'('NP'('N'(aurat)),'VP'('V'(dauri)))).
+test(15,'S'('NP'('N'(auraten)),'VP'('V'(dauri)))).

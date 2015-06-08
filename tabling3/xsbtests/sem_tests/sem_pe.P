@@ -1,0 +1,382 @@
+/************************************************************************/
+/*									*/
+/* SEMANTICA System							*/
+/* Copyright (C) SUNY at Stony Brook, 1994				*/
+/*									*/
+/************************************************************************/
+
+/*======================================================================
+  File			:  sem_pe.P
+  Author(s)		:  Kostis F. Sagonas
+  Last modification	:  July 25, 1995
+========================================================================*/
+
+
+:- export simplify/2, simplify/3.
+
+/*======================================================================*/
+/* NOTE: The following are exported, so that they can be called by	*/
+/*	 using call/1 on them.						*/
+/*======================================================================*/
+
+:- export 'set equal'/2, 'term equal'/2.
+
+:- dynamic sem_switch/1.
+
+:- import dnf/2 from sem_dnf.
+:- import 't not'/1 from tables.
+:- import is_true/1 from sem_parse.
+:- import sem_switch/1 from usermod.
+:- import sem_mode/1 from semantica.
+:- import sem_pretty/2 from sem_pretty.
+
+:- import numbervars/1 from num_vars.
+:- import subsumes/2, variant/2 from subsumes.
+
+/*======================================================================*/
+/*======================================================================*/
+
+simplify(Tree, PrettyExpr) :-
+	simplify(Tree, _, PrettyExpr).
+
+simplify(Tree, UglyExpr, PrettyExpr) :-
+	sem_mode(Mode),
+	( Mode == basic -> fp_reduce(val(t,Tree), SimplExpr)
+	; Mode == quant -> fp_reduce(val(t,Tree,_Seq), SimplExpr)
+	),
+	( sem_switch(debug_on) -> true
+	; fail_if(contains_val(SimplExpr)),
+	  fail_if(contains_tuple_arg(SimplExpr))
+	),
+	( sem_switch(set_theory_on) ->
+		apply_set_theory(SimplExpr, UglyExpr)
+	; UglyExpr = SimplExpr
+	),
+	sem_pretty(UglyExpr, PrettyExpr).
+
+/*======================================================================*/
+/*  fp_reduce(+X, -Y)							*/
+/*	Tries to simplify X until a fixed point is reached.		*/
+/*======================================================================*/
+
+fp_reduce(X, Y) :-
+	tc_reduce(X, Y),
+	sk_not(reducible(Y)),
+	fail_if(contains_builtin(Y)).
+
+:- table tc_reduce/2.
+
+tc_reduce(X, X).
+tc_reduce(X, Y) :- tc_reduce(X, Z), reduce(Z, Y).
+
+:- table reducible/1.
+
+reducible(X) :- reduce(X, Y), fail_if(variant(X,Y)).
+
+/*----------------------------------------------------------------------*/
+/*  reduce(+X, +Y)							*/
+/*	Reduces X to Y by applying either a simplification step, or a	*/
+/*	meta-rule.  Meta-rules are applied to the whole expression.	*/
+/*----------------------------------------------------------------------*/
+
+reduce(X, Y) :- partly_eval(X, Y).
+reduce(X, Y) :- apply_a_meta_rule(X, Y).
+
+/*----------------------------------------------------------------------*/
+/*  partly_eval(+X, -Y)							*/
+/*	Partially evaluates X to Y.  It can be seen as a simplifier of	*/
+/*	formulas.							*/
+/*----------------------------------------------------------------------*/
+
+partly_eval(X, true) :-
+	builtin(X),
+	!,
+	call(X).
+partly_eval(X, Y) :-
+	dnf(X, DNF_X),
+%	( X \== DNF_X ->
+%		telling(F), tell(user), writeln(DNF_X), told, tell(F)
+%	; true
+%	),
+	pe(DNF_X, Y).
+
+/*----------------------------------------------------------------------*/
+/*  pe(+X, +Expr, -Y)							*/
+/*	Partially evaluates X to Y (but for builtins).  It is assumed	*/
+/*	that X is in disjunctive normal form when coming here.	Expr	*/
+/*	is a copy of X used for a meta-rule.				*/
+/*----------------------------------------------------------------------*/
+
+:- table pe/2.
+
+pe(true, Y) :-
+	!,
+	Y = true.
+pe(not(A), not(D)) :-
+	!,
+	partly_eval(A, D).
+pe((A,B), D) :-
+	!,
+	partly_eval(A, D1), partly_eval(B, D2), conjify(D1, D2, D).
+pe((A;B), (D1;D2)) :-
+	!,
+%%	telling(X), tell(user), write('! Disjunction Case:'),
+	( copy_is_needed(A, B) ->
+		copy_term(B, C)		% Disconnect the vars in A and B
+	; C = B
+	),
+%%	writeln((A;C)), told, tell(X),
+	partly_eval(A, D1), partly_eval(C, D2).
+pe({TermForm:Condition}, {TermForm:PE_Condition}) :- 
+	!,
+	nonvar(Condition),
+	partly_eval(Condition, PE_Condition).
+pe(ValTerm, PE_ValTerm) :-
+	sem_mode(Mode),
+	val_arity(Mode, N),
+	functor(ValTerm, val, N),	% constrain uses of clause/2
+	!,
+	functor(ValHead, val, N),
+	subsuming_val_bodies(ValHead, ValTerm, Result),
+	( Result == [] ->
+%%		telling(X), tell(user), writeln('HERE'), told, tell(X),
+		PE_ValTerm = ValTerm
+	; my_member(ValTerm-PE_ValTerm, Result)
+	).
+pe(Pred, PE_Pred) :-
+	Pred =.. [F|Args],
+	pe_args(Args, PE_Args), 
+	Pred1 =.. [F|PE_Args],
+	( evaluable(Pred1), call(Pred1) -> PE_Pred = true ; PE_Pred = Pred1 ).
+
+:- mode pe_args(+,-).
+
+pe_args([], []).
+pe_args([Arg|Args], [PE_Arg|PE_Args]) :-
+	pe_arg(Arg, PE_Arg),
+	pe_args(Args, PE_Args).
+
+pe_arg(X, Y) :-
+	( var(X) -> X = Y
+	; integer(X) -> X = Y
+	; fp_reduce(X, Y)
+	).
+
+/*----------------------------------------------------------------------*/
+/*  copy_is_needed(+A, +B)						*/
+/*	Succeeds iff a copy of B is needed.  A and B are parts of a	*/
+/*	disjunction.  A copy of B is needed iff the partial evaluation	*/
+/*	of B binds a variable of A (obviously, this variable will be	*/
+/*	one of their common variables).					*/
+/*----------------------------------------------------------------------*/
+
+copy_is_needed(A, B) :-
+	have_vars_in_common(A, B),
+	copy_term((A,B), (ACopy,BCopy)),
+	partly_eval(BCopy, _), fail_if(variant(A,ACopy)).
+
+/*----------------------------------------------------------------------*/
+/*  conjify(+X, +Y, -Z)							*/
+/*	Z is the simplified conjunction of X and Y.			*/
+/*----------------------------------------------------------------------*/
+
+conjify(D1, D2, D) :-
+	( D1 == true ->	D = D2
+	; D2 == true -> D = D1
+	; D = (D1,D2)
+	).
+
+/*----------------------------------------------------------------------*/
+/*  subsuming_val_bodies(+ValHead, +ValTerm, -Result)			*/
+/*	Returns in Result all val rules that subsume ValTerm.		*/
+/*----------------------------------------------------------------------*/
+
+subsuming_val_bodies(ValHead, ValTerm, Result) :-
+	findall(ValHead-BodyIn,
+		val_selected(ValHead, ValTerm, BodyIn),
+		Result).
+
+val_selected(ValHead, ValTerm, Body) :-
+	clause(ValHead, Body),
+	subsumes(ValHead, ValTerm),
+	( Body = (A,_), all_builtins(A) ->	% Builtins are actually
+						% part of the head.
+		/* \+ \+ */ (ValHead = ValTerm, tc_reduce(A, true))
+	; true
+	).
+
+all_builtins(A) :- builtin(A).
+all_builtins((A,B)) :- all_builtins(A), all_builtins(B).
+
+/*----------------------------------------------------------------------*/
+/*  apply_a_meta_rule(+X, -Y)						*/
+/*	X reduces to Y by the application of meta-rules.  Currently	*/
+/*	only one meta-rule is implemented.  Others can be added.	*/
+/*----------------------------------------------------------------------*/
+
+apply_a_meta_rule(X, Y) :-
+	fail_if(contains_builtin(X)),	% prevent functor/3 from error
+	apply_a_meta_rule(X, X, Y).
+
+apply_a_meta_rule((Ain,Bin), Expr, (Aout,Bout)) :- !,
+	apply_a_meta_rule(Ain, Expr, Aout), apply_a_meta_rule(Bin, Expr, Bout).
+apply_a_meta_rule((Ain;Bin), Expr, (Aout;Bout)) :- !,
+	apply_a_meta_rule(Ain, Expr, Aout), apply_a_meta_rule(Bin, Expr, Bout).
+apply_a_meta_rule(ValTermIn, Expr, ValTermOut) :-
+	sem_mode(Mode), val_arity(Mode, N), functor(ValTermIn, val, N),
+	!,
+	( s_meta_rule_applicable(ValTermIn, Expr, N) ->
+		ValTermOut = true
+	; ValTermOut = ValTermIn
+	).
+apply_a_meta_rule(X, _, X).
+
+s_meta_rule_applicable(ValTerm, Expr, N) :-
+	ValTerm =.. [_,TruthVal,Config|_],
+	var(TruthVal), functor(Config, 'S', _),
+	singleton(TruthVal, Expr),
+	functor(ValHead, val, N),
+	subsuming_val_bodies(ValHead, ValTerm, Result), Result == [].
+
+singleton(Var, Expression) :-
+	calculate_occurences(Var, Expression, Occurences), Occurences =:= 1.
+
+calculate_occurences(Var, Term, Occurences) :-
+	functor(Term, _, Arity),
+	'calculate occurences'(Var, Term, 0, Arity, 0, Occurences).
+
+'calculate occurences'(Var, Term, N, Arity, OccIn, OccOut) :-
+	( N =:= Arity -> OccOut = OccIn
+	; NewN is N + 1, arg(NewN, Term, Arg),
+	  ( Arg == Var -> OccMid is OccIn + 1
+	  ; var(Arg) -> OccMid = OccIn
+	  ; atomic(Arg) -> OccMid = OccIn
+	  ; calculate_occurences(Var, Arg, ArgOcc), OccMid is OccIn + ArgOcc
+	  ),
+	  'calculate occurences'(Var, Term, NewN, Arity, OccMid, OccOut)
+	).
+
+
+/*----------------------------------------------------------------------*/
+/*  contains_builtin(+Expression)					*/
+/*	True iff Expression contains a builtin predicate.		*/
+/*----------------------------------------------------------------------*/
+
+contains_builtin((A,B)) :-
+	contains_builtin(A) ; contains_builtin(B).
+contains_builtin((A;B)) :-
+	contains_builtin(A) ; contains_builtin(B).
+contains_builtin(not(A)) :-
+	contains_builtin(A).
+contains_builtin(A) :- builtin(A).
+
+/*----------------------------------------------------------------------*/
+/*  contains_val(+Expression)						*/
+/*	True iff Expression contains a val/* term of the right arity.	*/
+/*----------------------------------------------------------------------*/
+
+contains_val(X) :-
+	var(X), !, fail.
+contains_val(Term) :-
+	functor(Term, val, N), sem_mode(Mode), val_arity(Mode, N).
+contains_val(Term) :-
+	Term =.. [_|Args], 'contains val'(Args).
+
+:- mode 'contains val'(+).
+
+'contains val'([Arg|Args]) :- contains_val(Arg) ; 'contains val'(Args).
+ 
+/*----------------------------------------------------------------------*/
+/*  contains_tuple_arg(+Expression)					*/
+/*	True iff Expression contains a tuple in an argument position	*/
+/*	of a predicate.							*/
+/*----------------------------------------------------------------------*/
+
+contains_tuple_arg((A,B)) :-
+	contains_tuple_arg(A) ; contains_tuple_arg(B).
+contains_tuple_arg((A;B)) :-
+	contains_tuple_arg(A) ; contains_tuple_arg(B).
+contains_tuple_arg(not(A)) :-
+	contains_tuple_arg(A).
+contains_tuple_arg(A) :-
+	A \= member(_,_), A =.. [_Pred|Args], safe_memberchk([_|_], Args).
+
+safe_memberchk(X, [Arg|_]) :- nonvar(Arg), X = Arg, !.
+safe_memberchk(X, [_|Args]) :- safe_memberchk(X, Args).
+
+/*----------------------------------------------------------------------*/
+/*  apply_set_theory(+ExprIn, -ExprOut)					*/
+/*	Simplifies membership relations in Set Expressions.		*/
+/*----------------------------------------------------------------------*/
+
+apply_set_theory((Ain,Bin), C) :- !,
+	apply_set_theory(Ain, Aout), apply_set_theory(Bin, Bout),
+	( Aout == true -> C = Bout ; Bout == true -> C = Aout ; C = (Aout,Bout)
+	).
+apply_set_theory((Ain;Bin), (Aout;Bout)) :- !,
+	apply_set_theory(Ain, Aout), apply_set_theory(Bin, Bout).
+apply_set_theory(not(Ain), not(Aout)) :- !,
+	apply_set_theory(Ain, Aout).
+apply_set_theory(Ain, Aout) :-
+	( Ain = member(X, Set), nonvar(Set) ->
+		set_simplify(Set, X, Aout)
+	; Aout = Ain
+	).
+
+:- mode set_simplify(+,+,-).
+
+set_simplify(Set, _, ExprOut) :-
+	var(Set), !, ExprOut = Set.
+set_simplify({ElemForm:CondIn}, X, ExprOut) :-
+	apply_set_theory(CondIn, CondOut),
+	( X = ElemForm -> ExprOut = CondOut
+	; CondOut == true -> ExprOut = 'term equal'(X, ElemForm)
+	; ExprOut = member(X, {ElemForm:CondOut})
+	).
+set_simplify('set union'(Set1,Set2), X, (Expr1;Expr2)) :-
+	set_simplify(Set1, X, Expr1), set_simplify(Set2, X, Expr2).
+set_simplify('set intersection'(Set1,Set2), X, (Expr1,Expr2)) :-
+	set_simplify(Set1, X, Expr1), set_simplify(Set2, X, Expr2).
+set_simplify('set difference'(Set1,Set2), X, (Expr1,not(Expr2))) :-
+	set_simplify(Set1, X, Expr1), set_simplify(Set2, X, Expr2).
+
+/*----------------------------------------------------------------------*/
+/*  val_arity(+Mode, ?Arity)						*/
+/*----------------------------------------------------------------------*/
+
+val_arity(basic, 2).
+val_arity(quant, 3).
+
+/*----------------------------------------------------------------------*/
+/*  List of builtin, evaluable predicates, and stuff like that...	*/
+/*----------------------------------------------------------------------*/
+
+builtin('=..'(_,_)).
+builtin(functor(_,_,_)).
+
+evaluable(=(_,_)).
+evaluable('set equal'(X,Y)) :-
+	( var(X) -> true ; var(Y) ).
+evaluable('term equal'(X,Y)) :-
+	( var(X) -> true ; var(Y) -> true ; is_true(X), is_true(Y) ).
+
+/*----------------------------------------------------------------------*/
+/*  Definitions of evaluable predicates.				*/
+/*----------------------------------------------------------------------*/
+
+'set equal'(X, Y) :- X = Y.
+
+'term equal'(X, Y) :- X = Y.
+
+/*----------------------------------------------------------------------*/
+/*  Auxiliary predicates.						*/
+/*----------------------------------------------------------------------*/
+
+have_vars_in_common(X, Y) :-
+	\+ \+ (copy_term(Y, YCopy), numbervars(X), fail_if(variant(Y,YCopy))).
+
+my_member(H, [H|_]).
+my_member(H, [_|T]) :- my_member(H, T).
+
+/* -------------------- end of file sem_pe.P -------------------------- */
+

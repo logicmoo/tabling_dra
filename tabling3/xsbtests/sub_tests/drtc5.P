@@ -1,0 +1,1 @@
+go :- ['Driver'], drtc('1Y','Data/tree').

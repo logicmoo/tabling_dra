@@ -1,0 +1,1 @@
+#define MAXINT 1000000

@@ -1,0 +1,4 @@
+test(0,'S'('NP'('N'('Rita')),'VP'('V'(dauri)))).
+test(1,'S'('NP'('N'('Rita')),'VP'('V'(hasi)))).
+test(2,'S'('NP'('N'('Rita')),'VP'('VP'('V'(dauri)),aur,'VP'('V'(hasi))))).
+test(3,'S'('NP'('N'('Rita')),'VP'('VP'('V'(dauri)),ya,'VP'('V'(hasi))))).

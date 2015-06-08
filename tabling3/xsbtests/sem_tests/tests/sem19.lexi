@@ -1,0 +1,14 @@
+lex_interp('D','"every"',0,'<X,Y>',s,'','','|Y - X| = 0').
+lex_interp('D','"every_except"',0,'<X,Y,z>',s,'','','|(Y - {z}) - X| = 0').
+lex_interp('D','"no_except"',0,'<X,Y,z>',s,'','','|(Y - {z}) /\ X| = 0').
+lex_interp('D','"not_every"',0,'<X,Y>',s,'','','-(|Y - X| = 0)').
+lex_interp('D','"not_only"',0,'<X,Y>',s,'','','-(|X - Y| = 0)').
+lex_interp('D','"only"',0,'<X,Y>',s,'','','|X - Y| = 0').
+lex_interp('N','"Rita"',0,x,s,'','','x = rita').
+lex_interp('N','"woman"',0,x,s,'','','woman(x)').
+lex_interp('N','"women"',0,x,s,'','','woman(x)').
+lex_interp('V','"laughed"',0,x,s,'','','laughed (x)').
+lex_interp('V','"ran"',0,x,s,'','','ran(x)').
+
+sem_lexi_mode(quant).
+

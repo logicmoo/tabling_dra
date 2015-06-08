@@ -1,0 +1,278 @@
+:- import ord_subset/2, ord_disjoint/2,ord_subtract/3,ord_member/2, ord_union/3 from ordsets.
+:- import flatten/2,memberchk/2, member/2,length/2,memberchk/2,ground/1 from basics.
+:- compiler_options([spec_off]).
+
+% Elementary Petri Net Evaluator.
+% Also, could find useful transitions, live transitions, (sequential)
+% configuration graph. 
+% Based on this, could extend to check whether two nets are bisimular, 
+% to find all processes in a net, contact-freeness, etc.
+
+% Finds all configurations reachable from instate
+% First arg is a state: i.e. a sorted list of places each of which
+% have a token in S.
+
+:- import conget/2, conset/2 from machine.
+:- dynamic instance_passed/1.
+
+:- table reachable/2.
+reachable(InState,NewState):-
+	reachable(InState,State),
+%	writeln(reachable(InState,State)),
+	hasTransition(State,NewState).
+%        bound_search.
+reachable(InState,NewState):-
+	hasTransition(InState,NewState).
+
+bound_search:- 
+	conget(foo,N),
+	(N > 1000000 -> 
+	    abort('Too many states!')
+	  ; N1 is N + 1,
+	    conset(foo,N1) ).
+
+:- table right_reachable/2.
+right_reachable(InState,NewState):-
+	hasTransition(InState,MidState),
+	right_reachable(MidState,NewState).
+right_reachable(InState,NewState):-
+	hasTransition(InState,NewState).
+
+:- thread_shared shared_reachable/2.
+:- table shared_reachable/2.
+shared_reachable(InState,NewState):-
+	shared_reachable(InState,State),
+	hasTransition(State,NewState).
+shared_reachable(InState,NewState):-
+	hasTransition(InState,NewState).
+
+hasTransition(State,NewState):-
+%	writeln(hasTransition(State)),
+	get_rules_for_state(State,AllRules),
+	member(Rule,AllRules),
+	apply_rule_to_state(Rule,State,NewState).
+
+%----
+% Constructs sets of rules with concession in State.  Also indicates which
+% rules have input or output conflicts
+get_rules_for_state(State,Flatrules):-
+	get_rules_for_state_1(State,State,Rules),
+	flatten(Rules,Flatrules),
+	!.
+
+get_rules_for_state_1([],_State,[]).
+get_rules_for_state_1([H|T],State,[Rules2|RT]):-
+	get_rules_for_state_2(H,State,Rules1),
+%	findall(rule([H|Places],Output,Dyn,Tran),rule([H|Places],Output,Dyn,Tran),Rules),
+%	check_concession(Rules,State,Rules1),
+	check_dynamic_constraints(Rules1,Rules2,State),
+	get_rules_for_state_1(T,State,RT).
+
+get_rules_for_state_2(H,State,Rules):- 
+	findall(rule([H|Places],Output,Dyn,Tran),
+	        (rule([H|Places],Output,Dyn,Tran),
+		 has_concession(rule([H|Places],Output,Dyn,Tran),State)),Rules).
+
+has_concession(rule([_Inp|Ilist],Outlist,_Dyn,_Name),State):- 
+	state_subset(Ilist,State),
+	ord_disjoint(Outlist,State).
+
+check_dynamic_constraints([],[],_State).
+check_dynamic_constraints([rule(Ilist,Outlist,dyn([],App),Name)|T],
+                	[rule(Ilist,Outlist,dyn([],App),Name)|T1],State):-!,
+			check_dynamic_constraints(T,T1,State).
+check_dynamic_constraints([rule(Ilist,Outlist,dyn(Dyn,App),Name)|T],
+                	[rule(Ilist,Outlist,dyn(_Dyn,App),Name)|T1],State):-
+			call_dynamic_constraints(Dyn,State),
+			check_dynamic_constraints(T,T1,State),!.
+check_dynamic_constraints([rule(_Ilist,_Outlist,_Dyn,_Name)|T],T1,State):-
+			check_dynamic_constraints(T,T1,State).
+
+:- import call_c/1 from standard.
+call_dynamic_constraints([],_State).
+call_dynamic_constraints([doesnt_contain(List)|R],State):- 
+	state_doesnt_contain(List,State),
+	call_dynamic_constraints(R,State).
+call_dynamic_constraints([contains(List)|R],State):- 
+	state_contains(List,State),
+	call_dynamic_constraints(R,State).
+call_dynamic_constraints([contains_at_least(Term,N)|R],State):- 
+	(integer(N) -> Cutoff = N ; call_c(N),arg(1,N,Cutoff)),  % allows dynamic computation of N
+	findall(Term,member(Term,State),Terms),length(Terms,L),L >= Cutoff,
+	call_dynamic_constraints(R,State).
+call_dynamic_constraints([condition(Goal)|R],State):- 
+	call_c(Goal),
+	call_dynamic_constraints(R,State).
+
+%-------
+apply_rule_to_state(rule(InS,Out,dyn(_Constr,Effects),_Name),State,NewState):-
+	ord_subtract(State,InS,Diff),
+	flatsort([Out|Diff],NewState1),
+	apply_dynamic_effects(Effects,NewState1,NewState2),
+	flatsort(NewState2,NewState).
+
+apply_dynamic_effects([],NewState,NewState).
+apply_dynamic_effects([delete(Term)|T],State,Newstate):- 
+	findall(Term,member(Term,State),Terms),
+	ord_subtract(State,Terms,Newstate1),
+	apply_dynamic_effects(T,Newstate1,Newstate).
+apply_dynamic_effects([insert(Term,Condition)|T],State,Newstate):- 
+	eval_insert_condition(Condition,State,Term,Terms),
+	sort(Terms,SortTerms),
+	ord_union(State,SortTerms,Newstate1),
+	apply_dynamic_effects(T,Newstate1,Newstate).
+%apply_dynamic_effects([createInstances(Term,Generator)|T],State,Newstate):- 
+%	findall(Term,call(Generator),NewInsts),
+%	apply_dynamic_effects(T,[NewInsts|State],Newstate).
+
+% match against every pattern in state.
+eval_insert_condition(exists(Pattern),State,Term,Terms):- !,
+	findall(Term,member(Pattern,State),Terms).
+eval_insert_condition(Condition,_State,Term,Terms):- 
+	findall(Term,call_c(Condition),Terms).
+
+flatsort(In,Out):- 
+	flatten(In,In1),
+	sort(In1,Out).
+
+count_states(L):- 
+	findall(1,get_residual(reachable(_X,_Y),_F),List),
+	length(List,L).
+
+count_rules(L):- 
+	findall(1,rule(_,_,_,_),List),
+	length(List,L).
+
+count_rr_states(L):- 
+	findall(1,get_residual(right_reachable(_X,_Y),_F),List),
+	length(List,L).
+
+show_states:- 
+	findall(Y,get_residual(reachable(_X,Y),_F),Ys),
+	sort(Ys,Ysort),
+	member(Y,Ysort),
+	writeln(Y),fail.
+show_states.
+
+show_shared_states:- 
+	findall(Y,get_residual(shared_reachable(_X,Y),_F),Reached),
+	sort(Reached,Rsort),
+	member(State,Rsort),
+	writeln(State),
+	fail.
+show_shared_states.
+
+count_rules(L):-
+	findall(1,rule(_,_,_,_),List),
+	length(List,L).
+
+count_shared_states(L):- 
+	findall(1,get_residual(shared_reachable(_X,_Y),_F),List),
+	length(List,L).
+
+% perhaps rewrite for ordsets -- this could be expensive.
+reset:- 
+	abolish_all_tables,
+	retractall(instance_passed(_)).
+
+state_contains(constr(Term,Constr),State):- 
+	member(Term,State),call_c(Constr),!.
+state_contains(','(C1,C2),State):- 
+	state_contains(C1,State),state_contains(C2,State).
+state_contains(';'(C1,C2),State):- 
+	( state_contains(C1,State) ; state_contains(C2,State)),!.
+
+state_doesnt_contain(constr(Term,Constr),State):- 
+	\+ (member(Term,State),call_c(Constr)).
+state_doesnt_contain(','(C1,C2),State):- 
+	state_doesnt_contain(C1,State),state_doesnt_contain(C2,State).
+state_doesnt_contain(';'(C1,C2),State):- 
+	( state_doesnt_contain(C1,State) ; state_doesnt_contain(C2,State)),!.
+
+% shd. probably change these to use log ith
+% state_subset should bind inputlist
+state_subset(Ilist,Input):- 
+	(ground(Ilist) -> 
+	    ord_subset(Ilist,Input)
+	 ;  slow_subset(Ilist,Input) ).
+
+slow_subset([],_List2).
+slow_subset([H|T],List2):- 
+	member(H,List2),
+	slow_subset(T,List2).
+
+% subtrace *everything* in Input that binds w. Ilist
+state_subtract(Ilist,Input):- 
+	(ground(Ilist) -> 
+	    ord_subtract(Ilist,Input)
+	 ;  slow_subtract(Ilist,Input) ).
+
+slow_subtract(Ilist,Input):- 
+	findall(X,(member(X,Ilist),member(X,Input)),SubList),
+	sort(SubList,SortList),
+	ord_subtract(SortList,Input).
+
+end_of_file.
+
+state_disjoint(Ilist,Input):- !,
+	(ground(Ilist) -> 
+	    ord_disjoint(Ilist,Input)
+	 ;  slow_disjoint(Ilist,Input) ).
+
+slow_disjoint(List1,List2):- 
+	\+ (member(Elt,List1),membr(Elt,List2)).
+
+find_conflicts([],[]).
+find_conflicts([H|T],[InconsH|InconsT]):- 
+	find_conflicts_1(T,H,InconsH),
+	find_conflicts(T,InconsT).
+	
+find_conflicts_1([],_,[]).
+vfind_conflicts_1([rule(Ilist,Outlist,N)|T],
+                	rule(Ilist1,Outlist1,N1),[Incons|TI]):- 
+	(\+ ord_disjoint(Ilist,Ilist)
+	  ; \+ ord_disjoint(Outlist,Outlist1) ),!,
+	  (N @< N1 -> Incons = incons(N,N1) ; Incons = incons(N1,N)),
+	find_conflicts_1(T,rule(Ilist1,Outlist1,N1),TI).
+find_conflicts_1([_|T],rule(Ilist1,Outlist1,N1),TI):- 
+	find_conflicts_1(T,rule(Ilist1,Outlist1,N1),TI).
+
+% Backtracks through ALL non-conflicting sets of rules for a given
+% state
+/* 
+generate_rulesets([],_Incons,Accum,Accum):- Accum \= [].
+generate_rulesets([rule(Ilist,Outlist,N)|TR],Incons,
+	          InAccum,Out):- 
+	check_incons(Incons,InAccum,N),
+	generate_rulesets(TR,Incons,[rule(Ilist,Outlist,N)|InAccum],Out).
+generate_rulesets([_|TR],Incons,Accum,TRS):- 
+	generate_rulesets(TR,Incons,Accum,TRS).
+
+check_incons([],_InAccum,_N).
+check_incons([incons(N1,N)|R],InAccum,N):-!,
+	\+ memberchk(rule(_,_,_,N1),InAccum),
+	check_incons(R,InAccum,N).
+check_incons([_|R],InAccum,N):-
+	check_incons(R,InAccum,N).
+*/
+
+
+
+get_rules_for_state_1([],_State,[]).
+get_rules_for_state_1([H|T],State,[Rules2|RT]):-
+	findall(rule([H|Places],Output,Dyn,Tran),rule([H|Places],Output,Dyn,Tran),Rules),
+	check_concession(Rules,State,Rules1),
+	check_dynamic_constraints(Rules1,Rules2,State),
+	get_rules_for_state_1(T,State,RT).
+
+% Check concession checks that a token is in all places in *t, and no
+% token is in t*. 
+check_concession([],_,[]).
+check_concession([rule([Inp|Ilist],Outlist,Dyn,Name)|T],Input,
+                	[rule([Inp|Ilist],Outlist,Dyn,Name)|T1]):-
+	state_subset(Ilist,Input),
+	ord_disjoint(Outlist,Input),!,
+	check_concession(T,Input,T1).
+check_concession([_Rule|T],Input,T1):-
+	check_concession(T,Input,T1).
+

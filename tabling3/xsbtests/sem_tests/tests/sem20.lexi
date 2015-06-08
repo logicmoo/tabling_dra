@@ -1,0 +1,7 @@
+lex_interp('N','"Rita"',0,x,'','','','x = rita').
+lex_interp('N','"Ajay"',0,x,'','','','x = ajay').
+lex_interp('V','"dauri"',0,'X','','','','X = {x: ran(x)}').
+lex_interp('V','"hasi"',0,'X','','','','X = {x: laughed(x)}').
+
+sem_lexi_mode(basic).
+

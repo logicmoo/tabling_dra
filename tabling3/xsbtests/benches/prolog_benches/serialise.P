@@ -1,0 +1,72 @@
+% generated: 17 November 1989
+% option(s): 
+%
+%   serialise
+%
+%   David H. D. Warren
+%
+%   itemize (pick a "serial number" for each 
+%   unique integer in) a list of 25 integers
+
+%:- option(analyze).
+
+:- xsb_configuration(compiler, CC), consult(rand, [CC]).
+
+:- import prand/1 from rand.
+
+bench_serialise(Type,N,Length):- 
+	create_random_list(Length,L),
+	cputime(T1),
+	main1(N,L),
+	cputime(T2),T is T2-T1,
+	writeq(datum(Type,T)),writeln('.'),nl.
+
+create_random_list(1,[R]):- !,prand(R).
+create_random_list(N,[R|T]):- 
+	N > 1,
+	prand(R),
+	N1 is N - 1,
+	create_random_list(N1,T).
+
+main1(N,L) :- repeat(N), serialise(L,_), fail.
+main1(_,_).
+
+repeat(N) :- N>=1.
+repeat(N) :- N>1, N1 is N-1, repeat(N1).
+
+serialise(L,R) :-
+    pairlists(L,R,A),
+    arrange(A,T),
+    numbered(T,1,_).
+
+pairlists([X|L],[Y|R],[pair(X,Y)|A]) :- pairlists(L,R,A).
+pairlists([],[],[]).
+
+arrange([X|L],tree(T1,X,T2)) :-
+    split(L,X,L1,L2),
+    arrange(L1,T1),
+    arrange(L2,T2).
+arrange([],void).
+
+split([X|L],X,L1,L2) :- !, split(L,X,L1,L2).
+split([X|L],Y,[X|L1],L2) :- before(X,Y), !, split(L,Y,L1,L2).
+split([X|L],Y,L1,[X|L2]) :- before(Y,X), !, split(L,Y,L1,L2).
+split([],_,[],[]).
+
+before(pair(X1,_),pair(X2,_)) :- X1 < X2.
+
+numbered(tree(T1,pair(_,N1),T2),N0,N) :-
+    numbered(T1,N0,N1),
+    N2 is N1+1,
+    numbered(T2,N2,N).
+numbered(void,N,N).
+
+end_of_file.
+
+serialise(X) :- 
+	serialise("
+ABLE WAS I ERE I SAW ELBA; 
+THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG;
+I'd rather have a bottle in front of me than a frontal lobotomy;
+Take my wife ... please!",X).
+

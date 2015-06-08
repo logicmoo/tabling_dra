@@ -1,0 +1,8 @@
+test('Val(t, [S NP VP]) iff Val(X, NP) & X = {x: Val(x, VP)}').
+test('Val(X, [NP D N]) iff Val(<X,Y>, D) & Y = {y: Val(y, N)}').
+test('Val(x, [VP V]) iff Val(x, V)').
+
+test('Val(<X,Y>, [D "every"]) iff subset(Y,X)').
+test('Val(x, [N "man"]) iff man(x)').
+test('Val(x, [V "runs"]) iff runs(x)').
+

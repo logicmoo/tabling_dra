@@ -1,0 +1,27 @@
+
+tom[believes->> ${alice[thinks->>flora:cool]}].
+tom[believes->> ${sally[thinks->> ${flora:cool}]}].
+tst1 :- X = ${a[b->c[e]]@foo}, write('tst1: ')@prolog(), writeln(X)@prolog().
+tst2 :- X = collectset{B| tom[believes->>B]},
+	write('tst2: ')@prolog(), writeln(X)@prolog().
+tst3 :- X = ${b:a[b->c]@bar}, write('tst3: ')@prolog(), writeln(X)@prolog().
+
+tst4 :- insert{jack[believes->> ${mary[thinks->> ${flora:cool}]}]},
+	jack[believes->>B],
+	write('tst4: ')@prolog(), writeln(B)@prolog(),
+	delete{jack[believes->>P]},
+	abolish_all_tables,
+	write('tst4: ')@prolog(), writeln('P' = P)@prolog(),
+	if jack[believes->>_] then
+           writeln('Tst4: something wrong')@prolog()
+        else
+           writeln('Tst4: ok')@prolog().
+
+pretest :- tst1, tst2, tst3, tst4.
+
+test :- tell(temp)@prolog(),
+	debug[#check_undefined(on)]@flora(sys),
+	pretest,
+	debug[#check_undefined(off)]@flora(sys),
+	pretest,
+	told@prolog().

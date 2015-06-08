@@ -1,0 +1,4 @@
+tst1 succeeded, as expected: =(x,a)
+tst2 succeeded, as expected: =(x,b)
+tst3 should cause an error: tst4 failed, as expected: 
+tst5 should cause an error: 

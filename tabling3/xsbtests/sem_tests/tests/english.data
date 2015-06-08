@@ -1,0 +1,99 @@
+/************************************************************************/
+/*									*/
+/* Semantica System							*/
+/* Copyright (C) SUNY at Stony Brook, 1993				*/
+/*									*/
+/************************************************************************/
+
+/*======================================================================
+  File			:  english.data
+  Author(s)		:  Kostis F. Sagonas
+  Last modification	:  March 23, 1994
+========================================================================*/
+
+
+%--------------------------------------------------------------------
+% i_lex_item(Category, Spelling, II, Audibility).
+%	 where Audibility = 0 if the word is audible and 1 otherwise.
+%--------------------------------------------------------------------
+
+i_lex_item('Det', these, 0, 0).
+i_lex_item('Det', this, 3, 0).
+i_lex_item('N', 'John', 1, 0).
+i_lex_item('N', 'Mary', 0, 0).
+i_lex_item('N', fido, 1, 0).
+i_lex_item('N', letters, 2, 0).
+i_lex_item('N', person, 1, 0).
+i_lex_item('N', bear, 1, 0).
+i_lex_item('P', to, 1, 0).
+i_lex_item('P', on, 2, 0).
+i_lex_item('P', in, 0, 0).
+i_lex_item('P', about, 3, 0).
+i_lex_item('V', gives, 1, 0).
+i_lex_item('V', puts, 2, 0).
+i_lex_item('V', kisses, 3, 0).
+i_lex_item('V', wrote, 4, 0).
+i_lex_item('V', bear, 5, 0).
+i_lex_item('V', died, 0, 0).
+i_lex_item('V', ate, 0, 0).
+i_lex_item('V', kissed, 3, 0).
+i_lex_item('V', talked, 0, 0).
+i_lex_item('testP', him, 0, 0).
+
+%-------------------------------------------
+% i_features(Category, Spelling, II, Feature).
+%-------------------------------------------
+
+i_features('P', to, 1, dat).
+i_features('P', on, 2, loc).
+i_features('P', about, 3, com).
+
+%-------------------------------------------------------------------
+% i_compls(Category, Spelling, II, ComplementsList).
+%	where ComplementsList is a list of 
+%		compl(Complement,Optionality,ComplementaryFeatures).
+%	where Optionality =:= 1 -> mandatory ; optional
+%-------------------------------------------------------------------
+
+i_compls('N',   letters, 2, [i_compl('PP',0,[])]).
+i_compls('P',   to,      1, [i_compl('NP',1,[])]).
+i_compls('P',   on,      2, [i_compl('NP',0,[])]).
+i_compls('P',   about,   3, [i_compl('NP',1,[])]).
+i_compls('V',   gives,   1, [i_compl('NP',1,[]), i_compl('PP',1,[dat])]).
+i_compls('V',   kisses,  3, [i_compl('NP',1,[])]).
+i_compls('V',   wrote,   4, [i_compl('NP',1,[]), i_compl('PP',0,[])]).
+i_compls('V',   puts,    2, [i_compl('NP',1,[]), i_compl('PP',1,[loc])]).
+i_compls('V',   ate,     0, [i_compl('NP',0,[])]).
+i_compls('V',   kissed,  3, [i_compl('NP',1,[])]).
+i_compls('V',   talked,  0, [i_compl('PP',0,[dat]), i_compl('PP',0,[com])]).
+
+%---------------------------
+% i_start_symbol(StartSymbol).
+%---------------------------
+
+i_start_symbol('S').
+
+%------------------------------------------
+% i_rule(Lhs, Rhs1,Rhs2,Rhs3,Rhs4, HeadList).
+%------------------------------------------
+
+i_rule('S','NP','VP','','',[]).
+i_rule('NP','N','','','',[1]).
+i_rule('NP','Det','N','','',[2]).
+i_rule('NP','Det','Nom','','',[2]).
+i_rule('Nom','N','PP','','',[1]).
+i_rule('VP','V','','','',[1]).
+i_rule('VP','V','NP','','',[1]).
+i_rule('VP','V','NP','PP','',[1]).
+i_rule('PP','P','NP','','',[1]).
+i_rule('VP','VP','PP','','',[1]).
+i_rule('VP',walks,'','','',[]).
+i_rule('VP','V','testP','','',[1]).
+i_rule('VP','V','PP','','',[1]).
+i_rule('VP','V','PP','PP','',[1]).
+
+%--------------------
+% i_rule_direction(HD).
+%--------------------
+
+i_rule_direction(0).	% from left to right

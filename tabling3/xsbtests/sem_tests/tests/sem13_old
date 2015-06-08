@@ -1,0 +1,8 @@
+'(angry_at(rita, moti) & left(ajay, rita))'
+'(proud_of(ajay, moti) & left(rita, ajay))'
+'angry(ajay)'
+'angry_at(rita, ajay)'
+'beautiful(rita)'
+'proud(rita)'
+'proud_of(ajay, rita)'
+'tall(ajay)'

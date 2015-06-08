@@ -1,0 +1,20 @@
+p :- if a then b else (if a then b else (if a then b then c)).
+p :- if a then b then c.
+p :- if (b then c) then d.
+p :- b then c.
+p :- (if a then b) @ m.
+p(if a).
+p :- insert{if a}.
+
+
+p :- while a do b.
+p :- while a loop b.
+p :- loop a until b.
+p :- do a until b.
+p :- unless a do b.
+do(a,b) :- true.
+until(a,b) :- true.
+loop(a,b) :- true.
+while(b) :- true.
+loop(b) :- true.
+unless(b) :- true.

@@ -1,0 +1,7 @@
+'((member(chris, {x : walks(x)}) & member(chris, {y : walks(y)})) & member(chris, {z : walks(z)}))'
+'(member(chris, {x : walks(x)}) & (member(chris, {y : walks(y)}) & member(chris, {z : walks(z)})))'
+'(member(chris, {x : walks(x)}) & member(chris, {y : walks(y)}))'
+'(val(x, V(V(walks), and, V(walks))) & member(chris, x))'
+'(val(x, VP(VP(V(walks)), and, VP(V(walks)))) & member(chris, x))'
+'member(chris, {x : member(<x, chris>, {<y, z> : admires(y, z)})})'
+'member(chris, {x : walks(x)})'

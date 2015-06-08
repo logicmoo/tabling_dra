@@ -1,0 +1,159 @@
+:- import between/3 from basics.
+
+cpubench_private_assertR(Times):- 
+	cputime(T1),
+	all_assertR(Times),
+	cputime(T2),T is T2-T1,
+	writeq(datum([pr_assR],T)),writeln('.'),nl,
+	flush_output.
+
+/* assert and retract */
+all_assertR(Times):- 
+	between(1,Times,N),
+	assert(p(N)),
+	retract(p(N)),
+	fail.
+all_assertR(_Times).
+
+:- thread_shared share/1.
+cpubench_share_assertR(Times):- 
+	cputime(T1),
+	share_assertR(Times),
+	cputime(T2),T is T2-T1,
+	writeq(datum([sh_assR],T)),writeln('.'),nl,
+	flush_output.
+
+/* assert and retract */
+share_assertR(Times):- 
+	between(1,Times,N),
+	assert(share(N)),
+	retract(share(N)),
+	fail.
+share_assertR(_Times).
+
+%--------------
+
+cpubench_all_assertRa(Times):- 
+	cputime(T1),
+	all_assertRa(Times),
+	cputime(T2),T is T2-T1,
+	writeq(datum([call],T)),writeln('.'),nl,
+	flush_output.
+
+/* assert and retractall */
+all_assertRa(Times):- 
+	between(1,Times,N),
+	assert(p(N)),
+	retractall(p(N)),
+	fail.
+all_assertRa(_Times).
+
+cpubench_all_assertA(Times):- 
+	cputime(T1),
+	all_assertA(Times),
+	cputime(T2),T is T2-T1,
+	writeq(datum([call],T)),writeln('.'),nl,
+	flush_output.
+
+/* assert and abolsh */
+all_assertA(Times):- 
+	between(1,Times,N),
+	assert(p(N)),
+	abolish(p/1),
+	fail.
+all_assertA(_Times).
+
+cpubench_assertaR(Times):- 
+	cputime(T1),
+	assertaR(Times),
+	cputime(T2),T is T2-T1,
+	writeq(datum([call],T)),writeln('.'),nl,
+	flush_output.
+
+assertaR(Times):- 
+	between(1,Times,N),
+	asserta(p(N)),
+	retract(p(N)),
+	fail.
+assertaR(_Times).
+
+:- index(triep/1,trie).
+cpubench_tassertR(Times):- 
+	cputime(T1),
+	tassertR(Times),
+	cputime(T2),T is T2-T1,
+	writeq(datum([call],T)),writeln('.'),nl,
+	flush_output.
+
+tassertR(Times):- 
+	between(1,Times,N),
+	assert(triep(N)),
+	retract(triep(N)),
+	fail.
+tassertR(_Times).
+
+cpubench_assertRa(Times):- 
+	cputime(T1),
+	assertRa(Times),
+	cputime(T2),T is T2-T1,
+	writeq(datum([call],T)),writeln('.'),nl,
+	flush_output.
+
+assertRa(Times):- 
+	between(1,Times,N),
+	assert(p(N)),
+	fail.
+assertRa(_Times):- 
+	retractall(p(_)).
+
+cpubench_tassertRa(Times):- 
+	cputime(T1),
+	tassertRa(Times),
+	cputime(T2),T is T2-T1,
+	writeq(datum([call],T)),writeln('.'),nl,
+	flush_output.
+
+tassertRa(Times):- 
+	between(1,Times,N),
+	assert(triep(N)),
+	fail.
+tassertRa(_Times):- 
+	retractall(triep(_)).
+
+cpubench_tassert_1Ra(Times):- 
+	cputime(T1),
+	tassert_1Ra(Times),
+	cputime(T2),T is T2-T1,
+	writeq(datum([call],T)),writeln('.'),nl,
+	flush_output.
+
+:- import t_assert/2 from assert.
+tassert_1Ra(Times):- 
+	between(1,Times,N),
+	t_assert(triep(N),_),
+	fail.
+tassert_1Ra(_Times):- 
+	retractall(triep(_)).
+
+end_of_file.
+
+xsbmt
+100000 asserts and retracts: 1.73 
+       convert_to_dyna in C -- 1.64
+       check refactor -- 1.61
+100000 asserts and retractalls
+       check refactor -- 1.63
+
+100000 asserts, 1 retractall: 0.8
+       convert_to_dyna in C -- 0.7   
+       check_refactor -- 0.68
+
+100000 trie asserts and retracts: 1.0
+         convert_dyna in C : 0.85
+100000 trie asserts 1 retractall: 0.81
+         after refactoring: (0.35)
+         convert_dyna in C : 0.24
+       
+100000 tasserts_1 and 1 retractall: 0.23
+         convert_dyna in C : 0.15
+

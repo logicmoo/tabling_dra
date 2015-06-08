@@ -1,0 +1,21 @@
+
+
+
+               insertion into a built-in is not allowed
+               invalid then-statement
+               invalid then-statement
+               redefinition of built-ins in rule head is not allowed
+               redefinition of built-ins in rule head is not allowed
+               redefinition of built-ins in rule head is not allowed
+               unexpected then-statement
+               unexpected then-statement
+++8 errors
+++Error[FLORA]: [compile_control.flr] [Parser] near line(1)/char(54) `then'
+++Error[FLORA]: [compile_control.flr] [Parser] near line(15)/char(1) `do'
+++Error[FLORA]: [compile_control.flr] [Parser] near line(16)/char(1) `until'
+++Error[FLORA]: [compile_control.flr] [Parser] near line(18)/char(1) `while'
+++Error[FLORA]: [compile_control.flr] [Parser] near line(2)/char(18) `then'
+++Error[FLORA]: [compile_control.flr] [Parser] near line(3)/char(12) `then'
+++Error[FLORA]: [compile_control.flr] [Parser] near line(4)/char(8) `then'
+++Error[FLORA]: [compile_control.flr] [Parser] near line(7)/char(13) `if'
+++compilation aborted

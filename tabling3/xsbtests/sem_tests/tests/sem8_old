@@ -1,0 +1,3 @@
+'((Agent(rita, x) & CAUSE(x, y)) & (crying(y) & Agent(max, y)))'
+'((arriving(x) & Theme(chris, x)) & late(chris))'
+'((arriving(x) & Theme(chris, x)) & late(x))'

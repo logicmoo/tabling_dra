@@ -1,0 +1,232 @@
+:- import flatten/2,memberchk/2, member/2,length/2 from basics.
+:- import parsort/4 from machine.
+
+/* Place Transition Net Evaluator -- with omega markings.  Relies on
+variance-based partial-order style answer subsumption.  Doing this
+efficiently and cleanly is a work in progress.  I'm using filterPOA/5
+out of aggregs1.P which is efficient but not clean.  As I make
+progress w. answer subsumption, I'll update the filterPOA/5. */
+
+:- import conget/2, conset/2 from machine.
+:- import alt_filterPOA/5, filterPOA/5 from aggregs1.
+:- import shared_filterPOA/5 from aggregs1.
+
+is_reachable(InState,NewState):- 
+	filterPOA(reachable(InState),NewState,more_general_than,abstract,abstract_call).
+
+reachable(InState,NewState):-
+	filterPOA(reachable(InState),State,more_general_than,abstract,abstract_call),
+%	writeln(reachable(InState,State)),
+	hasTransition(State,NewState).
+%        bound_search.
+reachable(InState,NewState):-
+	hasTransition(InState,NewState).
+
+alt_is_reachable(InState,NewState):- 
+	alt_filterPOA(alt_reachable(InState),NewState,more_general_than,
+ 	              abstract,abstract_call).
+%	alt_filterPOA(alt_reachable(InState),NewState,more_general_than(_,_),
+% 	              abstract,abstract_call(_,_)).
+
+alt_reachable(InState,NewState):-
+	alt_filterPOA(alt_reachable(InState),State,more_general_than,
+ 	              abstract,abstract_call),
+%	alt_filterPOA(alt_reachable(InState),State,more_general_than(_,_),
+% 	              abstract,abstract_call(_,_)),
+%	writeln(reachable(InState,State)),
+	hasTransition(State,NewState).
+%        bound_search.
+alt_reachable(InState,NewState):-
+	hasTransition(InState,NewState).
+
+%------------
+
+shared_is_reachable(InState,NewState):- 
+	shared_filterPOA(shared_reachable(InState),NewState,more_general_than,abstract,abstract_call).
+
+shared_reachable(InState,NewState):-
+	shared_filterPOA(shared_reachable(InState),State,more_general_than,abstract,abstract_call),
+%	writeln(reachable(InState,State)),
+	hasTransition(State,NewState).
+%        bound_search.
+shared_reachable(InState,NewState):-
+	hasTransition(InState,NewState).
+
+%------------
+
+hasTransition(State,NewState):-
+	get_rules_for_state(State,AllRules),
+	member(Rule,AllRules),
+	apply_rule_to_state(Rule,State,NewState).
+%        writeln(state(State,Rule,NewState)).
+%        writeln(state(NewState)).
+
+%----
+% Constructs sets of rules with concession in State.  Also indicates which
+% rules have input or output conflicts
+get_rules_for_state(State,Flatrules):-
+	get_rules_for_state_1(State,State,Rules),
+	flatten(Rules,Flatrules),
+	!.
+
+get_rules_for_state_1([],_State,[]).
+get_rules_for_state_1([place(P,_)|T],State,[Rules1|RT]):-
+	findall(rule(place(P,N),Places,Output),rule(place(P,N),Places,Output),Rules),
+	check_concession(Rules,State,Rules1),
+	get_rules_for_state_1(T,State,RT).
+
+% Check concession checks that a token is in all places in *t.
+% For unbounded nets, dont need to check that no token is in t*. 
+check_concession([],_,[]).
+check_concession([rule(Inp,Ilist,Outlist)|T],Input,
+                	[rule(Inp,Ilist,Outlist)|T1]):-
+	pt_ord_subset(Ilist,Input),
+%	ord_disjoint(Outlist,Input), not needed here
+	!,
+	check_concession(T,Input,T1).
+check_concession([_Rule|T],Input,T1):-
+	check_concession(T,Input,T1).
+
+pt_ord_subset([], _).
+pt_ord_subset([place(P1,_)|Tail1], [place(P2,_)|Tail2]) :-
+	compare(Order, P1, P2),
+	pt_ord_subset(Order, place(P1,_), Tail1, Tail2).
+
+pt_ord_subset(=, _, Tail1, Tail2) :-
+	pt_ord_subset(Tail1, Tail2).
+pt_ord_subset(>, place(P1,_), Tail1, [place(P2,_)|Tail2]) :-
+	compare(Order, P1, P2),
+	pt_ord_subset(Order, place(P1,_), Tail1, Tail2).
+
+%-------
+apply_rule_to_state(rule(In,InS,Out),State,NewState):-
+ 	pt_ord_subtract(State,[In|InS],Diff),
+	flatsort([Out|Diff],FlatState),
+	condense(FlatState,NewState).
+
+pt_ord_subtract([], _, []).
+pt_ord_subtract([Head1|Tail1], Set2, Difference) :-
+	pt_ord_subtract(Set2, Head1, Tail1, Difference).
+
+pt_ord_subtract([], Head1, Tail1, [Head1|Tail1]).
+pt_ord_subtract([place(P2,N2)|Tail2], place(P1,N1), Tail1, Difference) :-
+	compare(Order, P1, P2),
+	pt_ord_subtract(Order, place(P1,N1), Tail1, place(P2,N2), Tail2, Difference).
+
+pt_ord_subtract(<, Head1, Tail1, Head2, Tail2, [Head1|Difference]) :-
+        'pt_ord subtract'(Tail1, Head2, Tail2, Difference).
+pt_ord_subtract(>, Head1, Tail1, _,     Tail2, Difference) :-
+        pt_ord_subtract(Tail2, Head1, Tail1, Difference).
+pt_ord_subtract(=, place(P1,N1),     Tail1, _Head2,  Tail2, Difference) :-
+	(N1 == 1 -> Difference = Diff ; 
+	    (N1 == omega -> Difference = [place(P1,omega)|Diff] 
+	     ;     NNew is N1 -1, Difference = [place(P1,NNew)|Diff]) ),
+        pt_ord_subtract(Tail1, Tail2, Diff).
+
+'pt_ord subtract'([], _, _, []).
+'pt_ord subtract'([place(P1,N1)|Tail1], place(P2,N2), Tail2, Difference) :-
+        compare(Order, P1, P2),
+        pt_ord_subtract(Order, place(P1,N1), Tail1, place(P2,N2), Tail2, Difference).
+
+condense([],[]).
+condense([H],[H]):-!.
+condense([place(P1,N),place(P1,M)|T1],[place(P1,New)|T2]):- !,
+	((N = omega ; M = omega) -> New = omega ; New is N + M),
+	condense(T1,T2).
+condense([Head|T1],[Head|T2]):- !,
+	condense(T1,T2).
+
+flatsort(In,Out):- 
+	flatten(In,In1),
+	parsort(In1,asc,0,Out).
+
+omega_subset([], _).
+omega_subset([place(P1,N1)|Tail1], [place(P2,N2)|Tail2]) :-
+	compare(Order, P1, P2),N1 =< N2,
+	omega_subset(Order, place(P1,_), Tail1, Tail2).
+
+omega_subset(=, _, Tail1, Tail2) :-
+	omega_subset(Tail1, Tail2).
+omega_subset(>, place(P1,_), Tail1, [place(P2,_)|Tail2]) :-
+	compare(Order, P1, P2),
+	omega_subset(Order, place(P1,_), Tail1, Tail2).
+
+abstract_call([place(Place,_)|_],[place(Place,_)|_]).
+
+more_general_than([],[]).
+more_general_than([place(P,N1)|R1],[place(P,N2)|R2]):- 
+	N2 @=< N1,
+	more_general_than(R1,R2).
+
+abstract([],Answer,Answer):-!.
+abstract(Lists,Answer,NewAnswer):-
+	factor(Lists,Places),
+	abstract_1(Places,Answer,NewAnswer).
+
+factor([],[]).
+factor([[place(P1,N)|L1]|R1],[place(P1,Max)|R2]):-
+	factor_1(R1,N,Rn,Max),
+	(L1 == [] -> Rnew = Rn ; Rnew = [L1|Rn]),
+	factor(Rnew,R2).
+factor([[]|R],R1):- 
+	factor(R,R1).
+	
+factor_1([],Max,[],Max).
+factor_1([[place(_,M)|L1]|R1],N,[L1|Rnew],Max):- 
+	(N @< M -> N1 = M ; N1 = N),
+	factor_1(R1,N1,Rnew,Max).
+factor_1([[]|R],N,R1,Max):- 
+	factor_1(R,N,R1,Max).
+
+abstract_1([],[],[]). 
+abstract_1([place(P,N)|R1],[place(P,Ans)|R2],[place(P,NewAns)|R3]):- 
+	(N @< Ans -> NewAns = omega ; NewAns = Ans),
+	abstract_1(R1,R2,R3).
+
+count_states(L):- 
+	findall(1,get_residual(aggregs1:filterPOAA1(_X,_Y,_Z,_W,_V),_F),List),
+	length(List,L).
+
+alt_count_states(L):- 
+	findall(1,get_residual(aggregs1:alt_filterPOAA1(_X,_Y,_Z,_W,_V),_F),List),
+	length(List,L).
+
+end_of_file.
+
+%filterPOA(place,Place,more_general_than,abstract)
+place([place(p1,1),place(p2,2),place(p3,3)]).
+place([place(p1,2),place(p2,1),place(p3,3)]).
+place([place(p1,2),place(p2,1),place(p3,6)]).
+place([place(p1,2),place(p2,2),place(p3,4)]).
+
+count_states(L):- 
+	findall(1,get_residual(reachable(_X,_Y),_F),List),
+	length(List,L).
+
+count_rr_states(L):- 
+	findall(1,get_residual(right_reachable(_X,_Y),_F),List),
+	length(List,L).
+
+show_states:- 
+	get_residual(reachable(X,Y),_F),writeln((X,Y)),fail.
+show_states.
+
+show_shared_states:- 
+	findall(Y,get_residual(shared_reachable(_X,Y),_F),Reached),
+	sort(Reached,Rsort),
+	member(State,Rsort),
+	writeln(State),
+	fail.
+show_shared_states.
+
+count_shared_states(L):- 
+	findall(1,get_residual(shared_reachable(_X,_Y),_F),List),
+	length(List,L).
+
+bound_search:- 
+	conget(foo,N),
+	(N > 1000000 -> 
+	    abort('Too many states!')
+	  ; N1 is N + 1,
+	    conset(foo,N1) ).
+

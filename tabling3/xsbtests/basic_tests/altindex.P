@@ -1,0 +1,6 @@
+
+test :- telling(X),
+      compile(index_t2,[]), consult(index_t2),
+      tell(X), writeln('Compiling finished'), fail.
+test :- writeln('Test results'), top_level.
+

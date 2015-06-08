@@ -1,0 +1,15 @@
+test(0, 'S'('NP'('N'('Ajay')),'VP'('AP'('A'(lumba)),'V'(hai)))).
+test(1, 'S'('NP'('N'('Rita')),'VP'('AP'('A'(sundar)),'V'(hai)))).
+test(2, 'S'('NP'('N'('Ajay')),'VP'('AP'('A'(gussa)),'V'(hai)))).
+test(3, 'S'('NP'('N'('Rita')),'VP'('AP'('A'(abhimani)),'V'(hai)))).
+test(4, 'S'('NP'('N'('Rita')),
+	    'VP'('AP'('PP'('NP'('N'('Ajay')),se),'A'(gussa)),'V'(hai)))).
+test(5, 'S'('NP'('N'('Ajay'),ko),
+	    'VP'('AP'('PP'('NP'('N'('Rita')),pe),'A'(garv)),'V'(hai)))).
+test(6, 'S'('NP'('N'('Ajay'),ne),
+	    'VP'('NP'('N'('Rita'),ko),
+		 'AP'('PP'('NP'('N'('Moti')),se),'A'(gussa)),'V'(chhora)))).
+test(7, 'S'('NP'('N'('Rita'),ne),
+	    'VP'('NP'('N'('Ajay'),ko),
+		 'AP'('PP'('NP'('N'('Moti')),pe),'A'(garv)),'V'(chhora)))).
+

@@ -1,0 +1,122 @@
+% This file tests newExtTerm/1 and retractallExtTerm/1 for
+% hasAttr_ext, newExtTerm/1 for minAttr_ext, and checks cross
+% dependencies for minAttr_ext and hasAttr_ext. 
+
+:- [altcdf].
+:- [test_utils].
+
+:- import load_extensional_facts/1 from cdf_io.
+:- import update_all_components/2 from cdf_comps_noshare.
+:- import load_component/3 from cdf_comps_share.
+:- import retractallExtTerm/1,abolish_cdf_tables/0 from cdf_init_cdf.
+:- import allAttr/3, hasAttr/3, classHasAttr/3, minAttr/4, maxAttr/4, 
+	 coversAttr/3,isa/2,cdf_id_fields/4,
+	 newExtTerm/1 from cdf_init_cdf.
+
+loadfacts:- 
+	load_extensional_facts('check_testdir').
+
+testreturns:- 
+	loadfacts,
+	removeUserContext(_),
+	test_display(currentUserContext(_,_)),
+	addUserContext(foo,term),
+	test_display(currentUserContext(_,_)),
+	removeUserContext(_),
+	test_display(currentUserContext(_,_)),
+
+	removeCheckFromContext(_,_),
+	test_display(cdf_flags(_,_)),
+	addCheckToContext(check_types/2,query),
+	addCheckToContext(classify_if_necessary/2,componentUpdate),
+	test_display(cdf_flags(_,_)),
+	removeCheckFromContext(_,_),
+	test_display(cdf_flags(_,_)),
+
+            test_display(cdf_check_ground_fail(hasAttr(cid(c1,test),_,oid(o2,test)))),
+            test_display(cdf_check_ground_fail(
+	                                       hasAttr(cid(c1,test),rid(_,cdfpt),oid(o2,test)))),
+	test_display(cdf_check_ground_fail(
+   	                   isa(cid(p(cid(a,test),cid(_,cdfpt)),test),cid('CDF Root',cdf)))),
+	test_display(cdf_check_ground_fail(
+   	                   isa(cid(p(cid(a,test),cid(_,cdftp)),test),cid('CDF Root',cdf)))),
+
+            test_display(check_types(hasAttr(cid(c1,test),rid(_,test),oid(o2,test)))),
+            test_display(check_types(
+                                       hasAttr(cid(c1,test),crid(cr1,cdfpt),oid(o2,test)))),
+	test_display(check_types(
+	          hasAttr(cid(p(cid(a,test),rid(b,test)),test),rid(r,test),cid(c,test)))),
+            test_display(check_types(isa(cid(c2,test),oid(o2,test)))),
+            test_display(check_types(isa(oid(o2,test),cid(c2,test)))),
+	test_display(check_types(
+	          isa(cid(p(cid(a,test),cid(b,test)),test),cid(c,test)))),
+	test_display(check_types(
+	          isa(cid(p(cid(a,test),rid(b,test)),test),cid(c,test)))),
+
+            test_display(check_identity(   
+  	                           hasAttr_ext(oid(o2,test),rid(r4,test),oid(o12,test)))),
+            test_display(check_identity(   
+  	                           hasAttr_ext(oid(o2,test),rid(r4,test),oid(13,test)))),
+
+            test_display(check_implication(usercall,
+  	                           hasAttr_ext(oid(o2,test),rid(r4,test),oid(13,test)))),
+            test_display(check_implication(usercall,
+  	                           hasAttr_ext(oid(o2,test),rid(r4,test),cid(c12,test)))),
+
+	test_display(isa_ext_test(_,_)),
+            test_display(classify_if_necessary(usercall,test)),
+	test_display(isa_ext_test(_,_)),
+	test_display(hasAttr_ext(_,_,_)),
+	check_redundancies_notime(usercall,f(test,retract)),
+	test_display(hasAttr_ext(_,_,_)).
+
+	
+isa_ext_test(A,B):- 
+	isa_ext(A,B),
+	cdf_id_fields(A,_,_,test).
+
+end_of_file.
+
+%------------------------------------------------------------------------------------------
+/*       Baseline check of hasAttr/3: return
+         hasAttr(oid(o2,test),rid(r4,test),oid(o12,test))
+         hasAttr(oid(o2,test),rid(r2,test),oid(o12,test))
+         hasAttr(oid(o2,test),rid(r1,test),cid(c12,test))
+         hasAttr(oid(o2,test),rid(prod(rid(r2,test),rid(r2,test)),test),cid(c12,test)) */
+testhasAttrreturns_1:- 
+	test_display(hasAttr(oid(o2,test),X,_Y)).
+
+%------------------------------------------------------------------------------------------
+
+/*          below the following bindings should be returned.
+            hasAttr(oid(o2,test),rid(r4,test),oid(o13,test))
+            hasAttr(oid(o2,test),rid(r4,test),oid(o12,test))
+            hasAttr(oid(o2,test),rid(r1,test),oid(o12,test))
+            hasAttr(oid(o2,test),rid(prod(rid(r2,test),rid(r2,test)),test),cid(c12,test))
+Note that  X = rid(r2,test) Y = oid(o12,test) is implied by          
+               X = rid(r1,test) Y = oid(o12,test); */
+testhasAttrreturns_2:- 
+%	add an object in a class that already has a hasAttr
+	newExtTerm(hasAttr_ext(oid(o2,test),rid(r1,test),oid(o12,test))),
+%	add an object not in a class that already has a hasAttr
+	newExtTerm(hasAttr_ext(oid(o2,test),rid(r4,test),oid(o13,test))),
+	test_display(hasAttr(oid(o2,test),X,_Y)).
+
+%------------------------------------------------------------------------------------------
+
+/*  bindings should be the same as testhasAttrreturns_1 */
+testhasAttrreturns_3:- 
+	retractallExtTerm(hasAttr_ext(oid(o2,test),rid(r4,test),oid(o13,test))),
+	retractallExtTerm(hasAttr_ext(oid(o2,test),rid(r1,test),oid(o12,test))),
+	test_display(hasAttr(oid(o2,test),_X,_Y)).
+
+%------------------------------------------------------------------------------------------
+/*   check hasAttr / minAttr cross dependencies.
+     bindings should be the same as testhasAttrreturns_2 */
+testhasAttrreturns_4:- 
+	newExtTerm(minAttr_ext(oid(o2,test),rid(r1,test),oid(o12,test),1)),
+	newExtTerm(minAttr_ext(oid(o2,test),rid(r4,test),oid(o13,test),1)),
+	test_display(hasAttr(oid(o2,test),X,_Y)).
+
+end_of_file.
+

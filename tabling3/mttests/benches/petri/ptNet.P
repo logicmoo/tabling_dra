@@ -1,0 +1,148 @@
+:- import flatten/2,memberchk/2, member/2,length/2 from basics.
+:- import parsort/4 from machine.
+
+% Place Transition Net Evaluator.
+% Does not consider omega markings
+
+:- import conget/2, conset/2 from machine.
+
+:- table reachable/2.
+reachable(InState,NewState):-
+	reachable(InState,State),
+%	writeln(reachable(InState,State)),
+	hasTransition(State,NewState),
+        bound_search.
+reachable(InState,NewState):-
+	hasTransition(InState,NewState).
+
+bound_search:- 
+	conget(foo,N),
+	(N > 1000000 -> 
+	    abort('Too many states!')
+	  ; N1 is N + 1,
+	    conset(foo,N1) ).
+
+:- table right_reachable/2.
+right_reachable(InState,NewState):-
+	hasTransition(InState,MidState),
+	right_reachable(MidState,NewState).
+right_reachable(InState,NewState):-
+	hasTransition(InState,NewState).
+
+:- thread_shared shared_reachable/2.
+:- table shared_reachable/2.
+shared_reachable(InState,NewState):-
+	shared_reachable(InState,State),
+	hasTransition(State,NewState).
+shared_reachable(InState,NewState):-
+	hasTransition(InState,NewState).
+
+hasTransition(State,NewState):-
+	get_rules_for_state(State,AllRules),
+	member(Rule,AllRules),
+	apply_rule_to_state(Rule,State,NewState).
+%        writeln(state(State,Rule,NewState)).
+
+%----
+% Constructs sets of rules with concession in State.  Also indicates which
+% rules have input or output conflicts
+get_rules_for_state(State,Flatrules):-
+	get_rules_for_state_1(State,State,Rules),
+	flatten(Rules,Flatrules),
+	!.
+
+get_rules_for_state_1([],_State,[]).
+get_rules_for_state_1([place(P,_)|T],State,[Rules1|RT]):-
+	findall(rule(place(P,N),Places,Output),rule(place(P,N),Places,Output),Rules),
+	check_concession(Rules,State,Rules1),
+	get_rules_for_state_1(T,State,RT).
+
+% Check concession checks that a token is in all places in *t.
+% For unbounded nets, dont need to check that no token is in t*. 
+check_concession([],_,[]).
+check_concession([rule(Inp,Ilist,Outlist)|T],Input,
+                	[rule(Inp,Ilist,Outlist)|T1]):-
+	pt_ord_subset(Ilist,Input),
+%	ord_disjoint(Outlist,Input), not needed here
+	!,
+	check_concession(T,Input,T1).
+check_concession([_Rule|T],Input,T1):-
+	check_concession(T,Input,T1).
+
+pt_ord_subset([], _).
+pt_ord_subset([place(P1,_)|Tail1], [place(P2,_)|Tail2]) :-
+	compare(Order, P1, P2),
+	pt_ord_subset(Order, place(P1,_), Tail1, Tail2).
+
+pt_ord_subset(=, _, Tail1, Tail2) :-
+	pt_ord_subset(Tail1, Tail2).
+pt_ord_subset(>, place(P1,_), Tail1, [place(P2,_)|Tail2]) :-
+	compare(Order, P1, P2),
+	pt_ord_subset(Order, place(P1,_), Tail1, Tail2).
+
+%-------
+apply_rule_to_state(rule(In,InS,Out),State,NewState):-
+ 	pt_ord_subtract(State,[In|InS],Diff),
+	flatsort([Out|Diff],FlatState),
+	condense(FlatState,NewState).
+
+pt_ord_subtract([], _, []).
+pt_ord_subtract([Head1|Tail1], Set2, Difference) :-
+	pt_ord_subtract(Set2, Head1, Tail1, Difference).
+
+pt_ord_subtract([], Head1, Tail1, [Head1|Tail1]).
+pt_ord_subtract([place(P2,N2)|Tail2], place(P1,N1), Tail1, Difference) :-
+	compare(Order, P1, P2),
+	pt_ord_subtract(Order, place(P1,N1), Tail1, place(P2,N2), Tail2, Difference).
+
+pt_ord_subtract(<, Head1, Tail1, Head2, Tail2, [Head1|Difference]) :-
+        'pt_ord subtract'(Tail1, Head2, Tail2, Difference).
+pt_ord_subtract(>, Head1, Tail1, _,     Tail2, Difference) :-
+        pt_ord_subtract(Tail2, Head1, Tail1, Difference).
+pt_ord_subtract(=, place(P1,N1),     Tail1, _Head2,  Tail2, Difference) :-
+	(N1 == 1 -> Difference = Diff ; NNew is N1 -1, Difference = [place(P1,NNew)|Diff]),
+        pt_ord_subtract(Tail1, Tail2, Diff).
+
+'pt_ord subtract'([], _, _, []).
+'pt_ord subtract'([place(P1,N1)|Tail1], place(P2,N2), Tail2, Difference) :-
+        compare(Order, P1, P2),
+        pt_ord_subtract(Order, place(P1,N1), Tail1, place(P2,N2), Tail2, Difference).
+
+condense([],[]).
+condense([H],[H]):-!.
+condense([place(P1,N),place(P1,M)|T1],[place(P1,New)|T2]):- !,
+	New is N + M,
+	condense(T1,T2).
+condense([Head|T1],[Head|T2]):- !,
+	condense(T1,T2).
+
+flatsort(In,Out):- 
+	flatten(In,In1),
+	parsort(In1,asc,0,Out).
+
+count_states(L):- 
+	findall(1,get_residual(reachable(_X,_Y),_F),List),
+	length(List,L).
+
+count_rr_states(L):- 
+	findall(1,get_residual(right_reachable(_X,_Y),_F),List),
+	length(List,L).
+
+show_states:- 
+	get_residual(reachable(X,Y),_F),writeln((X,Y)),fail.
+show_states.
+
+show_shared_states:- 
+	findall(Y,get_residual(shared_reachable(_X,Y),_F),Reached),
+	sort(Reached,Rsort),
+	member(State,Rsort),
+	writeln(State),
+	fail.
+show_shared_states.
+
+count_shared_states(L):- 
+	findall(1,get_residual(shared_reachable(_X,_Y),_F),List),
+	length(List,L).
+
+end_of_file.
+

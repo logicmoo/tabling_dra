@@ -1,0 +1,178 @@
+:- import concat_atom/2 from string.
+
+:- thread_shared(rule/3).
+:- index(rule/3,trie).
+:- ensure_loaded(omegaNet).
+:- import between/3,member/2 from basics.
+:- import par_execute/1, n_par_execute/2 from thread.
+
+%------------------------------------------------------------------------------
+/*
+For Private Tables
+
+Generates a highly connected chain of loops of length N, with a small
+unbounded widget at the end.  Using n_par_execute n threads can
+traverse this using their private tables.
+
+Using par_execute/1 rather than n_par_execute/2 because goals are
+different for each thread.
+
+Not at all the best structure to test, but at least we understand it.
+
+*/
+
+gen_private_omega(N):-
+	retractall(rule(_,_,_)),
+	generate_omega_1(N).
+
+private_scale_omega(NumThreads):- 
+	abolish_all_tables,
+	cputime(B1),
+	walltime(Before),
+	n_par_execute( is_reachable([place(s0,1)],_), NumThreads ),
+%	is_reachable([place(s0,1)],_), count_states(L),writeln(numstates(L)),
+	walltime(After),
+	cputime(A1),
+	Time is After - Before,
+	write(datum([omega,priv],NumThreads,Time)),writeln('.'),
+	T1 is A1 - B1,
+	write(cpudatum([omega,priv],NumThreads,T1)),writeln('.'),
+	flush_output.
+
+alt_private_scale_omega(NumThreads):- 
+	abolish_all_tables,
+	cputime(B1),
+	walltime(Before),
+%	statistics(mutex),
+	n_par_execute( alt_is_reachable([place(s0,1)],_), NumThreads ),
+%	alt_is_reachable([place(s0,1)],_), 
+%	alt_count_states(L),writeln(numstates(L)),
+	walltime(After),
+	cputime(A1),
+	Time is After - Before,
+	write(datum([omega,priv],NumThreads,Time)),writeln('.'),
+	T1 is A1 - B1,
+	write(cpudatum([omega,priv],NumThreads,T1)),writeln('.'),
+	flush_output.
+
+% for testing
+bench_omega(N,NumThreads,Time):- 
+	abolish_all_tables,
+	retractall(rule(_,_,_)),
+	generate_omega_1(N),
+	walltime(Before),
+	n_par_execute( is_reachable([place(s0,1)],_), NumThreads ),
+%	is_reachable([place(s0,1)],_), count_states(L),writeln(numstates(L)),
+	walltime(After),
+	Time is After - Before,
+	statistics.
+
+generate_omega_1(N):- 
+	between(1,N,M),
+	concat_atom([s,M],Sm),
+	Mpre is M - 1,concat_atom([s,Mpre],Spre),
+	asserta(rule(place(Spre,1),[],[place(Sm,1)])),
+	asserta(rule(place(Sm,1),[],[place(Spre,1)])),
+	fail.
+generate_omega_1(N):- 
+	generate_small_unbounded(N).
+
+generate_small_unbounded(N):- 
+	concat_atom([s,N],S1),
+	N1 is N + 1,
+	concat_atom([s,N1],S2),
+	N2 is N + 2,
+	concat_atom([s,N2],S3),
+	N3 is N + 3,
+	concat_atom([s,N3],S4),
+	assert(rule(place(S1,1),[],[place(S1,1),place(S2,1)])),
+	assert(rule(place(S1,1),[],[place(S3,1)])),
+	assert(rule(place(S2,1),[place(S3,1)],[place(S3,1),place(S4,1)])),
+	assert(rule(place(S3,1),[],[place(S1,1)])).
+
+
+%------------------------------------------------------------------------------
+/*
+For Shared Tables
+
+Generates Numthread highly connected chains of length N, each with
+small unbounded widgets at the end.  These chains are disjoint, so
+that they can be traversed by N threads in parallel, theoretically
+without any contention.
+
+Using par_execute/1 rather than n_par_execute/2 because goals are
+different for each thread.
+
+Not at all the best structure to test, but at least we understand it.
+
+*/
+
+shared_bench_omega(N,Copies,NumThreads):- 
+	abolish_all_tables,
+	retractall(rule(_,_,_)),
+	shared_generate_omega(0,Copies,N,InG),
+	get_par_goals(Copies,NumThreads,InG,OutG),
+%	writelist(OutG),
+	walltime(Before),
+%	statistics(mutex),
+	par_execute(OutG),
+%	statistics(mutex),
+%	shared_is_reachable([place(s1,1)],_),
+	walltime(After),
+	Time is After - Before,
+	write(datum([omega,sh],NumThreads,Time)),
+	writeln('.'),
+	flush_output.
+
+get_par_goals(Max,NThreads,InG,OutG):- 
+	Quot is Max//NThreads,
+	get_goals( InG, Quot, OutG ).	
+
+get_goals( [], _NT, []).
+get_goals( LS, NT, [seq_execute(G)|Gs]) :-
+	   get_first_goals( NT, LS, LS1, G),
+	   get_goals( LS1, NT, Gs).
+
+get_first_goals( _NT, [], [], [] ).
+get_first_goals( 0, LS, LS, [] ).
+get_first_goals( NT, [S|LS], LS1, [S|Gs]) :-
+		 NT1 is NT - 1,
+		 get_first_goals( NT1, LS, LS1, Gs).
+
+shared_generate_omega(Numthreads,Numthreads,_ChainLength,[]):- !.
+shared_generate_omega(N,Numthreads,ChainLength,
+	              [shared_is_reachable([place(Sn,1)],_)|Rest]):- 
+	ChainStart is N*(ChainLength + 4),
+        shared_generate_omega_1(ChainStart,ChainLength),
+	concat_atom([s,ChainStart],Sn),
+	N1 is N + 1,
+	shared_generate_omega(N1,Numthreads,ChainLength,Rest).
+
+% small unbounded adds 3 new nodes.
+shared_generate_omega_1(N,ChainLength):- 
+	End is N + ChainLength,
+	Start is N + 1,
+	between(Start,End,M),
+	concat_atom([s,M],Sm),
+	Mpre is M - 1,concat_atom([s,Mpre],Spre),
+	assert(rule(place(Spre,1),[],[place(Sm,1)])),
+	fail.
+shared_generate_omega_1(N,ChainLength):- 
+	End is N + ChainLength,
+	generate_small_unbounded(End).
+
+seq_execute(H):- 
+		 member(G,H),
+%		 writeln(G),
+		 call(G),
+		 fail.
+seq_execute(_H).
+
+writelist([]).
+writelist([H|T]):- 
+		   writeln(H),
+		   writelist(T).
+
+
+
+

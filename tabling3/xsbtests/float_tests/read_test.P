@@ -1,0 +1,12 @@
+:- export test/0.
+
+test :- seeing(X), see('read_test_old'),
+	( read_one, fail ; true ), seen, see(X).
+
+read_one :-
+	repeat,
+		read(Term),
+			( Term =.. [_,Float], float(Float),
+			  write(Term), writeln('.')
+			; Term == end_of_file, !
+			).

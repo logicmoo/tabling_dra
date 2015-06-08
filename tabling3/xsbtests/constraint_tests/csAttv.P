@@ -1,0 +1,8 @@
+
+:- import {}/1 from clpr.
+:- import dump/3 from dump.
+
+test:- p(Y,Y,X),dump([X],[x],Xs),writeln(Xs).
+
+:- table p/3.
+p(Y,Z,X):- {X < 9}.

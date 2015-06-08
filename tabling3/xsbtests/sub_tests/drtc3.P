@@ -1,0 +1,1 @@
+go :- ['Driver'], drtc('X8','Data/chain').

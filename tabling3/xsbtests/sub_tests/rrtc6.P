@@ -1,0 +1,1 @@
+go :- ['Driver'], rrtc('X8','Data/tree').

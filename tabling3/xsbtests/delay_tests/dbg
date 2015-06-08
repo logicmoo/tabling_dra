@@ -1,0 +1,19 @@
+#!/bin/csh
+#
+set XEMU = ~kostis/research/HiLog/emu/xsb.dbg
+#
+if (-e sanity.out) then
+        /bin/rm sanity.out
+endif
+csh sanity.csh $XEMU > sanity.out
+grep "differ" sanity.out
+if ($status == 0) then
+	echo "--------------------------------------------------------"
+        echo "Bad News: Emulator is NO GOOD... (check file sanity.out)"
+	echo "--------------------------------------------------------"
+else
+        /bin/rm sanity.out
+	echo "--------------------------------------------------------"
+	echo "Good News: Emulator passed current delay test suite."
+	echo "--------------------------------------------------------"
+endif

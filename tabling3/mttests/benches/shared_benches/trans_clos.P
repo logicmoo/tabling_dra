@@ -1,0 +1,236 @@
+:- import thread_create/3, thread_join/2, thread_self/1 from thread.
+:- import mutex_create/1, mutex_destroy/1, with_mutex/2 from mutex_xsb.
+
+:- dynamic edge/2.
+:- dynamic rec_type/2.
+
+:- thread_shared edge/2.
+:- thread_shared rec_type/1.
+
+:- table tc_lr_s/2, tc_rr_s/2.
+:- thread_shared tc_lr_s/2, tc_rr_s/2.
+
+:- table tc_lr_p/2, tc_rr_p/2.
+:- thread_private tc_lr_p/2, tc_rr_p/2.
+
+:- table tc_lr/2, tc_rr/2.
+
+:- dynamic out/1.
+
+:- thread_shared out/1.
+
+
+tc_lr_p( InitNode, X ) :-
+	tc_lr_p( InitNode, N ),
+	edge( N, X ).
+tc_lr_p( InitNode, X ) :-
+	edge( InitNode, X ).
+
+tc_rr_p( InitNode, X ) :-
+	edge( InitNode, N ),
+	tc_rr_p( N, X ).
+tc_rr_p( InitNode, X ) :-
+	edge( InitNode, X ).
+
+
+tc_lr_s( InitNode, X ) :-
+	tc_lr_s( InitNode, N ),
+	edge( N, X ).
+tc_lr_s( InitNode, X ) :-
+	edge( InitNode, X ).
+
+tc_rr_s( InitNode, X ) :-
+	edge( InitNode, N ),
+	tc_rr_s( N, X ).
+tc_rr_s( InitNode, X ) :-
+	edge( InitNode, X ).
+
+tc_lr( InitNode, X ) :-
+	tc_lr( InitNode, N ),
+	edge( N, X ).
+tc_lr( InitNode, X ) :-
+	edge( InitNode, X ).
+
+tc_rr( InitNode, X ) :-
+	edge( InitNode, N ),
+	tc_rr( N, X ).
+tc_rr( InitNode, X ) :-
+	edge( InitNode, X ).
+
+call_rec_tc( S ) :-
+	out(yes),
+	rec_type(F),
+	G =.. [F,S,X],
+	G,
+	( ( F == tc_rr ; F == tc_lr )
+	->	writeln(S/X)
+	;	with_mutex( out_mut, writeln(S/X) )
+	),
+	fail.
+call_rec_tc( S ) :-
+	out(no),
+	rec_type(F),
+	G =.. [F,S,_],
+	G,
+	fail.
+call_rec_tc( _ ).
+
+do_tc( S, S ) :-
+	call_rec_tc( S ), !.
+do_tc( S, S2 ) :-
+	S2 > S,
+	call_rec_tc( S ),
+	S1 is S + 1,
+	do_tc( S1, S2 ).
+
+create_threads( M, _, [] ) :- M =< 0.
+create_threads( M, P, [T|Ts] ) :- 
+	S is M - P + 1,
+	thread_create( do_tc(S,M), T, [] ),
+	S1 is S - 1,
+	create_threads(S1,P,Ts).
+
+readGraph(Name) :-
+	abolish(edge/2),
+        index(edge/2,trie),
+	load_dyn(Name).
+
+init_info(T) :-
+	abolish_all_tables,
+	abolish(rec_type/1),
+	assert(rec_type(T)).
+
+doTest(F,M,N) :-
+	P is floor(M/N),
+	abolish(out/1),
+	assert(out(yes)),
+	mutex_create(out_mut),
+	walltime(T1),
+	tell(F),
+	create_threads( M, P, Ts ),
+	thread_join( Ts, _ ),
+	walltime(T2),
+	told,
+	mutex_destroy(out_mut),
+	T is T2 - T1,
+	writeln( T ).
+
+doTest_s(F,M) :-
+	abolish(out/1),
+	assert(out(yes)),
+	walltime(T1),
+	tell(F),
+	do_tc(1,M),
+	walltime(T2),
+	told,
+	T is T2 - T1,
+	writeln( T ).
+
+test_ls( Name, M, N ) :-
+	readGraph( Name ),
+	init_info(tc_lr_s),
+	doTest(ls,M,N).
+
+test_rs( Name, M, N ) :-
+	readGraph( Name ),
+	init_info(tc_rr_s),
+	doTest(rs,M,N).
+
+test_lp( Name, M, N ) :-
+	readGraph( Name ),
+	init_info(tc_lr_p),
+	doTest(lp,M,N).
+
+test_rp( Name, M, N ) :-
+	readGraph( Name ),
+	init_info(tc_rr_p),
+	doTest(rp,M,N).
+
+test_r( Name, M ) :-
+	readGraph( Name ),
+	init_info(tc_rr),
+	doTest_s(r,M).
+
+test_l( Name, M ) :-
+	readGraph( Name ),
+	init_info(tc_lr),
+	doTest_s(l,M).
+
+do_bench_mt(D,M,N) :-
+	abolish(out/1),
+	assert(out(no)),
+	P is floor(M/N),
+	walltime(T1),
+	create_threads( M, P, Ts ),
+	thread_join( Ts, _ ),
+	walltime(T2),
+	T is T2 - T1,
+	write( datum(D,N,T) ), writeln('.').
+
+do_bench_s(D,M) :-
+	abolish(out/1),
+	assert(out(no)),
+	walltime(T1),
+	do_tc(1,M),
+	walltime(T2),
+	T is T2 - T1,
+	write( datum(D,T) ), writeln('.').
+
+
+bench( T, TN, GName, GSize ) :-
+	init_info(T),
+	do_bench_s( [TN,GName], GSize ).
+
+priv_benches(GName,GSize) :-
+	bench(tc_lr_p,tc_lr,GName,GSize),
+	bench(tc_rr_p,tc_rr,GName,GSize).
+
+sh_benches(GName,GSize) :-
+	bench(tc_lr_s,tc_lr,GName,GSize),
+	bench(tc_rr_s,tc_rr,GName,GSize).
+
+seq_benches(GName,GSize) :-
+	bench(tc_lr,tc_lr,GName,GSize),
+	bench(tc_rr,tc_rr,GName,GSize).
+
+mt_bench( T, GName, GSize, NThreads ) :-
+	GSize >= NThreads,
+	init_info(T),
+	do_bench_mt( [T,GName], GSize, NThreads ),
+	flush_output.
+mt_bench( T, GName, GSize, NThreads ).
+
+
+mt_benches(GName,GSize,NT) :-
+	mt_bench(tc_lr_s,GName,GSize,NT),
+	mt_bench(tc_lr_p,GName,GSize,NT),
+	mt_bench(tc_rr_s,GName,GSize,NT),
+	(	NT =< 16
+	->	mt_bench(tc_rr_p,GName,GSize,NT)
+	;	true
+	).
+
+mt_benches_2(GName,GSize,NT) :-
+	mt_bench(tc_lr_s,GName,GSize,NT),
+	mt_bench(tc_lr_p,GName,GSize,NT).
+
+mt_mem_bench_ls(GName,GSize,NT) :-
+	readGraph(GName),
+	mt_bench(tc_lr_s,GName,GSize,NT),
+	writeln(memsuccess).
+
+mt_mem_bench_lp(GName,GSize,NT) :-
+	readGraph(GName),
+	mt_bench(tc_lr_p,GName,GSize,NT),
+	writeln(memsuccess).
+
+mt_mem_bench_rs(GName,GSize,NT) :-
+	readGraph(GName),
+	mt_bench(tc_rr_s,GName,GSize,NT),
+	writeln(memsuccess).
+
+mt_mem_bench_rp(GName,GSize,NT) :-
+	readGraph(GName),
+	mt_bench(tc_rr_p,GName,GSize,NT),
+	writeln(memsuccess).
+

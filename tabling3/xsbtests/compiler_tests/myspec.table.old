@@ -1,0 +1,620 @@
+
+
+'consecutive_#301'([_1|_2], _3, _4, _5, _6) :- 
+        _1 = clause(_7, _8, _9), 
+        _4 = clause(_10, _11, _12), 
+        _7 == _10 -> 
+        _3 = [], 
+        consecutive(_5, _6, _2)
+         ; 
+        _3 = [_1|_13], 
+        'consecutive_#301'(_2, _13, _4, _5, _6).
+
+spec(module(_1, _2, _3, _4), module(_1, _2, _5, _4)) :- 
+        initialise, 
+        collect_pi_calls(_3, _2, _6), 
+        interesting_calls(_6, _3, _7), 
+        merge_calls(_7, _8), 
+        specialise(_8, _1, _9, _3), 
+        new_clause_list(_8, _9, _5), 
+        generate_table_decl(_2, _8).
+
+initialise :- 
+        conset('singleton call #', 0).
+
+collect_pi_calls(_1, _2, _3) :- 
+        'collect pi calls'(_1, _4), 
+        'well, add some more'(_2, _4), 
+        close_pi_calls(_4, _3).
+
+:- mode  collect pi calls(+,?).
+'collect pi calls'([], _1).
+'collect pi calls'([pred(_1, _2, _3)|_4], _5) :- 
+        'collect from pred'(_2, _5), 
+        'collect pi calls'(_4, _5).
+
+:- mode  collect from pred(+,?).
+'collect from pred'([], _1).
+'collect from pred'([clause(_1, _2, _3)|_4], _5) :- 
+        chb(_2, _5), 
+        'collect from pred'(_4, _5).
+
+:- mode  chb(+,?).
+chb(and(_1, _2), _3) :- 
+        chb(_1, _3), 
+        chb(_2, _3).
+chb(or(_1, _2), _3) :- 
+        chb(_1, _3), 
+        chb(_2, _3).
+chb(if(_1, _2), _3) :- 
+        chb(_1, _3), 
+        chb(_2, _3).
+chb(not(_1), _2) :- 
+        chb(_1, _2).
+chb(goal(_1, _2), _3) :- 
+        filter_goal(_1, _2) -> 
+        member1(pi_calls(_1, _4), _3), 
+        add_new_clause(body_call(_2), _4)
+         ; 
+        true.
+chb(inlinegoal(_1, _2, _3), _4).
+
+:- mode  filter_goal(+,+).
+filter_goal(_1, _2) :- 
+        sym_prop(defined, _1), 
+        sth_bound(_2).
+
+'well, add some more'([], _1).
+'well, add some more'([_1|_2], _3) :- 
+        chb(_1, _3), 
+        'well, add some more'(_2, _3).
+
+interesting_calls([], _1, []).
+interesting_calls([pi_calls(_1, _2)|_3], _4, _5) :- 
+        _6 = pred(_1, _7, _8), 
+        member1(_6, _4), 
+        'interesting calls'(_2, _6, _9), 
+        _9 == [] -> 
+        _5 = _10
+         ; 
+        _5 = [pi_calls(_1, _9)|_10], 
+        interesting_calls(_3, _4, _10).
+
+:- mode  interesting calls(+,+,-).
+'interesting calls'([], _1, []).
+'interesting calls'([_1|_2], _3, _4) :- 
+        interesting_indeed(_1, _3, _5) -> 
+        _4 = [_5|_6]
+         ; 
+        _4 = _6, 
+        'interesting calls'(_2, _3, _6).
+
+:- mode  interesting_indeed(+,+,-).
+interesting_indeed(body_call(_1), pred(_2, _3, _4), body_call(_1, _5)) :- 
+        find_selected_clauses(_1, _3, _5), 
+        _5 \== [] -> 
+        option(spec_repr) -> 
+        consecutive(_3, _6, _5, _7), 
+        check_for_cut(_5, _7), 
+        _6 = [_8|_9] -> 
+        true
+         ; 
+        _7 = [_10|_11]
+         ; 
+        'give a second chance'(_1, _5)
+         ; 
+        proper_subset(_5, _3)
+         ; 
+        'give a second chance'(_1, _5)
+         ; 
+        sym_name(_2, _12, _13), 
+        warning(','('A partially instantiated call to ', ','(_12, ','(/, ','(_13, ' will fail!'))))), 
+        fail.
+
+:- index find_selected_clauses/3-2.
+:- mode  find_selected_clauses(+,+,-).
+find_selected_clauses(_1, [], []).
+find_selected_clauses(_1, [_2|_3], _4) :- 
+        _2 = clause(_5, _6, _7), 
+        unifies_mnl(_1, _5) -> 
+        _4 = [_2|_8]
+         ; 
+        _4 = _8, 
+        find_selected_clauses(_1, _3, _8).
+
+unifies_mnl([], _1).
+unifies_mnl([_1|_2], [_3|_4]) :- 
+        umnl_chk(_1, _3), 
+        unifies_mnl(_2, _4).
+
+:- mode  umnl_chk(+,+).
+umnl_chk(varocc(_1), _2).
+umnl_chk(integer(_1), _2) :- 
+        _2 = varocc(_3) -> 
+        true
+         ; 
+        _2 = integer(_1).
+umnl_chk(real(_1), _2) :- 
+        _2 = varocc(_3) -> 
+        true
+         ; 
+        _2 = real(_1).
+umnl_chk(constant(_1), _2) :- 
+        _2 = varocc(_3) -> 
+        true
+         ; 
+        _2 = constant(_1).
+umnl_chk(structure(_1, _2), _3) :- 
+        _3 = varocc(_4) -> 
+        true
+         ; 
+        _3 = structure(_1, _5), 
+        unifies_mnl(_2, _5).
+
+'give a second chance'(_1, _2) :- 
+        find_msg(_1, _2, _3), 
+        sth_bound(_3).
+
+merge_calls([], []).
+merge_calls([pi_calls(_1, _2)|_3], [pi_calls(_1, _4, _5)|_6]) :- 
+        _2 = [_7|_8], 
+        'merge calls'(_7, _8, _4), 
+        merge_calls(_3, _6).
+
+:- mode  merge calls(+,+,-).
+'merge calls'(body_call(_1, _2), _3, [body_calls(_4, _2, [_1|_5], _6, _7)|_8]) :- 
+        'find all delete'(_3, _2, _5, _9), 
+        'find msg of calls'(_1, _5, _4), 
+        _9 == [] -> 
+        _8 = []
+         ; 
+        _9 = [_10|_11], 
+        'merge calls'(_10, _11, _8).
+
+:- mode  find all delete(+,+,-,-).
+'find all delete'([], _1, [], []).
+'find all delete'([_1|_2], _3, _4, _5) :- 
+        _1 = body_call(_6, _7), 
+        _3 == _7 -> 
+        _4 = [_6|_8], 
+        _5 = _9
+         ; 
+        _4 = _8, 
+        _5 = [_1|_9], 
+        'find all delete'(_2, _3, _8, _9).
+
+:- index 'find msg of calls'/3-2.
+:- mode  find msg of calls(+,+,-).
+'find msg of calls'(_1, [], _1).
+'find msg of calls'(_1, [_2|_3], _4) :- 
+        msg(_1, _2, _5), 
+        'find msg of calls'(_5, _3, _4).
+
+specialise([], _1, _2, _2).
+specialise([pi_calls(_1, _2, _3)|_4], _5, _6, _7) :- 
+        specialise_pred(_1, _2, _3, _5, _6, _8), 
+        specialise(_4, _5, _8, _7).
+
+specialise_pred(_1, _2, _3, _4, _5, _6) :- 
+        sym_name(_1, _7, _8), 
+        sym_type(_1, tabled(_9, _10, _11, _12)) -> 
+        _13 = 1
+         ; 
+        _13 = 0, 
+\+         option(spec_repr), 
+        _3 = 0
+         ; 
+        non_overlapping_selection(_2), 
+        _3 = 1 -> 
+        message(','('% Specialising partially instantiated calls to ', ','(_7, ','(/, _8)))), 
+        'specialise pred'(_2, _7, _8, _13, _4, _5, _6)
+         ; 
+        _6 = _5, 
+        _3 = 0, 
+        warning(','('Calls select overlapping clause blocks of predicate ', ','(_7, ','(/, _8)))), 
+        message(','('           ', '(specialisation with representation cannot be performed!)')).
+
+:- mode  specialise pred(+,+,+,+,?,?,?).
+'specialise pred'([], _1, _2, _3, _4, _5, _5).
+'specialise pred'([_1|_2], _3, _4, _5, _6, _7, _8) :- 
+        _1 = body_calls(_9, _10, _11, _12, _13), 
+        specialise_calls(_9, _10, _11, _3, _4, _5, _6, _12, _13, _14), 
+        var(_14) -> 
+        _7 = _15
+         ; 
+        _7 = [_14|_15], 
+        'specialise pred'(_2, _3, _4, _5, _6, _15, _8).
+
+specialise_calls(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10) :- 
+        singleton_sets_opt(_2, _11, _12) -> 
+        singleton_special_calls(_3, _11, _12, _8)
+         ; 
+        find_msg(_1, _2, _13), 
+        represent(_13, _4, _5, _6, _7, _14, _9), 
+        make_special_pred(_2, _13, _14, _10), 
+        make_special_calls(_3, _13, _14, _8).
+
+singleton_sets_opt([clause(_1, _2, _3)|[]], _1, _2) :- 
+\+         option(unfold_off), 
+        _2 = inlinegoal(_4, _5, _6) -> 
+        true
+         ; 
+        _2 = goal(_7, _8).
+
+find_msg(_1, [_2|_3], _4) :- 
+        _2 = clause(_5, _6, _7), 
+        msg(_1, _5, _8), 
+        _3 == [] -> 
+        _4 = _8
+         ; 
+        find_msg(_8, _3, _4).
+
+:- mode  msg(+,+,-).
+msg([], [], []).
+msg([_1|_2], [_3|_4], [_5|_6]) :- 
+        msg_arg(_1, _3, _5), 
+        msg(_2, _4, _6).
+
+:- mode  msg_arg(+,+,-).
+msg_arg(structure(_1, _2), structure(_1, _3), structure(_1, _4)) :- 
+        !, 
+        msg(_2, _3, _4).
+msg_arg(_1, _1, _1) :- 
+\+         _1 = varocc(_2), 
+        !.
+msg_arg(_1, _2, varocc(_3)).
+
+represent(_1, _2, _3, _4, _5, _6, _7) :- 
+        gensym_pred(_2, _8), 
+        msg_copy(_1, _9, _10, [], 0, _11), 
+        _12 = [pred|[defined|[used|_13]]], 
+        _4 =:= 0 -> 
+        _13 = []
+         ; 
+        _13 = [tabled(_14, _15)|[]], 
+        warning(','('The specialisation of ', ','(_2, ','(/, ','(_3, ' will cause double tabling !'))))), 
+        message('           (possible source of inefficiency)'), 
+        sym_insert(_8, _11, _12, _5, _6), 
+        _7 = clause(_9, goal(_6, _10), _16).
+
+msg_copy([], [], _1, _1, _2, _2).
+msg_copy([_1|_2], [_3|_4], _5, _6, _7, _8) :- 
+        _1 = varocc(_9) -> 
+        _10 is +(_7, 1), 
+        _3 = varocc(_10), 
+        _5 = [_3|_11]
+         ; 
+        _1 = structure(_12, _13) -> 
+        _3 = structure(_12, _14), 
+        msg_copy(_13, _14, _5, _11, _7, _10)
+         ; 
+        _1 = _3, 
+        _11 = _5, 
+        _10 = _7, 
+        msg_copy(_2, _4, _11, _6, _10, _8).
+
+make_special_pred(_1, _2, _3, pred(_3, _4, _5)) :- 
+        make_special_clauses(_1, _2, _4, _6), 
+        index_euristic(_6, _7) -> 
+        sym_propin(index(_7), _3)
+         ; 
+        true.
+
+:- mode  make_special_clauses(+,+,-,-).
+make_special_clauses([], _1, [], []).
+make_special_clauses([clause(_1, _2, _3)|_4], _5, [clause(_6, _2, _3)|_7], [_6|_8]) :- 
+        make_new_args(_1, _5, _6, []), 
+        make_special_clauses(_4, _5, _7, _8).
+
+:- mode  make_new_args(+,+,?,?).
+make_new_args([], [], _1, _1).
+make_new_args([_1|_2], [_3|_4], _5, _6) :- 
+        make_new_arg(_1, _3, _5, _7), 
+        make_new_args(_2, _4, _7, _6).
+
+:- mode  make_new_arg(+,+,?,?).
+make_new_arg(structure(_1, _2), structure(_1, _3), _4, _5) :- 
+        !, 
+        make_new_args(_2, _3, _4, _5).
+make_new_arg(_1, _1, _2, _2) :- 
+\+         _1 = varocc(_3), 
+        !.
+make_new_arg(_1, _2, [_1|_3], _3).
+
+make_special_calls([], _1, _2, []).
+make_special_calls([_1|_2], _3, _4, [_5|_6]) :- 
+        make_special_call(_1, _3, _4, _5), 
+        make_special_calls(_2, _3, _4, _6).
+
+:- mode  make_special_call(+,+,+,-).
+make_special_call(_1, _2, _3, goal(_3, _4)) :- 
+        make_new_args(_1, _2, _4, []).
+
+index_euristic(_1, _2) :- 
+        _1 = [[_3|_4]|[_5|_6]], 
+        'index euristic'(_3, _1, 1, _2).
+
+:- mode  index euristic(+,+,+,-).
+'index euristic'(_1, _2, _3, _4) :- 
+        discrimination(_1, _2) -> 
+        _4 = _3
+         ; 
+        shift_left(_2, _5), 
+        _5 = [[_6|_7]|_8], 
+        _9 is +(_3, 1), 
+        'index euristic'(_6, _5, _9, _4).
+
+:- mode  discrimination(+,+).
+discrimination(_1, [[_2|_3]|_4]) :- 
+\+         _1 = varocc(_5)
+         ; 
+        _1 = _2
+         ; 
+        discrimination(_1, _4).
+
+:- mode  shift_left(+,-).
+shift_left([], []).
+shift_left([[_1|_2]|_3], [_2|_4]) :- 
+        shift_left(_3, _4).
+
+singleton_special_calls([], _1, _2, []).
+singleton_special_calls([_1|_2], _3, _4, [_5|_6]) :- 
+        singleton_special_call(_1, _3, _4, _5), 
+        singleton_special_calls(_2, _3, _4, _6).
+
+:- mode  singleton_special_call(+,+,+,-).
+singleton_special_call([], _1, _2, _3) :- 
+        'change vars in body'(_2, _3).
+singleton_special_call([_1|_2], [_3|_4], _5, _6) :- 
+        'arg unification'(_1, _3, _6, _7), 
+        singleton_special_call(_2, _4, _5, _7).
+
+:- mode  arg unification(+,+,?,?).
+'arg unification'(_1, _2, _3, _4) :- 
+        _2 = varocc(_5) -> 
+        name(_5, _6), 
+        _7 = [95|[118|_6]], 
+        atom_chars(_8, _7), 
+        _3 = and(inlinegoal(=, 2, [_1|[varocc(_8)|[]]]), _4)
+         ; 
+        _1 = varocc(_9) -> 
+        'change vars in arg'(_2, _10), 
+        _3 = and(inlinegoal(=, 2, [_1|[_10|[]]]), _4)
+         ; 
+        _1 = structure(_11, _12) -> 
+        _2 = structure(_13, _14), 
+        singleton_special_call(_12, _14, inlinegoal(true, 0, []), _15), 
+        _3 = and(_15, _4)
+         ; 
+        _3 = _4.
+
+:- mode  change vars in body(+,-).
+'change vars in body'(inlinegoal(_1, _2, _3), inlinegoal(_4, _2, _5)) :- 
+        _1 == ! -> 
+        _4 = true
+         ; 
+        _4 = _1, 
+        'change vars in args'(_3, _5).
+'change vars in body'(goal(_1, _2), goal(_1, _3)) :- 
+        'change vars in args'(_2, _3).
+
+:- mode  change vars in args(+,-).
+'change vars in args'([], []).
+'change vars in args'([_1|_2], [_3|_4]) :- 
+        'change vars in arg'(_1, _3), 
+        'change vars in args'(_2, _4).
+
+:- mode  change vars in arg(+,-).
+'change vars in arg'(varocc(_1), varocc(_2)) :- 
+        !, 
+        name(_1, _3), 
+        _4 = [95|[118|_3]], 
+        name(_2, _4).
+'change vars in arg'(structure(_1, _2), structure(_1, _3)) :- 
+        !, 
+        'change vars in args'(_2, _3).
+'change vars in arg'(_1, _1).
+
+new_clause_list([], _1, _1).
+new_clause_list([pi_calls(_1, _2, _3)|_4], _5, _6) :- 
+\+         option(spec_repr)
+         ; 
+        _3 =:= 1 -> 
+        'new clause list'(_2, _1, _3, _5, _7)
+         ; 
+        _7 = _5, 
+        new_clause_list(_4, _7, _6).
+
+:- mode  new clause list(+,+,+,?,?).
+'new clause list'([], _1, _2, _3, _3).
+'new clause list'([_1|_2], _3, _4, _5, _6) :- 
+        _1 = body_calls(_7, _8, _9, _10, _11), 
+        substitute(_5, _3, _9, _4, _8, _10, _11, _12), 
+        'new clause list'(_2, _3, _4, _12, _6).
+
+substitute([], _1, _2, _3, _4, _5, _6, []).
+substitute([_1|_2], _3, _4, _5, _6, _7, _8, [_9|_10]) :- 
+        _1 = pred(_11, _12, _13), 
+        _9 = pred(_11, _14, _13), 
+        nonvar(_8), 
+        _5 =:= 1, 
+        _11 == _3 -> 
+        subst_rep(_12, _6, _8, _15)
+         ; 
+        _15 = _12, 
+        subst_calls(_15, _3, _4, _7, _14), 
+        substitute(_2, _3, _4, _5, _6, _7, _8, _10).
+
+subst_rep(_1, _2, _3, _4) :- 
+        consecutive(_1, _5, _2, _6), 
+        append(_5, [_3|_6], _4).
+
+subst_calls([], _1, _2, _3, []).
+subst_calls([_1|_2], _3, _4, _5, [_6|_7]) :- 
+        _1 = clause(_8, _9, _10), 
+        needs_new_body(_9, _3, _4, _5, _11, _12), 
+        nonvar(_12) -> 
+        _6 = clause(_8, _11, _10)
+         ; 
+        _6 = _1, 
+        subst_calls(_2, _3, _4, _5, _7).
+
+:- mode  needs_new_body(+,+,+,+,-,-).
+needs_new_body(and(_1, _2), _3, _4, _5, and(_6, _7), _8) :- 
+        needs_new_body(_1, _3, _4, _5, _6, _8), 
+        needs_new_body(_2, _3, _4, _5, _7, _8).
+needs_new_body(or(_1, _2), _3, _4, _5, or(_6, _7), _8) :- 
+        needs_new_body(_1, _3, _4, _5, _6, _8), 
+        needs_new_body(_2, _3, _4, _5, _7, _8).
+needs_new_body(if(_1, _2), _3, _4, _5, if(_6, _7), _8) :- 
+        needs_new_body(_1, _3, _4, _5, _6, _8), 
+        needs_new_body(_2, _3, _4, _5, _7, _8).
+needs_new_body(not(_1), _2, _3, _4, not(_5), _6) :- 
+        needs_new_body(_1, _2, _3, _4, _5, _6).
+needs_new_body(goal(_1, _2), _3, _4, _5, _6, _7) :- 
+        _1 == _3, 
+        occurs_in(_2, _4, _5, _8) -> 
+        _8 = and(_9, _10) -> 
+        name_vars_uniquely(_8, _1, _6)
+         ; 
+        _6 = _8, 
+        _7 = 1
+         ; 
+        _6 = goal(_1, _2).
+needs_new_body(inlinegoal(_1, _2, _3), _4, _5, _6, inlinegoal(_1, _2, _3), _7).
+
+:- mode  occurs_in(+,+,+,-).
+occurs_in(_1, [_1|_2], [_3|_4], _3).
+occurs_in(_1, [_2|_3], [_4|_5], _6) :- 
+        occurs_in(_1, _3, _5, _6).
+
+name_vars_uniquely(_1, _2, _3) :- 
+        sym_name(_2, _4, _5), 
+        atom_chars(_4, _6), 
+        name(_5, _7), 
+        append([95|_6], [95|_7], _8), 
+        conget('singleton call #', _9), 
+        _10 is +(_9, 1), 
+        name(_10, _11), 
+        conset('singleton call #', _10), 
+        append(_8, [95|_11], _12), 
+        'name vars uniquely'(_1, _12, _3).
+
+:- mode  name vars uniquely(+,+,-).
+'name vars uniquely'(and(_1, _2), _3, and(_4, _5)) :- 
+        'name vars uniquely'(_1, _3, _4), 
+        'name vars uniquely'(_2, _3, _5).
+'name vars uniquely'(inlinegoal(_1, _2, _3), _4, inlinegoal(_1, _2, _5)) :- 
+        'name arg vars uniquely'(_3, _4, _5).
+'name vars uniquely'(goal(_1, _2), _3, goal(_1, _4)) :- 
+        'name arg vars uniquely'(_2, _3, _4).
+
+:- mode  name arg vars uniquely(+,+,-).
+'name arg vars uniquely'([], _1, []).
+'name arg vars uniquely'([_1|_2], _3, [_4|_5]) :- 
+        make_arg_vars_unique(_1, _3, _4), 
+        'name arg vars uniquely'(_2, _3, _5).
+
+:- mode  make_arg_vars_unique(+,+,-).
+make_arg_vars_unique(varocc(_1), _2, varocc(_3)) :- 
+        !, 
+        name(_1, _4), 
+        _4 = [95|[118|_5]] -> 
+        append(_4, _2, _6), 
+        atom_chars(_3, _6)
+         ; 
+        _3 = _1.
+make_arg_vars_unique(structure(_1, _2), _3, structure(_1, _4)) :- 
+        !, 
+        'name arg vars uniquely'(_2, _3, _4).
+make_arg_vars_unique(_1, _2, _1).
+
+generate_table_decl([], _1).
+generate_table_decl([goal(_1, _2)|_3], _4) :- 
+        'generate table decl'(_1, _4, _2), 
+        generate_table_decl(_3, _4).
+
+:- mode  generate table decl(+,+,+).
+'generate table decl'(_1, _2, _3) :- 
+        member1(pi_calls(_1, _4, _5), _2) -> 
+        'search for call'(_4, _3)
+         ; 
+        sym_name(_1, _6, _7), 
+        warning(','('Table specialisation declaration for ', ','(_6, ','(/, ','(_7, ' could not be '))))), 
+        message(','('           processed as intended... ', '(tabling the whole predicate instead)')), 
+        sym_propin(tabled(_8, _9), _1).
+
+:- mode  search for call(+,+).
+'search for call'([], _1).
+'search for call'([_1|_2], _3) :- 
+        _1 = body_calls(_4, _5, _6, _7, _8), 
+        member1(_3, _6) -> 
+        nonvar(_8) -> 
+        _7 = [goal(_9, _10)|_11], 
+        sym_propin(tabled(_12, _13), _9)
+         ; 
+        error('Singleton optimisations clash with table declaration'), 
+        message('         (please use compiler option "unfold_off")')
+         ; 
+        'search for call'(_2, _3).
+
+sth_bound([_1|_2]) :- 
+\+         _1 = varocc(_3), 
+        !.
+sth_bound([_1|_2]) :- 
+        sth_bound(_2).
+
+close_pi_calls([], []) :- 
+        !.
+close_pi_calls([pi_calls(_1, _2)|_3], [pi_calls(_1, _4)|_5]) :- 
+        clause_listify(_2, _4), 
+        close_pi_calls(_3, _5).
+
+proper_subset([], [_1|_2]).
+proper_subset([_1|_2], [_3|_4]) :- 
+        proper_subset(_2, _4).
+
+consecutive([_1|_2], _3, [_4|_5], _6) :- 
+        _1 = clause(_7, _8, _9), 
+        _4 = clause(_10, _11, _12), 
+        _7 == _10 -> 
+        _3 = [], 
+        consecutive(_5, _6, _2)
+         ; 
+        _3 = [_1|_13], 
+        'consecutive_#301'(_2, _13, _4, _5, _6).
+
+:- mode  consecutive(+,-,+).
+consecutive([], _1, _1).
+consecutive([_1|_2], _3, [_4|_5]) :- 
+        _1 = clause(_6, _7, _8), 
+        _4 = clause(_9, _10, _11), 
+        _6 == _9, 
+        consecutive(_2, _3, _5).
+
+check_for_cut(_1, _2) :- 
+        _2 == [] -> 
+        true
+         ; 
+        have_hardcut(_1, 0).
+
+:- mode  non_overlapping_selection(+).
+non_overlapping_selection([]).
+non_overlapping_selection([_1|_2]) :- 
+        _1 = body_calls(_3, _4, _5, _6, _7), 
+        'non overlapping selection'(_2, _4), 
+        non_overlapping_selection(_2).
+
+:- mode  non overlapping selection(+,+).
+'non overlapping selection'([], _1).
+'non overlapping selection'([_1|_2], _3) :- 
+        _1 = body_calls(_4, _5, _6, _7, _8), 
+        disjoint(_3, _5), 
+        'non overlapping selection'(_2, _3).
+
+:- mode  disjoint(+,+).
+disjoint([], _1).
+disjoint([_1|_2], _3) :- 
+\+         member1(_1, _3), 
+        disjoint(_2, _3).
+
