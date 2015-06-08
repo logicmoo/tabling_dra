@@ -1075,7 +1075,7 @@ solve(Cutted, _M:!, _, _, _ ) :- !, (var(Cutted);Cutted=cut).
 
 % Some other supported built-in.
 
-solve(Cutted, _M:BuiltIn, _, _, _ ) :-
+solve(_Cutted, _M:BuiltIn, _, _, _ ) :-
         builtin( BuiltIn ),
         !,
         incval( step_counter ),
@@ -1084,7 +1084,7 @@ solve(Cutted, _M:BuiltIn, _, _, _ ) :-
 
 % A "support" predicate
 
-solve(Cutted, _M:Goal, _, _, _ ) :-
+solve(_Cutted, _M:Goal, _, _, _ ) :-
         is_support( Goal ),
         !,
         incval( step_counter ),
@@ -1164,7 +1164,7 @@ solve0(Cutted, _M:Goal, Stack, Hyp, Level ) :-
 
 % A tabled goal that has been completed: all the results are in "answer".
 
-solve0(Cutted, _M:Goal, _, _, Level ) :-
+solve0(_Cutted, _M:Goal, _, _, Level ) :-
         is_completed( Goal ),
         !,
         incval( step_counter ),
@@ -1202,7 +1202,7 @@ solve0(Cutted, _M:Goal, _, _, Level ) :-
 %       4. If this goal is coinductive, then we use "result" to avoid
 %          duplicating results.
 
-solve0(Cutted, _M:Goal, Stack, Hyp, Level ) :-
+solve0(_Cutted, _M:Goal, Stack, Hyp, Level ) :-
         is_variant_of_ancestor( Goal, Stack,
                                 triple( G, I, C ), InterveningTriples
                               ),
@@ -1450,6 +1450,7 @@ compute_fixed_point_( Goal, Index, Stack, Hyp, Level, _ ) :-
         G = Goal,
         push_is_tabled( OriginalGoal, Index, ClauseCopy, Stack, NStack ),
         solve(Cutted, Body, NStack, Hyp, Level ),
+        (nonvar(Cutted)-> warning(['cutted at ',Cutted]); true),
         new_result_or_fail( Index, Goal ),
         memo( OriginalGoal, Goal, Level ).
 
