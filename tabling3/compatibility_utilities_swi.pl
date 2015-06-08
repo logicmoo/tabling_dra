@@ -86,7 +86,7 @@ name_chars( Atomic, NameCharCodes ) :-
 %        recorded( Head, interpreted_clause( Head, Body ) ).
 
 clause_in_module( ModuleName, Head, Body ) :-
-      debugOnError(  clause( ModuleName : Head, Body )).
+        clause( ModuleName : Head, Body ).
 
 
 %%------------------------------------------------------------------------------

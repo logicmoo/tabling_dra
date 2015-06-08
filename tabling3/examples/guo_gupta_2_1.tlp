@@ -14,4 +14,4 @@ q( c ).
 
 ?- r( b, Y ).    % expected: r( b, c )
 
-?- r( c, Y ).    % expected: failure
+?- \+ r( c, Y ).    % expected: failure

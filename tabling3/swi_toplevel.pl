@@ -27,19 +27,19 @@
   	    op(1150, fx, (coinductive))
   	  ]).
 
-process_file_test(F):-    abolish( interpreted:demo/0  ),abolish( demo/0  ),
-   retractall( interpreted:top  ),retractall( top  ),
-   retractall( interpreted:test  ),retractall( test  ),
-   time(must(once(process_file(F)))),!.  % ,once(ignore((run_curent_test,sleep(2)))))).
+process_file_test(F):- must_det_l((retractall(top(_)),once(process_file(F)))),!.  % ,once(ignore((run_curent_test,sleep(2)))))).
 
 run_curent_test:- show_call_failure(if_defined(go,if_defined(test,if_defined(top)))),!.
 run_curent_test:- top(_),!,forall(top(I),time((ignore(show_call((nonvar(I),query(I))))))),!.
 
 
-:- ensure_loaded( utilities ).
-:- ensure_loaded( program_consistency ).
-:- ensure_loaded( output_equation ).
-
+clause_module(U:Goal,M):- U==user,!,clause_module(Goal,M).
+clause_module(Goal,M):-predicate_property(Goal,imported_from(M)),!.
+clause_module(Goal,M):-current_predicate(_,M:Goal),!.
+clause_module(Goal,M):- source_file(Goal,F), module_property(M,file(F)),!.
+clause_module(Goal,M):-predicate_property(_:Goal,imported_from(M)),!.
+clause_module(Goal,M):-current_module(M),current_predicate(_,M:Goal),!.
+clause_module(M:_ ,M):-atom(M).
 
 
 %% load( + file name ):
@@ -256,9 +256,7 @@ print_table_statistics:-print_statistics.
 :- user:ensure_loaded(library(dra/tabling3/dra_table_assert)).
 %:- user:ensure_loaded(library(dra/tabling3/dra_table_record)).
 :- user:ensure_loaded(library(dra/tabling3/compatibility_utilities_swi)).
-:- user:ensure_loaded(library(dra/tabling3/top_level)).
-:- user:ensure_loaded(library(dra/tabling3/dra_common_wcuts)).  
-
+:- user:ensure_loaded(library(dra/tabling3/dra_common)).
 % c + r = 7.949 seconds
 
 /*
@@ -280,12 +278,18 @@ print_table_statistics:-print_statistics.
 :- process_file_test(library('dra/tabling3/Bench/clpfd/run')).
 :- process_file_test(library('dra/tabling3/Bench/aspclp/run')).
 */
-:- time(process_file_test(library('dra/tabling3/examples/XSB/farmer.tlp') )),!.
-:- time(process_file_test(library('dra/tabling3/examples/XSB/ham.tlp') )).
+t1:- time(process_file(library('dra/tabling3/examples/XSB/farmer.tlp') )),!.
+t2:- time(process_file_test(library('dra/tabling3/examples/XSB/ham.tlp') )).
+t3:- process_file_test(library('dra/tabling3/examples/graph.tlp') ).
+t4:- process_file_test(library('dra/tabling3/examples/module.tlp') ).
+t4:- process_file_test(library('dra/tabling3/examples/paper_example.tlp') ).
+t4:- process_file_test(library('dra/tabling3/examples/conditional.clp') ).
+t4:- process_file_test(library('dra/tabling3/examples/simple1.tlp') ).
+t4:- process_file_test(library('dra/tabling3/examples/simple1_old_first.tlp') ).
+t4:- process_file_test(library('dra/tabling3/examples/conditional.clp') ).
+t4:- process_file_test(library('dra/tabling3/examples/small_comment_example.tlp') ).
+t4:- process_file_test(library('dra/tabling3/examples/coind_new.tlp') ).
+t5:- process_file_test('/devel/LogicmooDeveloperFramework/PrologMUD/packs/MUD_PDDL/prolog/dra/tabling3/Bench/tabling/tcl.pl').
 
-% :- process_file_test('/devel/LogicmooDeveloperFramework/PrologMUD/packs/MUD_PDDL/prolog/dra/tabling3/Bench/tabling/tcl.pl').
-
-:-prolog.
-
-:- repeat,logOnErrorIgnore(tprolog),fail.
+:- repeat,logOnErrorIgnore(prolog),fail.
 

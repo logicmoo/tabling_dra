@@ -490,7 +490,7 @@ transform( [ Clause | Terms ], CurrentPred, [ NewClause | NewTerms ] ) :-
 store_info_about_is_tabled( PredSpecs ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         member( Pattern, Patterns ),               % i.e., sequence through list
-        assert_if_new( is_tabled( Pattern ) ),
+        assert( is_tabled( Pattern ) ),
         fail.
 
 store_info_about_is_tabled( _ ).
@@ -504,7 +504,7 @@ store_info_about_is_tabled( _ ).
 
 starting_new_predicate( Pattern ) :-
         check_contiguity( Pattern ),
-        assert_if_new( defined( Pattern ) ).
+        assert( defined( Pattern ) ).
 
 
 %% check_contiguity( + head of a clause ):
@@ -713,7 +713,7 @@ declare_is_coinductive0( Patterns ) :-
         ->
             duplicate_warning( Pattern, 'coinductive' )
         ;
-            assert_if_new( is_coinductive0( Pattern ) )
+            assert( is_coinductive0( Pattern ) )
         ),
         fail.
 
@@ -739,7 +739,7 @@ declare_is_support( Patterns ) :-
         ->
             duplicate_warning( Pattern, 'support' )
         ;
-            assert_if_new( is_support( Pattern ) )
+            assert( is_support( Pattern ) )
         ),
         fail.
 
@@ -757,7 +757,7 @@ declare_is_top( Patterns ) :-
         ->
             duplicate_warning( Pattern, 'top' )
         ;
-            assert_if_new( is_top( Pattern ) )
+            assert( is_top( Pattern ) )
         ),
         fail.
 

@@ -19,7 +19,6 @@ test:-
     write(SortBag),nl.
 
 
-
 sg(X,X).
 sg(X,Y):-edge(X,XX),sg(XX,YY),edge(Y,YY).
 

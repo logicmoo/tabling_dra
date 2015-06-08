@@ -652,6 +652,8 @@ edge(30,3).
 edge(30,37).
 edge(30,36).
 edge(30,8).
+end_of_file.
+
 edge(29,32).
 edge(29,21).
 edge(29,9).

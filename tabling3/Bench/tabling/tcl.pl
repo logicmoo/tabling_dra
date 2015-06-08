@@ -13,7 +13,7 @@ main:-top.
 
 top:-
     reach(X,Y),
-%    write(r(X,Y)),nl,
+   % write(X),
     fail.
 top.
 
