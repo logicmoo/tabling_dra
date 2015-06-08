@@ -945,12 +945,13 @@ plural( Output, N ) :-  N \= 1,  write( Output, 's' ).
 %%       faster access, so the comments in this file ("chain of ancestors" etc.)
 %%       might no longer be quite accurate.
 
-:- meta_predicate solve(+, +, +, +, + ).
+:- meta_predicate  solve(+, :, +, +, + ).
+:- meta_predicate solve0(+, :, +, +, + ).
 
 
 % A negation.
 
-solve(Cutted, \+ Goal, Stack, Hyp, Level ) :-
+solve(Cutted, _: (\+ Goal), Stack, Hyp, Level ) :-
         !,
         NLevel is Level + 1,
         trace_entry( normal, \+ Goal, '?', Level ),
@@ -965,7 +966,7 @@ solve(Cutted, \+ Goal, Stack, Hyp, Level ) :-
 
 % One solution.
 
-solve(Cutted, once( Goal ), Stack, Hyp, Level ) :-
+solve(Cutted, _M: once( Goal ), Stack, Hyp, Level ) :-
         !,
         NLevel is Level + 1,
         trace_entry( normal, once( Goal ), '?', Level ),
@@ -980,7 +981,7 @@ solve(Cutted, once( Goal ), Stack, Hyp, Level ) :-
 
 % A conditional with an else.
 
-solve(Cutted, (Cond -> Then ; _Else), Stack, Hyp, Level ) :-
+solve(Cutted, _M:(Cond -> Then ; _Else), Stack, Hyp, Level ) :-
         solve(Cutted, Cond, Stack, Hyp, Level ),
         !,
         solve(Cutted, Then, Stack, Hyp, Level ).
@@ -992,7 +993,7 @@ solve(Cutted, (_Cond -> _Then ; Else), Stack, Hyp, Level ) :-
 
 % A conditional without an else.
 
-solve(Cutted, (Cond -> Then), Stack, Hyp, Level ) :-
+solve(Cutted, _M:(Cond -> Then), Stack, Hyp, Level ) :-
         solve(Cutted, Cond, Stack, Hyp, Level ),
         !,
         solve(Cutted, Then, Stack, Hyp, Level ).
@@ -1000,17 +1001,17 @@ solve(Cutted, (Cond -> Then), Stack, Hyp, Level ) :-
 
 % A disjunction without a conditional.
 
-solve(Cutted, (Goals ; _), Stack, Hyp, Level ) :-
+solve(Cutted, _M:(Goals ; _), Stack, Hyp, Level ) :-
         solve(Cutted, Goals, Stack, Hyp, Level ).
 
-solve(Cutted, (_ ; Goals), Stack, Hyp, Level ) :-
+solve(Cutted, _M:(_ ; Goals), Stack, Hyp, Level ) :-
         !,
         solve(Cutted, Goals, Stack, Hyp, Level ).
 
 
 % A conjunction.
 
-solve(Cutted, (Goals1 , Goals2), Stack, Hyp, Level ) :-
+solve(Cutted, _M:(Goals1 , Goals2), Stack, Hyp, Level ) :-
         !,
         solve(Cutted, Goals1, Stack, Hyp, Level ),
         solve(Cutted, Goals2, Stack, Hyp, Level ).
@@ -1018,7 +1019,7 @@ solve(Cutted, (Goals1 , Goals2), Stack, Hyp, Level ) :-
 
 % call/1
 
-solve(Cutted, call( Goal ), Stack, Hyp, Level ) :-
+solve(Cutted, _M:call( Goal ), Stack, Hyp, Level ) :-
         (
             ( var( Goal )                          % e.g., Eclipse
             ; Goal = interpreted : V,  var( V )    % e.g., Sicstus
@@ -1032,7 +1033,7 @@ solve(Cutted, call( Goal ), Stack, Hyp, Level ) :-
 
 % assert/1
 
-solve(_Cutted, assert( Clause ), _, _, _ ) :-
+solve(_Cutted, _M:assert( Clause ), _, _, _ ) :-
         !,
         (
             \+ is_a_good_clause( Clause )
@@ -1055,7 +1056,7 @@ solve(_Cutted, retractall( C ), _, _, _ ) :-
 
 % findall/3: note that this is not opaque to coinductive and tabled ancestors!
 
-solve(Cutted, findall( Template, Goal, Bag ), Stack, Hyp, Level ) :-
+solve(Cutted, _M:findall( Template, Goal, Bag ), Stack, Hyp, Level ) :-
         !,
         NLevel is Level + 1,
         (
@@ -1070,11 +1071,11 @@ solve(Cutted, findall( Template, Goal, Bag ), Stack, Hyp, Level ) :-
         ),
         findall( Template, solve(Cutted, G, Stack, Hyp, NLevel ), Bag ).
 
-solve(Cutted, !, _, _, _ ) :- !, (var(Cutted);Cutted=cut).
+solve(Cutted, _M:!, _, _, _ ) :- !, (var(Cutted);Cutted=cut).
 
 % Some other supported built-in.
 
-solve(Cutted, BuiltIn, _, _, _ ) :-
+solve(Cutted, _M:BuiltIn, _, _, _ ) :-
         builtin( BuiltIn ),
         !,
         incval( step_counter ),
@@ -1083,13 +1084,13 @@ solve(Cutted, BuiltIn, _, _, _ ) :-
 
 % A "support" predicate
 
-solve(Cutted, Goal, _, _, _ ) :-
+solve(Cutted, _M:Goal, _, _, _ ) :-
         is_support( Goal ),
         !,
         incval( step_counter ),
         call_in_module( support, Goal ).
 
-solve(CuttedOut, Goal, Stack, Hyp, Level ):- 
+solve(CuttedOut, _M:Goal, Stack, Hyp, Level ):- 
    (nonvar(CuttedOut)->(trace);true),
    solve0(Cutted, Goal, Stack, Hyp, Level ),
    ((var(Cutted);non_cutted(Goal,Cutted, CuttedOut))->true;(!,fail)).
@@ -1099,7 +1100,7 @@ non_cutted(_,Cutted,Cutted).
 
 % A "normal" goal (i.e., not tabled, not coinductive).
 
-solve0(Cutted, Goal, Stack, Hyp, Level ) :-
+solve0(Cutted, _M:Goal, Stack, Hyp, Level ) :-
         \+ is_tabled( Goal ),
         \+ is_coinductive1( Goal ),
         !,
@@ -1125,7 +1126,7 @@ solve0(Cutted, Goal, Stack, Hyp, Level ) :-
 %       follows is an attempt to avoid too much duplication of code and
 %       redundant invocations of the costly check for unifiable ancestors.
 
-solve0(Cutted, Goal, Stack, Hyp, Level ) :-
+solve0(Cutted, _M:Goal, Stack, Hyp, Level ) :-
         \+ is_tabled( Goal ),
         is_coinductive1( Goal ),
         !,
@@ -1163,7 +1164,7 @@ solve0(Cutted, Goal, Stack, Hyp, Level ) :-
 
 % A tabled goal that has been completed: all the results are in "answer".
 
-solve0(Cutted, Goal, _, _, Level ) :-
+solve0(Cutted, _M:Goal, _, _, Level ) :-
         is_completed( Goal ),
         !,
         incval( step_counter ),
@@ -1201,7 +1202,7 @@ solve0(Cutted, Goal, _, _, Level ) :-
 %       4. If this goal is coinductive, then we use "result" to avoid
 %          duplicating results.
 
-solve0(Cutted, Goal, Stack, Hyp, Level ) :-
+solve0(Cutted, _M:Goal, Stack, Hyp, Level ) :-
         is_variant_of_ancestor( Goal, Stack,
                                 triple( G, I, C ), InterveningTriples
                               ),
@@ -1280,7 +1281,7 @@ solve0(Cutted, Goal, Stack, Hyp, Level ) :-
 % might not be necessary to continue the computation with the remaining clauses:
 % the rest of the results should be picked up from the table, instead.
 
-solve0(Cutted, Goal, Stack, Hyp, Level ) :-
+solve0(Cutted, _M:Goal, Stack, Hyp, Level ) :-
         (
             is_coinductive1( Goal )
         ->
