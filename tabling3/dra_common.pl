@@ -660,6 +660,7 @@ essence_hook( T, T ).    % default, may be overridden by the interpreted program
 :- op( 1010, fy, traces        ).    % allow  ":- traces  p/k ."
 :- op( 1010, fy, multifile    ).    % allow  ":- multifile  p/k ." (for Eclipse)
 :- op( 1010, fy, hilog    ).    % allow  ":- hilog  p/k ."
+:- op( 910,  fy, tnot    ).    % allow  ":- hilog  p/k ."
 
 
 
@@ -877,9 +878,11 @@ query( Goals ) :-                                         % invoked by top_level
         setval( step_counter,      0    ),!,
        call_cleanup(
         ((
-            empty_hypotheses( Hyp ),
-            empty_stack( Stack ),
-            solve(Cutted, Goals, Stack, Hyp, 0 ),
+           % empty_hypotheses( Hyp ),
+           % empty_stack( Stack ),
+            nb_getval('$tabling_exec',solve_external(Stack, Hyp, ValOld)),
+            Level is ValOld +1,
+            solve(Cutted, Goals, Stack, Hyp, Level ),
             ((var(Cutted);((traces),non_cutted(Goals,Cutted,( _))))->true;(!,fail)),
             print_statistics,
             setval( step_counter, 0 ),
@@ -954,6 +957,12 @@ plural( Output, N ) :-  N \= 1,  write( Output, 's' ).
 :- meta_predicate solve0(+, :, +, +, + ).
 
 
+:- 
+  empty_hypotheses( Hyp ),
+  empty_stack( Stack ),
+  nb_setval('$tabling_exec',solve_external(Stack, Hyp, -1)).
+
+
 % A negation.
 
 solve(Cutted, (_ : (\+ Goal)), Stack, Hyp, Level ) :-
@@ -967,6 +976,9 @@ solve(Cutted, (_ : (\+ Goal)), Stack, Hyp, Level ) :-
             trace_failure( normal, \+ Goal, '?', Level ),
             fail
         ).
+
+
+solve(Cutted, (_ : (tnot Goal)), Stack, Hyp, Level ) :- solve(Cutted, \+(findall(Goal,Goal,L),L=[]), Stack, Hyp, Level ).
 
 
 % One solution.
@@ -986,32 +998,20 @@ solve(Cutted, _M: once( Goal ), Stack, Hyp, Level ) :-
 
 % A conditional with an else.
 
-solve(Cutted, _M:(Cond -> Then ; _Else), Stack, Hyp, Level ) :-
-        solve(Cutted, Cond, Stack, Hyp, Level ),
-        !,
-        solve(Cutted, Then, Stack, Hyp, Level ).
-
-solve(Cutted, (_Cond -> _Then ; Else), Stack, Hyp, Level ) :-
-        !,
-        solve(Cutted, Else, Stack, Hyp, Level ).
+solve(Cutted, _M:(Cond -> Then ; Else), Stack, Hyp, Level ) :- !,
+      (  solve(Cutted, Cond, Stack, Hyp, Level ) ->        
+        solve(Cutted, Then, Stack, Hyp, Level ) ;
+        solve(Cutted, Else, Stack, Hyp, Level )).
 
 
 % A conditional without an else.
 
-solve(Cutted, _M:(Cond -> Then), Stack, Hyp, Level ) :-
-        solve(Cutted, Cond, Stack, Hyp, Level ),
-        !,
-        solve(Cutted, Then, Stack, Hyp, Level ).
+solve(Cutted, _M:(Cond -> Then), Stack, Hyp, Level ) :- !,
+        (solve(Cutted, Cond, Stack, Hyp, Level ) -> solve(Cutted, Then, Stack, Hyp, Level )).
 
-
-% A disjunction without a conditional.
-
-solve(Cutted, _M:(Goals ; _), Stack, Hyp, Level ) :-
-        solve(Cutted, Goals, Stack, Hyp, Level ).
-
-solve(Cutted, _M:(_ ; Goals), Stack, Hyp, Level ) :-
-        !,
-        solve(Cutted, Goals, Stack, Hyp, Level ).
+solve(Cutted, _M:(GoalsL ; GoalsR), Stack, Hyp, Level ) :- !,
+        (solve(Cutted, GoalsL, Stack, Hyp, Level ) ;
+         solve(Cutted, GoalsR, Stack, Hyp, Level )).
 
 
 % A conjunction.
@@ -1080,18 +1080,20 @@ solve(Cutted, _M:!, _, _, _ ) :- !, (var(Cutted);Cutted=cut).
 
 % Some other supported built-in.
 
-solve(_Cutted, _M:BuiltIn, _, _, _ ) :-
+solve(_Cutted, _M:BuiltIn, Stack, Hyp, Level ) :-
         builtin( BuiltIn ),
         !,
+        b_setval('$tabling_exec',solve_external(Stack, Hyp, Level)),
         incval( step_counter ),
         call( BuiltIn ).
 
 
 % A "support" predicate
 
-solve(_Cutted, _M:Goal, _, _, _ ) :-
+solve(_Cutted, _M:Goal, Stack, Hyp, Level ) :-
         is_support( Goal ),
         !,
+        b_setval('$tabling_exec',solve_external(Stack, Hyp, Level)),
         incval( step_counter ),
         call_in_module( support, Goal ).
 
