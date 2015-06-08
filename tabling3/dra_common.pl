@@ -557,7 +557,7 @@ default_extension( '.tlp' ).                              % invoked by top_level
 
 :- dynamic (is_coinductive0)/1 .
 :- dynamic (is_coinductive1)/1 .
-:- dynamic (is_table)/1 .
+:- dynamic (is_tabled)/1 .
 :- dynamic (is_old_first)/1 .
 :- dynamic pioneer/3 .
 :- dynamic result/2 .
@@ -688,6 +688,7 @@ legal_directive(M:P):-atom(M),M:legal_directive(P).
 legal_directive(P):-compound(P),functor(P,F,1),property_pred(F,_).
 
 
+fresh_multifile(X):- current_module(M), asserta_new( ((user:X) :- (M:X))).
 
 %% Check and process the legal directives (invoked by top_level)
 
@@ -700,6 +701,10 @@ execute_directive( (table PredSpecs) ) :-
         (
             member( Pattern, Patterns ),
             assert_if_new( is_tabled( Pattern ) ),
+            asserta_new( (Pattern :- !, query(Pattern) )),
+            functor(Pattern,F,A),
+            discontiguous(F/A),
+            dynamic(F/A),            
             fail
         ;
             true
@@ -951,7 +956,7 @@ plural( Output, N ) :-  N \= 1,  write( Output, 's' ).
 
 % A negation.
 
-solve(Cutted, _: (\+ Goal), Stack, Hyp, Level ) :-
+solve(Cutted, (_ : (\+ Goal)), Stack, Hyp, Level ) :-
         !,
         NLevel is Level + 1,
         trace_entry( normal, \+ Goal, '?', Level ),
@@ -1100,7 +1105,7 @@ non_cutted(_,Cutted,Cutted).
 
 % A "normal" goal (i.e., not tabled, not coinductive).
 
-solve0(Cutted, _M:Goal, Stack, Hyp, Level ) :-
+solve0(Cutted, M:Goal, Stack, Hyp, Level ) :-
         \+ is_tabled( Goal ),
         \+ is_coinductive1( Goal ),
         !,
@@ -1108,7 +1113,7 @@ solve0(Cutted, _M:Goal, Stack, Hyp, Level ) :-
         trace_entry( normal, Goal, '?', Level ),
         (
             NLevel is Level + 1,
-            use_clause( Goal, Body ),
+            use_clause( M , Goal, Body ),
             solve(Cutted, Body, Stack, Hyp, NLevel ),
             trace_success( normal, Goal, '?', Level )
         ;
@@ -1126,7 +1131,7 @@ solve0(Cutted, _M:Goal, Stack, Hyp, Level ) :-
 %       follows is an attempt to avoid too much duplication of code and
 %       redundant invocations of the costly check for unifiable ancestors.
 
-solve0(Cutted, _M:Goal, Stack, Hyp, Level ) :-
+solve0(Cutted, M:Goal, Stack, Hyp, Level ) :-
         \+ is_tabled( Goal ),
         is_coinductive1( Goal ),
         !,
@@ -1150,7 +1155,7 @@ solve0(Cutted, _M:Goal, Stack, Hyp, Level ) :-
                 trace_success( 'coinductive0(hypothesis)', Goal, '?', Level )
             ;
                 NLevel is Level + 1,
-                use_clause( Goal, Body ),
+                use_clause(M, Goal, Body ),
                 push_is_coinductive0( Goal, Hyp, NHyp ),
                 solve(Cutted, Body, Stack, NHyp, NLevel ),
                 trace_success( 'coinductive (clause)', Goal, '?', Level )
@@ -1281,7 +1286,7 @@ solve0(_Cutted, _M:Goal, Stack, Hyp, Level ) :-
 % might not be necessary to continue the computation with the remaining clauses:
 % the rest of the results should be picked up from the table, instead.
 
-solve0(Cutted, _M:Goal, Stack, Hyp, Level ) :-
+solve0(Cutted, M:Goal, Stack, Hyp, Level ) :-
         (
             is_coinductive1( Goal )
         ->
@@ -1299,7 +1304,7 @@ solve0(Cutted, _M:Goal, Stack, Hyp, Level ) :-
         ;
 
             NLevel is Level + 1,
-            use_clause( Goal, Body ),
+            use_clause(M, Goal, Body ),
             \+ is_completed( OriginalGoal ), % might well be, after backtracking
             copy_term2( (Goal :- Body), ClauseCopy ),
             push_is_tabled( OriginalGoal, Index, ClauseCopy, Stack, NStack ),
@@ -1400,20 +1405,39 @@ get_remaining_tabled_answers( Goal, Index, Label, Level ) :-
 
 
 
-%% use_clause( + goal, - body ):
+%% use_clause(+ module, + goal, - body ):
 %% Warn and fail if the goal invokes a non-existing predicate.  Otherwise
 %% nondeterministically return the appropriately instantiated body of each
 %% clause whose head matches the goal.
 
-use_clause( Goal, Body ) :-
+use_clause(M, Goal, Body ) :- 
+   predicate_property(M:Goal,number_of_clauses(_)),!, clause(M:Goal, Body ), Body \= (!,query(Goal)).
+use_clause(M, Goal, M:Body ) :- 
+   predicate_property(Goal,number_of_clauses(_)),!, clause(Goal, Body ), Body\= (!,query(Goal)).
+use_clause(M, Goal, Body ) :- show_call((asserta(builtin(Goal)),asserta(builtin(M:Goal)))),!,Body = M:Goal.
+
+use_clause_old0(M, Goal, Body ) :- 
         functor( Goal, P, K ),
         (
-            current_predicate_in_module( interpreted, P/K )
+            (current_predicate_in_module(M, P/K ))
         ->
-            clause_in_module( interpreted, Goal, Body )
+            clause(M: Goal, Body )
         ;
-         ( current_predicate_in_module( Other, P/K ) -> 
-                (trace,clause_in_module( Other, Goal, Body ));
+         ( clause(_:Goal, Body ) *-> true;
+               (warning( [ 'Calling an undefined predicate: \"', Goal, '\"' ] ),
+                fail))
+        ).
+
+
+use_clause_old(M, Goal, Body ) :- 
+        functor( Goal, P, K ),
+        (
+            current_predicate_in_module( user, P/K )
+        ->
+            clause_in_module( user, Goal, Body )
+        ;
+         ( current_predicate_in_module( M, P/K ) -> 
+                (clause_in_module( M, Goal, Body ));
                (warning( [ 'Calling an undefined predicate: \"', Goal, '\"' ] ),
                 fail))
         ).

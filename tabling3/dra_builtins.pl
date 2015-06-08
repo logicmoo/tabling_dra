@@ -9,7 +9,7 @@
 
 %%  NOTE: Just adding "!" won't do the trick, the main interpreter would
 %%        have to be modified substantially (but first: what are the semantics?)
-
+:-dynamic(builtin/1).
 builtin( (_ , _)            ).  % special treatment in solve/4
 builtin( (_ -> _)           ).  % special treatment in solve/4
 builtin( (_ -> _ ; _)       ).  % special treatment in solve/4
