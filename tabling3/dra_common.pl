@@ -945,7 +945,7 @@ plural( Output, N ) :-  N \= 1,  write( Output, 's' ).
 %%       faster access, so the comments in this file ("chain of ancestors" etc.)
 %%       might no longer be quite accurate.
 
-:- mode solve(+, +, +, +, + ).
+:- meta_predicate solve(+, +, +, +, + ).
 
 
 % A negation.
