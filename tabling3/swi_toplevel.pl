@@ -283,7 +283,7 @@ topl(_).
 t0:- [library('dra/tabling3/examples/XSB/farmer.tlp')].
 tn:- [library('dra/tabling3/examples/tnot1.tlp')].
 t1:- time(process_file(library('dra/tabling3/examples/XSB/farmer.tlp') )),!.
-t2:- [library('dra/tabling3/examples/XSB/ham.tlp')].
+t2:- time([library('dra/tabling3/examples/XSB/ham.tlp')]).
 t2a:- time(process_file_test(library('dra/tabling3/examples/XSB/ham.tlp') )).
 t3:- process_file_test(library('dra/tabling3/examples/graph.tlp') ).
 t4:- process_file_test(library('dra/tabling3/examples/module.tlp') ).
