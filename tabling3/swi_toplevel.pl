@@ -51,14 +51,25 @@ process_file_test(F):- must_det_l((retract_all0(topl(_)),once(process_file(F))))
 run_curent_test:- show_call_failure(if_defined(go,if_defined(test,if_defined(top)))),!.
 run_curent_test:- top(_),!,forall(top(I),time((ignore(show_call((nonvar(I),query(I))))))),!.
 
+:- dynamic(is_clause_module/2).
 
-clause_module(U:Goal,M):- U==user,!,clause_module(Goal,M).
-clause_module(Goal,M):-predicate_property(Goal,imported_from(M)),!.
-clause_module(Goal,M):-current_predicate(_,M:Goal),!.
-clause_module(Goal,M):- source_file(Goal,F), module_property(M,file(F)),!.
-clause_module(Goal,M):-predicate_property(_:Goal,imported_from(M)),!.
-clause_module(Goal,M):-current_module(M),current_predicate(_,M:Goal),!.
+clause_module(_:Goal,M):-  clause_module0(Goal,M),!.
+clause_module(Goal,M):-  clause_module0(Goal,M),!.
 clause_module(M:_ ,M):-atom(M).
+
+clause_module0(:- (Goal) ,M):- !, clause_module0(Goal,M).
+clause_module0((Goal:- _ ),M):- !, clause_module0(Goal,M).
+clause_module0((Goal , _ ),M):- !, clause_module0(Goal,M).
+clause_module0(Goal,M):-is_clause_module(Goal,M),!.
+clause_module0(Goal,M):-clause_module1(Goal,M),asserta(is_clause_module(Goal,M)),!.
+
+clause_module1(Goal,M):-predicate_property(Goal,imported_from(M)),!.
+clause_module1(Goal,M):-current_predicate(_,M:Goal),!.
+clause_module1(Goal,M):-source_file(Goal,F), module_property(M,file(F)),!.
+clause_module1(Goal,M):-predicate_property(_:Goal,imported_from(M)),!.
+clause_module1(Goal,M):-current_module(M),current_predicate(_,M:Goal),!.
+clause_module1(Goal,M):-clause(Goal,_,Ref),clause_propery(Ref,module(M)).
+clause_module1(Goal,M):-clause(_:Goal,_,Ref),clause_propery(Ref,module(M)).
 
 
 %% load( + file name ):
@@ -106,9 +117,30 @@ current_dirs('./.').
 to_the_file( FileName, FileName ) :- atomic(FileName),exists_file(FileName),!.
 to_the_file( FileName, AFN ) :- 
  member(TF,[false,true]), 
-  must(( default_extension( Ext ),no_repeats(current_dirs(D)),
+  must_det_l(( must(default_extension( Ext );Ext=clp),no_repeats(current_dirs(D)),
         absolute_file_name(FileName,AFN,[solutions(all),expand(TF),access(read),relative_to(D),file_errors(fail),extensions([Ext,'.pl','.tlp',''])]),
         exists_file(AFN))),!.
+
+:-dynamic(is_pred_metainterp/2).
+pred_metainterp(Pred,M):- is_pred_metainterp(Pred,M),!.
+pred_metainterp(Pred,M):-
+    is_tabled(Pred)-> M = is_tabled ;
+    is_coinductive1(Pred)-> M = is_coinductive1 ;
+    is_support(Pred)-> M = is_support ;
+    is_builtin(Pred)-> M = is_builtin ;
+    is_never_tabled(Pred)-> M = is_never_tabled.
+pred_metainterp(Pred,M):- source_file(Pred,File),is_file_meta(File,M),!.
+pred_metainterp(Pred,M):- might_be_clause_meta(Pred)-> M = is_never_tabled. 
+pred_metainterp(_   ,unknown).
+
+add_file_meta(FileName,Type):-to_the_file(FileName,File),assert_if_new(is_file_meta(File,Type)).
+
+:-add_file_meta('compatibility_utilities_swi',is_builtin).
+:-add_file_meta('swi_toplevel',is_builtin).
+:-add_file_meta('dra_common',is_builtin).
+
+
+
 
 
 %% top:
@@ -226,6 +258,31 @@ dra_listing_0(MatchesIn):-
   Decl=..[DECLF,F/A],
   format('~N:- ~q.~n',[Decl]))))).
 
+set_meta(Goal, Prop):- is_pred_metainterp(Goal,Prop),!.
+set_meta(Goal, Prop):- functor(Goal,F,A),functor(TGoal,F,A),
+  show_call(set_meta0(TGoal, Prop)),!,
+  retract_all0(is_pred_metainterp(TGoal,_)),
+  asserta_if_new(is_pred_metainterp(TGoal,Prop)).
+
+set_meta0(TGoal,is_builtin):-
+    retract_all0(is_tabled(TGoal)),(predicate_property(TGoal,dynamic)->retract_all0((TGoal:-!,query(TGoal)));true),
+    retract_all0(is_never_tabled(TGoal)),
+    asserta_if_new(is_builtin(TGoal)).
+
+set_meta0(TGoal,is_never_tabled):-
+    retract_all0(is_tabled(TGoal)),(predicate_property(TGoal,dynamic)->retract_all0((TGoal:-!,query(TGoal)));true),
+    retract_all0(is_builtin(TGoal)),
+    asserta_if_new(is_never_tabled(TGoal)).
+
+set_meta0(TGoal,is_tabled):- asserta_if_new(is_tabled(TGoal)),
+    retract_all0(is_never_tabled(TGoal)),
+    retract_all0(is_builtin(TGoal)),
+   (predicate_property(TGoal,dynamic)->asserta_new((TGoal:-!,query(TGoal)));true).
+   
+
+
+:-dynamic(clause_meta/1).
+might_be_clause_meta( Goal ):- compound(Goal), \+ \+ (arg(_,Goal,[_|_])),!.
 
 
 %legal_directive(M:P):-atom(M),M:legal_directive(P).
@@ -305,5 +362,5 @@ t4:- process_file_test(library('dra/tabling3/examples/small_comment_example.tlp'
 t4:- process_file_test(library('dra/tabling3/examples/coind_new.tlp') ).
 t5:- consult('/devel/LogicmooDeveloperFramework/PrologMUD/packs/MUD_PDDL/prolog/dra/tabling3/Bench/tabling/tcl.pl').
 
-:- repeat,logOnErrorIgnore(prolog),fail.
+% :- repeat,logOnErrorIgnore(prolog),fail.
 

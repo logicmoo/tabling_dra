@@ -656,7 +656,7 @@ show_result( yes, VarDict ) :-
         !,
         std_output_stream( Output ),
         show_bindings( VarDict ),
-        write( Output, 'Yes' ).
+        write( Output, 'Yes'+VarDict ).
 
 show_result( no, _ ) :-
         std_output_stream( Output ),
@@ -845,6 +845,11 @@ interactive_term( (:- Directive), _ ) :-               % directive
         process_directive( Directive ).
 
 interactive_term( (?- Query), VarDict ) :-             % query
+        iq( Query, VarDict ).
+
+
+iq( Query ) :- term_variables(Query , VarDict), iq( Query, VarDict ).
+iq( Query, VarDict ) :-
         !,
         execute_query( Query, Result ),
         show_result( Result, VarDict ),

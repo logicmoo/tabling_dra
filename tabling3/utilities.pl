@@ -253,7 +253,7 @@ check_predspec( P / K ) :-
         K >= 0,
         !.
 
-check_predspec( PredSpec ) :-
+check_predspec( PredSpec ) :- trace,
         error( [ 'An incorrect predicate specification: \"', PredSpec, '\"' ] ).
 
 

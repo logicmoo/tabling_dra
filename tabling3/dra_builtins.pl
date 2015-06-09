@@ -9,8 +9,9 @@
 
 %%  NOTE: Just adding "!" won't do the trick, the main interpreter would
 %%        have to be modified substantially (but first: what are the semantics?)
-:-dynamic(is_builtin/4).
+
 :-dynamic(is_builtin/1).
+:-dynamic(is_not_builtin/1).
 
 %is_builtin(_, ',',2          ).  % special treatment in solve/4
 %is_builtin( (_ -> _)           ).  % special treatment in solve/4
@@ -48,6 +49,13 @@ is_builtin( write_term( _, _ ) ).
 is_builtin( writeln( _ )       ).
 is_builtin( 'C'( _, _, _ )     ).  % for DCG's on some Prolog systems
 is_builtin( set_print_depth( _ ) ).          % not a real built-in, see "top_level"
+%is_builtin(delete(_,_,_)   ).
 
-is_builtin(_, delete(_,_,_)  ,delete, 3).
-is_builtin(_,G,F,A):- (var(G)->functor(G,F,A);true), is_builtin(G).
+is_builtin(Pred):- is_not_builtin(Pred),!,fail.
+is_builtin(Pred):- is_builtin0(Pred),asserta(is_builtin(Pred)),!.
+is_builtin(Pred):- functor(Pred,F,A),functor(TPred,F,A),asserta(is_not_builtin(TPred)),!,fail.
+
+is_builtin0(Pred) :- is_swi_builtin( Pred ).
+is_builtin0(Pred) :- functor(Pred,F,_),atom_concat('$',_,F).
+is_builtin0(Pred) :- source_file(Pred,File),is_file_meta(File,is_builtin), \+ clause(is_tabled(Pred),true).
+

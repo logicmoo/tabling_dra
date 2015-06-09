@@ -228,7 +228,7 @@ write_shallow( OutputStream, Term, MaxDepth ) :-
 %% Does this goal call a built-in predicate?  Or generate a built-in goal.
 
 is_swi_builtin( Pred ) :-
-        predicate_property( Pred, built_in ).
+        ( \+ ( \+ predicate_property( Pred, built_in ))).
 
 
 %%------------------------------------------------------------------------------
