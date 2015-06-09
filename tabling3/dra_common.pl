@@ -116,7 +116,7 @@ dra_version( Version ) :-
 %%%       N is the current size of the answer table.
 %%%
 %%%    4. If the program invokes a built-in predicate, that predicate must
-%%%       be declared in the table "builtin/1" (see file "dra_builtins.pl").
+%%%       be declared in the table "is_builtin/1" (see file "dra_builtins.pl").
 %%%       Every addition should be considered carefully: some built-ins might
 %%%       require special treatment by the interpreter.
 %%%
@@ -238,7 +238,7 @@ dra_version( Version ) :-
 
    The interpreted program must not contain cuts.  It also must not contain
    calls to built-in-predicates, except for the handful of predicates listed in
-   builtin/1 below.  (This list can be easily extended as the need arises.  Some
+   is_builtin/1 below.  (This list can be easily extended as the need arises.  Some
    built-in predicates, however, cannot be added without modifying the
    interpreter, sometimes extensively: "!/0" is a good example.)
 
@@ -1087,7 +1087,7 @@ solve(_ , _M:true, _, _, _ ) :- !.
 % Some other supported built-in.
 
 solve(_Cutted, _M:BuiltIn, Stack, Hyp, Level ) :-
-        (builtin( BuiltIn );is_support( BuiltIn )),
+        (is_builtin( BuiltIn );is_support( BuiltIn )),
         !,
         b_setval('$tabling_exec',solve_external(Stack, Hyp, Level)),
         incval( step_counter ),
@@ -1563,7 +1563,7 @@ use_clause(M, Goal, Body ) :-
    predicate_property(M:Goal,number_of_clauses(_)),!, clause(M:Goal, Body ), Body \= (!,query(Goal)).
 use_clause(M, Goal, M:Body ) :- 
    predicate_property(Goal,number_of_clauses(_)),!, clause(Goal, Body ), Body\= (!,query(Goal)).
-use_clause(M, Goal, Body ) :- show_call((asserta(builtin(Goal)),asserta(builtin(M:Goal)))),!,Body = M:Goal.
+use_clause(M, Goal, Body ) :- show_call((asserta(is_builtin(Goal)),asserta(is_builtin(M:Goal)))),!,Body = M:Goal.
 
 use_clause_old0(M, Goal, Body ) :- 
         functor( Goal, P, K ),

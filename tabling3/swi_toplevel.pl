@@ -12,6 +12,24 @@
 :- attach_packs.
 :- initialization(attach_packs).
 
+
+property_pred(table,is_tabled).
+property_pred(builtin,is_builtin).
+property_pred(never_table,is_never_tabled).
+property_pred(old_first,is_old_first).
+property_pred(coinductive0,is_coinductive0).
+property_pred(coinductive1,is_coinductive1).
+property_pred(topl,is_topl).
+property_pred(support,is_support).
+property_pred(local,is_local).
+property_pred(traces,is_traced).
+property_pred(set_default_extension,default_extension).
+property_pred(hilog,is_hilog).
+
+:- forall(property_pred(D,F) ,((DG=..[D,_],asserta((DG:-execute_directive(DG)))), 
+   ( \+ current_op(_,fy,D) -> op(900,fy,D) ; true),  multifile(F/1),dynamic(F/1))).
+
+
 % :- multifile sandbox:safe_primitive/1.
 % :-asserta((sandbox:safe_primitive(Z):-wdmsg(Z))).
 
@@ -27,7 +45,8 @@
   	    op(1150, fx, (coinductive))
   	  ]).
 
-process_file_test(F):- must_det_l((retractall(top(_)),once(process_file(F)))),!.  % ,once(ignore((run_curent_test,sleep(2)))))).
+retract_all0(R):- ignore((retract(R),fail)).
+process_file_test(F):- must_det_l((retract_all0(topl(_)),once(process_file(F)))),!.  % ,once(ignore((run_curent_test,sleep(2)))))).
 
 run_curent_test:- show_call_failure(if_defined(go,if_defined(test,if_defined(top)))),!.
 run_curent_test:- top(_),!,forall(top(I),time((ignore(show_call((nonvar(I),query(I))))))),!.
@@ -58,7 +77,6 @@ load( FileName ) :-
 
 
 cputime(X):- statistics(cputime,X).
-table(X):-execute_directive(table(X)).
 
 %% process_file( + file name ):
 %% Load a program from this file, processing directives and queries.
@@ -214,16 +232,6 @@ dra_listing_0(MatchesIn):-
 
 %legal_directive(P):-compound(P),functor(P,F,1),property_pred(F).
 
-property_pred(table,is_tabled).
-property_pred(builtin,is_builtin).
-property_pred(old_first,is_old_first).
-property_pred(coinductive0,is_coinductive0).
-property_pred(coinductive1,is_coinductive1).
-property_pred(topl,is_topl).
-property_pred(support,is_support).
-%property_pred(traces,is_traced).
-%property_pred(hilog,is_hilog).
-
 
 %:-use_module(boot('$toplevel'),[]).
 % '$query_loop'/0 
@@ -278,23 +286,24 @@ print_table_statistics:-print_statistics.
 :- process_file_test(library('dra/tabling3/Bench/clpfd/run')).
 :- process_file_test(library('dra/tabling3/Bench/aspclp/run')).
 */
-topl(_).
 
-t0:- [library('dra/tabling3/examples/XSB/farmer.tlp')].
-tn:- [library('dra/tabling3/examples/tnot1.tlp')].
+t0:- time([library('dra/tabling3/examples/XSB/farmer.tlp')]).
+tn:- time([library('dra/tabling3/examples/tnot1.tlp')]).
 t1:- time(process_file(library('dra/tabling3/examples/XSB/farmer.tlp') )),!.
 t2:- time([library('dra/tabling3/examples/XSB/ham.tlp')]).
-t2a:- time(process_file_test(library('dra/tabling3/examples/XSB/ham.tlp') )).
-t3:- process_file_test(library('dra/tabling3/examples/graph.tlp') ).
+t2a:- time([library('dra/tabling3/examples/XSB/ham_auto.tlp')]).
+
+t2b:- time(process_file_test(library('dra/tabling3/examples/XSB/ham.tlp') )).
+t3:- [(library('dra/tabling3/examples/graph.tlp') )].
 t4:- process_file_test(library('dra/tabling3/examples/module.tlp') ).
-t4:- process_file_test(library('dra/tabling3/examples/paper_example.tlp') ).
+t4:- [(library('dra/tabling3/examples/paper_example.tlp') )].
 t4:- process_file_test(library('dra/tabling3/examples/conditional.clp') ).
 t4:- process_file_test(library('dra/tabling3/examples/simple1.tlp') ).
 t4:- process_file_test(library('dra/tabling3/examples/simple1_old_first.tlp') ).
 t4:- process_file_test(library('dra/tabling3/examples/conditional.clp') ).
 t4:- process_file_test(library('dra/tabling3/examples/small_comment_example.tlp') ).
 t4:- process_file_test(library('dra/tabling3/examples/coind_new.tlp') ).
-t5:- process_file_test('/devel/LogicmooDeveloperFramework/PrologMUD/packs/MUD_PDDL/prolog/dra/tabling3/Bench/tabling/tcl.pl').
+t5:- consult('/devel/LogicmooDeveloperFramework/PrologMUD/packs/MUD_PDDL/prolog/dra/tabling3/Bench/tabling/tcl.pl').
 
 :- repeat,logOnErrorIgnore(prolog),fail.
 
