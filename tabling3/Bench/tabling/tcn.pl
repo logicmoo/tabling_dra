@@ -1,4 +1,4 @@
-:-tabled reach/2.
+:-table reach/2.
 
 go:-
     cputime(Start),

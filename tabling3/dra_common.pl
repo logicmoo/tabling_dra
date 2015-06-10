@@ -845,7 +845,7 @@ remove_variants_( [ H | T ], Accumulator, RL ) :-
 % :- mode query( + ).
 
 query( Goals ) :-                                         % invoked by top_level
-  must(b_getval('$tabling_exec',solve_external(Stack, Hyp, ValOld))),
+  must(b_getval('$tabling_exec',solve_external(Stack, Hyp, ValOld, CuttedOut))),
    ( (ValOld < 0) -> 
      ((
         reinitialise_pioneer,
@@ -865,7 +865,7 @@ query( Goals ) :-                                         % invoked by top_level
            % empty_stack( Stack ),            
             Level is ValOld +1,
             solve(Cutted, Goals, Stack, Hyp, Level ),
-            ((var(Cutted);((traces),non_cutted(Goals,Cutted,( _))))->true;(!,fail)),
+            ((var(Cutted);((traces),non_cutted(Goals,Cutted,(CuttedOut))))->true;(!,fail)),
              EXIT
             )),        
            (( 
@@ -943,7 +943,7 @@ plural( Output, N ) :-  N \= 1,  write( Output, 's' ).
 :- 
   empty_hypotheses( Hyp ),
   empty_stack( Stack ),
-  nb_setval('$tabling_exec',solve_external(Stack, Hyp, -1)).
+  nb_setval('$tabling_exec',solve_external(Stack, Hyp, -1, _CuttedOut)).
 
 % tnot/1 must be ran in meta-interp
 tnot(G):-query(tnot(G)).
@@ -1069,39 +1069,37 @@ solve(Cutted, _:!(Where), _, _, _ ) :- !, (var(Cutted);Cutted=cut_to(Where)).
 % Some other supported built-in.
 
 
-solve(CuttedOut, M:Goal, Stack, Hyp,  Level ):- 
+solve(CuttedOut, M:Goal, Stack, Hyp,  Level ):-     
     pred_metainterp(Goal,Meta), !, solve4meta(Meta, CuttedOut, M:Goal, Stack, Hyp,  Level ).
 
 
-solve4meta(Meta, _CuttedOut, M:BuiltIn, Stack, Hyp,  Level ):-
+solve4meta(Meta, CuttedOut, M:BuiltIn, Stack, Hyp,  Level ):-
         arg(_,is_builtin;is_support,Meta),
         !,
-        b_setval('$tabling_exec',solve_external(Stack, Hyp, Level)),
+        b_setval('$tabling_exec',solve_external(Stack, Hyp, Level, Cutted)),
         incval( step_counter ),
-        clause_module(M:BuiltIn,CM),
-        call(CM: BuiltIn ).
+        clause_module(M:BuiltIn,CM),!,
+        call(CM: BuiltIn ),        
+        ((var(Cutted);(trace,non_cutted(BuiltIn,Cutted, CuttedOut)))->true;(!,fail)). 
 
 solve4meta(Meta,CuttedOut, M:Goal, Stack, Hyp,  Level ):- 
    arg(_,is_tabled;is_coinductive1,Meta),!,
-  ((nonvar(CuttedOut)->(trace);true)),
   solve2t(Cutted, M:Goal, Stack, Hyp, Level ),
   ((var(Cutted);non_cutted(Goal,Cutted, CuttedOut))->true;(!,fail)).
 
-solve4meta(_,CuttedOut, M:Goal, Stack, Hyp,  Level ):- !,
-  ((nonvar(CuttedOut)->(trace);true)),
+solve4meta(_,CuttedOut, M:Goal, Stack, Hyp,  Level ):- !,  
   solve1p(Cutted, M:Goal, Stack, Hyp, Level ),
   ((var(Cutted);non_cutted(Goal,Cutted, CuttedOut))->true;(!,fail)).
 
 solve4meta(_ANYMETA,CuttedOut, M:Goal, Stack, Hyp,  Level ):- 
   % Should read the new default
   set_meta(Goal,is_tabled),!,
-  ((nonvar(CuttedOut)->(trace);true)),
   solve2t(Cutted, M:Goal, Stack, Hyp,  Level ),
   ((var(Cutted);non_cutted(Goal,Cutted, CuttedOut))->true;(!,fail)). 
 
 
 non_cutted(_,cut,_):-!,fail.
-non_cutted(Goal,cut_to(ToGoal),_):- Goal=ToGoal, !,fail.
+non_cutted(Goal,cut_to(ToGoal),_):- must(nonvar(ToGoal)), Goal=ToGoal, !,fail.
 non_cutted(_,Cutted,Cutted).
 
 % A "normal" goal (i.e., not tabled, not coinductive).

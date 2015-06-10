@@ -209,7 +209,7 @@ pdcg(L) :- start_symbol(C),pdcg(C,L,[]).
 
 start_symbol(n_sent).
 
-:-tabled pdcg/3.
+:-table pdcg/3.
 %:-mode pdcg(+,-,-).
 pdcg(n_x_ka_kan,_1728,_1729) :- fstck(n_x_ka_kan,_1728),msw(n_x_ka_kan,[n_y_ka,n_suffix_quant_time]),pdcg(n_y_ka,_1728,_1733),_1733=[n_suffix_quant_time|_1729].
 pdcg(n_month_day,_1728,_1729) :- fstck(n_month_day,_1728),msw(n_month_day,[n_n_month,n_n_day]),pdcg(n_n_month,_1728,_1733),pdcg(n_n_day,_1733,_1729).

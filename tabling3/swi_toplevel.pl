@@ -372,5 +372,5 @@ t5:- consult('/devel/LogicmooDeveloperFramework/PrologMUD/packs/MUD_PDDL/prolog/
 
 % :- repeat,logOnErrorIgnore(prolog),fail.
 user:term_expansion((?- G),_):- nonvar(G), format(atom(H),'~q .',[G]),user:rl_add_history(H),fail.
-user:goal_expansion(G,_):- G\=(_,_),G\=(_;_),\+predicate_property(G,_),format(atom(H),'~q .',[G]),user:rl_add_history(H),fail.
+% user:goal_expansion(G,_):- G\=(_,_),G\=(_;_),\+predicate_property(G,_),format(atom(H),'~q .',[G]),user:rl_add_history(H),fail.
 

@@ -1,3 +1,5 @@
+:- style_check(-singleton).
+
 :- table member1__1/2.
 :- table peepelimupd__1/4.
 :- table peepdel__1/3.
@@ -77,7 +79,7 @@ comppopt11__1(_270,_272,_274) :-
                          [_270,_272,_274]).
 comppopt11__1(_300,_302,_304) :- 
         [other] = _306, [list|_236] = _308, _118 = _310, 
-        'my =\='(_261,_259),
+        'my =\\='(_261,_259),
         poptmovreg(_274,_259,_261,_236,_118),
         normalize_result([_306,_308,_310],
                          [_300,_302,_304]).
@@ -241,7 +243,7 @@ comppopt4__1(_489,_491,_493,_495,_497) :-
 comppopt4__1(_509,_511,_513,_515,_517) :- 
         [list|_473] = _519, _102 = _521, _116 = _523, _130 = _525, _460 = _527, 
         peepredundant(_422,_473,_102,_208,_116,_442),
-        'my =\='(_442,[num]),
+        'my =\\='(_442,[num]),
         'my ='(_460,[list|_457]),
         comppopt4(_473,_208,_116,_130,_457),
         normalize_result([_519,_521,_523,_525,_527],
@@ -278,7 +280,7 @@ notmember1__1(_112,_114) :-
                           [_112,_114]).
 notmember1__1(_228,_230) :- 
         _207 = _232, [list|_178] = _234, 
-        'my =\='(_207,_198),
+        'my =\\='(_207,_198),
         notmember1(_207,_178),
         normalize_result([_232,_234],
                          [_228,_230]).
@@ -343,32 +345,32 @@ peepuse__1(_112,_114) :-
                           [_112,_114]).
 peepuse__1(_172,_174) :- 
         [other] = _176, _88 = _178, 
-        'my =\='(_154,[num]),
+        'my =\\='(_154,[num]),
         normalize_result([_176,_178],
                          [_172,_174]).
 peepuse__1(_172,_174) :- 
         [other] = _176, _88 = _178, 
-        'my =\='(_154,[num]),
+        'my =\\='(_154,[num]),
         normalize_result([_176,_178],
                          [_172,_174]).
 peepuse__1(_172,_174) :- 
         [other] = _176, _88 = _178, 
-        'my =\='(_154,[num]),
+        'my =\\='(_154,[num]),
         normalize_result([_176,_178],
                          [_172,_174]).
 peepuse__1(_172,_174) :- 
         [other] = _176, _88 = _178, 
-        'my =\='(_154,[num]),
+        'my =\\='(_154,[num]),
         normalize_result([_176,_178],
                          [_172,_174]).
 peepuse__1(_172,_174) :- 
         [other] = _176, _88 = _178, 
-        'my =\='(_154,[num]),
+        'my =\\='(_154,[num]),
         normalize_result([_176,_178],
                          [_172,_174]).
 peepuse__1(_172,_174) :- 
         [other] = _176, _88 = _178, 
-        'my =\='(_154,[num]),
+        'my =\\='(_154,[num]),
         normalize_result([_176,_178],
                          [_172,_174]).
 peepchk__1(_112,_114) :- 
@@ -982,17 +984,17 @@ tp.
 %---------------- Builtin Preds ----------------------------
 
 'my ='(X1,X2) :- 'my =_1'(Y1,Y2), unify_sets([X1,X2],[Y1,Y2]).
-'my \=='(X1,X2) :- 'my \==__1'(Y1,Y2), unify_sets([X1,X2],[Y1,Y2]).
+'my \\=='(X1,X2) :- 'my \\==__1'(Y1,Y2), unify_sets([X1,X2],[Y1,Y2]).
 'my is'([num],[num]).
 'my <'([num],[num]).
 'my >'([num],[num]).
 'my >='([num],[num]).
 'my =<'([num],[num]).
 'my =:='([num],[num]).
-'my =\='([num],[num]).
+'my =\\='([num],[num]).
 
 'my =_1'(X,X).
-'my \==__1'(_,_).
+'my \\==__1'(_,_).
 
 
 %---------------- Show Result ------------------------------
@@ -1196,7 +1198,7 @@ keys_and_values([Key-Value|Pairs], [Key|Keys], [Value|Values]) :-
    keys_and_values(Pairs, Keys, Values).
 
 %%-----------------------------------------------------------------------------
-flatten(Set,SetF) :- colterms(Set,[],SetMemb), sort(SetMemb,SetF).
+% flatten(Set,SetF) :- colterms(Set,[],SetMemb), sort(SetMemb,SetF).
 
 colterms(V,I,O) :- var(V), !, O = [V|I].
 colterms([],I,O) :- !, O = I.
@@ -1214,15 +1216,27 @@ insert_vertice([V-E|G],V1-E1,[V-EE1|G]) :- V==V1, ord_union(E,E1,EE1), !.
 insert_vertice([N|G],N1,[N|NewG]) :- insert_vertice(G,N1,NewG).
 
 %%-----------------------------------------------------------------------------
+/*
 occur_graph(ArgsV,OG) :- occur_graph(ArgsV,0,OG).
 occur_graph([],_,[]).
 occur_graph([L|A],I,OG) :- J is I+1, occur_graph(A,J,O1), ogl(L,I,O1,OG) .
+*/
 
 ogl([],_,O,O).
 ogl([V|R],I,In,Out) :- ogl(R,I,In,O1), insert_vertice(O1,V-[I],Out).
 
 %%-----------------------------------------------------------------------------
 
+my_ground(X):-var(X),!,fail.
+my_ground(X):-atomic(X),!,true.
+my_ground([X|Xs]):-!,my_ground(X),my_ground(Xs).
+my_ground(X):-functor(X,_,N),my_ground(X,N).
+
+my_ground(X,N):-N=:=0,!,true.
+my_ground(X,N):-N>0,arg(N,X,A),my_ground(A),N1 is N-1,my_ground(X,N1).
+
+
+/*
 numbervars(X):-my_number_vars(X,0,_).
 
 my_number_vars(T, N0, N) :- 
@@ -1500,14 +1514,6 @@ ord_del_element(=, _, _, Set, Set).
 ord_del_element(>, _, Head, Tail, [Head|Tail]).
 
 
-my_ground(X):-var(X),!,fail.
-my_ground(X):-atomic(X),!,true.
-my_ground([X|Xs]):-!,my_ground(X),my_ground(Xs).
-my_ground(X):-functor(X,_,N),my_ground(X,N).
-
-my_ground(X,N):-N=:=0,!,true.
-my_ground(X,N):-N>0,arg(N,X,A),my_ground(A),N1 is N-1,my_ground(X,N1).
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   subsumes_chk(General, Specific)
 %   is true when Specific is an instance of General. However, this
@@ -1544,3 +1550,5 @@ subsumes(_,_).
 my_variant(Term1, Term2) :-
     subsumes_chk(Term1, Term2),
     subsumes_chk(Term2, Term1).
+
+*/

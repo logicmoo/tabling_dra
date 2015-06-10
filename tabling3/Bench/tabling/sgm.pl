@@ -1,4 +1,4 @@
-:-tabled sg/2,edge/2.
+:-table sg/2,edge/2.
 
 go:-
     cputime(Start),
