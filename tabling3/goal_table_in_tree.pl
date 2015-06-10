@@ -28,6 +28,10 @@
 %%%  Last update: 16 May 2009.                                               %%%
 %%%                                                                          %%%
 
+
+% :- ensure_loaded( goal_table_in_open_tree ).
+% end_of_file.
+
 :- ensure_loaded( utilities ).
 :- ensure_loaded( higher_order ).
 :- ensure_loaded( tree ).

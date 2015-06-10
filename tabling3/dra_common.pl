@@ -690,13 +690,16 @@ legal_directive(M:P):-atom(M),M:legal_directive(P).
 legal_directive(P):-compound(P),functor(P,F,1),property_pred(F,_).
 
 
-fresh_multifile(X):- current_module(M), asserta_new( ((user:X) :- (M:X))).
+fresh_multifile(X):- current_module(M), must(M \= user), asserta_new( ((user:X) :- (M:X))).
 
 %% Check and process the legal directives (invoked by top_level)
 
+source_context(F):- prolog_load_context(source,F).
+
 execute_directive( (table all) ) :-
-        !,
-        assert_if_new( is_tabled( _ ) ).
+        !, once((source_context(F),add_file_meta(F,is_tabled));assert_if_new( is_tabled( _ ):-! )).
+execute_directive( (table none) ) :-
+        !, once((source_context(F),retract_all0(is_file_meta(F,is_tabled)));(retract_all0( is_tabled( _ ) ),retract_all0( is_tabled( _ ) :- ! ))).
 
 execute_directive( (table PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
@@ -729,35 +732,22 @@ execute_directive( (coinductive0 PredSpecs) ) :-
             true
         ).
 
-execute_directive( (coinductive1 all) ) :-
-        !,
-        assert_if_new( is_coinductive1( _ ) ).
 
-execute_directive( (coinductive1 PredSpecs) ) :-
+execute_directive( (dynamic PredSpecs) ) :- current_module(M),
+        dynamic_in_module( M, PredSpecs).
+
+execute_directive((multifile( X)) ):-!, multifile(X). 
+
+execute_directive( answers( Goal, Pattern ) ) :-
+        print_required_answers( Goal, Pattern ).
+
+execute_directive( Dir ) :- property_pred(F,DBF), Dir=..[F,all],DB=..[DBF,_],
+        !, once((source_context(F),add_file_meta(F,DBF));assert_if_new( DB:-! )).
+execute_directive( Dir ) :- property_pred(F,DBF), (Dir=..[F,none];Dir=..[F,-all]),DB=..[DBF,_],
+        !, once((source_context(F),retract_all0(is_file_meta(F,DBF)));(retract_all0( DB ),retract_all0( DB :- ! ))).
+execute_directive( Dir ) :- property_pred(F,DBF), Dir=..[F,PredSpecs],         
         predspecs_to_patterns( PredSpecs, Patterns ),
-        (
-            member( Pattern, Patterns ),
-            assert_if_new( is_coinductive1( Pattern ) ),
-            fail
-        ;
-            true
-        ).
-
-
-
-execute_directive( (old_first all) ) :-
-        !,
-        asserta_new( is_old_first( _ ) ).
-
-execute_directive( ( old_first(PredSpecs)) ) :-
-        predspecs_to_patterns( PredSpecs, Patterns ),
-        (
-            member( Pattern, Patterns ),
-            asserta_new( is_old_first( Pattern ) ),
-            fail
-        ;
-            true
-        ).
+        add_patterns(Patterns,DBF).
 
 execute_directive( (traces all) ) :-
         !,
@@ -767,28 +757,12 @@ execute_directive( (traces PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         will_trace( Patterns ).
 
-execute_directive( (dynamic PredSpecs) ) :-
-        dynamic_in_module( interpreted, PredSpecs).
+add_patterns([],_):-!.
+add_patterns([P|Patterns],DBF):- add_pattern(P,DBF),!,add_patterns(Patterns,DBF).
 
-execute_directive((multifile( X)) ):-!,    % ignore ?
-      multifile(X). 
-
-execute_directive( answers( Goal, Pattern ) ) :-
-        print_required_answers( Goal, Pattern ).
-
-execute_directive(Dir ) :- property_pred(F,DBF), Dir=..[F,all],DB=..[DBF,_],
-        !, assert_if_new( DB ).
-execute_directive(Dir ) :- property_pred(F,DBF), Dir=..[F,PredSpecs],
-         DB=..[DBF,Pattern],
-     
-        predspecs_to_patterns( PredSpecs, Patterns ),
-      (
-            member( Pattern, Patterns ),
-            assert( DB ),
-            fail
-        ;
-            true
-        ).
+add_pattern(Pattern, - DBF):- DB=..[DBF,Pattern],retract_all0( DB ).
+add_pattern(Pattern, + DBF):- DB=..[DBF,Pattern],asserta_if_new( DB ).
+add_pattern(Pattern,DBF):- DB=..[DBF,Pattern],assert_if_new( DB ).
 
 
 %% will_trace( + list of patterns ):

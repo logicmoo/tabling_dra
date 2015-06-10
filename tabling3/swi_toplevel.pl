@@ -13,7 +13,7 @@
 :- initialization(attach_packs).
 
 
-property_pred(table,is_tabled).
+property_pred((table),is_tabled).
 property_pred(builtin,is_builtin).
 property_pred(never_table,is_never_tabled).
 property_pred(old_first,is_old_first).
@@ -22,7 +22,7 @@ property_pred(coinductive1,is_coinductive1).
 property_pred(topl,is_topl).
 property_pred(support,is_support).
 property_pred(local,is_local).
-property_pred(traces,is_traced).
+property_pred((traces),is_tracing).
 property_pred(set_default_extension,default_extension).
 property_pred(hilog,is_hilog).
 
@@ -46,7 +46,10 @@ property_pred(hilog,is_hilog).
   	  ]).
 
 retract_all0(R):- ignore((retract(R),fail)).
-process_file_test(F):- must_det_l((retract_all0(topl(_)),once(process_file(F)))),!.  % ,once(ignore((run_curent_test,sleep(2)))))).
+
+pf(F):- must(retract_all0(topl(_))),
+  to_filename(F,FC),
+   must([(FC)]),!.  % ,once(ignore((run_curent_test,sleep(2)))))).
 
 run_curent_test:- show_call_failure(if_defined(go,if_defined(test,if_defined(top)))),!.
 run_curent_test:- top(_),!,forall(top(I),time((ignore(show_call((nonvar(I),query(I))))))),!.
@@ -107,18 +110,23 @@ do_process_file( FileName ) :-
 
 %
 
-current_dirs(D):- prolog_load_context(directory,D).
-current_dirs(D):- working_directory(D,D).
-current_dirs(D):- current_stream(_,read,Y), stream_property(Y,file_name(FN)), file_directory_name(FN,D).
-current_dirs(D):- stream_property(_,file_name(FN)), file_directory_name(FN,D).
-current_dirs(D):- source_file_property(FN, modified(_)), file_directory_name(FN,D).
-current_dirs('./.').
+current_dirs(DO):-no_repeats(DO,(current_dirs0(D),(atom_concat(DO,'/',D)->true;DO=D))).
+current_dirs0(D):- prolog_load_context(directory,D).
+current_dirs0(D):- working_directory(D,D).
+current_dirs0(D):- current_stream(_,read,Y), stream_property(Y,file_name(FN)), file_directory_name(FN,D).
+current_dirs0(D):- stream_property(_,file_name(FN)), file_directory_name(FN,D).
+current_dirs0(D):- expand_file_name('*/',X),member(E,X),absolute_file_name(E,D),exists_directory(D).
+current_dirs0(D):- expand_file_name('*/*/',X),member(E,X),absolute_file_name(E,D),exists_directory(D).
+current_dirs0(D):- expand_file_name('*/*/*/',X),member(E,X),absolute_file_name(E,D),exists_directory(D).
+current_dirs0(D):- source_file_property(FN, modified(_)), file_directory_name(FN,D).
+current_dirs0('.').
 
-to_the_file( FileName, FileName ) :- atomic(FileName),exists_file(FileName),!.
-to_the_file( FileName, AFN ) :- 
- member(TF,[false,true]), 
-  must_det_l(( must(default_extension( Ext );Ext=clp),no_repeats(current_dirs(D)),
-        absolute_file_name(FileName,AFN,[solutions(all),expand(TF),access(read),relative_to(D),file_errors(fail),extensions([Ext,'.pl','.tlp',''])]),
+to_filename( FileName, FileName ) :- atomic(FileName),exists_file(FileName),!.
+to_filename( FileName, AFN ) :-
+ must(default_extension( Ext );Ext='.tlp'), 
+ must((current_dirs(D),
+     member(TF,[false,true]),
+        absolute_file_name(FileName,AFN,[solutions(all),expand(TF),access(read),relative_to(D),file_errors(fail),extensions(['',Ext,'.pl','.tlp','.clp','.P'])]),
         exists_file(AFN))),!.
 
 :-dynamic(is_pred_metainterp/2).
@@ -133,7 +141,7 @@ pred_metainterp(Pred,M):- source_file(Pred,File),is_file_meta(File,M),!.
 pred_metainterp(Pred,M):- might_be_clause_meta(Pred)-> M = is_never_tabled. 
 pred_metainterp(_   ,unknown).
 
-add_file_meta(FileName,Type):-to_the_file(FileName,File),assert_if_new(is_file_meta(File,Type)).
+add_file_meta(FileName,Type):-to_filename(FileName,File),assert_if_new(is_file_meta(File,Type)).
 
 :-add_file_meta('compatibility_utilities_swi',is_builtin).
 :-add_file_meta('swi_toplevel',is_builtin).
@@ -325,23 +333,23 @@ print_table_statistics:-print_statistics.
 % c + r = 7.949 seconds
 
 /*
-% :- process_file_test(library('dra/tabling3/examples/XSB/fib.tlp') ).
+% :- pf(library('dra/tabling3/examples/XSB/fib.tlp') ).
 
-:- process_file_test(library('dra/tabling3/examples/co_t.tlp') ).
-
-
-:- process_file_test(library('dra/tabling3/examples/coind2.tlp') ).
-% :- process_file_test(library('dra/tabling3/examples/LTL/v.pl') ).
-%:- process_file_test(library('dra/tabling3/examples/mini_graph.tlp') ).
-%:- process_file_test(library('dra/tabling3/examples/mini_language.tlp') ).
-:- process_file_test(library('dra/tabling3/examples/paper_example.tlp') ).
+:- pf(library('dra/tabling3/examples/co_t.tlp') ).
 
 
+:- pf(library('dra/tabling3/examples/coind2.tlp') ).
+% :- pf(library('dra/tabling3/examples/LTL/v.pl') ).
+%:- pf(library('dra/tabling3/examples/mini_graph.tlp') ).
+%:- pf(library('dra/tabling3/examples/mini_language.tlp') ).
+:- pf(library('dra/tabling3/examples/paper_example.tlp') ).
 
-:- process_file_test(library('dra/tabling3/Bench/tabling3/run')).
-:- process_file_test(library('dra/tabling3/Bench/prolog/run')).
-:- process_file_test(library('dra/tabling3/Bench/clpfd/run')).
-:- process_file_test(library('dra/tabling3/Bench/aspclp/run')).
+
+
+:- pf(library('dra/tabling3/Bench/tabling3/run')).
+:- pf(library('dra/tabling3/Bench/prolog/run')).
+:- pf(library('dra/tabling3/Bench/clpfd/run')).
+:- pf(library('dra/tabling3/Bench/aspclp/run')).
 */
 
 t0:- time([library('dra/tabling3/examples/XSB/farmer.tlp')]).
@@ -350,17 +358,19 @@ t1:- time(process_file(library('dra/tabling3/examples/XSB/farmer.tlp') )),!.
 t2:- time([library('dra/tabling3/examples/XSB/ham.tlp')]).
 t2a:- time([library('dra/tabling3/examples/XSB/ham_auto.tlp')]).
 
-t2b:- time(process_file_test(library('dra/tabling3/examples/XSB/ham.tlp') )).
+t2b:- time(pf(library('dra/tabling3/examples/XSB/ham.tlp') )).
 t3:- [(library('dra/tabling3/examples/graph.tlp') )].
-t4:- process_file_test(library('dra/tabling3/examples/module.tlp') ).
+t4:- pf(library('dra/tabling3/examples/module.tlp') ).
 t4:- [(library('dra/tabling3/examples/paper_example.tlp') )].
-t4:- process_file_test(library('dra/tabling3/examples/conditional.clp') ).
-t4:- process_file_test(library('dra/tabling3/examples/simple1.tlp') ).
-t4:- process_file_test(library('dra/tabling3/examples/simple1_old_first.tlp') ).
-t4:- process_file_test(library('dra/tabling3/examples/conditional.clp') ).
-t4:- process_file_test(library('dra/tabling3/examples/small_comment_example.tlp') ).
-t4:- process_file_test(library('dra/tabling3/examples/coind_new.tlp') ).
+t4:- pf(library('dra/tabling3/examples/conditional.clp') ).
+t4:- pf(library('dra/tabling3/examples/simple1.tlp') ).
+t4:- pf(library('dra/tabling3/examples/simple1_old_first.tlp') ).
+t4:- pf(library('dra/tabling3/examples/conditional.clp') ).
+t4:- pf(library('dra/tabling3/examples/small_comment_example.tlp') ).
+t4:- pf(library('dra/tabling3/examples/coind_new.tlp') ).
 t5:- consult('/devel/LogicmooDeveloperFramework/PrologMUD/packs/MUD_PDDL/prolog/dra/tabling3/Bench/tabling/tcl.pl').
 
 % :- repeat,logOnErrorIgnore(prolog),fail.
+user:term_expansion((?- G),_):- nonvar(G), format(atom(H),'~q .',[G]),user:rl_add_history(H),fail.
+user:goal_expansion(G,_):- G\=(_,_),G\=(_;_),\+predicate_property(G,_),format(atom(H),'~q .',[G]),user:rl_add_history(H),fail.
 
