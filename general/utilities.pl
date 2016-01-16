@@ -212,6 +212,10 @@ predspecs_to_patterns( Var, _ ) :-
                ]
              ).
 
+predspecs_to_patterns( [PredSpec | PredSpecs], [ Pattern | Patterns ] ) :-
+        !,
+        predspec_to_pattern( PredSpec, Pattern ),
+        predspecs_to_patterns( PredSpecs, Patterns ).
 predspecs_to_patterns( (PredSpec , PredSpecs), [ Pattern | Patterns ] ) :-
         !,
         predspec_to_pattern( PredSpec, Pattern ),
@@ -229,6 +233,10 @@ predspecs_to_patterns( PredSpec, [ Pattern ] ) :-
 %% well-formed: if not, raise a fatal error; otherwise return a most general
 %% instance that correspond to the predicate specification.
 
+predspec_to_pattern( + PredSpec, + Pattern ) :- !,predspec_to_pattern( PredSpec, Pattern ).
+predspec_to_pattern( - PredSpec, - Pattern ) :- !,predspec_to_pattern( PredSpec, Pattern ).
+predspec_to_pattern( M:PredSpec, M:Pattern ):- !,predspec_to_pattern( PredSpec, Pattern ).
+predspec_to_pattern( PredSpec, Pattern ) :- Pattern \= (_/_),!,PredSpec = Pattern.
 predspec_to_pattern( PredSpec, Pattern ) :-
         check_predspec( PredSpec ),
         PredSpec = P / K,
@@ -287,7 +295,7 @@ uc( 'Y' ).  uc( 'Z' ).
 %% Succeed if arg1 =< arg2 < arg3.
 %% If arg2 is a variable, generate the appropriate values
 
-between( A, V, B ) :-
+old_between( A, V, B ) :-
         integer( A ),
         integer( B ),
         (

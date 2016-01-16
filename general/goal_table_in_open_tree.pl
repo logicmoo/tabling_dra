@@ -85,6 +85,9 @@ is_a_variant_in_goal_table( Goal, Table ) :-
 %% goal_table_add( + goal table, + goal ):
 %% Add this goal to the table.
 
+goal_table_add( Table, Goal, Table ):-
+  goal_table_add( Table, Goal ),!.
+
 goal_table_add( Table, Goal ) :-
         functor( Goal, P, K ),
         (

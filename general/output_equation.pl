@@ -389,7 +389,7 @@ replace_markers_by_variables_in_list( [ T | Ts ], VL, [ V | Vs ] ) :-
 %% Succeed if the list contains this term (as opposed to something that is
 %% unifiable with this term).
 
-identical_member( X, Items ) :-
+old_identical_member( X, Items ) :-
         member( T, Items ),
         X == T,
         !.

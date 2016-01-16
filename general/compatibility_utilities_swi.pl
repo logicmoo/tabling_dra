@@ -227,8 +227,8 @@ write_shallow( OutputStream, Term, MaxDepth ) :-
 %% is_built_in( +- goal ):
 %% Does this goal call a built-in predicate?  Or generate a built-in goal.
 
-is_builtin( Pred ) :-
-        predicate_property( Pred, built_in ).
+is_swi_builtin( Pred ) :-
+        ( \+ ( \+ predicate_property( Pred, built_in ))).
 
 
 %%------------------------------------------------------------------------------
@@ -308,7 +308,7 @@ getval( Name, Value ) :-
 %%------------------------------------------------------------------------------
 %% incval( + name ):
 %% Increment this counter by 1.
-
+incval( Name ) :- !, flag( Name, Value, Value+1 ).
 incval( Name ) :-
         getval( Name, Value ),
         NewValue is Value + 1,

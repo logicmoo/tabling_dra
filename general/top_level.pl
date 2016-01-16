@@ -37,7 +37,7 @@
 %%%    1. To use this top level, just include it in your the file that
 %%%       contains the code for your metainterpreter:
 %%%
-%%%           :- ensure_loaded( '../general/top_level' ).
+%%%           :- ensure_loaded( 'top_level' ).
 %%%
 %%%       Then load the metainterpreter into your logic programming system.
 %%%
@@ -114,7 +114,7 @@
 %%%    5. The interpreted program may contain declarations of "top" and
 %%%       "support" predicates, in the form of directives:
 %%%
-%%%           :- top p/1, q/2.
+%%%           :- topl p/1, q/2.
 %%%           :- support check_consistency/1.
 %%%
 %%%       The "top" declaration indicates predicates that will be called "from
@@ -134,7 +134,7 @@
 %%%       Predicates that are declared as "support" must be defined in other
 %%%       files.  To compile and load such files, use
 %%%
-%%%           :- load_support( filename ).
+%%%           :- load_is_support( filename ).
 
 
 
@@ -159,8 +159,8 @@
 %%%
 %%%       will be stored as
 %%%
-%%%           support( p( _ ) ).
-%%%           support( q( _, _ ) ).
+%%%           is_support( p( _ ) ).
+%%%           is_support( q( _, _ ) ).
 %%%
 %%%       The intended meaning is that "support" predicates do not make use
 %%%       (directly or indirectly) of the special features provided by the
@@ -168,7 +168,7 @@
 %%%       them over to Prolog (which would presumably speed up the computation).
 %%%
 %%%       Please note that the support predicates (which should be defined in
-%%%       files mentioned in ":- load_support( filename )." directives) are
+%%%       files mentioned in ":- load_is_support( filename )." directives) are
 %%%       compiled into the module "support" (unless they are defined within
 %%%       other modules).
 %%%
@@ -246,12 +246,22 @@
 :- ensure_loaded( program_consistency ).
 :- ensure_loaded( output_equation ).
 
-:- op( 1010, fy, top          ).     % allow  ":- top p/k ."
+:- op( 1010, fy, topl          ).     % allow  ":- topl p/k ."
 :- op( 1010, fy, support      ).     % allow  ":- support p/k ."
 :- op( 1010, fy, load_support ).     % allow  ":- load_support filename ."
 
-:- dynamic (support)/1.
-:- dynamic (top)/1.
+:-           op( 1010, fy, coinductive0  ),    % allow  ":- coinductive0 p/k ."
+             op( 1010, fy, coinductive1 ),    % allow  ":- coinductive1 p/k ."
+             op( 1010, fy, table       ),    % allow  ":- table p/k ."
+             op( 1010, fy, old_first    ),    % allow  ":- old_first p/k ."
+             op( 1010, fy, traces        ),    % allow  ":- traces  p/k ."
+             op( 1010, fy, multifile    ),    % allow  ":- multifile  p/k ."
+             op( 1010, fy, topl          ),    % allow  ":- topl p/k ."
+             op( 1010, fy, support      ),    % allow  ":- support p/k ."
+             op( 1010, fy, load_support ).     % allow  ":- load_support filename
+
+:- dynamic (is_support)/1.
+:- dynamic (is_topl)/1.
 :- dynamic (defined)/1.
 
 
@@ -298,13 +308,13 @@ prog( FileName ) :-
         process_file( FileName ),
         check_general_consistency,
         program_loaded,                          % provided by a metainterpreter
-        top.
+        !.
 
 %
 setup :-
         retractall( known( _ )   ),
-        retractall( support( _ ) ),
-        retractall( top( _ )     ),
+        retractall( is_support( _ ) ),
+        retractall( is_top( _ )     ),
         retractall( defined( _ ) ),
         erase_modules,
         create_modules.
@@ -414,9 +424,13 @@ fill_interface_modules.
 process_file( FileName ) :-
         open_the_file( FileName, ProgStream ),
         process_input( ProgStream ),
+        stream_property(ProgStream,file_name(FN)),
+        load_files(FN,[derived_from(FN),register(true),stream(ProgStream)]),
         close( ProgStream ).
 
 %
+
+open_the_file( FileName, ProgStream ) :- to_the_file( FileName, AFN ),!, open( AFN, read, ProgStream ).
 open_the_file( FileName, ProgStream ) :-
         ensure_filename_is_an_atom( FileName ),
         name_chars( FileName, FileNameChars ),
@@ -566,16 +580,16 @@ ensure_dynamic( _ ).
 
 % :- mode process_directive( + ).
 
-process_directive( (top all) ) :-
+process_directive( (topl all) ) :-
         !,
-        assert( top( _ ) ).
+        assert( is_top( _ ) ).
 
-process_directive( (top PredSpecs) ) :-
+process_directive( (topl PredSpecs) ) :-
         !,
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
             member( Pattern, Patterns ),
-            assert( top( Pattern ) ),
+            assert( is_top( Pattern ) ),
             fail
         ;
             true
@@ -586,7 +600,7 @@ process_directive( (support PredSpecs) ) :-      % store in "support" table
         predspecs_to_patterns( PredSpecs, Patterns ),
         (
             member( Pattern, Patterns ),
-            assert( support( Pattern ) ),
+            assert( is_support( Pattern ) ),
             fail
         ;
             true
@@ -642,7 +656,7 @@ show_result( yes, VarDict ) :-
         !,
         std_output_stream( Output ),
         show_bindings( VarDict ),
-        write( Output, 'Yes' ).
+        write( Output, 'Yes'+VarDict ).
 
 show_result( no, _ ) :-
         std_output_stream( Output ),
@@ -766,7 +780,7 @@ check_not_builtin( _, _ ).
 %%       reading the term the rest of the line is ignored, to facilitate
 %%       interaction with the user when asking whether more answers are needed.
 
-(top) :-
+old_top :-
         std_input_stream( Input ),
         std_output_stream( Output ),
         repeat,
@@ -831,6 +845,11 @@ interactive_term( (:- Directive), _ ) :-               % directive
         process_directive( Directive ).
 
 interactive_term( (?- Query), VarDict ) :-             % query
+        iq( Query, VarDict ).
+
+
+iq( Query ) :- term_variables(Query , VarDict), iq( Query, VarDict ).
+iq( Query, VarDict ) :-
         !,
         execute_query( Query, Result ),
         show_result( Result, VarDict ),

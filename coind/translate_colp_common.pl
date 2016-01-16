@@ -83,10 +83,10 @@
 %%%       There are, however, two directives that must be recognized. The first
 %%%       is the operator declaration (i.e., ":- op( ... )") (and this is
 %%        dealt with by "read_terms/2" in "utilities".  The second is
-%%%       ":- tabled ...", which we must allow in order to process programs
+%%%       ":- table ...", which we must allow in order to process programs
 %%%       that take advantage of both coinduction and tabling.  The translator
 %%%       automatically transforms the predicate specifications in
-%%%       ":- tabled ..." (unless they refer to predicates declared as
+%%%       ":- table ..." (unless they refer to predicates declared as
 %%%       "support").
 %%%       Moreover, the translator issues appropriate "essence_hook" clauses
 %%%       that allow the implementation of tabling to strip the additional
@@ -102,12 +102,12 @@
 %%% with the translated program.
 %%% In general, directives will be just copied to the translated program (i.e.,
 %%% without transformation. However, there are two kinds of exceptions.  The
-%%% first is ":- tabled ..." and ":- op( ... )", discussed above.  The second is
+%%% first is ":- table ..." and ":- op( ... )", discussed above.  The second is
 %%% that the following directives will be interpreted directly by the translator
 %%% (and not copied):
 %%%
 %%% 1.
-%%%     :- coinductive PredSpec .
+%%%     :- coinductive0 PredSpec .
 %%%
 %%%  (where PredSpec is of the form "p/k", or "p/k, q/k, ...": the item that
 %%%   precedes the slash is the name of a predicate, and the item that follows
@@ -116,7 +116,7 @@
 %%%  These directives are treated as declarations of coinductive predicates.
 %%%
 %%% 2.
-%%%     :- top PredSpec.
+%%%     :- topl PredSpec.
 %%%
 %%%  These are treated as declarations of predicates that will be invoked
 %%%  directly by the user or non-coinductive programs.  In the translated
@@ -172,7 +172,7 @@
 %%%    provided to facilitate invocation.  For example, if the definition of
 %%%    p/2 above were preceded by
 %%%
-%%%           :- top p/2.
+%%%           :- topl p/2.
 %%%
 %%%    then the translator would output also
 %%%
@@ -204,7 +204,7 @@
 %%%
 %%%    For example, if the definition of p/2 above were preceded by
 %%%
-%%%           :- coinductive p/2.
+%%%           :- coinductive0 p/2.
 %%%
 %%%    then the transformed form would be (assuming the set of hypotheses is
 %%%    represented as a list):
@@ -223,7 +223,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-:- ensure_loaded( '../general/utilities' ).
+:- ensure_loaded( 'utilities' ).
 
 
 
@@ -291,25 +291,25 @@ first( pair( A, _ ), A ).
 %-----  The main translator  -----
 
 
-:- op( 1000, fy, coinductive ).    % allow  ":- coinductive p/k ."
+:- op( 1000, fy, coinductive0 ).    % allow  ":- coinductive0 p/k ."
 :- op( 1000, fy, support ).        % allow  ":- support p/k ."
-:- op( 1000, fy, top ).            % allow  ":- top p/k ."
+:- op( 1000, fy, topl ).            % allow  ":- topl p/k ."
 
-:- op( 1000, fy, tabled ).         % allow also  ":- tabled p/k ."
+:- op( 1000, fy, table ).         % allow also  ":- table p/k ."
 
 
 %% A translator directive will be remembered in a dedicated table,
-%% e.g., ":- coinductive p/2" as "coinductive( p( _, _ ) )".
+%% e.g., ":- coinductive0 p/2" as "is_coinductive0( p( _, _ ) )".
 %%
-%% A ":- tabled ..." directive will also be remembered in a dedicated table.
+%% A ":- table ..." directive will also be remembered in a dedicated table.
 %%
 %% Moreover, the table "defined" will contain the name of each predicate the
 %% processing of whose definition has been started (and possibly finished).
 
-:- dynamic (coinductive)/1.
+:- dynamic (is_coinductive0)/1.
 :- dynamic (support)/1.
-:- dynamic (top)/1.
-:- dynamic (tabled)/1.
+:- dynamic (is_topl)/1.
+:- dynamic (is_tabled)/1.
 :- dynamic defined/1.
 
 
@@ -318,10 +318,10 @@ first( pair( A, _ ), A ).
 %% invocation).
 
 initialise_tables :-
-        retractall( coinductive( _ ) ),
-        retractall( support( _ )     ),
-        retractall( top( _ )         ),
-        retractall( tabled( _ )      ),
+        retractall( is_coinductive0( _ ) ),
+        retractall( is_support( _ )     ),
+        retractall( is_top( _ )         ),
+        retractall( is_tabled( _ )      ),
         retractall( defined( _ )     ).
 
 
@@ -334,13 +334,13 @@ initialise_tables :-
 
 write_declarations_as_comments( OutputStream ) :-
         writeln( OutputStream, '%% COINDUCTIVE PREDICATES:' ),
-        coinductive( Pattern ),                   % i.e., sequence through these
+        is_coinductive0( Pattern ),                   % i.e., sequence through these
         write_pred_spec_comment( Pattern, OutputStream ),
         fail.
 
 write_declarations_as_comments( OutputStream ) :-
         writeln( OutputStream, '%% \"SUPPORT\" PREDICATES:' ),
-        support( Pattern ),                       % i.e., sequence through these
+        is_support( Pattern ),                       % i.e., sequence through these
         write_pred_spec_comment( Pattern, OutputStream ),
         fail.
 
@@ -363,7 +363,7 @@ write_pred_spec_comment( Pattern, OutputStream ) :-
 %:- mode write_top_predicates( + ).
 
 write_top_predicates( OutputStream ) :-
-        top( Pattern ),                           % i.e., sequence through these
+        is_top( Pattern ),                           % i.e., sequence through these
         Pattern =.. [ F | Args ],
         transform_predicate_name( F, NF ),
         once( append( Args, [ [] ], ExtendedArgs ) ),
@@ -381,8 +381,8 @@ write_top_predicates( OutputStream ) :-
 %% been declared as support.
 
 write_essence_hook( OutputStream ) :-
-        tabled( Pattern ),                       % i.e., sequence through tabled
-        \+ support( Pattern ),
+        is_tabled( Pattern ),                       % i.e., sequence through tabled
+        \+ is_support( Pattern ),
         Pattern =.. [ F | Args ],
         drop_last( Args, ArgsButLast ),
         PatternButLast =.. [ F | ArgsButLast ],
@@ -426,13 +426,13 @@ drop_last( List, ListWithoutLast ) :-
 transform( [], _, [] ) :-
         !.
 
-transform( [ (:- tabled PredSpecs) | Terms ],
+transform( [ (:- table PredSpecs) | Terms ],
            _,
-           [(:- tabled NewPredSpecs) | NewTerms ]
+           [(:- table NewPredSpecs) | NewTerms ]
          ) :-
         !,
         transform_pred_specs( PredSpecs, NewPredSpecs ),
-        store_info_about_tabled( NewPredSpecs ),
+        store_info_about_is_tabled( NewPredSpecs ),
         transform( Terms, '', NewTerms ).
 
 transform( [ (:- Directive) | Terms ], _, NewTerms ) :-
@@ -455,7 +455,7 @@ transform( [ Clause | Terms ], CurrentPred,
          ) :-
         get_clause_head( Clause, Head ),
         Head \= CurrentPred,
-        coinductive( Head ),             % beginning a new coinductive predicate
+        is_coinductive0( Head ),             % beginning a new coinductive predicate
         !,
         most_general_instance( Head, Pattern ),
         starting_new_predicate( Pattern ),
@@ -467,7 +467,7 @@ transform( [ Clause | Terms ], CurrentPred,
 transform( [ Clause | Terms ], CurrentPred, [ NewClause | NewTerms ] ) :-
         get_clause_head( Clause, Head ),
         Head \= CurrentPred,
-        % \+ coinductive( Head ),        % beginning a new "normal" predicate
+        % \+ is_coinductive0( Head ),        % beginning a new "normal" predicate
         !,
         most_general_instance( Head, Pattern ),
         starting_new_predicate( Pattern ),
@@ -483,17 +483,17 @@ transform( [ Clause | Terms ], CurrentPred, [ NewClause | NewTerms ] ) :-
 
 
 
-%% store_info_about_tabled( + predicate specifications ):
+%% store_info_about_is_tabled( + predicate specifications ):
 %% Remember the tabled predicates in order to be able to issue appropriate
 %% "essence_hook/2" clauses.
 
-store_info_about_tabled( PredSpecs ) :-
+store_info_about_is_tabled( PredSpecs ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
         member( Pattern, Patterns ),               % i.e., sequence through list
-        assert( tabled( Pattern ) ),
+        assert( is_tabled( Pattern ) ),
         fail.
 
-store_info_about_tabled( _ ).
+store_info_about_is_tabled( _ ).
 
 
 %% starting_new_predicate( + most general instance of a predicate ):
@@ -538,7 +538,7 @@ transform_pred_specs( PredSpec, NewPredSpec ) :-
 %
 transform_pred_spec( PredSpec, PredSpec ) :-
         predspec_to_pattern( PredSpec, Pattern ),      % also checks correctness
-        support( Pattern ),
+        is_support( Pattern ),
         !.
 
 transform_pred_spec( P / K, NP / K1 ) :-
@@ -553,14 +553,14 @@ transform_pred_spec( P / K, NP / K1 ) :-
 %:- mode transform_clause( +, - ).
 
 transform_clause( (Head :- Body), NewClause ) :-
-        coinductive( Head ),
+        is_coinductive0( Head ),
         !,
         transform_logical_atom( Head, HypVar, NewHead ),
         transform_body( Body, NewHypVar, NewBody ),
         NewClause = (NewHead :- NewHypVar = [ Head | HypVar ], NewBody).
 
 transform_clause( (Head :- Body), (NewHead :- NewBody) ) :-
-        % \+ coinductive( Head ),
+        % \+ is_coinductive0( Head ),
         !,
         transform_logical_atom( Head, HypVar, NewHead ),
         transform_body( Body, HypVar, NewBody ).
@@ -617,7 +617,7 @@ transform_body( Call, HypVar, NewCall ) :-
 %:- mode transform_logical_atom( +, ?, - ).
 
 transform_logical_atom( \+ C, _, \+ C ) :-
-        support( C ),
+        is_support( C ),
         !.
 
 transform_logical_atom( \+ C, _, \+ C ) :-
@@ -639,11 +639,11 @@ transform_logical_atom( once( Calls ), Hyp, once( NewCalls ) ) :-
         transform_body( Calls, Hyp, NewCalls ).
 
 transform_logical_atom( Pred, _, Pred ) :-
-        (support( Pred ) ; is_builtin( Pred )),
+        (is_support( Pred ) ; is_builtin( Pred )),
         !.
 
 transform_logical_atom( Pred, HypVar, NewPred ) :-
-        % \+ (support( Pred ) ; is_built_in( Pred )),
+        % \+ (is_support( Pred ) ; is_built_in( Pred )),
         Pred =.. [ Name | Args ],
         transform_predicate_name( Name, NewName ),
         once( append( Args, [ HypVar ], NewArgs ) ),
@@ -669,9 +669,9 @@ transform_predicate_name( Name, NewName ) :-
 
 %:- mode is_a_translator_directive( + ).
 
-is_a_translator_directive( (coinductive _) ).
+is_a_translator_directive( (coinductive0 _) ).
 is_a_translator_directive( (support     _) ).
-is_a_translator_directive( (top         _) ).
+is_a_translator_directive( (topl         _) ).
 
 
 
@@ -680,88 +680,88 @@ is_a_translator_directive( (top         _) ).
 
 %:-  mode process_translator_directive( + ).
 
-process_translator_directive( (coinductive PredSpecs) ) :-
+process_translator_directive( (coinductive0 PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
-        declare_coinductive( Patterns ).
+        declare_is_coinductive0( Patterns ).
 
 process_translator_directive( (support PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
-        declare_support( Patterns ).
+        declare_is_support( Patterns ).
 
-process_translator_directive( (top PredSpecs) ) :-
+process_translator_directive( (topl PredSpecs) ) :-
         predspecs_to_patterns( PredSpecs, Patterns ),
-        declare_top( Patterns ).
+        declare_is_top( Patterns ).
 
 
 
-%% declare_coinductive( + list of general instances ):
+%% declare_is_coinductive0( + list of general instances ):
 %% Store the general instances in "coinductive", warning about duplications.
 %% An overlap with "support" is a fatal error.
 
-declare_coinductive( Patterns ) :-
+declare_is_coinductive0( Patterns ) :-
         member( Pattern, Patterns ),              % i.e., sequence through these
         check_declaration_order( Pattern, 'coinductive' ),
         (
-            support( Pattern )
+            is_support( Pattern )
         ->
             overlap_error( Pattern )
         ;
             true
         ),
         (
-            coinductive( Pattern )
+            is_coinductive0( Pattern )
         ->
             duplicate_warning( Pattern, 'coinductive' )
         ;
-            assert( coinductive( Pattern ) )
+            assert( is_coinductive0( Pattern ) )
         ),
         fail.
 
-declare_coinductive( _ ).
+declare_is_coinductive0( _ ).
 
 
-%% declare_support( + list of general instances ):
+%% declare_is_support( + list of general instances ):
 %% Store the general instances in "support", warning about duplications.
 %% An overlap with "coinductive" is a fatal error.
 
-declare_support( Patterns ) :-
+declare_is_support( Patterns ) :-
         member( Pattern, Patterns ),              % i.e., sequence through these
         check_declaration_order( Pattern, 'support' ),
         (
-            coinductive( Pattern )
+            is_coinductive0( Pattern )
         ->
             overlap_error( Pattern )
         ;
             true
         ),
         (
-            support( Pattern )
+            is_support( Pattern )
         ->
             duplicate_warning( Pattern, 'support' )
         ;
-            assert( support( Pattern ) )
+            assert( is_support( Pattern ) )
         ),
         fail.
 
-declare_support( _ ).
+declare_is_support( _ ).
 
 
-%% declare_top( + list of general instances ):
+%% declare_is_top( + list of general instances ):
 %% Store the general instances in "top", warning about duplications.
 
-declare_top( Patterns ) :-
+declare_is_top( Patterns ) :-
         member( Pattern, Patterns ),             % i.e., sequence through these
         check_declaration_order( Pattern, 'top' ),
         (
-            top( Pattern )
+            is_top( Pattern )
         ->
             duplicate_warning( Pattern, 'top' )
         ;
-            assert( top( Pattern ) )
+            assert( is_top( Pattern ) )
         ),
         fail.
 
-declare_top( _ ).
+declare_is_top( _ ).
 
 
 %% duplicate_warning( + most general instance of a predicate,

@@ -205,7 +205,7 @@ most_general_instance( Term, Pattern ) :-
 
 predspecs_to_patterns( Var, _ ) :-
         var( Var ),
-        !, trace, 
+        !,
         error( [ 'A variable instead of predicate specifications: \"',
                  Var,
                  '\"'
@@ -261,7 +261,7 @@ check_predspec( P / K ) :-
         K >= 0,
         !.
 
-check_predspec( PredSpec ) :- trace,
+check_predspec( PredSpec ) :-
         error( [ 'An incorrect predicate specification: \"', PredSpec, '\"' ] ).
 
 

@@ -17,7 +17,7 @@ NOTE: 1. Each of the examples in this directory has three versions:
 
       2. If you want to try the examples directly in your logic programming
           system (without tabling), then it's best to comment out the
-          directive ":- tabled tverify_ / 3." in "verifier.pl" after you
+          directive ":- table tverify_ / 3." in "verifier.pl" after you
           translate "verifier.clp".
 
 

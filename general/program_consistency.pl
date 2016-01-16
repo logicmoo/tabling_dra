@@ -63,19 +63,19 @@ check_general_consistency :-
                  ListOfDefinedSupport
                ),
         (
-            top( Var ),  var( Var )
+            is_top( Var ),  var( Var )
         ->
             ListOfDeclaredTop = ListOfDefined
         ;
             findall( P/K
-                   , ( top( Pattern )
+                   , ( is_top( Pattern )
                      , functor( Pattern, P, K )
                      )
                    , ListOfDeclaredTop
                    )
         ),
         findall( P/K
-               , ( support( Pattern )
+               , ( is_support( Pattern )
                  , functor( Pattern, P, K )
                  )
                , ListOfDeclaredSupport
