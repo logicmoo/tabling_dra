@@ -485,24 +485,24 @@ tp.
 %---------------- Builtin Preds ----------------------------
 
 'my ='(X1,X2) :- 'my =__1'(Y1,Y2), unify_sets([X1,X2],[Y1,Y2]).
-'my \=='(X1,X2) :- 'my \==__1'(Y1,Y2), unify_sets([X1,X2],[Y1,Y2]).
+'my \\=='(X1,X2) :- 'my \\==__1'(Y1,Y2), unify_sets([X1,X2],[Y1,Y2]).
 'my is'(X1,X2) :- 'my is__1'(Y1,Y2), unify_sets([X1,X2],[Y1,Y2]).
 'my =:='(X1,X2) :- 'my =:=__1'(Y1,Y2), unify_sets([X1,X2],[Y1,Y2]).
-'my =\='(X1,X2) :- 'my =\=__1'(Y1,Y2), unify_sets([X1,X2],[Y1,Y2]).
+'my =\\='(X1,X2) :- 'my =\\=__1'(Y1,Y2), unify_sets([X1,X2],[Y1,Y2]).
 'my <'(X1,X2) :- 'my <__1'(Y1,Y2), unify_sets([X1,X2],[Y1,Y2]).
 'my >'(X1,X2) :- 'my >__1'(Y1,Y2), unify_sets([X1,X2],[Y1,Y2]).
 'my >='(X1,X2) :- 'my >=__1'(Y1,Y2), unify_sets([X1,X2],[Y1,Y2]).
 'my =<'(X1,X2) :- 'my =<__1'(Y1,Y2), unify_sets([X1,X2],[Y1,Y2]).
 
 'my =__1'(X,X).
-'my \==__1'(_,_).
+'my \\==__1'(_,_).
 'my is__1'(num,num).
 'my <__1'(num,num).
 'my >__1'(num,num).
 'my >=__1'(num,num).
 'my =<__1'(num,num).
 'my =:=__1'(num,num).
-'my =\=__1'(num,num).
+'my =\\=__1'(num,num).
 
 
 %---------------- Show Result ------------------------------

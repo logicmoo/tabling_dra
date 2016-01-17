@@ -42,13 +42,13 @@
 %% then
 %%     map( sum(5 ), [ 1, 2, 3 ], Result )
 %% will bind Result to [ 6, 7, 8 ].
-
+/*
 apply( PredNameArgs, Arguments ) :-
         PredNameArgs =.. [ PredName | Args ],
         append( Args, Arguments, AllArgs ),
         Literal =.. [ PredName | AllArgs ],
         call( Literal ).
-
+*/
 
 %%------------------------------------------------------------------------------
 %% map( + predicate name, + list, - mapped list ):
@@ -65,13 +65,13 @@ apply( PredNameArgs, Arguments ) :-
 %%          ?- map( square, [ 1, 2, 3 ], Ans ).
 %%
 %%          Ans = [ 1, 4, 9 ].
-
+/*
 map( _, [], [] ).
 
 map( PredName, [ H | T ], [ NH | NT ] ) :-
         apply( PredName, [ H, NH ] ),
         map( PredName, T, NT ).
-
+*/
 
 %%------------------------------------------------------------------------------
 %% filter( + predicate name, + list, - filtered list ):

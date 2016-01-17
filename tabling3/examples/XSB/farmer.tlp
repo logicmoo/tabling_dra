@@ -24,9 +24,27 @@
 
 % Adapted by F.K. @ UTD
 
-:- topl demo/0.
+:- if(current_predicate((topl)/1)).
 
-:- table path/4.
+:- topl(demo/0).
+
+:- table(path/4).
+
+:- endif.
+
+/*
+
+Farmer Wolf Goat Cabbage ran 10k times
+
+NEW SWI Tabling/Non-Tabling:  
+% 3,305,123 inferences, 0.550 CPU in 0.550 seconds (100% CPU,  6,011,913 Lips)
+% 3,810,383 inferences, 0.441 CPU in 0.441 seconds (100% CPU,  8,647,303 Lips)
+
+OLD SWI Tabling/Non-Tabling:  
+% 2,661,828 inferences, 0.439 CPU in 0.439 seconds (100% CPU,  6,070,209 Lips)
+% 3,810,383 inferences, 0.380 CPU in 0.381 seconds (100% CPU, 10,023,585 Lips)
+
+*/
 
 
 /************************************************************************/
@@ -77,9 +95,10 @@ opp( w, e ).
 safe( fwgc( X, _, X, _ ) ).
 safe( fwgc( X, X, _, X ) ).
 
+write_result(_):-!.
 write_result([]) :- nl.
 write_result([X|L]) :-
         write(X), nl,
         write_result(L).
 
-?- demo.
+?- time(forall(between(0,10000,_G725060),demo)).

@@ -21,7 +21,7 @@
    %                                                                      %
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- use_module(library(memo)).
+% :- use_module(library(memo)).
 
 %%%                                                                          %%%
 %%%  An interpreter for tabled logic programming with coinduction:           %%%
@@ -880,7 +880,7 @@ solve_exit_query:-
             setval( old_table_size, NAns2 ).
 
 %% Print information about the number of steps and the answer table.
-
+print_statistics :- !.
 print_statistics :-
         std_output_stream( Output ),
         getval( step_counter, NSteps ),
