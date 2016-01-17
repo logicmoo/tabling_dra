@@ -1,13 +1,20 @@
 #! swipl -L8G -G8G -T8G -f
-/** <module> MUD server startup script in SWI-Prolog
+/** <module> startup script in SWI-Prolog
 
 */
+
+:- if(exists_source(library(logicmoo_utils))).
+
+:- use_module(library(logicmoo_utils)).
 :- shell(cls).
+:- use_listing_vars.
+
+:- endif.
 
 :- dynamic   user:file_search_path/2.
 :- multifile user:file_search_path/2.
 
-:- prolog_load_context(directory,H),absolute_file_name('../../../..',A,[file_type(directory),relative_to(H)]),asserta(user:file_search_path(pack,A)).
+:- prolog_load_context(directory,H),absolute_file_name('../',A,[file_type(directory),relative_to(H)]),asserta(user:file_search_path(dra,A)).
 
 :- attach_packs.
 :- initialization(attach_packs).
@@ -36,9 +43,6 @@ property_pred(hilog,is_hilog).
 %%% ON :- initialization( profiler(_,walltime) ).
 %%% ON :- initialization(user:use_module(library(swi/pce_profile))).
 
-:- user:ensure_loaded(library(ape/get_ape_results)).
-
-:- user:ensure_loaded(library(logicmoo/util/logicmoo_util_all)).
 
 :- use_module(library(coinduction),
   	  [ (coinductive)/1,
@@ -326,49 +330,50 @@ initialize_table:-must(initialise).
 print_table_statistics:-print_statistics.
 %load(P):-must(prog0(P)),!.
 
-:- user:ensure_loaded(library(dra/tabling3/dra_table_assert)).
-%:- user:ensure_loaded(library(dra/tabling3/dra_table_record)).
-:- user:ensure_loaded(library(dra/tabling3/compatibility_utilities_swi)).
-:- user:ensure_loaded(library(dra/tabling3/dra_common)).
+% :- user:ensure_loaded((dra_table_assert)).
+:- user:ensure_loaded((dra_table_record)).
+:- user:ensure_loaded((compatibility_utilities_swi)).
+:- user:ensure_loaded((dra_common)).
 % c + r = 7.949 seconds
 
 /*
-% :- pf(library('dra/tabling3/examples/XSB/fib.tlp') ).
+% :- pf(('examples/XSB/fib.tlp') ).
 
-:- pf(library('dra/tabling3/examples/co_t.tlp') ).
-
-
-:- pf(library('dra/tabling3/examples/coind2.tlp') ).
-% :- pf(library('dra/tabling3/examples/LTL/v.pl') ).
-%:- pf(library('dra/tabling3/examples/mini_graph.tlp') ).
-%:- pf(library('dra/tabling3/examples/mini_language.tlp') ).
-:- pf(library('dra/tabling3/examples/paper_example.tlp') ).
+:- pf(('examples/co_t.tlp') ).
 
 
+:- pf(('examples/coind2.tlp') ).
+% :- pf(('examples/LTL/v.pl') ).
+%:- pf(('examples/mini_graph.tlp') ).
+%:- pf(('examples/mini_language.tlp') ).
+:- pf(('examples/paper_example.tlp') ).
 
-:- pf(library('dra/tabling3/Bench/tabling3/run')).
-:- pf(library('dra/tabling3/Bench/prolog/run')).
-:- pf(library('dra/tabling3/Bench/clpfd/run')).
-:- pf(library('dra/tabling3/Bench/aspclp/run')).
+
+
+:- pf(('Bench/tabling3/run')).
+:- pf(('Bench/prolog/run')).
+:- pf(('Bench/clpfd/run')).
+:- pf(('Bench/aspclp/run')).
 */
 
-t0:- time([library('dra/tabling3/examples/XSB/farmer.tlp')]).
-tn:- time([library('dra/tabling3/examples/tnot1.tlp')]).
-t1:- time(process_file(library('dra/tabling3/examples/XSB/farmer.tlp') )),!.
-t2:- time([library('dra/tabling3/examples/XSB/ham.tlp')]).
-t2a:- time([library('dra/tabling3/examples/XSB/ham_auto.tlp')]).
+t0:- time([('examples/XSB/farmer.tlp')]).
+tn:- time([('examples/tnot1.tlp')]).
+t1:- time(process_file(('examples/XSB/farmer.tlp') )),!.
+t2:- time([('examples/XSB/ham.tlp')]).
+t2a:- time([('examples/XSB/ham_auto.tlp')]).
 
-t2b:- time(pf(library('dra/tabling3/examples/XSB/ham.tlp') )).
-t3:- [(library('dra/tabling3/examples/graph.tlp') )].
-t4:- pf(library('dra/tabling3/examples/module.tlp') ).
-t4:- [(library('dra/tabling3/examples/paper_example.tlp') )].
-t4:- pf(library('dra/tabling3/examples/conditional.clp') ).
-t4:- pf(library('dra/tabling3/examples/simple1.tlp') ).
-t4:- pf(library('dra/tabling3/examples/simple1_old_first.tlp') ).
-t4:- pf(library('dra/tabling3/examples/conditional.clp') ).
-t4:- pf(library('dra/tabling3/examples/small_comment_example.tlp') ).
-t4:- pf(library('dra/tabling3/examples/coind_new.tlp') ).
-t5:- consult('/devel/LogicmooDeveloperFramework/PrologMUD/packs/MUD_PDDL/prolog/dra/tabling3/Bench/tabling/tcl.pl').
+t2b:- time(pf(('examples/XSB/ham.tlp') )).
+t3:- [(('examples/graph.tlp') )].
+t4:- pf(('examples/module.tlp') ).
+t41:- [(('examples/paper_example.tlp') )].
+t42:- pf(('examples/conditional.clp') ).
+t43:- pf(('examples/simple1.tlp') ).
+t44:- pf(('examples/simple1_old_first.tlp') ).
+t45:- pf(('examples/conditional.clp') ).
+t46:- pf(('examples/small_comment_example.tlp') ).
+t47:- pf(('examples/coind_new.tlp') ).
+t51:- consult(('Bench/tabling/tcl.pl')).
+t52:- consult(('Bench/tabling/peep.pl')).
 
 % :- repeat,logOnErrorIgnore(prolog),fail.
 user:term_expansion((?- G),_):- nonvar(G), format(atom(H),'~q .',[G]),user:rl_add_history(H),fail.
