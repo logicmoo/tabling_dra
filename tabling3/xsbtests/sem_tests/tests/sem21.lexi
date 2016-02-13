@@ -1,7 +1,0 @@
-lex_interp('N','"David"',0,x,'','','','x = david').
-lex_interp('N','"MrDiver"',0,x,'','','','x = david').
-lex_interp('N','"Kostis"',0,x,'','','','x = kostis').
-lex_interp('V','"is"',0,'<x,y>','','','','x = y').
-
-sem_lexi_mode(basic).
-

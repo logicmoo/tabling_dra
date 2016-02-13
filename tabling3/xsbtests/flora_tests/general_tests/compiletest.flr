@@ -1,6 +1,0 @@
-
-%% 2 - stderr
-test :- file_reopen(temp,w,2,_)@prolog(file_io),
-	%% we need to catch the abort, but XSB can't do it yet
-	flCompile(compile_control),
-	file_close(2)@prolog(file_io).

@@ -1,4 +1,0 @@
-:- [exec].
-:- [kalah_ox].
-
-test :- exec,fail.

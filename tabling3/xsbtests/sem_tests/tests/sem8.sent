@@ -1,3 +1,0 @@
-test(1, 'S'('NP'('N'('Chris')),'VP'('VP'('V'(arrives)),'AP'('A'(late))))).
-test(2, 'S'('NP'('N'('Rita')),
-	    'VP'('V'(made),'CL'('NP'('N'('Max')),'VP'('V'(cry)))))).

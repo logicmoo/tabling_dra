@@ -1,6 +1,0 @@
-choices(pate,sole,fruit)
-choices(radishes,beef,fruit)
-choices(radishes,pork,fruit)
-choices(radishes,sole,fruit)
-choices(radishes,sole,iceCream)
-choices(radishes,tuna,fruit)

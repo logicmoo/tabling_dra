@@ -1,5 +1,0 @@
-tree('Rita dauri','''S''(''NP''(''N''(''Rita'')),''VP''(''V''(dauri)))','Rita dauri','Rita dauri',0).
-tree('Rita hasi','''S''(''NP''(''N''(''Rita'')),''VP''(''V''(hasi)))','Rita hasi','Rita hasi',1).
-tree('Rita dauri aur hasi','''S''(''NP''(''N''(''Rita'')),''VP''(''VP''(''V''(dauri)),aur,''VP''(''V''(hasi))))','Rita dauri aur hasi','Rita dauri aur hasi',2).
-tree('Rita dauri ya hasi','''S''(''NP''(''N''(''Rita'')),''VP''(''VP''(''V''(dauri)),ya,''VP''(''V''(hasi))))','Rita dauri ya hasi','Rita dauri ya hasi',3).
-

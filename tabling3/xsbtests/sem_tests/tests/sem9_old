@@ -1,1 +1,0 @@
-'member(chris, {x : member(<x, kate>, {<y, z> : equal(y, z)})})'

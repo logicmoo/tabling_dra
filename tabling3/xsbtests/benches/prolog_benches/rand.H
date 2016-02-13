@@ -1,1 +1,0 @@
-:- export prand/1.

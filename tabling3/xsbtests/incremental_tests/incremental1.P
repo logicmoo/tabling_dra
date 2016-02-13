@@ -1,9 +1,0 @@
-
-/* This prevents a spurious error for executing incremental under the
-    mt engine, which does not yet support incremental tabling. */
-test:- 
-	(xsb_configuration(engine_mode,'multi-threading') -> 
-	    load_dync(incremental1_old),
-	    (incr(X),write(incr(X)),writeln('.'),fail ; true)
-	 ;  [incremental1_1],test_seq).
-

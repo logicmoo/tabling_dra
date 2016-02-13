@@ -1,6 +1,0 @@
-
-test :- tell(temp)@prolog(), 
-	[btupdates>>foo],
-	debug[#check_undefined(on)]@flora(sys),
-	[btupdates>>foo],
-	told@prolog().

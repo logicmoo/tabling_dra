@@ -1,1 +1,0 @@
-go :- ['Driver'], sg('1Y','Data/chain').

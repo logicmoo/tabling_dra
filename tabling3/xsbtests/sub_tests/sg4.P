@@ -1,1 +1,0 @@
-go :- ['Driver'], sg('XY','Data/tree').

@@ -1,5 +1,0 @@
-test(1, 'S'('NP'('N'('Chris')), 'VP'('VP'('V'(arrived)),'AP'('A'(tired))))).
-test(2, 'S'('it_is_false_that',
-	    'S'('NP'('N'('Chris')),'VP'('VP'('V'(arrived)),'AP'('A'(tired)))))).
-test(3, 'S'('NP'('N'('Chris')), 'VP'('VP'('V'(is)),'AP'('A'(tired))))).
-test(4, 'S'('NP'('N'('Chris')), 'VP'('V'(is),'AP'('A'(tired))))).

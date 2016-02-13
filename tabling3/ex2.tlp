@@ -1,6 +1,0 @@
-:- table p/1.
-:- coinductive0 p/1.
-
-p( [ a | X ] ) :-  p( X ).
-
-p( [ b | X ] ) :-  p( X ).

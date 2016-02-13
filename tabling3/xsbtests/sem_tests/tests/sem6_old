@@ -1,4 +1,0 @@
-'(arrived(chris) & tired(chris))'
-'(val(chris, V(is)) & tired(chris))'
-'-((arrived(chris) & tired(chris)))'
-'tired(chris)'

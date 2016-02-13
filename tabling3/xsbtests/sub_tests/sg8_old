@@ -1,4 +1,0 @@
-same_gen(A,A)
-same_gen(A,A)
-same_gen([A],[A])
-same_gen(f(A),f(A))

@@ -1,9 +1,0 @@
-
-
-/* Pg. 140 */
-:- index(rule/4,trie).
-
-rule(place(s1,1),[],[place(s1,1),place(s2,1)]).               % t1
-rule(place(s1,1),[],[place(s3,1)]).                           % t2
-rule(place(s2,1),[place(s3,1)],[place(s3,1),place(s4,1)]).    % t3
-rule(place(s3,1),[],[place(s1,1)]).                           % t4

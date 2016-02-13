@@ -1,1 +1,0 @@
-go :- ['Driver'], drtc(multiup,'Data/cycles').

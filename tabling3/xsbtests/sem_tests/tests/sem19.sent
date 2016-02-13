@@ -1,6 +1,0 @@
-test(0,'S'('NP'('D'(every),'N'(woman)),'VP'('V'(laughed)))).
-test(1,'S'('NP'('D'(not_every),'N'(woman)),'VP'('V'(laughed)))).
-test(2,'S'('NP'('D'(only),'N'(women)),'VP'('V'(laughed)))).
-test(3,'S'('NP'('D'(not_only),'N'(women)),'VP'('V'(laughed)))).
-test(4,'S'('NP'('DP'('D'(every_except),'NP'('N'('Rita'))),'N'(woman)),'VP'('V'(laughed)))).
-test(5,'S'('NP'('DP'('D'(no_except),'NP'('N'('Rita'))),'N'(woman)),'VP'('V'(ran)))).

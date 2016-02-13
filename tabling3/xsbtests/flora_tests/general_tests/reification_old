@@ -1,9 +1,0 @@
-Tst4: ok
-tst1: (_$_$_flora'usermod'foo'd_fd(a,b,c)  ','  _$_$_flora'usermod'foo'd_meth(c,e))
-tst1: (_$_$_flora'usermod'foo'd_fd(a,b,c)  ','  _$_$_flora'usermod'foo'd_meth(c,e))
-tst2: [(_$_$_flora'usermod'main'd_mvd(alice,thinks,flora)  ','  _$_$_flora'usermod'main'd_isa(flora,cool)),_$_$_flora'usermod'main'd_mvd(sally,thinks,_$_$_flora'usermod'main'd_isa(flora,cool))]
-tst2: [(_$_$_flora'usermod'main'd_mvd(alice,thinks,flora)  ','  _$_$_flora'usermod'main'd_isa(flora,cool)),_$_$_flora'usermod'main'd_mvd(sally,thinks,_$_$_flora'usermod'main'd_isa(flora,cool))]
-tst3: (_$_$_flora'usermod'bar'd_isa(b,a)  ','  _$_$_flora'usermod'bar'd_fd(b,b,c))
-tst3: (_$_$_flora'usermod'bar'd_isa(b,a)  ','  _$_$_flora'usermod'bar'd_fd(b,b,c))
-tst4: P = _$_$_flora'usermod'main'd_mvd(mary,thinks,_$_$_flora'usermod'main'd_isa(flora,cool))
-tst4: _$_$_flora'usermod'main'd_mvd(mary,thinks,_$_$_flora'usermod'main'd_isa(flora,cool))
