@@ -1,10 +1,10 @@
-name(dra_tabling).
+name(tabling_dra).
 version('1.0.1').
 title('SWI-Prolog interface to Table-handling procedures for the "dra" interpreter. Written by Feliks Kluzniak at UTD (March 2009)').
-keywords([tabling,memoization]).
+keywords([tabling,memoization,dra]).
 author( 'Douglas Miles', 'http://www.linkedin.com/in/logicmoo' ).
 packager( 'Douglas Miles', 'http://www.linkedin.com/in/logicmoo' ).
 maintainer( 'Douglas Miles', 'http://www.linkedin.com/in/logicmoo' ).
-home( 'https://github.com/logicmoo/swicli' ).
-download( 'https://github.com/TeamSPoon/dra_tabling/release/*.zip' ).
+home( 'https://github.com/TeamSPoon/tabling_dra' ).
+download( 'https://github.com/TeamSPoon/tabling_dra/release/*.zip' ).
 requires(logicmoo_base).
