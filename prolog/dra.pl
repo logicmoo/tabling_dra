@@ -31,7 +31,8 @@
 
 :- module('$dra',[dra_call_coind0/1,dra_call_coind1/1,dra_call_tabled/1,dra_call_interp/1,tnot/1,initialise/0]).
 :- '$set_source_module'(_,'$dra').
-:- 'set_prolog_flag'(access_level,system).
+:- current_prolog_flag(access_level,Was),asserta(was_access_level(Was)).
+:- set_prolog_flag(access_level,system).
 
 
 
@@ -691,122 +692,6 @@ dra_version( Version ) :-
         append( VCodes, SPar, VersionCodes ),
         name_chars( Version, VersionCodes ).
 
-% NOTE:
-%
-%    1. See ../general/top_level.ecl for a description of how to load
-%       and run programs.
-%       Please note that in Eclipse after loading this interpreter you
-%       should issue
-%            :- import dra.
-%       if you don't want to keep writing
-%            dra:prog( filename )
-%       every time.
-%
-%    2. The interpreter supports a number of directives:
-%
-%       a) Tabled and coinductive predicates should be declared as such in
-%          the program file, e.g.,
-%              :- table       ancestor/2.
-%              :- coinductive0  comember/2.
-%              :- coinductive1 comember/2.
-%
-%          "coinductive1" means that if there are coinductive hypotheses
-%          with which a goal unifies, then the usual clauses will not be tried
-%          after the hypotheses are exhausted (this is "new style"
-%          coinduction).
-%
-%       b) To include files use the usual Prolog syntax:
-%              :- [ file1, file2, ... ].
-%
-%       c) To declare predicates used in an interpreted program as dynamic,
-%          use
-%              :- dynamic p/k.
-%
-%       d) By default, a goal produces new (i.e., heretofore unknown) answers
-%          before producing old ones.  To reverse this behaviour, use
-%
-%              :- old_first p/k.
-%          or
-%              :- old_first all.
-%
-%       e) To produce a wallpaper traces use the traces directive. For example,
-%
-%              :- traces p/3, q/0, r/1.
-%
-%          will traces predicates "p/3", "q/0" and "r/1".  If you want to traces
-%          everything, use
-%
-%              :- traces all.
-%
-%          These directives are cumulative.
-%
-%       f) To print out subsets of the current answer table, use
-%
-%              :- answers( Goal, Pattern ).
-%
-%          this will print all tabled answers that are associated with a
-%          variant of Goal and unifiable with Pattern.
-%          To get a dump of the entire table, use just
-%
-%              :- answers( _, _ ).
-%
-%    2. The program should contain no other directives. It may, however,
-%       contain queries, which will be executed immediately upon reading.
-%
-%    3. Just before the result of a query is reported, the interpreter
-%       produces a printout with statistics accummulated since the previous
-%       printout (or since the beginning, if this is the first printout during
-%       this session with the interpreted program). The printout looks like
-%       this:
-%
-%           [K steps, M new answers tabled (N in all)]
-%
-%       where K, M and N are some natural numbers. K is the number of
-%       evaluated goals, M is the number of new additions to the answer table,
-%       N is the current size of the answer table.
-%
-%    4. If the program invokes a built-in predicate, that predicate dra_must
-%       be declared in the table "is_never_tabled/1" (see file "dra_builtins.pl").
-%       Every addition should be considered carefully: some built-ins might
-%       require special treatment by the interpreter.
-%
-%    5. The program may contain clauses that modify the definition of the
-%       interpreter's predicate "essence_hook/2" (the clauses will be asserted
-%       at the front of the predicate, and will thus override the default
-%       definition for some cases).  The default definition is
-%
-%          essence_hook( T, T ).
-%
-%       This predicate is invoked _in certain contexts_ when:
-%          - two terms are about to be compared (either for equality or to
-%            check whether they are variants of each other);
-%          - an answer is tabled;
-%          - an answer is retrieved from the table.
-%
-%       The primary intended use is to suppress arguments that carry only
-%       administrative information and that may differ in two terms that are
-%       "semantically" equal or variants of each other. (Such, for example, is
-%       the argument that carries the set of coinductive hypotheses in a
-%       co-logic program translated into Prolog: see "../coind/translate_clp".
-%       Mind you, that translation need not be applied to programs executed by
-%       this interpreter).
-%
-%       For example, the presence of
-%
-%          essence_hook( p( A, B, _ ),  p( A, B ) ).
-%
-%       will result in "p( a, b, c )" and "p( a, b, d )" being treated as
-%       identical, as each of them will be translated to "p( a, b )" before
-%       comparison.
-%
-%       NOTE: This facility should be used with the utmost caution, as it
-%             may drastically affect the semantics of the interpreted program
-%             in a fashion that would be hard to understand for someone who
-%             does not understand the details of the interpreter.
-%
-% LIMITATIONS: - The interpreted program should not contain cuts.
-%              - Error detection is quite rudimentary.
-
 
 
 
@@ -1185,128 +1070,207 @@ dra_version( Version ) :-
 
            The variable is reinitialized before the evaluation of a new query.
 
+
+  NOTE:
+ 
+    1. See ../general/top_level.ecl for a description of how to load
+       and run programs.
+       Please note that in Eclipse after loading this interpreter you
+       should issue
+            :- import dra.
+       if you don't want to keep writing
+            dra:prog( filename )
+       every time.
+ 
+    2. The interpreter supports a number of directives:
+ 
+       a) Tabled and coinductive predicates should be declared as such in
+          the program file, e.g.,
+              :- table       ancestor/2.
+              :- coinductive0  comember/2.
+              :- coinductive1 comember/2.
+ 
+          "coinductive1" means that if there are coinductive hypotheses
+          with which a goal unifies, then the usual clauses will not be tried
+          after the hypotheses are exhausted (this is "new style"
+          coinduction).
+ 
+       b) To include files use the usual Prolog syntax:
+              :- [ file1, file2, ... ].
+ 
+       c) To declare predicates used in an interpreted program as dynamic,
+          use
+              :- dynamic p/k.
+ 
+       d) By default, a goal produces new (i.e., heretofore unknown) answers
+          before producing old ones.  To reverse this behaviour, use
+ 
+              :- old_first p/k.
+          or
+              :- old_first all.
+ 
+       e) To produce a wallpaper traces use the traces directive. For example,
+ 
+              :- traces p/3, q/0, r/1.
+ 
+          will traces predicates "p/3", "q/0" and "r/1".  If you want to traces
+          everything, use
+ 
+              :- traces all.
+ 
+          These directives are cumulative.
+ 
+       f) To print out subsets of the current answer table, use
+ 
+              :- answers( Goal, Pattern ).
+ 
+          this will print all tabled answers that are associated with a
+          variant of Goal and unifiable with Pattern.
+          To get a dump of the entire table, use just
+ 
+              :- answers( _, _ ).
+ 
+    2. The program should contain no other directives. It may, however,
+       contain queries, which will be executed immediately upon reading.
+ 
+    3. Just before the result of a query is reported, the interpreter
+       produces a printout with statistics accummulated since the previous
+       printout (or since the beginning, if this is the first printout during
+       this session with the interpreted program). The printout looks like
+       this:
+ 
+           [K steps, M new answers tabled (N in all)]
+ 
+       where K, M and N are some natural numbers. K is the number of
+       evaluated goals, M is the number of new additions to the answer table,
+       N is the current size of the answer table.
+ 
+    4. If the program invokes a built-in predicate, that predicate dra_must
+       be declared in the table "is_never_tabled/1" (see file "dra_builtins.pl").
+       Every addition should be considered carefully: some built-ins might
+       require special treatment by the interpreter.
+ 
+    5. The program may contain clauses that modify the definition of the
+       interpreter's predicate "essence_hook/2" (the clauses will be asserted
+       at the front of the predicate, and will thus override the default
+       definition for some cases).  The default definition is
+ 
+          essence_hook( T, T ).
+ 
+       This predicate is invoked _in certain contexts_ when:
+          - two terms are about to be compared (either for equality or to
+            check whether they are variants of each other);
+          - an answer is tabled;
+          - an answer is retrieved from the table.
+ 
+       The primary intended use is to suppress arguments that carry only
+       administrative information and that may differ in two terms that are
+       "semantically" equal or variants of each other. (Such, for example, is
+       the argument that carries the set of coinductive hypotheses in a
+       co-logic program translated into Prolog: see "../coind/translate_clp".
+       Mind you, that translation need not be applied to programs executed by
+       this interpreter).
+ 
+       For example, the presence of
+ 
+          essence_hook( p( A, B, _ ),  p( A, B ) ).
+ 
+       will result in "p( a, b, c )" and "p( a, b, d )" being treated as
+       identical, as each of them will be translated to "p( a, b )" before
+       comparison.
+ 
+       NOTE: This facility should be used with the utmost caution, as it
+             may drastically affect the semantics of the interpreted program
+             in a fashion that would be hard to understand for someone who
+             does not understand the details of the interpreter.
+
+ 
+     The top level notes "never_tabled" declarations in the table "is_never_tabled".
+        For example,
+ 
+            :- never_tabled p/1, q/2.
+ 
+        will be stored as
+ 
+            is_never_tabled( p( _ ) ).
+            is_never_tabled( q( _, _ ) ).
+ 
+        The intended meaning is that "never_tabled" predicates do not make use
+        (directly or indirectly) of the special features provided by the
+        metainterpreter, so their invocations can be handled just by handing
+        them over to Prolog (which would presumably speed up the computation).
+ 
+        Please note that the never_tabled predicates (which should be defined in
+        files mentioned in ":- load_is_support( filename )." directives) are
+        compiled into the module "never_tabled" (unless they are defined within
+        other modules).
+ 
+ 
+     The metainterpreter should provide the following predicates
+        ("hooks") that will be called by the top level:
+ 
+           - is_cuts_ok/1:
+                  Defines patterns for built-in predicates from the host
+                  system that can be invoked by the interpreted program.
+                  For example, to allow writeln/2, declare:
+                      is_cuts_ok( writeln( _, _ ) ).
+ 
+           - default_extension/1:
+                  This predicate is optional.  If present, its argument
+                  should be an atom whose name is the extension string to be
+                  added to file names that do not already have an extension.
+                  (The string should begin with a period!)
+                  For example, a metainterpreter for coinductive logic
+                  programming might contain the following fact:
+                       default_extension( '.clp' ).
+ 
+           - initialise/0:
+                  This will be called before loading a new program,
+                  giving the metainterpreter an opportunity to
+                  (re)initialise its data structures.
+ 
+           - legal_directive/1:
+                  Whenever the top level encounters a directive
+                  (of the form ":- D."), it will call "legal_directive( D )".
+                  If the call succeeds, the interpreter will be given
+                  a chance to process the directive (see below), otherwise
+                  the directive will be ignored (with a suitable warning).
+ 
+           - process_directive/1:
+                  Whenever the top level encounters a legal directive
+                  ":- D" (see above), it invokes "process_directive( D )"
+                  to give the interpreter a chance to act upon the
+                  directive.
+ 
+           - dra_call_interp/1:
+                  This would be the main entry point of the metainterpreter.
+                  Whenever the top level encounters a query (of the form
+                  "?- Q."), it will display the query and then call
+                  "dra_call_interp( Q )".  Depending on the result, it will then
+                  display "No", or "Yes" (preceded by a display of bindings
+                  acquired by the variables occurring in "Q"); in the latter
+                  case it will also backtrack to obtain more solutions.
+ 
+ 
+     The metainterpreter can also define hooks of its own.  A hook
+        predicate should be declared in a fact of "hook_predicate/1".
+        For example,
+ 
+            hook_predicate( essence_hook( _, _ ) ).
+ 
+        declares that "essence_hook/2" is a metainterpreter hook.  A hook
+        predicate (essence_hook/2 in this case) should be dynamic.  When
+        the top level encounters a clause whose head matches a hook predicate
+        declaration, the clause is asserted at the front (!) of the predicate
+        (in the module of the running program, not in "interpreted").
+ 
+        NOTE: If the interpreter does not use hook predicates, it must contain
+              the definition
+                  hook_predicate( '' ).
+
+
 */
 
-
-% NOTES FOR AUTHORS OF METAINTERPRETERS:
-%
-%    6. The clauses read in by the top level are loaded into the module
-%       "interpreted".  This is done to avoid conflicts with predicates
-%       used in the metainterpreter (and the top level).  The metainterpreter
-%       must access them by using the predicate imported from
-%       "compatibility_utilties_...":
-%           clause_in_module( interpreted, ... )
-%
-%       The predicates defined by these clauses are stored in the table
-%       defined/1, in the form of patterns, e.g.,
-%           is_defined( p( _, _ ) ).
-%
-%
-%    7. The top level notes "never_tabled" declarations in the table "is_never_tabled".
-%       For example,
-%
-%           :- never_tabled p/1, q/2.
-%
-%       will be stored as
-%
-%           is_never_tabled( p( _ ) ).
-%           is_never_tabled( q( _, _ ) ).
-%
-%       The intended meaning is that "never_tabled" predicates do not make use
-%       (directly or indirectly) of the special features provided by the
-%       metainterpreter, so their invocations can be handled just by handing
-%       them over to Prolog (which would presumably speed up the computation).
-%
-%       Please note that the never_tabled predicates (which should be defined in
-%       files mentioned in ":- load_is_support( filename )." directives) are
-%       compiled into the module "never_tabled" (unless they are defined within
-%       other modules).
-%
-%
-%    8. The metainterpreter should provide the following predicates
-%       ("hooks") that will be called by the top level:
-%
-%          - is_cuts_ok/1:
-%                 Defines patterns for built-in predicates from the host
-%                 system that can be invoked by the interpreted program.
-%                 For example, to allow writeln/2, declare:
-%                     is_cuts_ok( writeln( _, _ ) ).
-%
-%          - default_extension/1:
-%                 This predicate is optional.  If present, its argument
-%                 should be an atom whose name is the extension string to be
-%                 added to file names that do not already have an extension.
-%                 (The string should begin with a period!)
-%                 For example, a metainterpreter for coinductive logic
-%                 programming might contain the following fact:
-%                      default_extension( '.clp' ).
-%
-%          - initialise/0:
-%                 This will be called before loading a new program,
-%                 giving the metainterpreter an opportunity to
-%                 (re)initialise its data structures.
-%
-%          - program_loaded/0:
-%                 This will be called after a program has been read in from
-%                 its file and stored in memory.  The interpreter can use
-%                 the opportunity to check the program's consistency, to
-%                 transform the program, etc.
-%
-%          - legal_directive/1:
-%                 Whenever the top level encounters a directive
-%                 (of the form ":- D."), it will call "legal_directive( D )".
-%                 If the call succeeds, the interpreter will be given
-%                 a chance to process the directive (see below), otherwise
-%                 the directive will be ignored (with a suitable warning).
-%
-%          - process_directive/1:
-%                 Whenever the top level encounters a legal directive
-%                 ":- D" (see above), it invokes "process_directive( D )"
-%                 to give the interpreter a chance to act upon the
-%                 directive.
-%
-%          - dra_call_tabled/1:
-%                 This would be the main entry point of the metainterpreter.
-%                 Whenever the top level encounters a query (of the form
-%                 "?- Q."), it will display the query and then call
-%                 "dra_call_tabled( Q )".  Depending on the result, it will then
-%                 display "No", or "Yes" (preceded by a display of bindings
-%                 acquired by the variables occurring in "Q"); in the latter
-%                 case it will also backtrack to obtain more solutions.
-%
-%
-%    9. The metainterpreter can also define hooks of its own.  A hook
-%       predicate should be declared in a fact of "hook_predicate/1".
-%       For example,
-%
-%           hook_predicate( essence_hook( _, _ ) ).
-%
-%       declares that "essence_hook/2" is a metainterpreter hook.  A hook
-%       predicate (essence_hook/2 in this case) should be dynamic.  When
-%       the top level encounters a clause whose head matches a hook predicate
-%       declaration, the clause is asserted at the front (!) of the predicate
-%       (in the module of the running program, not in "interpreted").
-%
-%       NOTE: If the interpreter does not use hook predicates, it must contain
-%             the definition
-%                 hook_predicate( '' ).
-
-
-%:- ensure_loaded( utilities ).
-%:- ensure_loaded( program_consistency ).
-%
-
-%                                                                          %
-%  Check the consistency of the loaded program.                            %
-%  An auxiliary of top_level.                                              %
-%                                                                          %
-%  Written by Feliks Kluzniak at UTD (January 2009).                       %
-%                                                                          %
-%  Last update: 11 June 2009.                                              %
-%                                                                          %
-
-
-%:- ensure_loaded( utilities ).
 %:- ensure_loaded( open_set_in_tree ).
 %
 
@@ -1792,7 +1756,6 @@ identical_member2( (N , Term), Items ) :-
              op( 1010, fy, never_tabled      ).    % allow  ":- never_tabled p/k ."
 
 :- dynamic (is_never_tabled)/1.
-:- dynamic (is_defined)/1.
 
 
 
@@ -2939,7 +2902,7 @@ use_clause(Goal, Body ) :- set_meta(Goal, is_never_tabled),Body = call(Goal).
 % with each new answer (and tabling it).  Fail when all the possible results
 % are exhausted.
 
-:- mode(compute_fixed_point( +, +, +, +, +)).
+% :- mode(compute_fixed_point( +, +, +, +, +)).
 
 compute_fixed_point( Goal, PGIndex, Stack, Hyp, Level ) :-
         NLevel is Level +1,
@@ -3625,10 +3588,7 @@ complete_goal( Goal, Level ) :-
 %    writeln(M:H),
    \+ atom_concat('__aux',_,F), FM:module_transparent(M:F/A)))).
 
-
-
-
-
+:- retract(was_access_level(Was)),set_prolog_flag(access_level,Was).
 
 
 
