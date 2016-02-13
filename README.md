@@ -2,7 +2,7 @@
 Port to SWI-Prolog's C @ https://github.com/logicmoo/swipl-devel/   for the "dra" memoizing interpreter 
 
 
-   General description
+   General description  Written by Feliks Kluzniak at UTD (January 2009).
    -------------------
 
    A simple (and very inefficient) interpreter that emulates "top-down tabled
