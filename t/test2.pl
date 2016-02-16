@@ -1,6 +1,45 @@
 
+:- '$set_source_module'(_,user).
+:- 'module'(user).
 
-:- if(tabling_store(recored)).
+:- if((fail,exists_source(library(drac)))).
+	:- use_module(library(drac)).
+:- else.
+	:- use_module(library(dra)).
+:- endif.
+
+/*
+% Simpler example than example12.pl, but the number of predicates involved in mutual recursion will also increase at runtime.
+
+expected_variants([p(3,_),p(2,_),q(2,_),q(3,_),p(_,_)]).
+% Note: p(3,_) and q(3,_) are empty tables, but they are there.
+expected_answers_for_variant(p(_,_),[p(1,2),p(2,3),p(1,3)]).
+expected_answers_for_variant(p(3,_),[]).
+expected_answers_for_variant(p(2,_),[p(2,3)]).
+expected_answers_for_variant(q(2,_),[q(2,3)]).
+expected_answers_for_variant(q(3,_),[]).
+*/
+
+:-table((p/2, q/2)).
+:-export((p/2, q/2)).
+
+
+p(X,Y) :-p(X,Z), q(Z,Y).
+p(X,Y) :-e(X,Y).
+q(X,Y) :-p(X,Y).
+
+e(1,2).
+e(2,3).
+
+:- listing(p/2).
+
+:- once(\+ tnot(p(_X,_Y))).
+
+:-print_tables.
+
+
+
+
 
 /*
 
@@ -44,42 +83,5 @@ t5:-consult('/devel/LogicmooDeveloperFramework/PrologMUD/packs/MUD_PDDL/prolog/d
 
 */
 
-:- endif.
 
-
-
-:- '$set_source_module'(_,user).
-:- 'module'(user).
-
-:- use_module(dra).
-
-
-/*
-% Simpler example than example12.pl, but the number of predicates involved in mutual recursion will also increase at runtime.
-
-expected_variants([p(3,_),p(2,_),q(2,_),q(3,_),p(_,_)]).
-% Note: p(3,_) and q(3,_) are empty tables, but they are there.
-expected_answers_for_variant(p(_,_),[p(1,2),p(2,3),p(1,3)]).
-expected_answers_for_variant(p(3,_),[]).
-expected_answers_for_variant(p(2,_),[p(2,3)]).
-expected_answers_for_variant(q(2,_),[q(2,3)]).
-expected_answers_for_variant(q(3,_),[]).
-*/
-
-:-table((p/2, q/2)).
-:-export((p/2, q/2)).
-
-
-p(X,Y) :-p(X,Z), q(Z,Y).
-p(X,Y) :-e(X,Y).
-q(X,Y) :-p(X,Y).
-
-e(1,2).
-e(2,3).
-
-:- listing(p/2).
-
-:- once(\+ tnot(p(_X,_Y))).
-
-:-print_tables.
 
