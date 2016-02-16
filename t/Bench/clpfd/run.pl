@@ -134,9 +134,9 @@ ratios(F1,F2):-
     prod(Ratios,1,Prod),
     output_ratios(Ratios),
     Amean is Sum/N,
-    Gmean is exp(1/N*log(Prod)),
-    write_ln(user_output,['<amean>', Amean],' & ',' \hline \\'),
-    write_ln(user_output,['<gmean>', Gmean],' & ',' \hline \\').
+    Gmean is exp(1/N*log(Prod)), 
+    write_ln(user_output,['<amean>', Amean],' & ',' \\hline \\\\'),
+    write_ln(user_output,['<gmean>', Gmean],' & ',' \\hline \\\\').
 
 readall(F,L,N):-
     see(F),
@@ -173,7 +173,7 @@ prod([],Prod,Prod).
 output_ratios([]).
 output_ratios([Ratio|Ratios]):-
     Ratio=..[Name,R],
-    write_ln(user_output,[Name,R],' & ',' \hline \\'),
+    write_ln(user_output,[Name,R],' & ',' \\hline \\\\'),
     output_ratios(Ratios).
 
 '$member'(X,[X1|Xs]):-

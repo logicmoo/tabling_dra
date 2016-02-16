@@ -1,5 +1,7 @@
+
 :-set_prolog_flag(singleton,off).
 :-set_prolog_flag(redefined,off).
+:- style_check(-singleton).
 
 programs(Ps):-
     Ps=[
@@ -33,7 +35,7 @@ go(Suite):-
     name(Suite,String),
     myappend("res_bp_",String,FileNameString),
     name(FileName,FileNameString),
-    open(FileName,write,S),
+    open(FileName,write,S),!,
     run(Suite,S).
 
 go:-
@@ -105,10 +107,10 @@ run(Suite,S):-close(S).
 
 run_program(P,N,S):-
 %    compile(P),
-    load(P),
-    initialize_table,
+		load(P),!,
+    initialize_table,!,
     ntimes(N,T),!,
-    write(S,P),write(S,'('), T1 is T/N, write(S,T1), write(S,').'),nl(S).
+    write(S,PF),write(S,'('), T1 is T/N, write(S,T1), write(S,').'),nl(S).
 
 ntimes(N,T):-
     statistics(runtime,_),
@@ -237,7 +239,8 @@ sum_list([X|Xs],Sum0,Sum):-
 
 
 myappend([],X,X).
-myappend([X|Xs],Ys,[X|Zs]):-myappend(Xs,Ys,Zs).
+myappend([X|Xs],Ys,[X|Zs]):-!,myappend(Xs,Ys,Zs).
+myappend(X,B,C):- name(X,A),myappend(A,B,C).
 
 '$member'(X,[X1|Xs]):-
     X=X1.
@@ -293,3 +296,4 @@ summary:-
 command(X):-nl,write(X),nl,
     call(X).
 
+:- go.

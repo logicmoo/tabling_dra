@@ -24,16 +24,17 @@
 
 % Adapted by F.K. @ UTD
 
-:- topl demo/0.
+:- topl demo/1.
 
 :- table fib0/3.
 
 
-demo :-
-        write('Enter N : '), read(N),
+demo(N):-
+        (var(N)->(write('Enter N : '), read(N));true),
         fib(N, Fib),
         write('Fib of '), write(N), write(' is '), writeln(Fib).
 
+fib(end_of_file, end_of_file).
 fib(N, X) :- fib0(N, X, _).
 
 /* fib0(+Arg, -Result, -MinusOneRes) */
@@ -47,10 +48,6 @@ fib0(N, X, X1) :-
         X1 is X2 + X3,
         X is X1+X2.
 
-?- fib( 0, N ).
-?- fib( 1, N ).
-?- fib( 2, N ).
-?- fib( 3, N ).
-?- fib( 9, N ).
+?- forall(between(0,100,N),demo(N)).
 
-?- demo.
+

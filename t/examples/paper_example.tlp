@@ -1,3 +1,6 @@
+
+:- style_check(-singleton).
+
 % An example from "Linear Tabling Strategies and Optimizations" by
 % Neng-Fa Zhou, Taisuke Sato and Yi-Dong Shen.
 

@@ -68,7 +68,8 @@
 				  (coinductive0)/1,
 				  (coinductive1)/1,
           (tnot)/1,
-          initialise/0,
+          initialize_table/0,
+				  abolish_tables/0,
           print_tables/0,
 
 
@@ -297,10 +298,10 @@
                   For example, to allow dra_w/2, declare:
                       :- is_cut_ok( dra_w( _, _ ) ).
  
-           - initialise/0:
+           - initialize_table/0:
                   This will be called before loading a new program,
                   giving the metainterpreter an opportunity to
-                  (re)initialise its data structures.
+                  (re)initialize_table its data structures.
  
            - legal_directive/1:
                   Whenever the top level encounters a directive
@@ -586,6 +587,14 @@
            )
 
 
+   -- number_of_answers
+
+           This is a no-profiling heuristics variable that records the size of "answer".  It
+           is useful for determining whether new answers have been generated
+           during a phase of the computation.
+
+           This variable is not cleared before the evaluation of a new query.
+
      
    Profiling below is not part of the tabling system
    -----------------------------------------------------
@@ -615,14 +624,6 @@
            query terminates.
 
            The variable is reinitialized before the evaluation of a new query.
-
-   -- number_of_answers
-
-           This is a profiling non-logical variable that records the size of "answer".  It
-           is useful for determining whether new answers have been generated
-           during a phase of the computation.
-
-           This variable is not cleared before the evaluation of a new query.
 */
 
 
@@ -643,13 +644,14 @@ system:'$enter_dra'.
 :- endif.
 
 
-
 std_trace_stream(user_error).
 dra_w(M):-std_trace_stream(S),format(S,'~q',[M]),flush_output(S).
+dra_wln(M):-current_predicate(logicmoo_util_dmsg:dmsg/1),!,dmsg(M).
 dra_wln(M):-std_trace_stream(S),format(S,'~q.~n',[M]),flush_output(S).
 dra_retract_all(R):-ignore((retract(R),fail)).
 % dra_asserta_new(G):-catch(G,_,fail),!.
 dra_asserta_new(G):-dra_retract_all(G),asserta(G).
+dra_assertz_new(G):-dra_retract_all(G),assertz(G).
 dra_must((G1,G2)):- !, dra_must(G1),dra_must(G2).
 dra_must(G):-G *->true;dra_error(failed_dra_must(G)).
 dra_error(W):-throw(dra_error(W)).
@@ -674,17 +676,19 @@ property_pred(cut_ok,is_cut_ok).
 property_pred(old_first,is_old_first).
 property_pred(never_tabled,is_never_tabled).
 property_pred(hilog,is_hilog).
-property_pred(topl,is_traced).
+property_pred(topl,is_topl).
 
 table(Mask):- process_dra_ective(table(Mask)).
 coinductive0(Mask):-process_dra_ective(coinductive0(Mask)).
 coinductive1(Mask):-process_dra_ective(coinductive1(Mask)).
+topl(Mask):-process_dra_ective(topl(Mask)).
 
 make_db_pred(D,F):-
     DG=..[D,_],
     (predicate_property(M:DG,_)->true;(predicate_property(DG,imported_from(M))->true;M=system)),
     module_transparent(M:DG), add_clauses(M:DG , process_dra_ective(DG)), 
-   ( \+ current_op(_,fy,user:D) -> op(1010,fy,user:D) ; true), 
+   ( \+ current_op(_,fy,user:D) -> op(1010,fy,user:D) ; true),
+    dynamic(F/1),
     multifile(F/1).
 
 :-forall(property_pred(D,F) , make_db_pred(D,F)).
@@ -697,21 +701,28 @@ make_db_pred(D,F):-
 % :-user:ensure_loaded(library(ape/get_ape_results)).
 % :-user:ensure_loaded(library(logicmoo/util/logicmoo_util_all)).
 
-:-use_module(library(coinduction),
-  	  [ (coinductive)/1,
-  	    op(1150, fx, (coinductive))
-  	  ]).
+
 
 % BREAKS THINGS meta_predicate(set_meta(0,+)).
 :- module_transparent(set_meta/2).
-set_meta(TGoal,is_coninductive0):- !,
-    set_meta(TGoal,is_coninductive1),
-    add_clauses( TGoal ,  (!, dra_call_coind0(TGoal) )),
-    dra_asserta_new(is_coninductive0(TGoal)).
 
-set_meta(TGoal,is_coninductive1):- !,
+
+
+set_meta(TGoal,is_coinductive0):- !,
+    functor(TGoal,F,A),
+    use_module(library(coinduction),[ (coinductive)/1,op(1150, fx, (coinductive))]),
+    coinduction:expand_coinductive_declaration(F/A, Clauses),
+    directive_source_file(File),
+    '$compile_aux_clauses'(Clauses, File).
+
+set_meta(TGoal,is_coinductive0):- !,
+    set_meta(TGoal,is_coinductive1),
+    add_clauses( TGoal ,  (!, dra_call_coind0(TGoal) )),
+    dra_asserta_new(is_coinductive0(TGoal)).
+
+set_meta(TGoal,is_coinductive1):- !,
     add_clauses( TGoal , (!, dra_call_coind1(TGoal) )),
-    dra_asserta_new(is_coninductive1(TGoal)).
+    dra_asserta_new(is_coinductive1(TGoal)).
 
 set_meta(TGoal,is_never_tabled):- !,
     dra_retract_all(is_tabled(TGoal)),
@@ -722,12 +733,16 @@ set_meta(TGoal,is_never_tabled):- !,
 set_meta(TGoal,is_tabled):-
     dra_retract_all(is_never_tabled(TGoal)),
     dra_asserta_new(is_tabled(TGoal)),
-    add_clauses( TGoal ,  (!, dra_call_tabled(TGoal))).    
+    add_clauses( TGoal ,  (!, dra_call_tabled(TGoal))),
+    functor(TGoal,F,A),discontiguous(F/A).    
     %interp(dra_call_tabled,TGoal).
 
 set_meta(TGoal,is_old_first):-
     set_meta(TGoal,is_tabled),
     dra_asserta_new(is_old_first(TGoal)).
+
+set_meta(TGoal,Atom):- Assert=..[Atom,TGoal],
+    dra_asserta_new(Assert).
 
 
 %------------------------------------------------------------------------------
@@ -766,14 +781,14 @@ is_builtin(Pred) :-functor(Pred,F,_),atom_concat('$',_,F).
 
 
 %------------------------------------------------------------------------------
-% mk_pattern( + an atom representing the name of a predicate,
+% mk_pattern(+An atom representing the name of a predicate,
 %             + an integer representing the arity of the predicate,
 %             - the most general pattern that matches all invocations of the
 %               predicate
 %           )
 % Given p/k, produce p( _, _, ... _ )  (of arity k)
 
-% :-mode mk_pattern( +, +, -).
+% :-mode mk_pattern(+,+,-).
 
 % mk_pattern( P, K, Pattern ) :-
 %        length( Args, K ),                           % Args = K fresh variables
@@ -785,9 +800,7 @@ mk_pattern( P, K, Pattern ) :-
 
 
 %------------------------------------------------------------------------------
-% predspecs_to_patterns( +a conjunction of predicate specifications,
-%                        - list of most general instances of these predicates
-%                      ):
+%% predspecs_to_patterns(+PredSpecs,-PatternsList)
 % Given one or several predicate specifications (in the form "p/k" or
 % "p/k, q/l, ...") check whether they are well-formed: if not, raise a fatal
 % dra_error; otherwise return a list of the most general instances that correspond
@@ -818,15 +831,13 @@ predspecs_to_patterns( PredSpec, [ Pattern ] ) :-
 
 
 %------------------------------------------------------------------------------
-% predspec_to_pattern( +a predicate specification,
-%                      - a most general instance of this predicate
-%                    ):
+% predspec_to_pattern(+PredSpec,-GeneralPaton).
 % Given a predicate specification (in the form "p/k") check whether it is
 % well-formed: if not, raise a fatal dra_error; otherwise return a most general
 % instance that correspond to the predicate specification.
 
-predspec_to_pattern( +PredSpec, +Pattern ) :- !,predspec_to_pattern( PredSpec, Pattern ).
-predspec_to_pattern(-PredSpec, -Pattern ) :- !,predspec_to_pattern( PredSpec, Pattern ).
+predspec_to_pattern(+PredSpec,+Pattern ) :- !,predspec_to_pattern( PredSpec, Pattern ).
+predspec_to_pattern(-PredSpec,-Pattern ) :- !,predspec_to_pattern( PredSpec, Pattern ).
 predspec_to_pattern( M:PredSpec, M:Pattern ):- !,predspec_to_pattern( PredSpec, Pattern ).
 predspec_to_pattern( PredSpec, Pattern ) :-Pattern \= (_/_),!,PredSpec = Pattern.
 predspec_to_pattern( PredSpec, Pattern ) :-
@@ -866,22 +877,22 @@ essence_hook( T, T ).    % default, may be overridden by the interpreted program
 
 
 %------------------------------------------------------------------------------
-% are_variants( +term, +term ) :
+%% are_variants(+Term,+Term )
 %    Succeeds only if both arguments are variants of each other.
 %    Does not instantiate any variables.
 % NOTE:
 %   If variant/2 turns out to be broken, replace the last call with the
 %    following three:
-%        dra_check( T1 = T2 ),                   % quickly weed out obvious misfits
+%        \+ \+ ( T1 = T2 ),                   % quickly weed out obvious misfits
 %        copy_term( T2, CT2 ),
-%        dra_check( (numbervars( T1, 0, N ), numbervars( CT2, 0, N ), T1 = CT2) ).
+%       \+ \+ ( (numbervars( T1, 0, N ), numbervars( CT2, 0, N ), T1 = CT2) ).
 
 are_variants( T1, T2 ) :-
         variant( T1, T2 ).
 
 
 %------------------------------------------------------------------------------
-% write_shallow( +output stream, +term, +maximum depth ):
+%% write_shallow(+Output stream,+Term,+Maximum depth)
 % Like write/2, but only to a limited print depth.
 
 write_shallow( OutputStream, Term, MaxDepth ) :-
@@ -889,7 +900,7 @@ write_shallow( OutputStream, Term, MaxDepth ) :-
 
 
 %------------------------------------------------------------------------------
-% is_built_in( +- goal ):
+%% is_swi_builtin(?goal)
 % Does this goal call a built-in predicate?  Or generate a built-in goal.
 
 is_swi_builtin( Pred ) :-
@@ -899,7 +910,7 @@ is_swi_builtin( Pred ) :-
 
 
 %------------------------------------------------------------------------------
-% dra_setval_flag( +name, +value ):
+%% dra_setval_flag(+Name,+Value)
 % Set this counter to this value.
 %
 % NOTE: Since DRA uses global variables to store only integers, we use the
@@ -910,14 +921,14 @@ dra_setval_flag( Name, Value ) :-flag( Name, _Old, Value ).
 
 
 %------------------------------------------------------------------------------
-% dra_getval_flag( +name, -value ):
+%% dra_getval_flag(+Name,-Value)
 % Get the value associated with this counter.
 
 dra_getval_flag( Name, Value ) :-flag( Name, Value, Value ).
 
 
 %------------------------------------------------------------------------------
-% dra_incval_flag( +name ):
+%% dra_incval_flag(+Name)
 % Increment this counter by 1.
 dra_incval_flag( Name ) :-flag( Name, Value, Value+1 ).
 
@@ -954,13 +965,13 @@ dra_incval_flag( Name ) :-flag( Name, Value, Value+1 ).
 %
 % The operations are:
 %
-%    empty_hypotheses(-stack of hypotheses ):
+%     empty_hypotheses(-stack of hypotheses ):
 %         Create an empty stack for coinductive hypotheses.
 %
-%    push_is_coinductive( +goal, +stack of hypotheses , -new stack ):
+%     push_is_coinductive(+Goal,+Stack of hypotheses ,-new stack ):
 %         Push the coinductive goal onto the stack.
 %
-%    unify_with_coinductive_ancestor( +goal, +stack of hypotheses ):
+%     unify_with_coinductive_ancestor(+Goal,+Stack of hypotheses ):
 %         Fail if there is no unifiable coinductive ancestor on the stack. If
 %         there is one, succeed after performing the unification with the
 %         most recent such ancestor.  Upon failure undo the unification and
@@ -991,21 +1002,23 @@ dra_incval_flag( Name ) :-flag( Name, Value, Value+1 ).
 
 
 %------------------------------------------------------------------------------
-% empty_otree( +- tree ):
+%% empty_otree(?OpenTree)
+%
 % Create an empty tree, or check that the provided tree is empty.
 
 empty_tree( empty ).
 
 
 %------------------------------------------------------------------------------
-% is_in_tree( +tree, +key, +comparison predicate, -information ):
+%% is_in_tree(+Tree,+Key,+ComparisonLessThanPredicate,-Information)
+%
 % If the entry for this key is present in the tree, succeed and return the
 % associated information; if it is not, fail.
 % "comparison predicate" is a binary predicate that succeeds if the first
 % argument is smaller than the second argument.  Any predicate that implements
 % a total ordering will do.
 
-:-meta_predicate(is_in_tree( +, +, 2, -)).
+:-meta_predicate(is_in_tree(+,+, 2,-)).
 is_in_tree( Node, Key, LessPred, Info ) :-
         Node = t( K, I, L, R ),
         (
@@ -1022,13 +1035,8 @@ is_in_tree( Node, Key, LessPred, Info ) :-
 
 
 %------------------------------------------------------------------------------
-% tree_add( +tree,
-%           +key,
-%           +information,
-%           +comparison predicate,
-%           +modification predicate,
-%           - new tree
-%         ):
+%% tree_add(+Tree,+Key,+Information,+ComparisonLTPredicate,+ModificationAddPredicate,+NewTree)
+%           
 % Make sure that the key is associated with this information in the tree.
 % If the entry for this key is already present, modify the existing
 % information.
@@ -1038,7 +1046,7 @@ is_in_tree( Node, Key, LessPred, Info ) :-
 % information from its second argument to its first argument, thus obtaining
 % the third argument.
 
-:-meta_predicate(tree_add( +, +, +, 2, 3, -)).
+:-meta_predicate(tree_add(+,+,+, 2, 3,-)).
 
 tree_add( Node, Key, Info, LessPred, ModifyPred, NewNode ) :-
         (
@@ -1075,7 +1083,7 @@ tree_add( Node, Key, Info, LessPred, ModifyPred, NewNode ) :-
 
 
 %------------------------------------------------------------------------------
-% empty_goal_table( +- goal table ):
+%% empty_goal_table(?goal table)
 % Create an empty goal table, or check that the provided table is empty.
 
 empty_goal_table( Table ) :-
@@ -1083,7 +1091,7 @@ empty_goal_table( Table ) :-
 
 
 %------------------------------------------------------------------------------
-% goal_table_member( +goal, +goal table ):
+%% goal_table_member(+Goal,+Goal table)
 % Check whether any instantiations of the goal are in the table: if there are,
 % unify the goal with the first one (backtracking will unify it with each of
 % them in turn).
@@ -1099,7 +1107,7 @@ goal_table_member( Goal, Table ) :-
 
 
 %------------------------------------------------------------------------------
-% is_a_variant_in_goal_table( +goal, +goal table ):
+%% is_a_variant_in_goal_table(+Goal,+Goal table)
 % Succeed iff a variant of this goal is present in the table.
 % Do not modify the goal.
 %
@@ -1116,7 +1124,7 @@ is_a_variant_in_goal_table( Goal, Table ) :-
 
 
 %------------------------------------------------------------------------------
-% member_reversed( +- item, +list of items ):
+%% member_reversed(?item,+ListOfItems)
 % Like member/2, but the order of searching/generation is reversed.
 
 member_reversed( M, [ _ | L ] ) :-
@@ -1125,7 +1133,8 @@ member_reversed( M, [ M | _ ] ).
 
 
 %------------------------------------------------------------------------------
-% goal_table_add( +goal table, +goal, -new goal table ):
+%% goal_table_add(+GoalTable,+Goal,-NewGoalYable)
+%
 % Add this goal to the table.
 
 goal_table_add( Table, Goal, NewTable ) :-
@@ -1145,7 +1154,7 @@ empty_hypotheses( Hyp ) :-
         empty_goal_table( Hyp ).
 
 
-% :-mode push_is_coinductive( +, +, -).
+% :-mode push_is_coinductive(+,+,-).
 
 push_is_coinductive( Goal, Hyp, NewHyp ) :-
         goal_table_add( Hyp, Goal, NewHyp ).
@@ -1161,19 +1170,19 @@ push_is_coinductive( Goal, Hyp, NewHyp ) :-
 % empty_hypotheses( [] ).
 %
 %
-% :-mode push_is_coinductive( +, +, -).
+% :-mode push_is_coinductive(+,+,-).
 %
 % push_is_coinductive( Goal, Hyp, [ Goal | Hyp ] ).
 %
 %
-% :-mode unify_with_coinductive_ancestor( +, +).
+% :-mode unify_with_coinductive_ancestor(+,+).
 %
 % unify_with_coinductive_ancestor( Goal, Hyp ) :-
 %         once( essence_hook( Goal, Essence ) ),
 %         member( G, Hyp ),
 %         once( essence_hook( G, Essence ) ).
 
-% :-mode unify_with_coinductive_ancestor( +, +).
+% :-mode unify_with_coinductive_ancestor(+,+).
 
 unify_with_coinductive_ancestor( Goal, Hyp ) :-
         goal_table_member( Goal, Hyp ).
@@ -1223,16 +1232,16 @@ unify_with_coinductive_ancestor( Goal, Hyp ) :-
 %
 % The operations are:
 %
-%    empty_stack(-stack ):
+%     empty_stack(-stack )
 %            Create an empty stack.
 %
-%    push_is_tabled( +goal, +index, +clause, +stack, -new stack ):
+%     push_is_tabled(+Goal,+Index,+Clause,+Stack,-new stack )
 %            where the first three arguments are the constitutive elements of
 %            a triple.
 %            Push the triple goal onto the stack.
 %
-%    is_variant_of_ancestor( +goal,
-%                            +stack,
+%    is_variant_of_ancestor(+Goal,
+%                            +Stack,
 %                            - the triple with the variant ancestor,
 %                            - goals between goal and the variant ancestor
 %                          )
@@ -1250,14 +1259,14 @@ unify_with_coinductive_ancestor( Goal, Hyp ) :-
 % empty_stack( [] ).
 %
 %
-% :-mode push_is_tabled( +, +, +, +, -).
+% :-mode push_is_tabled(+,+,+,+,-).
 %
 % push_is_tabled( Goal, PGIndex, Clause, Stack,
 %              [ triple( Goal, PGIndex, Clause ) | Stack ]
 %            ).
 %
 %
-% :-mode is_variant_of_ancestor( +, +, -, -).
+% :-mode is_variant_of_ancestor(+,+,-,-).
 %
 % is_variant_of_ancestor( Goal, Stack, AncestorTriple, Prefix ) :-
 %         append( Prefix, [ AncestorTriple | _ ], Stack ),      % split the list
@@ -1283,7 +1292,7 @@ empty_stack( tstack( [], Table ) ) :-
         empty_goal_table( Table ).
 
 
-% :-mode push_is_tabled( +, +, +, +, -).
+% :-mode push_is_tabled(+,+,+,+,-).
 
 push_is_tabled( Goal, PGIndex, Clause, tstack( Stack, Table ),
              tstack( [ triple( Goal, PGIndex, Clause ) | Stack ], NewTable )
@@ -1291,7 +1300,7 @@ push_is_tabled( Goal, PGIndex, Clause, tstack( Stack, Table ),
         goal_table_add( Table, Goal, NewTable ).
 
 
-% :-mode is_variant_of_ancestor( +, +, -, -).
+% :-mode is_variant_of_ancestor(+,+,-,-).
 
 is_variant_of_ancestor( Goal,
                         tstack( Stack, Table ),
@@ -1320,7 +1329,15 @@ is_variant_of_ancestor( Goal,
 
 dra_version('DRA ((c) UTD 2009) version 0.97 (beta), June 2011 - LOGICMOO').
 
-initialise :-                                        % invoked by top_level
+initialize_table:- abolish_tables,
+      retractall( is_coinductive0( _ )  ),
+      retractall( is_coinductive1( _ ) ),
+      retractall( is_tabled( _ )       ),
+      retractall( is_old_first( _ )    ),
+      dra_must((dra_version( Version ),
+      dra_w( Version ))).
+
+abolish_tables :-                                        % invoked by top_level
    dra_must((
         reinitialise_answer,
         reinitialise_result,
@@ -1328,17 +1345,11 @@ initialise :-                                        % invoked by top_level
         reinitialise_loop,
         reinitialise_looping_alternative,
         reinitialise_completed,
-        retractall( is_coinductive0( _ )  ),
-        retractall( is_coinductive1( _ ) ),
-        retractall( is_tabled( _ )       ),
-        retractall( is_old_first( _ )    ),
         retractall( is_traced( _ )      ),
         dra_setval_flag( number_of_answers, 0 ),
         dra_setval_flag( unique_index,      0 ),
         dra_setval_flag( step_counter,      0 ),
-        dra_setval_flag( old_table_size,    0 ))),
-        dra_must((dra_version( Version ),
-        dra_w( Version ))),!.
+        dra_setval_flag( old_table_size,    0 ))),!.
 
 
 %  Administration  %
@@ -1358,7 +1369,7 @@ initialise :-                                        % invoked by top_level
 %legal_directive(M:P):-atom(M),M:legal_directive(P).
 %legal_directive(P):-compound(P),functor(P,F,1),property_pred(F).
 legal_directive((coinductive( _))  ).
-legal_directive( (coinductive0 _)  ).
+% legal_directive( (coinductive0 _)  ).
 legal_directive( (coinductive1 _) ).
 legal_directive( (table _)       ).
 legal_directive( (dynamic _)      ).
@@ -1379,7 +1390,7 @@ legal_directive(P):-compound(P),functor(P,F,1),property_pred(F,_).
 % Check and process the legal directives (invoked by top_level)
 
 
-% process_dra_ective( +directive ):
+%% process_dra_ective(+Directive)
 % Process a directive.
 :-module_transparent(process_dra_ective/1).
 
@@ -1404,17 +1415,19 @@ process_dra_ective( Dir ) :-
 add_patterns([],_):- !.
 add_patterns([P|Patterns],DBF):-add_pattern(P,DBF),!,add_patterns(Patterns,DBF).
 
-add_pattern(Pattern, -DBF):- !, DB=..[DBF,Pattern], dra_retract_all( DB ).
-add_pattern(Pattern, + DBF):- !, add_pattern(Pattern, DBF).
+add_pattern(Pattern,-DBF):- !, DB=..[DBF,Pattern], dra_retract_all( DB ).
+add_pattern(Pattern,+ DBF):- !, add_pattern(Pattern, DBF).
 add_pattern(Pattern,DBF):-DB=..[DBF,Pattern],
         set_meta(Pattern,DBF),
-        dra_asserta_new( DB ),!.
+        dra_assertz_new( DB ),!.
 
 
 
 %
 %  The interpreter  %
 
+% tnot/1 must be ran in meta-interp
+'tnot'(G):-dra_call_interp('tnot'(G)).
 % invoked by VMI/WAM to Execute a query.
 :-module_transparent(dra_call_tabled/1).
 dra_call_tabled(G) :- dra_use_interp(dra_call_tabled,G) .
@@ -1427,8 +1440,7 @@ dra_call_interp(G):-dra_use_interp(dra_interp,G).
 
 
 
-
-:-module_transparent(dra_use_interp/2).
+:- meta_predicate dra_use_interp(5,?).
 dra_use_interp(Type,Goals ) :-
       '$dra':dra_must(b_getval('$tabling_exec',dra_state(Stack, Hyp, ValOld, CuttedOut))),
       setup_call_cleanup(
@@ -1463,20 +1475,17 @@ exit_dra_call:-
 
 
 % Print information about the number of steps and the answer table.
-print_statistics :-        
+print_statistics :-  notrace((      
         dra_getval_flag( step_counter, NSteps ),
         dra_getval_flag( number_of_answers, NAns ),
         dra_getval_flag( old_table_size, OldNAns ),
         TableGrowth is NAns - OldNAns,
-        dra_wln([step=NSteps,growth=TableGrowth,tabled=NAns]).
+        ( TableGrowth>0
+				   ->dra_wln([step=NSteps,growth=TableGrowth,tabled=NAns]);true))).
 
 
 
-% dra_interp(Cutted, +sequence of goals,
-%        +stack,
-%        +coinductive hypotheses,
-%        +level
-%      ):
+%% dra_interp(?Cutted,+Goal,+Stack,+CoinductiveHypotheses,+Level)
 % Solve the sequence of goals, maintaining information about the current chain
 % of tabled ancestors(stack) and the chain of coinductive0 ancestors
 %(coinductive hypotheses).  The level is the level of recursion, and is used
@@ -1505,15 +1514,28 @@ print_statistics :-
 :-
   empty_hypotheses( Hyp ),
   empty_stack( Stack ),
-  nb_setval('$tabling_exec',dra_state(Stack, Hyp, -1, _CuttedOut)).
+  nb_setval('$tabling_exec',dra_state(Stack, Hyp,-1, _CuttedOut)).
 
-% tnot/1 must be ran in meta-interp
-'tnot'(G):-dra_call_interp('tnot'(G)).
 
-:-module_transparent(dra_interp/5).
+% this next meta_predicate decl causes an infinate loop
+:- meta_predicate dra_interp(*,0,*,*,*).
+% so we use the next line insteal to repress 
+%  Found new meta-predicates in iteration 1 (0.072 sec)
+:- meta_predicate dra_interp(-,+,+,+,+).
+:- module_transparent(dra_interp/5).
+
+
+
+dra_interp(CuttedOut, Goal, Stack, Hyp,  Level ):- assertion(nonvar(Goal)),
+   is_tabled(Goal),!,
+   dra_call_tabled(Cutted, Goal, Stack, Hyp, Level ),
+  ((var(Cutted);non_cutted(Goal,Cutted, CuttedOut))->true;(!,fail)).
+
+% simply true.
+dra_interp(_ ,     true, _, _, _ ) :- !.
 
 % A negation.
-dra_interp(Cutted, ((\+ Goal)), Stack, Hyp, Level ) :-assertion(nonvar(Goal)),
+dra_interp(Cutted, ((\+ Goal)), Stack, Hyp, Level ) :- 
         !,
         NLevel is Level +1,
         trace_entry( normal, \+ Goal, '?', Level ),
@@ -1526,15 +1548,10 @@ dra_interp(Cutted, ((\+ Goal)), Stack, Hyp, Level ) :-assertion(nonvar(Goal)),
         ).
 
 
-% simply true.
-dra_interp(_ ,     true, _, _, _ ) :- !.
-
-
+% special tnot/1
 dra_interp(Cutted, ( (tnot Goal)) , Stack, Hyp, Level ) :- !, findall(Cutted-Goal,dra_interp(Cutted, Goal , Stack, Hyp, Level ),L),L=[].
 
-
 % One solution.
-
 dra_interp(Cutted, once( Goal ), Stack, Hyp, Level ) :-
         !,
         NLevel is Level +1,
@@ -1549,7 +1566,6 @@ dra_interp(Cutted, once( Goal ), Stack, Hyp, Level ) :-
 
 
 % A conditional with an else.
-
 dra_interp(Cutted, (Cond -> Then ; Else), Stack, Hyp, Level ) :- !,
       (  dra_interp(Cutted, Cond, Stack, Hyp, Level ) ->        
         dra_interp(Cutted, Then, Stack, Hyp, Level ) ;
@@ -1557,10 +1573,10 @@ dra_interp(Cutted, (Cond -> Then ; Else), Stack, Hyp, Level ) :- !,
 
 
 % A conditional without an else.
-
 dra_interp(Cutted, (Cond -> Then), Stack, Hyp, Level ) :- !,
         (dra_interp(Cutted, Cond, Stack, Hyp, Level ) -> dra_interp(Cutted, Then, Stack, Hyp, Level )).
 
+% or
 dra_interp(Cutted, (GoalsL ; GoalsR), Stack, Hyp, Level ) :- !,
         (dra_interp(Cutted, GoalsL, Stack, Hyp, Level ) ;
          dra_interp(Cutted, GoalsR, Stack, Hyp, Level )).
@@ -1577,18 +1593,14 @@ dra_interp(Cutted, call( Goal ), Stack, Hyp, Level ) :- !,dra_interp(Cutted, Goa
 
 
 % findall/3: note that this is not opaque to coinductive and tabled ancestors!
-
 dra_interp(Cutted, findall( Template, Goal, Bag ), Stack, Hyp, Level ) :- !,
         NLevel is Level +1,
         findall( Template, dra_interp(Cutted, Goal, Stack, Hyp, NLevel ), Bag ).
 
+% cut
 dra_interp(Cutted, !, _, _, _ ) :- !, (var(Cutted);Cutted=cut).
+% cut to Label
 dra_interp(Cutted, !(Where), _, _, _ ) :- !, (var(Cutted);Cutted=cut_to(Where)).
-
-dra_interp(CuttedOut, Goal, Stack, Hyp,  Level ):-
-   is_tabled(Goal),!,
-   dra_call_tabled(Cutted, Goal, Stack, Hyp, Level ),
-  ((var(Cutted);non_cutted(Goal,Cutted, CuttedOut))->true;(!,fail)).
 
 
 % A goal that is coinductive, but not tabled.
@@ -1635,14 +1647,14 @@ dra_interp(Cutted, Goal, Stack, Hyp, Level ) :-fail,
 
 
 % Some other supported built-in.
-dra_interp(CuttedOut, BuiltIn, Stack, Hyp,  Level ):- !,
+dra_interp(CuttedOut, NeverTable, Stack, Hyp,  Level ):- % is_never_tabled(NeverTable),
+     !,
      b_setval('$tabling_exec',dra_state(Stack, Hyp, Level, Cutted)),
-     call(BuiltIn ),        
-    ((var(Cutted);(trace,non_cutted(BuiltIn,Cutted, CuttedOut)))->true;(!,fail)). 
+     call(NeverTable ),        
+    ((var(Cutted);(trace,non_cutted(NeverTable,Cutted, CuttedOut)))->true;(!,fail)). 
 
-/*
 
-dra_interp(CuttedOut, Goal, Stack, Hyp,  Level ):-fail,
+dra_interp(CuttedOut, Goal, Stack, Hyp,  Level ):- fail, is_cut_ok(Goal),
   % Should read the new default
   set_meta(Goal,is_tabled),!,
   dra_call_tabled(Cutted, Goal, Stack, Hyp,  Level ),
@@ -1661,7 +1673,6 @@ dra_interp(Cutted, Goal, Stack, Hyp, Level ):-
             fail
         ).
 
-*/
 
 non_cutted(_,cut,_):- !,fail.
 non_cutted(Goal,cut_to(ToGoal),_):-dra_must(nonvar(ToGoal)), Goal=ToGoal, !,fail.
@@ -1865,13 +1876,12 @@ dra_call_tabled(Cutted, Goal, Stack, Hyp, Level ) :-
 
 
 
-% get_tabled_if_old_first( +goal, +GoalIndex,
-%                          +traces label, +traces level
-%                        ):
+%% get_tabled_if_old_first(+Goal,+PGIndex,+TraceLabel,+Level)
+%
 % If the goal has been declared as "old_first", produce all the tabled answers,
 % remembering them in "result", then succeed; otherwise just fail.
 
-% :-mode get_tabled_if_old_first( +, +, +, +).
+% :-mode get_tabled_if_old_first(+,+,+,+).
 
 get_tabled_if_old_first( Goal, PGIndex, Label, Level ) :-
         is_old_first( Goal ),
@@ -1879,25 +1889,24 @@ get_tabled_if_old_first( Goal, PGIndex, Label, Level ) :-
         new_result_or_fail( PGIndex, Goal ).     % i.e., make a note of the answer
 
 
-% get_all_tabled_answers( +goal, +GoalIndex, +traces label, +traces level ):
+%% get_all_tabled_answers(+Goal,+PGIndex,+TraceLabel,+Level)
 % Return (one by one) all the answers that are currently tabled for this goal.
 % (Each answer is returned by appropriately instantiating the goal.)
 
-% :-mode get_all_tabled_answers( +, +, +, +).
+% :-mode get_all_tabled_answers(+,+,+,+).
 
 get_all_tabled_answers( Goal, PGIndex, Label, Level ) :-
         get_answer( Goal ),
         trace_success( Label, Goal, PGIndex, Level ).
 
 
-% get_remaining_tabled_answers( +goal,        +GoalIndex,
-%                               +traces label, +traces level
-%                             ):
+%% get_remaining_tabled_answers(+Goal,+PGIndex,+TraceLabel,+Level)
+%
 % Return (one by one) all the answers that are currently tabled for this goal
 % but are not present in its "result" entries.
 % (Each answer is returned by appropriately instantiating the goal.)
 
-% :-mode get_remaining_tabled_answers( +, +, +, +).
+% :-mode get_remaining_tabled_answers(+,+,+,+).
 
 get_remaining_tabled_answers( Goal, PGIndex, Label, Level ) :-
         get_answer( Goal ),
@@ -1906,12 +1915,12 @@ get_remaining_tabled_answers( Goal, PGIndex, Label, Level ) :-
 
 
 
-% use_clause(+module, +goal, -body ).
+% use_clause(+Module,+Goal,+Body).
 % Warn and fail if the goal invokes a non-existing predicate.  Otherwise
 % nondeterministically return the appropriately instantiated body of each
 % clause whose head matches the goal.
 
-% :-meta_predicate(use_clause(:, -)).
+% :-meta_predicate(use_clause(:,-)).
 :- module_transparent(use_clause/2).
 use_clause(Goal, Body ) :-
    predicate_property(Goal,number_of_clauses(_)),!, clause(Goal, Body ),Body \= (!,_).
@@ -1922,12 +1931,12 @@ use_clause(Goal, Body ) :-set_meta(Goal, is_never_tabled),Body = call(Goal).
 
 
 
-% compute_fixed_point( +pioneer goal, +its index, +stack, +level ):
+%% compute_fixed_point(+Pioneer goal,+Its index,+Stack,+Level)
 % Solve the goal by associated rules from "looping_alternative", succeeding
 % with each new answer (and tabling it).  Fail when all the possible results
 % are exhausted.
 
-% :-mode(compute_fixed_point( 0, +, +, +, +)).
+% :-mode(compute_fixed_point( 0,+,+,+,+)).
 
 compute_fixed_point( Goal, PGIndex, Stack, Hyp, Level ) :-
         NLevel is Level +1,
@@ -1942,7 +1951,7 @@ compute_fixed_point( Goal, PGIndex, Stack, Hyp, Level ) :-
         compute_fixed_point_( Goal, PGIndex, Stack, NHyp, NLevel, NAns ).
 
 %
-% :-mode compute_fixed_point_( +, +, +, +, +, +).
+% :-mode compute_fixed_point_(0,+,+,+,+,+).
 
 compute_fixed_point_( Goal, PGIndex, Stack, Hyp, Level, _ ) :-
         copy_term( Goal, OriginalGoal ),
@@ -1952,7 +1961,7 @@ compute_fixed_point_( Goal, PGIndex, Stack, Hyp, Level, _ ) :-
         G = Goal,
         push_is_tabled( OriginalGoal, PGIndex, ClauseCopy, Stack, NStack ),
         dra_interp(Cutted, Body, NStack, Hyp, Level ),
-        (nonvar(Cutted)-> print_message(waring,[warning,'cutted at ',Cutted]); true),
+        (nonvar(Cutted)-> print_message(warning,[warning,'cutted at ',Cutted]); true),
         new_result_or_fail( PGIndex, Goal ),
         memo( OriginalGoal, Goal, Level ).
 
@@ -1963,7 +1972,7 @@ compute_fixed_point_( Goal, PGIndex, Stack, Hyp, Level, NAns ) :-
 
 
 
-% suppress_pioneers_on_list( +list of triples, +TraceLevel ):
+%% suppress_pioneers_on_list(+ListOfTriples,+Level)
 % If any of the triples describe goals that are pioneers, make sure those goals
 % cease to be pioneers.
 
@@ -1978,11 +1987,11 @@ suppress_pioneers_on_list( _, _ ).
 
 
 
-% rescind_pioneer_status( +index ):
+%% rescind_pioneer_status(+Index)
 % Remove auxiliary table entries for the pioneer with this index.
 % Specifically, clean up "pioneer", "loop" and "looping_alternative".
 
-% :-mode rescind_pioneer_status( +).
+% :-mode rescind_pioneer_status(+).
 
 rescind_pioneer_status( PGIndex ) :-
         delete_pioneer( PGIndex ),
@@ -1990,12 +1999,12 @@ rescind_pioneer_status( PGIndex ) :-
         delete_looping_alternatives( PGIndex ).
 
 
-% complete_cluster( +PioneerIndex of a pioneer goal, +TraceLevel ):
+%% complete_cluster(+PioneerIndexOfGoal,+Level)
 % If the goal has an associated cluster, make sure all the goals in the cluster
 % are marked as completed.
 % Recall that a cluster may consist of a number of "loops".
 
-% :-mode complete_cluster( +, +).
+% :-mode complete_cluster(+,+).
 
 complete_cluster( PGIndex, Level ) :-
         get_loop( PGIndex, Gs ),                  % iterate over loops
@@ -2007,12 +2016,10 @@ complete_cluster( _, _ ).
 
 
 
-% extract_goals( +list of triples of goals, indices and clauses,
-%                - list of goals
-%              ):
+%% extract_goals(+ListOfTriplesOfGoalsWIndicesAndClauses,-ListOfGoals)
 % Filter away the other info in each triple, return list of goals only.
 
-% :-mode extract_goals( +, -).
+% :-mode extract_goals(+,-).
 
 extract_goals( [], [] ).
 
@@ -2028,7 +2035,7 @@ extract_goals( [ triple( G, _, _ ) | Ts ], [ G | Gs ] ) :-
 %       "looping_alternative" and "completed".
 
 
-% get_unique_index(-):
+%% get_unique_index(-PGIndex)
 % Produce a new unique index.
 
 % :-mode get_unique_index(-).
@@ -2044,11 +2051,11 @@ get_unique_index( PGIndex ) :-
 %-----  Custom-tailored utilities  -----
 
 
-% are_essences_variants( +term, +term ):
+%% are_essences_variants(+Term,+Term)
 % Are both the terms variants of each other after filtering through
 % essence_hook?
 
-% :-mode are_essences_variants( +, +).
+% :-mode are_essences_variants(+,+).
 
 are_essences_variants( T1, T2 ) :-
         once( essence_hook( T1, ET1 ) ),
@@ -2057,10 +2064,10 @@ are_essences_variants( T1, T2 ) :-
 
 
 
-% trace_entry( +label, +goal, +GoalIndex, +level ):
+%% trace_entry(+Label,+Goal,+PGIndex,+Level)
 % If the goal matches one of the traced patterns, print out a traces line about
 % entering the goal (at this level, with this label).
-% (The GoalIndex is not always relevant: "?" is used for those cases.)
+% (The PGIndex is not always relevant: "?" is used for those cases.)
 
 trace_entry( Label, Goal, PGIndex, Level ) :-
         is_traced( Goal ),
@@ -2074,12 +2081,12 @@ trace_entry( Label, Goal, PGIndex, Level ) :-
 trace_entry( _, _, _, _ ).
 
 
-% trace_success( +label, +goal, +GoalIndex, +level ):
+%% trace_success(+Label,+Goal,+PGIndex,+Level)
 % If the goal matches one of the traced patterns, print out a traces line about
 % success of the goal (at this level, with this label).  Moreover, just before
 % backtracking gets back to the goal, print out a traces line about retrying the
 % goal.
-% (The GoalIndex is not always relevant: "?" is used for those cases.)
+% (The PGIndex is not always relevant: "?" is used for those cases.)
 
 trace_success( Label, Goal, PGIndex, Level ) :-
         is_traced( Goal ),
@@ -2101,10 +2108,10 @@ trace_success( Label, Goal, PGIndex, Level ) :-
 trace_success( _, _, _, _ ).
 
 
-% trace_failure( +label, +goal, +GoalIndex, +level ):
+%% trace_failure(+Label,+Goal,+PGIndex,+Level)
 % If the goal matches one of the traced patterns, print out a traces line about
 % failure of the goal (at this level, with this label).
-% (The GoalIndex is not always relevant: "?" is used for those cases.)
+% (The PGIndex is not always relevant: "?" is used for those cases.)
 
 trace_failure( Label, Goal, PGIndex, Level ) :-
         is_traced( Goal ),
@@ -2118,10 +2125,10 @@ trace_failure( Label, Goal, PGIndex, Level ) :-
 trace_failure( _, _, _, _ ).
 
 
-% trace_other( +label, +goal, +GoalIndex, +level ):
+%% trace_other(+Label,+Goal,+PGIndex,+Level)
 % If the goal matches one of the traced patterns, print out a traces line about
 % this goal (at this level, with this label).
-% (The GoalIndex is not always relevant: "?" is used for those cases.)
+% (The PGIndex is not always relevant: "?" is used for those cases.)
 
 trace_other( Label, Goal, PGIndex, Level ) :-
         is_traced( Goal ),
@@ -2163,7 +2170,7 @@ print_depth( 10 ).
 
 
 
-% optional_trace( +label, +goal, +term, +level ):
+%% optional_trace(+Label,+Goal,+Term,+Level)
 % If the goal matches one of the traced patterns, print out a traces line with
 % this label, the goal and the term.
 
@@ -2185,7 +2192,7 @@ optional_trace( _, _, _, _ ).
 
 
 
-% c +r = 7.949 seconds
+% c +R = 7.949 seconds
 
 
 % :-repeat,logOnErrorIgnore(prolog),fail.
@@ -2219,11 +2226,10 @@ optional_trace( _, _, _, _ ).
 
 
 
-
-:- if(\+ current_predicate(tabling_store/1)).
-
+:- if(\+ current_predicate(tabling_store/1);\+tabling_store(_)).
+:- dynamic(tabling_store/1).
 tabling_store(assert).
-
+% tabling_store(record).
 :- endif.
 
 
@@ -2232,369 +2238,8 @@ tabling_store(assert).
 
 
 
-
-:- if(tabling_store(assert)).
-/*  Part of SWI-Prolog
-
-    Author:        Douglas R. Miles
-    E-mail:        logicmoo@gmail.com
-    WWW:           http://www.swi-prolog.org http://www.prologmoo.com
-    Copyright (C): 2015, University of Amsterdam
-                                    VU University Amsterdam
-
-    This program is free software; you can redistribute it and/or
-    modify it under the terms of the GNU General Public License
-    as published by the Free Software Foundation; either version 2
-    of the License, or (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-    As a special exception, if you link this library with other files,
-    compiled with a Free Software compiler, to produce an executable, this
-    library does not by itself cause the resulting executable to be covered
-    by the GNU General Public License. This exception does not however
-    invalidate any other reasons why the executable file might be covered by
-    the GNU General Public License.
-
-*/
-%:-user:ensure_loaded(library(dra/tabling3/dra_table_assert)).
-   % NOTICE:    % %
-   %                                                                      %
-   %  COPYRIGHT (2009) University of Dallas at Texas.                     %
-   %                                                                      %
-   %  Developed at the Applied Logic, Programming Languages and Systems   %
-   %  (ALPS) Laboratory at UTD by Feliks Kluzniak.                        %
-   %                                                                      %
-   %  Permission is granted to modify this file, and to distribute its    %
-   %  original or modified contents for non-commercial purposes, on the   %
-   %  condition that this notice is included in all copies in its         %
-   %  original form.                                                      %
-   %                                                                      %
-   %  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,     %
-   %  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES     %
-   %  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE AND     %
-   %  NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR        %
-   %  ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE FOR ANY DAMAGES OR       %
-   %  OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE, ARISING    %
-   %  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR       %
-   %  OTHER DEALINGS IN THE SOFTWARE.                                     %
-   %                                                                      %
-   %
-
-%  Table-handling procedures for the "dra" interpreter.                    %
-%                                                                          %
-%  Written by Feliks Kluzniak at UTD (March 2009)           .              %
-%                                                                          %
-%  Last update: 25 August 2009.                                            %
-%                                                                          %
-
-% The tables are normally kept in asserted clauses, but for some systems this
-% is  not convenient, because asserted clauses are compiled.
-% For example, this is so in SWI Prolog, which in addition does not assert
-% cyclic terms, so  for that system the "recorded" database is more
-% appropriate.
-% In order to facilitate such changes, routines for handling the table is
-% factored out of the main program.
-:-dynamic pioneer/3 .
-:-dynamic result/2 .
-:-dynamic loop/2 .
-:-dynamic looping_alternative/2 .
-:-dynamic completed/2 .
-
-print_tables :-
-       listing( answer( _, _, _ ) ),
-       listing( result( _, _ ) ),
-       listing( pioneer( _, _, _ ) ),
-       listing( loop( _, _ ) ),
-       listing( looping_alternative( _, _ ) ),
-       listing( completed( _, _ ) ).
-
-
-% >>>>>>>>>  This version for systems that use assert/1. <<<<<<<<<
-
-:-dynamic answer/3 .
-
-
-% Clear all is_known answers.
-
-reinitialise_answer :-
-        retractall( answer( _, _, _ ) ).
-
-
-% is_answer_known( +goal, +fact ):
-% Does the table "answer" contain a variant of this fact paired with a variant
-% of this goal?
-
-% :-mode is_answer_known( +, +).
-
-is_answer_known( Goal, Fact ) :-
-        copy_term( Goal, Copy ),
-        once( essence_hook( Copy, CopyEssence ) ),
-        answer( CopyEssence, G, F ),
-        are_essences_variants( G, Goal ),
-        are_essences_variants( F, Fact ),
-        !.
-
-
-% memo( +goal, +fact, +TraceLevel ):
-% If the table "answer" does not contain a variant of this fact paired with
-% a variant of this goal, then add the pair to the table, increasing
-% "number_of_answers".
-
-% :-mode memo( +, +, +).
-
-memo( Goal, Fact, _ ) :-
-        is_answer_known( Goal, Fact ),
-        !.
-
-memo( Goal, Fact, Level ) :-
-        % \+ is_answer_known( Goal, Fact ),
-        optional_trace( 'Storing answer: ', Goal, Fact, Level ),
-        copy_term( Goal, Copy ),
-        once( essence_hook( Copy, CopyEssence ) ),
-        assert( answer( CopyEssence, Goal, Fact ) ),
-        dra_incval_flag( number_of_answers ).
-
-
-% get_answer( +- goal ):
-% Get an instantiation (if any) tabled in "answer" for variants of this goal.
-% Sequence through all such instantiations on backtracking.
-
-% :-mode get_answer( ? ).
-
-get_answer( Goal ) :-
-        once( essence_hook( Goal, EssenceOfGoal ) ),
-        copy_term( Goal, Copy ),
-        once( essence_hook( Copy, CopyEssence ) ),
-        answer( CopyEssence, G, Ans ),
-        once( essence_hook( G, EssenceOfG ) ),
-        are_variants( EssenceOfGoal, EssenceOfG ),
-        EssenceOfGoal = EssenceOfG,     % make sure variables are the right ones
-        once( essence_hook( Ans, EssenceOfAns ) ),
-        EssenceOfGoal = EssenceOfAns .  % instantiate
-
-
-% get_all_tabled_goals(-list of goals ):
-% Get all the goals that were tabled together with their answers.
-
-get_all_tabled_goals( Goals ) :-
-        findall( Goal, answer( _, Goal, _ ), Goals ).
-
-
-
-%-----------------------------------------------------------------------------
-
-% reinitialise_result:
-% Clear the table of results.
-
-reinitialise_result :-
-        retractall( result( _, _ ) ).
-
-
-% is_result_known( +index, +fact ):
-% Does the table "result" contain a variant of this fact associated with this
-% index?
-
-% :-mode is_result_known( +, +).
-
-is_result_known( PGIndex, Fact ) :-
-        result( PGIndex, F ),
-        are_essences_variants( F, Fact ),
-        !.
-
-
-% new_result_or_fail( +index, +fact ):
-% If the table "result" already contains a variant of this fact associated with
-% this index, then fail.  Otherwise record the fact in the table and succeed.
-
-% :-mode new_result_or_fail( +, +).
-
-new_result_or_fail( PGIndex, Fact ) :-
-        \+ is_result_known( PGIndex, Fact ),
-        assert( result( PGIndex, Fact ) ).
-
-
-
-%------------------------------------------------------------------------------
-
-% reinitialise_pioneer:
-% Clear the table of pioneers.
-
-reinitialise_pioneer :-
-        retractall( pioneer( _, _, _ ) ).
-
-% is_a_variant_of_a_pioneer( +goal, -index ):
-% Succeeds if the goal is a variant of a goal that is tabled in "pioneer";
-% returns the index of the relevant entry in table "pioneer".
-
-% :-mode is_a_variant_of_a_pioneer( +, -).
-
-is_a_variant_of_a_pioneer( Goal, PGIndex ) :-
-        copy_term( Goal, Copy ),
-        once( essence_hook( Copy, CopyEssence ) ),
-        pioneer( CopyEssence, G, PGIndex ),
-        are_essences_variants( Goal, G ),
-        !.
-
-
-% add_pioneer( +goal, -index ):
-% Add an entry for this goal to "pioneer", return the unique index.
-
-% :-mode add_pioneer( +, -).
-
-add_pioneer( Goal, PGIndex ) :-
-        copy_term( Goal, Copy ),
-        once( essence_hook( Copy, CopyEssence ) ),
-        get_unique_index( PGIndex ),
-        assert( pioneer( CopyEssence, Goal, PGIndex ) ).
-
-
-
-% delete_pioneer(+PGIndex).
-% Remove the entry in "pioneer" associated with this index.
-
-delete_pioneer( PGIndex ) :-
-        retract( pioneer( _, _, PGIndex )).
-
-
-
-%------------------------------------------------------------------------------
-
-% reinitialise_loop:
-% Clear the table of pioneers.
-
-reinitialise_loop :-
-        retractall( loop( _, _ ) ).
-
-
-% add_loop( +index, +list of goals ):
-% Add an entry to "loop".
-
-% :-mode add_loop( +, +).
-
-add_loop( _, [] ) :-                           % empty loops are not stored
-        !.
-
-add_loop( PGIndex, Goals ) :-                    % neither are duplicates
-        loop( PGIndex, Gs ),
-        are_variants( Goals, Gs ),
-        !.
-
-add_loop( PGIndex, Goals ) :-
-        assert( loop( PGIndex, Goals ) ).
-
-
-% delete_loops( +index ):
-% Remove all the entries in "loop" that are associated with this index.
-
-delete_loops( PGIndex ) :-
-        retractall( loop( PGIndex, _ ) ).
-
-
-% get_loop( +index, -Goals ):
-% Get an entry from table "loop" that is associated with this index;
-% another such entry (if it exists) on backtracking etc.
-
-get_loop( PGIndex, Gs ) :-
-        loop( PGIndex, Gs ).
-
-
-
-%------------------------------------------------------------------------------
-
-% reinitialise_looping_alternative:
-% Clear the table of pioneers.
-
-reinitialise_looping_alternative :-
-        retractall( looping_alternative( _, _ ) ).
-
-
-% add_looping_alternative( +index, +Clause ):
-% Add and entry to "looping_alternative".
-
-% :-mode add_looping_alternative( +, +).
-
-add_looping_alternative( PGIndex, Clause ) :-     % duplicates are not stored
-        looping_alternative( PGIndex, C ),
-        are_variants( Clause, C ),
-        !.
-
-add_looping_alternative( PGIndex, Clause ) :-
-        assert( looping_alternative( PGIndex, Clause ) ).
-
-
-% delete_looping_alternatives( +index ):
-% Remove all the entries in "loop" that are associated with this index.
-
-delete_looping_alternatives( PGIndex ) :-
-        retractall( looping_alternative( PGIndex, _ ) ).
-
-
-% get_looping_alternative( +index, -clause ):
-% Get an entry from table "looping_alternative" that is associated with this
-% index; another such entry (if it exists) on backtracking etc.
-
-get_looping_alternative( PGIndex, Clause ) :-
-        looping_alternative( PGIndex, Clause ).
-
-
-
-%------------------------------------------------------------------------------
-
-% reinitialise_completed:
-% Clear the table of completed goals.
-
-reinitialise_completed :-
-        retractall( completed( _, _ ) ).
-
-
-% is_completed( +goal ):
-% Succeeds iff the goal is a variant of a goal that has been stored in
-% the table "completed".
-
-% :-mode is_completed( +).
-
-is_completed( Goal ) :-
-        copy_term( Goal, Copy ),
-        once( essence_hook( Copy, CopyEssence ) ),
-        completed( CopyEssence, G ),
-        are_essences_variants( Goal, G ).
-
-
-% complete_goal( +goal, +index for tracing ):
-% Make sure the goal is marked as completed.
-
-% :-mode complete_goal( +, +).
-
-complete_goal( Goal, _ ) :-
-        is_completed( Goal ),
-        !.
-
-complete_goal( Goal, Level ) :-
-        % \+ is_completed( Goal ),
-        copy_term( Goal, Copy ),
-        once( essence_hook( Copy, CopyEssence ) ),
-        trace_other( 'Completing', Goal, '?', Level ),
-        assert( completed( CopyEssence, Goal ) ).
-
-
-%------------------------------------------------------------------------------
-:- endif.
-
-
-
-
-
-
-
-:- if(tabling_store(recored)).
+/**/
+:- if(tabling_store(hybrid);true).
 /*  Part of SWI-Prolog
 
     Author:        Douglas R. Miles
@@ -2646,17 +2291,17 @@ complete_goal( Goal, Level ) :-
    %  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR       %
    %  OTHER DEALINGS IN THE SOFTWARE.                                     %
    %                                                                      %
-   %%%%%%%%%%%%%%%%%%
+   %
 
 %  Table-handling procedures for the "dra" interpreter.                    %
 %                                                                          %
 %  Written by Feliks Kluzniak at UTD (March 2009)           .              %
 %                                                                          %
-%  Last update: 27 August 2009.                                            %
+%  Last update: 25-27 August 2009.                                            %
 %                                                                          %
 
 % The tables are normally kept in asserted clauses, but for some systems this
-% is not convenient, because asserted clauses are compiled.
+% is  not convenient, because asserted clauses are compiled.
 % For example, this is so in SWI Prolog, which in addition does not assert
 % cyclic terms, so  for that system the "recorded" database is more
 % appropriate.
@@ -2664,13 +2309,13 @@ complete_goal( Goal, Level ) :-
 % factored out of the main program.
 
 
-
 % >>>>>>>>>  This version for systems that use the recorded database. <<<<<<<<<
+% >>>>>>>>>  This version for systems that use assert/1. <<<<<<<<<
 
 
 %------------------------------------------------------------------------------
 
-% ensure_recorded( + key, + item ):
+%% ensure_recorded(+Key,+ item)
 % Make sure that the item is recorded in the database.
 
 ensure_recorded( Key, Item ) :-
@@ -2682,8 +2327,26 @@ ensure_recorded( Key, Item ) :-
             recordz( Key, Item )
         ).
 
+:-dynamic answer/3 .
+:-dynamic pioneer/3 .
+:-dynamic result/2 .
+:-dynamic loop/2 .
+:-dynamic looping_alternative/2 .
+:-dynamic completed/2 .
+
+print_tables :-
+       recorded_listing( answer( _, _, _ ) ),
+       recorded_listing( result( _, _ ) ),
+       recorded_listing( pioneer( _, _, _ ) ),
+       recorded_listing( loop( _, _ ) ),
+       recorded_listing( looping_alternative( _, _ ) ),
+       recorded_listing( completed( _, _ ) ).
 
 
+recorded_listing(G):-
+   (current_predicate(_,G)->listing(G);true),
+   forall(recorded(G,A),dra_wln(G->A)),
+   forall(recorded(A,G),dra_wln(A->G)),!.
 
 %------------------------------------------------------------------------------
 
@@ -2697,6 +2360,9 @@ ensure_recorded( Key, Item ) :-
 
 % Clear all known answers (and keys).
 
+reinitialise_answer :- tabling_store(assert),!,
+        retractall( answer( _, _, _ ) ).
+
 reinitialise_answer :-
         recorded( answer_key, Key, RefKey ),
         erase( RefKey ),
@@ -2706,12 +2372,19 @@ reinitialise_answer :-
 
 reinitialise_answer.
 
-
-% is_answer_known( + goal, + fact ):
+%% is_answer_known(+Goal,+Fact)
 % Does the table "answer" contain a variant of this fact paired with a variant
 % of this goal?
 
-% :-mode is_answer_known( +, + ).
+% :-mode is_answer_known(+,+).
+
+is_answer_known( Goal, Fact ) :- tabling_store(assert),!,
+        copy_term( Goal, Copy ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        answer( CopyEssence, G, F ),
+        are_essences_variants( G, Goal ),
+        are_essences_variants( F, Fact ),
+        !.
 
 is_answer_known( Goal, Fact ) :-
         copy_term( Goal, Copy ),
@@ -2722,16 +2395,25 @@ is_answer_known( Goal, Fact ) :-
         !.
 
 
-% memo( + goal, + fact, + level for tracing ):
+%% %memo(+Goal,+Fact,+Level)
 % If the table "answer" does not contain a variant of this fact paired with
 % a variant of this goal, then add the pair to the table, increasing
 % "number_of_answers".
 
-% :-mode memo( +, +, + ).
+% :-mode memo(+,+,+).
 
 memo( Goal, Fact, _ ) :-
         is_answer_known( Goal, Fact ),
         !.
+
+memo( Goal, Fact, Level ) :- tabling_store(assert),!,
+        % \+ is_answer_known( Goal, Fact ),
+        optional_trace( 'Storing answer: ', Goal, Fact, Level ),
+        copy_term( Goal, Copy ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        assert( answer( CopyEssence, Goal, Fact ) ),
+        dra_incval_flag( number_of_answers ).
+
 
 memo( Goal, Fact, Level ) :-
         % \+ is_answer_known( Goal, Fact ),
@@ -2744,9 +2426,7 @@ memo( Goal, Fact, Level ) :-
         dra_incval_flag( number_of_answers ).
 
 %------------------------------------------------------------------------------
-% most_general_instance( + a term,
-%                        - a most general instance with the same main functor
-%                      ):
+%% most_general_instance(+Term,-MostGeneralInstanceSameFunctor)
 % E.g., p( a, q( X, Y ) )  is transformed to  p( _, _ ).
 
 % :-mode most_general_instance( +, -).
@@ -2757,11 +2437,22 @@ most_general_instance( Term, Pattern ) :-
 
 
 
-% get_answer( +- goal ):
+%% %get_answer(?Goal)
 % Get an instantiation (if any) tabled in "answer" for variants of this goal.
 % Sequence through all such instantiations on backtracking.
 
 % :-mode get_answer( ? ).
+
+get_answer( Goal ) :- tabling_store(assert),!,
+        once( essence_hook( Goal, EssenceOfGoal ) ),
+        copy_term( Goal, Copy ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        answer( CopyEssence, G, Ans ),
+        once( essence_hook( G, EssenceOfG ) ),
+        are_variants( EssenceOfGoal, EssenceOfG ),
+        EssenceOfGoal = EssenceOfG,     % make sure variables are the right ones
+        once( essence_hook( Ans, EssenceOfAns ) ),
+        EssenceOfGoal = EssenceOfAns .  % instantiate
 
 get_answer( Goal ) :-
         copy_term( Goal, Copy ),
@@ -2775,8 +2466,11 @@ get_answer( Goal ) :-
         EssenceOfGoal = EssenceOfAns .  % instantiate
 
 
-% get_all_tabled_goals(-list of goals ):
+%% get_all_tabled_goals(-ListOfGoals)
 % Get all the goals that were tabled together with their answers.
+
+get_all_tabled_goals( Goals ) :- tabling_store(assert),!,
+        findall( Goal, answer( _, Goal, _ ), Goals ).
 
 get_all_tabled_goals( Goals ) :-
         findall( Goal,
@@ -2791,60 +2485,76 @@ get_all_tabled_goals( Goals ) :-
 %------------------------------------------------------------------------------
 
 % Each item recorded for table "result" is of the form "result( Fact )".
-% The item is recorded under the key "Index".  The index is additionally
+% The item is recorded under the key "PGIndex".  The index is additionally
 % recorded under the key "result_key".
 
 % reinitialise_result:
 % Clear the result table.
+
+reinitialise_result :-  tabling_store(assert),!,
+        retractall( result( _, _ ) ).
+
 reinitialise_result :-
-        recorded( result_key, Index, RefIndex ),
+
+        recorded( result_key, PGIndex, RefIndex ),
         erase( RefIndex ),
-        recorded( Index, result( _ ), RefResult ),
+        recorded( PGIndex, result( _ ), RefResult ),
         erase( RefResult ),
         fail.
 
 reinitialise_result.
 
 
-% is_result_known( + index, + fact ):
+%% is_result_known(+PGIndex,+ fact)
 % Does the table "result" contain a variant of this fact associated with this
 % index?
 
-% :-mode is_result_known( +, + ).
+% :-mode is_result_known(+,+).
 
-is_result_known( Index, Fact ) :-
-        recorded( Index, result( F ) ),
+is_result_known( PGIndex, Fact ) :- tabling_store(assert),!,
+        result( PGIndex, F ),
+        are_essences_variants( F, Fact ),
+        !.
+
+is_result_known( PGIndex, Fact ) :-
+        recorded( PGIndex, result( F ) ),
         are_essences_variants( F, Fact ),
         !.
 
 
-% new_result_or_fail( + index, + fact ):
+%% new_result_or_fail(+PGIndex,+Fact)
 % If the table "result" already contains a variant of this fact associated with
 % this index, then fail.  Otherwise record the fact in the table and succeed.
 
-% :-mode new_result_or_fail( +, + ).
+% :-mode new_result_or_fail(+,+).
 
-new_result_or_fail( Index, Fact ) :-
-        \+ is_result_known( Index, Fact ),
-        recordz( Index, result( Fact ) ),
-        ensure_recorded( result_key, Index ).
+new_result_or_fail( PGIndex, Fact ) :- tabling_store(assert),!,
+        \+ is_result_known( PGIndex, Fact ),
+        assert( result( PGIndex, Fact ) ).
+
+new_result_or_fail( PGIndex, Fact ) :-
+        \+ is_result_known( PGIndex, Fact ),
+        recordz( PGIndex, result( Fact ) ),
+        ensure_recorded( result_key, PGIndex ).
 
 
 
-%-------------------------------------------------------------------------------
-
+%------------------------------------------------------------------------------
 % Each item recorded for table "pioneer" is of the form
-% "pioneer( Filter, Goal, Index )" (where "Index" is unique and "Filter" is the
+% "pioneer( Filter, Goal, PGIndex )" (where "PGIndex" is unique and "Filter" is the
 % essence of a copy of "Goal".
 % The item is recorded under the key "Goal" , i.e., effectively the key is the
 % principal functor of the goal.  A most general instance of the goal is
 % additionally  recorded under the key "pioneer_key".
 % Moreover, to speed up delete_pioneer/1, the key is recorded also as
-% "pioneer_goal( Key )" under the key "Index".
+% "pioneer_goal( Key )" under the key "PGIndex".
 
 
 % reinitialise_pioneer:
 % Clear the table of pioneers.
+
+reinitialise_pioneer :- tabling_store(assert),!,
+        retractall( pioneer( _, _, _ ) ).
 
 reinitialise_pioneer :-
         recorded( pioneer_key, Key, RefIndex ),
@@ -2856,44 +2566,60 @@ reinitialise_pioneer :-
 reinitialise_pioneer.
 
 
-% is_a_variant_of_a_pioneer( + goal, -index ):
+%% is_a_variant_of_a_pioneer(+Goal,-PGIndex)
 % Succeeds if the goal is a variant of a goal that is tabled in "pioneer";
 % returns the index of the relevant entry in table "pioneer".
 
-% :-mode is_a_variant_of_a_pioneer( +, -).
+% :-mode is_a_variant_of_a_pioneer(+,-).
 
-is_a_variant_of_a_pioneer( Goal, Index ) :-
+is_a_variant_of_a_pioneer( Goal, PGIndex ) :- tabling_store(assert),!,
         copy_term( Goal, Copy ),
         once( essence_hook( Copy, CopyEssence ) ),
-        recorded( Goal, pioneer( CopyEssence, G, Index ) ),
+        pioneer( CopyEssence, G, PGIndex ),
+        are_essences_variants( Goal, G ),
+        !.
+
+is_a_variant_of_a_pioneer( Goal, PGIndex ) :-
+        copy_term( Goal, Copy ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        recorded( Goal, pioneer( CopyEssence, G, PGIndex ) ),
         are_essences_variants( Goal, G ),
         !.
 
 
-% add_pioneer( + goal, -index ):
+%% add_pioneer(+Goal,-index)
 % Add an entry for this goal to "pioneer", return the unique index.
 
-% :-mode add_pioneer( +, -).
+% :-mode add_pioneer(+,-).
 
-add_pioneer( Goal, Index ) :-
-        get_unique_index( Index ),
+add_pioneer( Goal, PGIndex ) :- tabling_store(assert),!,
         copy_term( Goal, Copy ),
         once( essence_hook( Copy, CopyEssence ) ),
-        recordz( Goal, pioneer( CopyEssence, Goal, Index ) ),
+        get_unique_index( PGIndex ),
+        assert( pioneer( CopyEssence, Goal, PGIndex ) ).
+
+add_pioneer( Goal, PGIndex ) :-
+        get_unique_index( PGIndex ),
+        copy_term( Goal, Copy ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        recordz( Goal, pioneer( CopyEssence, Goal, PGIndex ) ),
         most_general_instance( Goal, Key ),
         ensure_recorded( pioneer_key, Key ),
-        recordz( Index, pioneer_goal( Key ) ).
+        recordz( PGIndex, pioneer_goal( Key ) ).
 
 
-% delete_pioneer( + index ):
+%% delete_pioneer(+PGIndex)
 % Remove the entry in "pioneer" associated with this index.
 
 % :-mode delete_pioneer( + ).
 
-delete_pioneer( Index ) :-
-        recorded( Index, pioneer_goal( Key ), RefIndex ),
+delete_pioneer( PGIndex ) :- tabling_store(assert),!,
+        retract( pioneer( _, _, PGIndex )).
+
+delete_pioneer( PGIndex ) :-
+        recorded( PGIndex, pioneer_goal( Key ), RefIndex ),
         erase( RefIndex ),
-        recorded( Key, pioneer( _, _, Index ), RefPioneer ),
+        recorded( Key, pioneer( _, _, PGIndex ), RefPioneer ),
         erase( RefPioneer ).
 
 
@@ -2901,7 +2627,7 @@ delete_pioneer( Index ) :-
 %-------------------------------------------------------------------------------
 
 % Each item recorded for table "loop" is of the form "loop( Goals )".
-% The item is recorded under the key "Index", where "Index" is the index
+% The item is recorded under the key "PGIndex", where "PGIndex" is the index
 % associated with the loop.
 % The index is additionally recorded under the key "loop_key".
 
@@ -2909,50 +2635,63 @@ delete_pioneer( Index ) :-
 % reinitialise_loop:
 % Clear the table of pioneers.
 
+reinitialise_loop :- tabling_store(assert),!,
+        retractall( loop( _, _ ) ).
+
 reinitialise_loop :-
-        recorded( loop_key, Index, RefIndex ),
+        recorded( loop_key, PGIndex, RefIndex ),
         erase( RefIndex ),
-        delete_loops( Index ),
+        delete_loops( PGIndex ),
         fail.
 
 reinitialise_loop.
 
 
-% delete_loops( + index ):
+%% add_loop(+PGIndex,+ListOfGoals)
+% Add an entry to "loop".
+
+% :-mode add_loop(+,+).
+
+add_loop( _, [] ) :-                           % empty loops are not stored
+        !.
+
+add_loop( PGIndex, Goals ) :-                    % neither are duplicates
+        get_loop( PGIndex, Gs ),
+        are_variants( Goals, Gs ),
+        !.
+
+add_loop( PGIndex, Goals ) :- tabling_store(assert),!,
+        assert( loop( PGIndex, Goals ) ).
+
+add_loop( PGIndex, Goals ) :-
+        recordz( PGIndex, loop( Goals ) ),
+        ensure_recorded( loop_key, PGIndex ).
+
+%% delete_loops(+PGIndex)
 % Remove all the entries in "loop" that are associated with this index.
 
-delete_loops( Index ) :-
-        recorded( Index, loop( _ ), RefLoop ),
+delete_loops( PGIndex ) :- tabling_store(assert),!,
+        retractall( loop( PGIndex, _ ) ).
+
+delete_loops( PGIndex ) :-
+        recorded( PGIndex, loop( _ ), RefLoop ),
         erase( RefLoop ),
         fail.
 
 delete_loops( _ ).
 
 
-% add_loop( + index, + list of goals ):
-% Add an entry to "loop".
-
-% :-mode add_loop( +, + ).
-
-add_loop( _, [] ) :-                           % empty loops are not stored
-        !.
-
-add_loop( Index, Goals ) :-                    % neither are duplicates
-        get_loop( Index, Gs ),
-        are_variants( Goals, Gs ),
-        !.
-
-add_loop( Index, Goals ) :-
-        recordz( Index, loop( Goals ) ),
-        ensure_recorded( loop_key, Index ).
 
 
-% get_loop( + index, -Goals ):
+%% get_loop(+PGIndex,-Goals)
 % Get an entry from table "loop" that is associated with this index;
 % another such entry (if it exists) on backtracking etc.
 
-get_loop( Index, Gs ) :-
-        recorded( Index, loop( Gs ) ).
+get_loop( PGIndex, Gs ) :- tabling_store(assert),!,
+        loop( PGIndex, Gs ).
+
+get_loop( PGIndex, Gs ) :-
+        recorded( PGIndex, loop( Gs ) ).
 
 
 
@@ -2960,7 +2699,7 @@ get_loop( Index, Gs ) :-
 
 % Each item recorded for table "looping_alternative" is of the form
 % "looping_alternative( Clause )".
-% The item is recorded under the key "Index", where "Index" is the index
+% The item is recorded under the key "PGIndex", where "PGIndex" is the index
 % associated with the looping_alternative.
 % The index is additionally recorded under the key "looping_alternative_key".
 
@@ -2968,47 +2707,61 @@ get_loop( Index, Gs ) :-
 % reinitialise_looping_alternative:
 % Clear the table of pioneers.
 
+reinitialise_looping_alternative :- tabling_store(assert),!,
+        retractall( looping_alternative( _, _ ) ).
+
 reinitialise_looping_alternative :-
-        recorded( looping_alternative_key, Index, RefIndex ),
+        recorded( looping_alternative_key, PGIndex, RefIndex ),
         erase( RefIndex ),
-        delete_looping_alternatives( Index ),
+        delete_looping_alternatives( PGIndex ),
         fail.
 
 reinitialise_looping_alternative.
 
 
-% delete_looping_alternatives( + index ):
+%% add_looping_alternative(+PGIndex,+Clause)
+% Add and entry to "looping_alternative".
+
+% :-mode add_looping_alternative(+,+).
+
+add_looping_alternative( PGIndex, Clause ) :-     % duplicates are not stored
+        get_looping_alternative( PGIndex, C ),
+        are_variants( Clause, C ),
+        !.
+
+add_looping_alternative( PGIndex, Clause ) :- tabling_store(assert),!,
+        assert( looping_alternative( PGIndex, Clause ) ).
+
+add_looping_alternative( PGIndex, Clause ) :-
+        recordz( PGIndex, looping_alternative( Clause ) ),
+        ensure_recorded( looping_alternative_key, PGIndex ).
+
+
+%% delete_looping_alternatives(+PGIndex)
 % Remove all the entries in "loop" that are associated with this index.
 
-delete_looping_alternatives( Index ) :-
-        recorded( Index, looping_alternative( _ ), RefLoop ),
+delete_looping_alternatives( PGIndex ) :- tabling_store(assert),!,
+        retractall( looping_alternative( PGIndex, _ ) ).
+
+delete_looping_alternatives( PGIndex ) :-
+        recorded( PGIndex, looping_alternative( _ ), RefLoop ),
         erase( RefLoop ),
         fail.
 
 delete_looping_alternatives( _ ).
 
 
-% add_looping_alternative( + index, + Clause ):
-% Add and entry to "looping_alternative".
-
-% :-mode add_looping_alternative( +, + ).
-
-add_looping_alternative( Index, Clause ) :-     % duplicates are not stored
-        get_looping_alternative( Index, C ),
-        are_variants( Clause, C ),
-        !.
-
-add_looping_alternative( Index, Clause ) :-
-        recordz( Index, looping_alternative( Clause ) ),
-        ensure_recorded( looping_alternative_key, Index ).
 
 
-% get_looping_alternative( + index, -clause ):
+%% get_looping_alternative(+PGIndex,-Clause)
 % Get an entry from table "looping_alternative" that is associated with this
 % index; another such entry (if it exists) on backtracking etc.
 
-get_looping_alternative( Index, Clause ) :-
-        recorded( Index, looping_alternative( Clause ) ).
+get_looping_alternative( PGIndex, Clause ) :- tabling_store(assert),!,
+        looping_alternative( PGIndex, Clause ).
+
+get_looping_alternative( PGIndex, Clause ) :-
+        recorded( PGIndex, looping_alternative( Clause ) ).
 
 
 
@@ -3025,6 +2778,9 @@ get_looping_alternative( Index, Clause ) :-
 % reinitialise_completed:
 % Clear the table of completed goals.
 
+reinitialise_completed :- tabling_store(assert),!,
+        retractall( completed( _, _ ) ).
+
 reinitialise_completed :-
         recorded( completed_key, Key , RefIndex ),
         erase( RefIndex ),
@@ -3035,11 +2791,17 @@ reinitialise_completed :-
 reinitialise_completed.
 
 
-% is_completed( + goal ):
+%% is_completed(+Goal)
 % Succeeds iff the goal is a variant of a goal that has been stored in
 % the table "completed".
 
-% :-mode is_completed( + ).
+% :-mode is_completed(+).
+
+is_completed( Goal ) :- tabling_store(assert),!,
+        copy_term( Goal, Copy ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        completed( CopyEssence, G ),
+        are_essences_variants( Goal, G ).
 
 is_completed( Goal ) :-
         copy_term( Goal, Copy ),
@@ -3047,28 +2809,40 @@ is_completed( Goal ) :-
         recorded( Goal, completed( CopyEssence, G ) ),
         are_essences_variants( Goal, G ).
 
-
-% complete_goal( + goal, + index for tracing ):
+%% complete_goal(+Goal,+IndexFortracing)
 % Make sure the goal is marked as completed.
 
-% :-mode complete_goal( +, + ).
+% :-mode complete_goal(+,+).
 
 complete_goal( Goal, _ ) :-
         is_completed( Goal ),
         !.
 
-complete_goal( Goal, Level ) :-
+complete_goal( Goal, Level ) :- tabling_store(assert),!,
         % \+ is_completed( Goal ),
-        trace_other( 'Completing', Goal, '?', Level ),
         copy_term( Goal, Copy ),
         once( essence_hook( Copy, CopyEssence ) ),
+        trace_other( 'Completing', Goal, '?', Level ),
+        assert( completed( CopyEssence, Goal ) ).
+complete_goal( Goal, Level ) :-
+        % \+ is_completed( Goal ),
+        copy_term( Goal, Copy ),
+        once( essence_hook( Copy, CopyEssence ) ),
+        trace_other( 'Completing', Goal, '?', Level ),
         recordz( Goal, completed( CopyEssence, Goal ) ),
         most_general_instance( Goal, Key ),
         ensure_recorded( completed_key, Key ).
 
+
 %-------------------------------------------------------------------------------
 
 :- endif.
+
+
+
+
+
+
 
 
 :-source_location(S,_),prolog_load_context(module,FM),
@@ -3083,32 +2857,14 @@ complete_goal( Goal, Level ) :-
 
 :- retract(was_access_level(Was)),set_prolog_flag(access_level,Was).
 
-% Comment this for source maintainance
-end_of_file.
 
+
+
+:- if(fail).
+% Comment this for source maintainance
 :- make.
 :- check.
-
 :- gxref.
-
 :- listing(tnot).
 :- listing(table).
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+:- endif.

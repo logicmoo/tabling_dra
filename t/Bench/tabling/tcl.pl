@@ -1,15 +1,9 @@
 
-
-:- if(current_predicate((topl)/1)).
-
-:- topl((go/0, main/0)).
+:- module(tcl,[]).
+% :- topl((go/0, main/0)).
 :- table(reach/2).
 
-:- else.
-
 cputime(X):- statistics(cputime,X).
-
-:- endif.
 
 /*
 
@@ -24,24 +18,24 @@ TIME:13.26628324
 */
 
 
-go:-
+tgo:-
     (cputime(Start)),
-    top,
+    ttop,
     cputime(End),
     T is End-Start,
     write('TIME:'),write(T),nl.
 
-main:-top.
+main:-ttop.
 
-top:-
+ttop:-
     reach(X,Y),
-   % write(X),
+    % write(X->Y),
     fail.
-top.
+ttop.
 
 reach(X,Y):-edge(X,Y).
 reach(X,Y):-reach(X,Z),edge(Z,Y).
 
 :-['sg_edge.pl'].
 
-:- time(go).
+:- time(tgo),!.
