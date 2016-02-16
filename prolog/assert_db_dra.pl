@@ -1,3 +1,18 @@
+/**/
+% >>>>>>>>>  This version for systems that use the recorded database. <<<<<<<<<
+:- if(tabling_store(assert)).
+/*  Part of SWI-Prolog
+
+    Author:        Douglas R. Miles
+    E-mail:        logicmoo@gmail.com
+    WWW:           http://www.swi-prolog.org http://www.prologmoo.com
+    Copyright (C): 2015, University of Amsterdam
+                                    VU University Amsterdam
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation; either version 2
+    of the License, or (at your option) any later version.
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -15,6 +30,7 @@
     invalidate any other reasons why the executable file might be covered by
     the GNU General Public License.
 
+*/
 */
    % NOTICE: %%%%%%%%%%%%%%%%
    %                                                                      %

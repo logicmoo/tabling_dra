@@ -46,6 +46,8 @@ e(2,3).
 lm:- use_module(library(logicmoo_utils)).
 :-user:lm.
 
+:- doc_server(6568,[allow(ip(_,_,_,_))]).
+
 abolish_all(F/A):- functor(P,F,A),forall(current_predicate(_,M:P),(predicate_property(M:P,_),abolish(M:F/A))).
 
 :- meta_predicate(call_all(0)).
