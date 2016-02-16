@@ -646,7 +646,7 @@ system:'$enter_dra'.
 
 std_trace_stream(user_error).
 dra_w(M):-std_trace_stream(S),format(S,'~q',[M]),flush_output(S).
-dra_wln(M):-current_predicate(logicmoo_util_dmsg:dmsg/1),!,dmsg(M).
+dra_wln(M):-call(notrace,((current_predicate(logicmoo_util_dmsg:dmsg/1),!,logicmoo_util_dmsg:dmsg(M)))),!.
 dra_wln(M):-std_trace_stream(S),format(S,'~q.~n',[M]),flush_output(S).
 dra_retract_all(R):-ignore((retract(R),fail)).
 % dra_asserta_new(G):-catch(G,_,fail),!.
@@ -707,13 +707,14 @@ make_db_pred(D,F):-
 :- module_transparent(set_meta/2).
 
 
-
+/*
 set_meta(TGoal,is_coinductive0):- !,
     functor(TGoal,F,A),
     use_module(library(coinduction),[ (coinductive)/1,op(1150, fx, (coinductive))]),
     coinduction:expand_coinductive_declaration(F/A, Clauses),
     directive_source_file(File),
     '$compile_aux_clauses'(Clauses, File).
+*/
 
 set_meta(TGoal,is_coinductive0):- !,
     set_meta(TGoal,is_coinductive1),
@@ -1464,14 +1465,14 @@ init_dra_call:-
 
 cont_dra_call :-
 				print_statistics,
-				'$exit_dra'.
+				system:'$exit_dra'.
 
 exit_dra_call:-
 				print_statistics,
 				dra_setval_flag( step_counter, 0 ),
 				dra_getval_flag( number_of_answers, NAns2 ),
 				dra_setval_flag( old_table_size, NAns2 ),
-				'$exit_dra'.
+				system:'$exit_dra'.
 
 
 % Print information about the number of steps and the answer table.
