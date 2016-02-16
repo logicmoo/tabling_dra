@@ -33,11 +33,15 @@
           dra_call_tabled/1,
           dra_call_coind0/1,
           dra_call_coind1/1,
+					essence_hook/2,
           get_all_tabled_goals/1,
           cont_dra_call/0,
           exit_dra_call/0,
           init_dra_call/0,
           process_dra_ective/1,
+					(table)/1,
+				  (coinductive0)/1,
+				  (coinductive1)/1,
           (tnot)/1,
           initialise/0,
           print_tables/0,
@@ -429,14 +433,8 @@
 
   NOTE:
  
-    1. See ../general/top_level.ecl for a description of how to load
-       and run programs.
-       Please note that in Eclipse after loading this interpreter you
-       should issue
-            :-import dra.
-       if you don't want to keep writing
-            dra:prog( filename )
-       every time.
+    1.  `:- use_module(library(dra))`.
+
  
     2. The interpreter supports a number of directives:
  
@@ -507,7 +505,7 @@
        require special treatment by the interpreter.
  
     5. The program may contain clauses that modify the definition of the
-       interpreter's predicate "essence_hook/2" (the clauses will be asserted
+       interpreter''s predicate "essence_hook/2" (the clauses will be asserted
        at the front of the predicate, and will thus override the default
        definition for some cases).  The default definition is
  
@@ -632,6 +630,13 @@
 :-meta_predicate dra_retract_all(:).
 :-meta_predicate dra_must(0).
 
+:- if(\+ current_predicate(system:'$exit_dra'/0)).
+
+system:'$exit_dra'.
+system:'$enter_dra'.
+
+:- endif.
+
 
 std_trace_stream(user_error).
 dra_w(M):-std_trace_stream(S),format(S,'~q',[M]),flush_output(S).
@@ -643,32 +648,40 @@ dra_must((G1,G2)):- !, dra_must(G1),dra_must(G2).
 dra_must(G):-G *->true;dra_error(failed_dra_must(G)).
 dra_error(W):-throw(dra_error(W)).
 
-% BREAKS THINGS :- meta_predicate(add_clauses(0)).
-:- module_transparent(add_clauses/1).
-add_clauses(_G):- current_prolog_flag(xref, true),!.
-add_clauses(G):- predicate_property(G,dynamic),!,dra_asserta_new(G).
-add_clauses(G):- predicate_property(G,static),!,compile_aux_clauses(G).
-add_clauses(G):- compile_aux_clauses(G).
+% BREAKS THINGS :- meta_predicate(add_clauses(:,0)).
+:- module_transparent(add_clauses/2).
+add_clauses(_,_):- current_prolog_flag(xref, true),!.
+add_clauses(H,B):- predicate_property(H,dynamic),!,dra_asserta_new((H:-B)).
+add_clauses(H,B):- predicate_property(H,number_of_clauses(_)), ( \+ \+ clause(H,B)),!.
+add_clauses(H,B):- predicate_property(H,static),!,directive_source_file(File),'$compile_aux_clauses'([(H:-B)], File).
+add_clauses(H,B):- predicate_property(H,undefined), \+ source_location(_,_), !,dra_asserta_new((H:-B)).
+add_clauses(H,B):- directive_source_file(File),'$compile_aux_clauses'([(H:-B)], File).
 
+directive_source_file(File):-prolog_load_context(source,File),!.
+directive_source_file(File):-prolog_load_context(module,File),!.
 
 property_pred((table),is_tabled).
+property_pred(coinductive0,is_coinductive0).
+property_pred(coinductive1,is_coinductive1).
 property_pred((traces),is_traced).
 property_pred(cut_ok,is_cut_ok).
 property_pred(old_first,is_old_first).
-property_pred(coinductive0,is_coinductive0).
-property_pred(coinductive1,is_coinductive1).
 property_pred(never_tabled,is_never_tabled).
 property_pred(hilog,is_hilog).
+property_pred(topl,is_traced).
 
+table(Mask):- process_dra_ective(table(Mask)).
+coinductive0(Mask):-process_dra_ective(coinductive0(Mask)).
+coinductive1(Mask):-process_dra_ective(coinductive1(Mask)).
 
-:-forall(property_pred(D,F) ,
-   ((DG=..[D,_],
-    M = system,
-    module_transparent(M:D/1),
-    add_clauses(( M:DG :- process_dra_ective(DG))), 
+make_db_pred(D,F):-
+    DG=..[D,_],
+    (predicate_property(M:DG,_)->true;(predicate_property(DG,imported_from(M))->true;M=system)),
+    module_transparent(M:DG), add_clauses(M:DG , process_dra_ective(DG)), 
    ( \+ current_op(_,fy,user:D) -> op(1010,fy,user:D) ; true), 
-    multifile(F/1)))).
+    multifile(F/1).
 
+:-forall(property_pred(D,F) , make_db_pred(D,F)).
 
 % ON :-initialization( profiler(_,walltime) ).
 % ON :-initialization(user:use_module(library(swi/pce_profile))).
@@ -683,17 +696,15 @@ property_pred(hilog,is_hilog).
   	    op(1150, fx, (coinductive))
   	  ]).
 
-:-set_prolog_flag(debugger_show_context,true).
-
 % BREAKS THINGS meta_predicate(set_meta(0,+)).
 :- module_transparent(set_meta/2).
 set_meta(TGoal,is_coninductive0):- !,
     set_meta(TGoal,is_coninductive1),
-    add_clauses( (TGoal :- !, dra_call_coind0(TGoal) )),
+    add_clauses( TGoal ,  (!, dra_call_coind0(TGoal) )),
     dra_asserta_new(is_coninductive0(TGoal)).
 
 set_meta(TGoal,is_coninductive1):- !,
-    add_clauses( (TGoal :- !, dra_call_coind1(TGoal) )),
+    add_clauses( TGoal , (!, dra_call_coind1(TGoal) )),
     dra_asserta_new(is_coninductive1(TGoal)).
 
 set_meta(TGoal,is_never_tabled):- !,
@@ -705,7 +716,7 @@ set_meta(TGoal,is_never_tabled):- !,
 set_meta(TGoal,is_tabled):-
     dra_retract_all(is_never_tabled(TGoal)),
     dra_asserta_new(is_tabled(TGoal)),
-    add_clauses( (TGoal :- !, dra_call_tabled(TGoal))),
+    add_clauses( TGoal ,  (!, dra_call_tabled(TGoal))),
     functor(TGoal,F,A),discontiguous(F/A).
     %interp(dra_call_tabled,TGoal).
 
@@ -2713,6 +2724,8 @@ t5:-consult('/devel/LogicmooDeveloperFramework/PrologMUD/packs/MUD_PDDL/prolog/d
 */
 
 
+:- if(\+ current_predicate(ensure_recorded/1)).
+
 /*  Part of SWI-Prolog
 
     Author:        Douglas R. Miles
@@ -3186,6 +3199,9 @@ complete_goal( Goal, Level ) :-
 
 %-------------------------------------------------------------------------------
 
+:- endif.
+
+:- retract(was_access_level(Was)),set_prolog_flag(access_level,Was).
 
 
 :- '$set_source_module'(_,user).
