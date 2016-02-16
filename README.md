@@ -244,35 +244,20 @@ Port to SWI-Prolog's C @ https://github.com/logicmoo/swipl-devel/   for the "dra
                   system that can be invoked by the interpreted program.
                   For example, to allow writeln/2, declare:
                       is_cuts_ok( writeln( _, _ ) ).
- 
-           - default_extension/1:
-                  This predicate is optional.  If present, its argument
-                  should be an atom whose name is the extension string to be
-                  added to file names that do not already have an extension.
-                  (The string should begin with a period!)
-                  For example, a metainterpreter for coinductive logic
-                  programming might contain the following fact:
-                       default_extension( '.clp' ).
- 
+
            - initialise/0:
                   This will be called before loading a new program,
                   giving the metainterpreter an opportunity to
                   (re)initialise its data structures.
+
  
-           - legal_directive/1:
-                  Whenever the top level encounters a directive
-                  (of the form ":- D."), it will call "legal_directive( D )".
-                  If the call succeeds, the interpreter will be given
-                  a chance to process the directive (see below), otherwise
-                  the directive will be ignored (with a suitable warning).
- 
-           - process_directive/1:
+           - process_dra_ective/1:
                   Whenever the top level encounters a legal directive
                   ":- D" (see above), it invokes "process_directive( D )"
                   to give the interpreter a chance to act upon the
                   directive.
  
-           - dra_call_interp/1:
+           - dra_interp/1:
                   This would be the main entry point of the metainterpreter.
                   Whenever the top level encounters a query (of the form
                   "?- Q."), it will display the query and then call
@@ -281,20 +266,4 @@ Port to SWI-Prolog's C @ https://github.com/logicmoo/swipl-devel/   for the "dra
                   acquired by the variables occurring in "Q"); in the latter
                   case it will also backtrack to obtain more solutions.
  
- 
-     The metainterpreter can also define hooks of its own.  A hook
-        predicate should be declared in a fact of "hook_predicate/1".
-        For example,
- 
-            hook_predicate( essence_hook( _, _ ) ).
- 
-        declares that "essence_hook/2" is a metainterpreter hook.  A hook
-        predicate (essence_hook/2 in this case) should be dynamic.  When
-        the top level encounters a clause whose head matches a hook predicate
-        declaration, the clause is asserted at the front (!) of the predicate
-        (in the module of the running program, not in "interpreted").
- 
-        NOTE: If the interpreter does not use hook predicates, it must contain
-              the definition
-                  hook_predicate( '' ).
 
