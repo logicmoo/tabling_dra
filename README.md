@@ -1,5 +1,5 @@
 # tabling
-Port to SWI-Prolog's C @ https://github.com/logicmoo/swipl-devel/   for the "dra" memoizing interpreter 
+Port to SWI-Prolog's C @ https://github.com/TeamSPoon/swipl-devel/   for the "dra" memoizing interpreter 
 
 
    General description  Written by Feliks Kluzniak at UTD (January 2009).
