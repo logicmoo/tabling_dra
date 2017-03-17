@@ -1,5 +1,5 @@
 name(tabling_dra).
-version('1.1.113').
+version('1.1.114').
 title('SWI-Prolog interface to Table-handling procedures for the "dra" interpreter. Written by Feliks Kluzniak at UTD (March 2009)').
 keywords([tabling,memoization,dra]).
 author( 'Douglas Miles', 'http://www.linkedin.com/in/logicmoo' ).
