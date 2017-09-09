@@ -1476,7 +1476,7 @@ exit_dra_call:-
 
 
 % Print information about the number of steps and the answer table.
-print_statistics :-  notrace((      
+print_statistics :-  quietly((      
         dra_getval_flag( step_counter, NSteps ),
         dra_getval_flag( number_of_answers, NAns ),
         dra_getval_flag( old_table_size, OldNAns ),
